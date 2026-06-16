@@ -20,6 +20,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { StyleSpecification, LayerSpecification } from 'maplibre-gl';
+import type { MapBaseStyle, MapDensity } from '../sub/mapLens';
 
 // OpenFreeMap public instance — free, no API key, no signup. We fetch it only to
 // borrow its sources/glyphs/sprite; on failure we return this URL verbatim as a
@@ -102,6 +103,40 @@ const DARK: CoralPalette = {
   localityLabel: '#a1a1aa',
 };
 
+// Net-new Contrast palette (Direction D / P3). A high-contrast LIGHT-based variant
+// for low-vision / bright-sunlight use: pure-white canvas, near-black labels with
+// white halos, and more separated land/water/road tones — every field is set, so
+// it is a FULLY styled variant, not a half-built one. The rose motorway accent is
+// kept (it's signal). This is the honest replacement third option for the dead
+// Sat/Terr/Hybrid control.
+const CONTRAST: CoralPalette = {
+  canvas: '#ffffff',
+  landNatural: '#f0f0f0',
+  park: '#d6ecd8',
+  water: '#bcd4ea',
+  building: '#dcdcdc',
+  roadLocal: '#ffffff',
+  roadArterial: '#cfcfcf',
+  roadHighwayFill: '#ffd2d9',
+  roadHighwayStroke: '#e11d48',
+  boundary: '#8a8a8a',
+  labelText: '#0a0a0a',
+  labelHalo: '#ffffff',
+  waterLabel: '#0b3a66',
+  roadLabel: '#0a0a0a',
+  roadLabelHalo: '#ffffff',
+  adminLabel: '#1a1a1a',
+  localityLabel: '#000000',
+};
+
+// Palette map keyed by base-style variant. Exported so the variant set + density
+// filtering are unit-testable without the network fetch buildCoralStyle does.
+export const PALETTES: Record<MapBaseStyle, CoralPalette> = {
+  light: LIGHT,
+  dark: DARK,
+  contrast: CONTRAST,
+};
+
 // Prefer an English label when present, else the local name (OpenMapTiles ships
 // both `name` and `name:en`).
 const NAME_FIELD = ['coalesce', ['get', 'name:en'], ['get', 'name']];
@@ -109,7 +144,7 @@ const NAME_FIELD = ['coalesce', ['get', 'name:en'], ['get', 'name']];
 // ─── Coral Cockpit layers (OpenMapTiles v3 schema) ──────────────────────────
 // Draw order bottom→top: background → land → water → roads → boundaries →
 // labels. POI + transit are intentionally omitted (Google path hides them).
-function coralLayers(p: CoralPalette): LayerSpecification[] {
+export function coralLayers(p: CoralPalette, density: MapDensity = 'high'): LayerSpecification[] {
   const layers = [
     { id: 'background', type: 'background', paint: { 'background-color': p.canvas } },
 
@@ -328,6 +363,18 @@ function coralLayers(p: CoralPalette): LayerSpecification[] {
       },
     },
   ];
+  // Density (Direction D / P3). 'low' hides the minor labels (water names + small
+  // places) and pushes road labels to a closer zoom so the pins (signal) dominate
+  // at a glance; city labels + ALL geometry are always kept. 'high' is the full
+  // set. Honest filtering — the labels genuinely drop, not a no-op toggle.
+  if (density === 'low') {
+    const dropped = new Set(['label-water', 'label-place-other']);
+    const kept = layers.filter(l => !dropped.has(l.id));
+    for (const l of kept) {
+      if (l.id === 'label-road') (l as { minzoom?: number }).minzoom = 14;
+    }
+    return kept as unknown as LayerSpecification[];
+  }
   // The style-spec expression unions are stricter than the literals above can be
   // inferred to; this is the only type escape and it's localized to the build.
   return layers as unknown as LayerSpecification[];
@@ -339,8 +386,23 @@ function coralLayers(p: CoralPalette): LayerSpecification[] {
 // attribution. On any network/parse failure returns the plain liberty URL (safe
 // full-credit fallback — light, un-Coral, but always renders).
 // ─────────────────────────────────────────────────────────────────────────────
-export async function buildCoralStyle(isDarkMode: boolean): Promise<StyleSpecification | string> {
-  const palette = isDarkMode ? DARK : LIGHT;
+export interface BuildCoralStyleOptions {
+  /** Explicit palette variant (Direction D base-style switch). When omitted, the
+   *  palette follows isDarkMode (light/dark) — preserving the original two-state
+   *  behavior for callers that don't opt in. */
+  variant?: MapBaseStyle;
+  /** Label/symbol density. 'high' (default) = full label set; 'low' = minor
+   *  labels hidden + road labels thinned. */
+  density?: MapDensity;
+}
+
+export async function buildCoralStyle(
+  isDarkMode: boolean,
+  opts: BuildCoralStyleOptions = {},
+): Promise<StyleSpecification | string> {
+  const variant: MapBaseStyle = opts.variant ?? (isDarkMode ? 'dark' : 'light');
+  const density: MapDensity = opts.density ?? 'high';
+  const palette = PALETTES[variant];
   try {
     const res = await fetch(OPENFREEMAP_STYLE);
     if (!res.ok) return OPENFREEMAP_STYLE;
@@ -349,11 +411,11 @@ export async function buildCoralStyle(isDarkMode: boolean): Promise<StyleSpecifi
     base.sources[OMT_SOURCE].attribution = ATTRIBUTION;
     const style = {
       version: 8,
-      name: `Pulse Coral Cockpit (${isDarkMode ? 'dark' : 'light'})`,
+      name: `Pulse Coral Cockpit (${variant})`,
       glyphs: base.glyphs,
       sprite: base.sprite,
       sources: base.sources,
-      layers: coralLayers(palette),
+      layers: coralLayers(palette, density),
     };
     return style as StyleSpecification;
   } catch {

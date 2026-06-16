@@ -9,7 +9,7 @@
 // and the geo-relevance helper (lensIncludesContact).
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { CalendarRange, Globe, Layers, Map as MapIcon, Mountain, Satellite, Sun } from 'lucide-react';
+import { CalendarRange, Contrast, Globe, Layers, Map as MapIcon, Minimize2, Moon, Mountain, Satellite, Sun, Type } from 'lucide-react';
 
 export type MapLens = 'today' | 'week' | 'atlas';
 
@@ -57,3 +57,27 @@ export const MAP_VIEW_OPTIONS: { id: MapViewMode; label: string; Icon: typeof Su
 ];
 
 export const MAP_VIEW_LS_KEY = 'pulse:map:view-mode';
+
+// ─── Direction D (Horizon, P3) base-style switch ─────────────────────────────
+// Replaces the dead Sat/Terr/Hybrid picker on the MapLibre branch (under the
+// mapHorizon flag). 'light'/'dark' map to the existing Coral palettes; 'contrast'
+// is the net-new high-contrast palette (buildCoralStyle). Density thins the
+// label/symbol layers so pins (signal) dominate at a glance. The Google fallback
+// branch keeps MapViewPicker — this control is MapLibre-only.
+export type MapBaseStyle = 'light' | 'dark' | 'contrast';
+export type MapDensity = 'high' | 'low';
+export const MAP_BASE_STYLE_LS_KEY = 'pulse:map:base-style';
+export const MAP_DENSITY_LS_KEY = 'pulse:map:density';
+
+export const MAP_BASE_STYLE_OPTIONS: { id: MapBaseStyle; label: string; Icon: typeof Sun }[] = [
+  { id: 'light',    label: 'Light',    Icon: Sun },
+  { id: 'dark',     label: 'Dark',     Icon: Moon },
+  { id: 'contrast', label: 'Contrast', Icon: Contrast },
+];
+
+// 'high' = full label set (today's behavior); 'low' = minor labels hidden + road
+// labels thinned. Two detents only — a third would over-complicate a chrome chip.
+export const MAP_DENSITY_OPTIONS: { id: MapDensity; label: string; Icon: typeof Sun }[] = [
+  { id: 'high', label: 'Detailed', Icon: Type },
+  { id: 'low',  label: 'Minimal',  Icon: Minimize2 },
+];

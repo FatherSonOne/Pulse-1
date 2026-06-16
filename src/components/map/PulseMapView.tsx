@@ -32,12 +32,14 @@ import { useContactGeocoding } from './hooks/useContactGeocoding';
 import { useLivePresence } from './hooks/useLivePresence';
 import { useMapAiProposals } from './hooks/useMapAiProposals';
 import { useMapViewMode } from './hooks/useMapViewMode';
+import { useMapBaseStyle } from './hooks/useMapBaseStyle';
 import { useGoogleMapsLoader } from './hooks/useGoogleMapsLoader';
 import { useSrAnnouncer } from './hooks/useSrAnnouncer';
 import { useFitBounds } from './hooks/useFitBounds';
 import { createGoogleMapAdapter } from './provider/googleAdapter';
 import { createMapLibreAdapter } from './provider/maplibreAdapter';
 import { useMapLibreRenderer } from './provider/useMapLibreRenderer';
+import { useFeatures } from '../../contexts/FeatureContext';
 import { MapLibreAcceptedRoute } from './provider/MapLibreAcceptedRoute';
 import { MapLibreAtlasTerritories } from './provider/MapLibreAtlasTerritories';
 import { MapLibreAtlasHalos } from './provider/MapLibreAtlasHalos';
@@ -51,6 +53,7 @@ import { useMarkerClusters, type ClusterCentroid } from './hooks/useMarkerCluste
 import { useSpiderAnimation } from './hooks/useSpiderAnimation';
 import { MapLensRow } from './sub/MapLensRow';
 import { MapViewPicker } from './sub/MapViewPicker';
+import { BaseStyleSwitch } from './horizon/BaseStyleSwitch';
 import MapClusterMarker, { MapClusterMarkerBody } from './sub/MapClusterMarker';
 import SpiderLines, { SpiderLinesBody } from './sub/SpiderLines';
 import { computeMarkerLayout } from './sub/markerLayout';
@@ -106,6 +109,12 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
   const { isLoaded, loadError } = useGoogleMapsLoader();
   // MapLibre renderer (P1c spike) — flag-gated; default OFF → Google path.
   const mapLibreOn = useMapLibreRenderer();
+  // Direction D (Horizon) — the new UX is renderer-coupled, so it activates only
+  // when mapHorizon AND the MapLibre renderer are both on. When off, every Horizon
+  // surface below falls back to the legacy control (P3: BaseStyleSwitch ↔ MapViewPicker).
+  const { features } = useFeatures();
+  const mapHorizonOn = features.mapHorizon && mapLibreOn;
+  const { baseStyle, density, changeBaseStyle, changeDensity } = useMapBaseStyle(isDarkMode);
 
   // Circle source. App.tsx mounts us with circles={[]}; self-fetch the user's
   // circles when the prop is empty so the Atlas territories / filter chips /
@@ -672,6 +681,8 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
               center={userPosition ?? DEFAULT_CENTER}
               zoom={DEFAULT_ZOOM}
               isDarkMode={isDarkMode}
+              baseStyle={mapHorizonOn ? baseStyle : undefined}
+              density={mapHorizonOn ? density : undefined}
               className="w-full h-full"
               onReady={handleMapLibreReady}
               onStyleSwapped={handleStyleSwapped}
@@ -1021,14 +1032,27 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           />
         )}
 
-        {/* View-mode picker — floats at the map's bottom-right. Lives where
-            Google Maps' own zoom + attribution chrome lives, so it reads as
-            "how the map renders," not as part of the top navigation. */}
-        <MapViewPicker
-          viewMode={viewMode}
-          isDarkMode={isDarkMode}
-          onViewModeChange={changeViewMode}
-        />
+        {/* Base-map control — floats at the map's bottom-right, where Google Maps'
+            own zoom + attribution chrome lives, so it reads as "how the map
+            renders," not as part of the top navigation. Under Horizon (MapLibre +
+            mapHorizon) this is the renderer-real Light/Dark/Contrast + density
+            switch; otherwise the legacy Sat/Terr/Hybrid picker stays (it's still
+            live on the Google fallback). Additive — no deletion. */}
+        {mapHorizonOn ? (
+          <BaseStyleSwitch
+            baseStyle={baseStyle}
+            density={density}
+            isDarkMode={isDarkMode}
+            onBaseStyleChange={changeBaseStyle}
+            onDensityChange={changeDensity}
+          />
+        ) : (
+          <MapViewPicker
+            viewMode={viewMode}
+            isDarkMode={isDarkMode}
+            onViewModeChange={changeViewMode}
+          />
+        )}
 
         {/* Live presence chip — bottom-left. Replaces the old peer-lens
             LiveTeamView entry point. Tap opens the sheet. */}
