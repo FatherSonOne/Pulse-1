@@ -187,10 +187,12 @@ const DEFAULT_FEATURES: FeatureFlags = {
   // Features & Labs. Persisted-blob masking is handled by the FLAGS_VERSION bump.
   mapHorizon: true,
 
-  // Map Horizon Floating Chrome OFF by default (dark-launch) — the Tier-3 §8B
-  // floating-islands rebuild behind a sub-flag, double-gated on mapHorizon.
-  // Graduating ON later requires a FLAGS_VERSION bump + a migration line.
-  mapHorizonFloat: false,
+  // Map Horizon Floating Chrome ON by default — graduated 2026-06-16 (F6) after a
+  // live eyeball. The Map chrome is floating glass islands over a full-bleed map
+  // (Direction-D: scrubber pill, AI card, Routes/Live/Fences cluster). Double-gated
+  // on mapHorizon. Per-user opt-out in Settings → Features & Labs. Persisted-blob
+  // masking handled by the FLAGS_VERSION bump (v3).
+  mapHorizonFloat: true,
 
   // Relay Live (Voice Rooms) OFF by default — no peer audio transport yet (S0-2).
   relayLiveRooms: false,
@@ -201,7 +203,7 @@ const STORAGE_KEY = 'pulse_feature_flags';
 // stale persisted value — saved flags otherwise win the merge in the loader, so a
 // bare default flip never reaches a browser that's already run the app. The loader
 // resets the listed flags once per bump.
-const FLAGS_VERSION = 2;
+const FLAGS_VERSION = 3;
 const FLAGS_VERSION_KEY = 'pulse_feature_flags_version';
 const DISCOVERY_STORAGE_KEY = 'pulse_feature_discovery';
 
@@ -223,6 +225,9 @@ export const FeatureProvider: React.FC<{ children: React.ReactNode }> = ({ child
         // v2 (2026-06-16): Map Horizon redesign (P13) graduated to default-ON —
         // force the new default over any stale persisted `false`.
         merged.mapHorizon = DEFAULT_FEATURES.mapHorizon;
+        // v3 (2026-06-16): Map Horizon Floating Chrome (F6) graduated to default-ON —
+        // force the new default over any stale persisted `false`.
+        merged.mapHorizonFloat = DEFAULT_FEATURES.mapHorizonFloat;
         try { localStorage.setItem(FLAGS_VERSION_KEY, String(FLAGS_VERSION)); } catch { /* storage blocked */ }
       }
       return merged;
@@ -408,7 +413,7 @@ export const FEATURE_NAMES: Record<keyof FeatureFlags, string> = {
   logosVisionSync: 'Logos Vision Sync (Beta)',
   mapLibreRenderer: 'MapLibre Map Renderer (Beta)',
   mapHorizon: 'Map Horizon Redesign (Alpha)',
-  mapHorizonFloat: 'Map Horizon — Floating Chrome (Alpha)',
+  mapHorizonFloat: 'Map Horizon — Floating Chrome',
   relayLiveRooms: 'Live Voice Rooms (Coming Soon)',
 };
 

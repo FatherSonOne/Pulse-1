@@ -59,15 +59,15 @@ export const FeaturesLabsSettings: React.FC = () => {
         />
       </SettingsCard>
 
-      {/* Map "Horizon" Floating Chrome (Tier-3 §8B rebuild) on/off. OFF (default)
-          → the Map keeps the stacked-band Horizon chrome. ON → the chrome becomes
-          floating glass islands over a full-bleed map (the Direction-D mockup:
-          floating scrubber pill, AI card, Routes/Live/Fences surfaces cluster).
-          Double-gated on Map Horizon Redesign. For testing & development. */}
+      {/* Map "Horizon" Floating Chrome (Tier-3 §8B rebuild). ON by default since
+          2026-06-16 (F6 graduation) → the Map chrome is floating glass islands over
+          a full-bleed map (Direction-D: scrubber pill, AI card, Routes/Live/Fences
+          surfaces cluster). Turn OFF to fall back to the stacked-band Horizon chrome.
+          Double-gated on Map Horizon Redesign. */}
       <SettingsCard>
         <ToggleItem
-          label="Map Horizon — Floating Chrome (Alpha)"
-          desc="When on, the Map chrome floats as glass islands over a full-bleed map (the Direction-D mockup) instead of stacked bands. Requires Map Horizon Redesign on. Off keeps the current banded Map. For testing & development."
+          label="Map Horizon — Floating Chrome"
+          desc="On by default. The Map chrome floats as glass islands over a full-bleed map (scrubber pill, AI card, Routes/Live/Fences cluster). Requires Map Horizon Redesign on. Turn off to use the stacked-band Map chrome."
           active={features.mapHorizonFloat}
           onToggle={() => toggleFeature('mapHorizonFloat')}
         />
