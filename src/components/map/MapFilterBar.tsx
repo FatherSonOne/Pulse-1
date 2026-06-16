@@ -39,6 +39,10 @@ interface CommonProps {
   filter: MapFilter;
   isDarkMode: boolean;
   onFilterChange: (f: MapFilter) => void;
+  /** Direction D (Horizon, P6) — coral=signal-only. When true, the filter CHROME
+   *  (search-clear, location toggle, banner dismiss) goes neutral; the broadcast
+   *  pill keeps coral (it IS live signal). Undefined ⇒ legacy rose chrome (OFF path). */
+  neutralChrome?: boolean;
 }
 
 interface MapFilterControlsProps extends CommonProps {
@@ -68,8 +72,17 @@ const LOCATION_OPTIONS = [
 
 // ─── Inline controls — embedded into MapLensRow's right slot ──────────────
 export const MapFilterControls: React.FC<MapFilterControlsProps> = ({
-  filter, isDarkMode, onFilterChange, userId, searchInputRef, contacts,
+  filter, isDarkMode, onFilterChange, userId, searchInputRef, contacts, neutralChrome,
 }) => {
+  // Coral=signal-only chrome (P6): neutral focus ring + neutral active fill for the
+  // filter chrome when under Horizon; legacy rose otherwise. The broadcast pill is
+  // deliberately excluded — it's live signal and keeps coral.
+  const ringCls = neutralChrome
+    ? (isDarkMode ? 'focus-visible:ring-zinc-400' : 'focus-visible:ring-zinc-500')
+    : 'focus-visible:ring-rose-500';
+  const toggleActiveCls = neutralChrome
+    ? (isDarkMode ? 'bg-white/15 text-white' : 'bg-gray-200 text-gray-900')
+    : 'bg-rose-500 text-white';
   const [liveOn, setLiveOn] = useState<boolean>(() => {
     if (typeof localStorage === 'undefined') return false;
     return localStorage.getItem(LIVE_LOCATION_LS_KEY) === '1';
@@ -162,7 +175,7 @@ export const MapFilterControls: React.FC<MapFilterControlsProps> = ({
             type="button"
             onClick={() => onFilterChange({ ...filter, searchQuery: '' })}
             aria-label="Clear search"
-            className={`p-0.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
+            className={`p-0.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 ${ringCls} ${
               isDarkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-gray-200 text-gray-500'
             }`}
           >
@@ -187,9 +200,9 @@ export const MapFilterControls: React.FC<MapFilterControlsProps> = ({
               onClick={() => onFilterChange({ ...filter, locationType: value })}
               aria-pressed={active}
               title={`Show ${label.toLowerCase()} locations`}
-              className={`flex items-center gap-1 px-2 py-1 text-[10px] tracking-[0.1em] uppercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-inset ${
+              className={`flex items-center gap-1 px-2 py-1 text-[10px] tracking-[0.1em] uppercase transition-colors focus-visible:outline-none focus-visible:ring-2 ${ringCls} focus-visible:ring-inset ${
                 active
-                  ? 'bg-rose-500 text-white'
+                  ? toggleActiveCls
                   : `${isDarkMode ? 'text-gray-300 hover:bg-white/10' : 'text-gray-600 hover:bg-gray-200'}`
               }`}
               style={monoStyle}
@@ -257,8 +270,12 @@ export const MapFilterControls: React.FC<MapFilterControlsProps> = ({
 
 // ─── Accessory bands — geo banner above, circle chips below ───────────────
 const MapFilterAccessories: React.FC<MapFilterAccessoriesProps> = ({
-  filter, circles, isDarkMode, onFilterChange, geoBlocked, onDismissGeoBanner,
+  filter, circles, isDarkMode, onFilterChange, geoBlocked, onDismissGeoBanner, neutralChrome,
 }) => {
+  // P6 — neutral focus ring under Horizon (coral=signal-only); legacy rose otherwise.
+  const ringCls = neutralChrome
+    ? (isDarkMode ? 'focus-visible:ring-zinc-400' : 'focus-visible:ring-zinc-500')
+    : 'focus-visible:ring-rose-500';
   const toggleCircle = (id: string) => {
     const next = filter.circles.includes(id)
       ? filter.circles.filter(x => x !== id)
@@ -291,7 +308,7 @@ const MapFilterAccessories: React.FC<MapFilterAccessoriesProps> = ({
               type="button"
               onClick={onDismissGeoBanner}
               aria-label="Dismiss location banner"
-              className={`p-1 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
+              className={`p-1 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 ${ringCls} ${
                 isDarkMode ? 'hover:bg-white/10' : 'hover:bg-amber-500/10'
               }`}
             >

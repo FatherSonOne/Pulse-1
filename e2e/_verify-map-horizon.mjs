@@ -87,6 +87,19 @@ try {
     await page.waitForTimeout(1500);
     check('Atlas mode toggles aria-pressed', (await atlas.getAttribute('aria-pressed')) === 'true');
     await page.screenshot({ path: 'e2e/_map-horizon-atlas.png', fullPage: false });
+
+    // P6 — filter CHROME is neutral under Horizon (active location toggle is no
+    // longer rose); the broadcast pill keeps coral (checked separately by eye).
+    const activeLoc = page.locator('[aria-label="Location type filter"] button[aria-pressed="true"]').first();
+    if (await activeLoc.count()) {
+      const cls = (await activeLoc.getAttribute('class')) || '';
+      const neutral = !/\brose\b|rose-/.test(cls) && (/bg-white\/15/.test(cls) || /bg-gray-200/.test(cls));
+      check('P6: active location toggle neutral (no rose)', neutral, cls.match(/bg-[^\s]+/)?.[0] || cls.slice(0, 50));
+    } else {
+      check('P6: active location toggle found', false, 'toggle not present');
+    }
+    // Close-up of the top chrome band for a legible eyeball.
+    await page.screenshot({ path: 'e2e/_map-horizon-chrome.png', clip: { x: 150, y: 38, width: 1120, height: 130 } });
   }
 } catch (e) {
   log('ERR', e.message);

@@ -695,6 +695,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
               userId={userId}
               searchInputRef={searchInputRef}
               contacts={localContacts}
+              neutralChrome={mapHorizonOn}
             />
           }
         />
@@ -711,6 +712,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
               userId={userId}
               searchInputRef={searchInputRef}
               contacts={localContacts}
+              neutralChrome={mapHorizonOn}
             />
           }
         />
@@ -722,6 +724,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
         onFilterChange={setFilter}
         geoBlocked={geoBlocked && !geoBannerDismissed}
         onDismissGeoBanner={dismissGeoBanner}
+        neutralChrome={mapHorizonOn}
       />
 
       {/* AI strip — driven by aiState + acceptedRoute. Committed-coral band
