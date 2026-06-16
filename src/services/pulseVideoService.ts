@@ -241,6 +241,11 @@ export async function markRoomEnded(roomName: string, durationSeconds: number): 
 
 /**
  * Look up a room record by its Daily room name.
+ *
+ * NOTE: after the 0.2 RLS fix, direct reads of pulse_video_rooms are owner-only
+ * (owner_all is the sole policy). This still works for the room's OWNER, but a
+ * guest joining someone else's room via /meet/:roomName gets zero rows — use
+ * resolveRoomForJoin() for the deep-link join path instead.
  */
 export async function getRoomByName(roomName: string): Promise<VideoRoomRecord | null> {
   const { data, error } = await supabase
@@ -251,6 +256,30 @@ export async function getRoomByName(roomName: string): Promise<VideoRoomRecord |
 
   if (error || !data) return null;
   return data as VideoRoomRecord;
+}
+
+/** Join-safe subset of a room, exposed by the resolve_room_for_join RPC. */
+export interface JoinRoomInfo {
+  room_url: string;
+  room_name: string;
+  status: string;
+  title: string | null;
+}
+
+/**
+ * Resolve only the join-safe columns (room_url/room_name/status/title) of a room
+ * for a deep-link join, via the resolve_room_for_join SECURITY DEFINER RPC.
+ *
+ * This is the cross-tenant-safe replacement for getRoomByName on the
+ * /meet/:roomName path: it exposes no transcript/summary/recording_url, so a
+ * guest can resolve the room_url to join without the broad table read that the
+ * dropped `authenticated_read` policy used to allow.
+ */
+export async function resolveRoomForJoin(roomName: string): Promise<JoinRoomInfo | null> {
+  const { data, error } = await supabase.rpc('resolve_room_for_join', { p_room_name: roomName });
+  if (error || !data || (Array.isArray(data) && data.length === 0)) return null;
+  const row = Array.isArray(data) ? data[0] : data;
+  return row as JoinRoomInfo;
 }
 
 /**

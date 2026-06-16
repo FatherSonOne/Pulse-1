@@ -11,7 +11,7 @@ import LandingPage from './components/LandingPage';
 import { WorkspaceInviteAccept } from './components/WorkspaceInviteAccept';
 import BookingPage from './components/BookingPage';
 import PulseVideoRoom from './components/Meetings/PulseVideoRoom';
-import { getRoomByName } from './services/pulseVideoService';
+import { resolveRoomForJoin } from './services/pulseVideoService';
 
 // Lazy-load route components for better code splitting
 const Messages = lazy(() => import('./components/Messages'));
@@ -128,7 +128,7 @@ const PulseRoomPage: React.FC<{ roomName: string }> = ({ roomName }) => {
   const [error, setError] = React.useState('');
 
   React.useEffect(() => {
-    getRoomByName(roomName).then(room => {
+    resolveRoomForJoin(roomName).then(room => {
       if (room) {
         setRoomUrl(room.room_url);
       } else {
