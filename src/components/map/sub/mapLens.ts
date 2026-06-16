@@ -13,10 +13,30 @@ import { CalendarRange, Globe, Layers, Map as MapIcon, Mountain, Satellite, Sun 
 
 export type MapLens = 'today' | 'week' | 'atlas';
 
+// Direction D (Horizon) time axis. The scrubber (P5) moves through these four
+// detents; Atlas becomes an orthogonal boolean MODE (see isAtlasMode) rather than
+// a peer value. MapHorizon is intentionally SEPARATE from MapLens — the live tabs
+// stay TODAY/WEEK/ATLAS until P5 replaces them, so adding 'now'/'3d' here neither
+// implies new tabs nor touches LENS_OPTIONS. The lens predicate accepts both.
+export type MapHorizon = 'now' | 'today' | '3d' | 'week';
+
+// Atlas as a decoupled boolean MODE (Direction D / P5). Today Atlas is the
+// 'atlas' MapLens value; the scrubber will make it orthogonal so a time-horizon
+// can stay active while zoomed out. This bridge derives the boolean from the
+// current lens WITHOUT changing the enum, so existing consumers keep working and
+// P5 can flip the source of truth later. (P1: computed alongside, not replacing.)
+export const isAtlasMode = (lens: MapLens): boolean => lens === 'atlas';
+
 export const DEFAULT_CENTER = { lat: 37.7749, lng: -122.4194 };
 export const DEFAULT_ZOOM = 11;
 export const DAY_MS = 24 * 60 * 60 * 1000;
 export const WEEK_MS = 7 * DAY_MS;
+// Direction D (Horizon) windows — the two detents that don't exist in the
+// TODAY/WEEK lens today. NOW_MS = 3h per the 2026-06-15 decision ("Now" = the
+// nearest un-visited stop AND events in [now, now + NOW_MS)); THREE_DAY_MS spans
+// the near-term batch. Pure additions — no UI consumes them until the scrubber (P5).
+export const NOW_MS = 3 * 60 * 60 * 1000;
+export const THREE_DAY_MS = 3 * DAY_MS;
 
 export const LENS_OPTIONS: { id: MapLens; label: string; Icon: typeof Sun }[] = [
   { id: 'today', label: 'Today', Icon: Sun },

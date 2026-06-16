@@ -18,10 +18,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CalendarEvent, Contact, Thread } from '../../../types';
 import { dataService } from '../../../services/dataService';
-import { DAY_MS, WEEK_MS, type MapLens } from '../sub/mapLens';
+import { DAY_MS, NOW_MS, THREE_DAY_MS, WEEK_MS, type MapHorizon, type MapLens } from '../sub/mapLens';
 
 export interface GeoSignals {
+  /** Direction D "Now" window — events in [now, now + NOW_MS). Pure derivation;
+   *  no UI consumes it until the Horizon scrubber (P5). */
+  nowEvents: CalendarEvent[];
   todayEvents: CalendarEvent[];
+  /** Direction D "3 days" window — events in [now − DAY_MS, now + THREE_DAY_MS). */
+  threeDayEvents: CalendarEvent[];
   weekEvents: CalendarEvent[];
   recentMessageContactIds: Set<string>;
   /** True when at least one source returned non-empty data; tells the lens
@@ -52,9 +57,16 @@ export function contactAttendsEvent(c: Contact, e: CalendarEvent): boolean {
 // attend an event in the lens window, OR (defensive) the legacy proxy still
 // places them in the window. The fallback keeps a freshly-installed Pulse
 // (no calendar yet, no message history yet) from looking empty.
+// Accepts the live MapLens ('today'|'week'|'atlas') AND the two net-new Horizon
+// windows ('now'|'3d') the scrubber (P5) will drive. The 'now'/'3d' branches are
+// additive: 'today'/'week'/'atlas' behave EXACTLY as before. NOTE — the 2026-06-15
+// "Now" decision also includes "the single nearest un-visited stop"; that is a
+// GLOBAL selection (needs GPS + the visited-stops set), not a per-contact test, so
+// P5 layers it as a UNION at the call site. This predicate covers only the event-
+// window half of "Now".
 export function lensIncludesContact(
   c: Contact,
-  lens: MapLens,
+  lens: MapLens | MapHorizon,
   now: number,
   signals: GeoSignals,
 ): boolean {
@@ -62,7 +74,11 @@ export function lensIncludesContact(
 
   if (signals.hasRealSignals) {
     if (signals.recentMessageContactIds.has(c.id)) return true;
-    const eventList = lens === 'today' ? signals.todayEvents : signals.weekEvents;
+    const eventList =
+      lens === 'now' ? signals.nowEvents
+      : lens === 'today' ? signals.todayEvents
+      : lens === '3d' ? signals.threeDayEvents
+      : signals.weekEvents;
     if (eventList.some(e => contactAttendsEvent(c, e))) return true;
     // Real signals exist but this contact isn't tied to them. Still honour
     // the team/pulse-user override so the operator's own circle is visible
@@ -75,7 +91,11 @@ export function lensIncludesContact(
   // no thread history, etc.). Keeps the section usable for fresh installs.
   if (c.isTeamMember || c.pulseUserId) return true;
   const seen = c.lastSeen ? c.lastSeen.getTime() : 0;
-  const window = lens === 'today' ? DAY_MS : WEEK_MS;
+  const window =
+    lens === 'now' ? NOW_MS
+    : lens === 'today' ? DAY_MS
+    : lens === '3d' ? THREE_DAY_MS
+    : WEEK_MS;
   return now - seen <= window;
 }
 
@@ -129,6 +149,17 @@ export function useGeoRelevanceSignals(input: UseGeoRelevanceSignalsInput): GeoS
       const t = e.start instanceof Date ? e.start.getTime() : new Date(e.start).getTime();
       return Number.isFinite(t) && t >= dayCutoff && t < weekCutoff;
     });
+    // Direction D windows — pure derivations on the same already-fetched `events`
+    // set (no prop override, no new fetch). nowEvents ⊆ todayEvents and
+    // threeDayEvents ⊆ weekEvents, so hasRealSignals below already accounts for them.
+    const nowEvents = events.filter(e => {
+      const t = e.start instanceof Date ? e.start.getTime() : new Date(e.start).getTime();
+      return Number.isFinite(t) && t >= now && t < now + NOW_MS;
+    });
+    const threeDayEvents = events.filter(e => {
+      const t = e.start instanceof Date ? e.start.getTime() : new Date(e.start).getTime();
+      return Number.isFinite(t) && t >= dayCutoff && t < now + THREE_DAY_MS;
+    });
 
     let recentMessageContactIds = recentMessageContactIdsProp;
     if (recentMessageContactIds === undefined) {
@@ -148,6 +179,6 @@ export function useGeoRelevanceSignals(input: UseGeoRelevanceSignalsInput): GeoS
       weekEvents.length > 0 ||
       recentMessageContactIds.size > 0;
 
-    return { todayEvents, weekEvents, recentMessageContactIds, hasRealSignals };
+    return { nowEvents, todayEvents, threeDayEvents, weekEvents, recentMessageContactIds, hasRealSignals };
   }, [todayEventsProp, weekEventsProp, recentMessageContactIdsProp, fetchedEvents, fetchedThreads]);
 }
