@@ -424,6 +424,14 @@ code {
 .vox-menu-in { animation: voxMenuIn 140ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 @media (prefers-reduced-motion: reduce) { .vox-menu-in { animation: none; } }
 
+/* Entrance for the Contacts › People Co-pilot rail. It mounts only when the
+   pane container grows wide enough to inline the 3rd column (container-query
+   gated — see ContactsHybridPeople). A short fade+slide so the 300px column
+   reads as intentional rather than a layout pop at the breakpoint. */
+@keyframes copilotRailIn { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
+.copilot-rail-in { animation: copilotRailIn 200ms cubic-bezier(0.23, 1, 0.32, 1) forwards; }
+@media (prefers-reduced-motion: reduce) { .copilot-rail-in { animation: none; } }
+
 /* Stagger Delays */
 .animation-delay-100 { animation-delay: 0.1s; }
 .animation-delay-200 { animation-delay: 0.2s; }

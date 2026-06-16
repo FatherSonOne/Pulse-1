@@ -70,12 +70,27 @@ const TABS: ModeTab[] = [
   },
 ];
 
+// Sticky last-used tab. Cold start lands on Today (the relationship-triage
+// surface — the section's whole reason to exist); once the user switches to
+// People, every subsequent visit restores their choice so a power user never
+// pays the switch toll twice. An explicit `initialMode` prop (palette/deep-link
+// open) still overrides the stored value for that mount.
+const STICKY_MODE_KEY = 'pulse_contacts_mode';
+
 // ==================== MAIN COMPONENT ====================
 
 export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
   const { t } = useTranslation();
   const { currentWorkspace } = useWorkspaceData();
-  const [activeMode, setActiveMode] = useState<ContactsMode>(props.initialMode ?? 'today');
+  const [activeMode, setActiveMode] = useState<ContactsMode>(() => {
+    // Explicit caller intent (e.g. a palette/deep-link open) always wins.
+    if (props.initialMode) return props.initialMode;
+    try {
+      const stored = localStorage.getItem(STICKY_MODE_KEY);
+      if (stored === 'today' || stored === 'people') return stored;
+    } catch { /* storage blocked (private mode) — fall through to default */ }
+    return 'today';
+  });
   const [showTour, setShowTour] = useState(() => shouldShowContactsTour());
   const [connectModalOpen, setConnectModalOpen] = useState(false);
   const [trimWizardOpen, setTrimWizardOpen] = useState(false);
@@ -87,6 +102,16 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
   const pendingSearchFocusRef = useRef(false);
   const workspaceId = currentWorkspace?.id ?? '';
   const showEmptyState = props.contacts.length === 0;
+
+  // Persist the last-used tab. Cold start stays 'today'; once the user switches,
+  // every subsequent visit restores their choice (sticky no-ops if storage is
+  // blocked). Keyboard shortcuts and tab clicks both flow through setActiveMode,
+  // so this single effect covers every path that changes the mode.
+  useEffect(() => {
+    try {
+      localStorage.setItem(STICKY_MODE_KEY, activeMode);
+    } catch { /* storage blocked — sticky simply no-ops */ }
+  }, [activeMode]);
 
   // Focus the People tab's search input (selector via data attribute).
   const handleSearchFocus = useCallback(() => {

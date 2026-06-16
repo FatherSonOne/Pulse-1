@@ -65,7 +65,7 @@ import type { DiscoveredPulseUser } from '../../../services/pulseUserDiscoverySe
 import { BrowseColumn } from './list/BrowseColumn';
 import { FocusColumn } from './detail/FocusColumn';
 import { CopilotRail } from './copilot/CopilotRail';
-import { useMediaQuery } from '../../../hooks/useMediaQuery';
+import { useElementWidth } from '../../Relay/studio/useElementWidth';
 import { composeEmail } from './channels/actions';
 import {
   filterBrowseContacts,
@@ -116,15 +116,22 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
   // ── Selection + filter state ──────────────────────────────────────────────
   const [userId, setUserId] = useState<string | null>(null);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
-  // Responsive: below md the 3-pane collapses to a single column (master-detail
-  // Browse<->Focus) with the Co-pilot rail behind a toggle. JS check, not Tailwind
-  // responsive variants (unreliable in this tree — see the Co-pilot note below).
-  const isDesktop = useMediaQuery('(min-width: 768px)');
-  // Wider gate for the inline Co-pilot rail. Between 768px and 1100px the
-  // Browse + Focus panes already fill the row; adding the 300px rail there
-  // crushes both to unusable widths. Above 1100px there's room for all three;
-  // below it the Co-pilot moves to the FAB + slide-over sheet.
-  const isWide = useMediaQuery('(min-width: 1100px)');
+  // Responsive: below the two-pane threshold the 3-pane collapses to a single
+  // column (master-detail Browse<->Focus) with the Co-pilot rail behind a toggle.
+  // We measure the *pane container* (useElementWidth / ResizeObserver), NOT the
+  // viewport: the global Pulse nav sits ~270px in front of this surface, so a
+  // viewport media query over-reports the room the panes have and crushes the
+  // Focus detail pane (the most important one) — that was the bug. Container
+  // width = the real space the three panes share, so the breakpoints self-correct
+  // at every viewport and survive the sidebar collapsing. paneRef is the callback
+  // ref attached to the root pane row below; it primes synchronously (no flash).
+  const [paneRef, paneWidth] = useElementWidth<HTMLDivElement>();
+  // Browse (330) + Focus (≥360 to stay usable) fit side-by-side at ≥700.
+  const isDesktop = paneWidth >= 700;
+  // All three (Browse 330 + Focus ≥360 + Co-pilot 300 ≈ 990) fit at ≥1000; below
+  // that the Co-pilot moves to the FAB + slide-over sheet so Browse + Focus keep
+  // their full width.
+  const isWide = paneWidth >= 1000;
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
@@ -559,7 +566,7 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
   );
 
   return (
-    <div className="flex h-full w-full overflow-hidden" style={{ background: 'var(--pulse-canvas)' }}>
+    <div ref={paneRef} className="flex h-full w-full overflow-hidden" style={{ background: 'var(--pulse-canvas)' }}>
       {/* Col 1 — Browse. Mobile: full-width primary pane, shown only when no
           contact is selected (master-detail). */}
       {(isDesktop || !selectedContact) && (
@@ -664,7 +671,7 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
           right-side sheet, so Browse + Focus keep their full width. */}
       {isWide ? (
         <div
-          className="flex flex-col shrink-0 border-l p-4 overflow-hidden"
+          className="copilot-rail-in flex flex-col shrink-0 border-l p-4 overflow-hidden"
           style={{ width: 300, borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}
         >
           {copilotRail}
