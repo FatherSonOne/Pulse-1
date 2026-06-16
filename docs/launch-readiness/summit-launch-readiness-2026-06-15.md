@@ -320,3 +320,26 @@ Verified against live ground truth (information_schema.columns, pg_constraint, p
 1. **S0-1** — Close the hosted-minute metering leak (sendBeacon + server-authoritative ledger) before broad hosted rollout — the one F-grade failsafe and a real revenue leak.
 2. **S0-2** — Correct the false "idempotent" comment and add a dedup guard so the additive billing SQL can't double-bill once a retry is added.
 3. **S1-1** — Add confirm/undo to permanent single-click session delete — cheap, high trust impact, prevents irreversible data loss.
+
+---
+
+## Progress — 2026-06-16 (implementation session)
+
+Sprint 0 closed; Sprint 1 substantially done. Every commit tsc-clean (893 baseline held throughout), Sprint 0 **live-verified end-to-end on prod**. No `App.tsx` edits — S1-2 deferred to avoid colliding with an active parallel Map session.
+
+| Item | Status | Commit(s) |
+|---|---|---|
+| Dark-mode intro-modal opacity | ✅ shipped | `a224ae8` |
+| **S0-1 / S0-2** hosted-minute metering — per-session dedup ledger (`record_summit_minutes` + `summit_metered_sessions`, service-role-only), client `session_id` + marker/replay/pagehide, false "idempotent" comment corrected | ✅ shipped + **live-verified** | `138cd48` server · `c9b4482` client · `f2a0f0b` lockdown |
+| **S1-1** confirm-free undo on session delete | ✅ shipped | `da880df` |
+| **S1-3** live metering smoke test (console → edge fn → DB, deduped, then cleaned up) | ✅ verified | — |
+| **S1-4** live mid-session AI-mode / context / voice sync | ✅ shipped | `ae25025` |
+| **S3-1** stale "GPT-4O" labels → `gpt-realtime` (single constant) | ✅ shipped | `2fd8623` |
+| **S3-2** tool-arg mapping → real schema (`decision`/`context`/`dueDate`) | ✅ shipped | `358e1e8` |
+| **S2-3** "BYO key failed" toast (no more silent hosted fall-through) | ✅ shipped | `96d072a` |
+
+**Prod migrations applied:** `20260616000000_summit_metering_dedup.sql`, `20260616000001_summit_metering_dedup_lockdown.sql`. Edge fn `summit-session-end` redeployed **v24** (`verify_jwt` preserved).
+
+**Implementation note (S0-1):** the audit's suggested "sendBeacon + server-authoritative ledger" was realized as a **per-`session_id` dedup ledger** (`record_summit_minutes`) plus client marker/replay/pagehide. This closes the leak (idempotent metering, recoverable on next load) without a full at-mint session-open record; a heavier server-authoritative-at-mint reconciliation remains possible if the "device never returns" long-tail ever needs closing.
+
+**Still open:** **S1-2** (Cmd+K gate — deferred, one-liner ready, parked off `App.tsx`); **S3-3** (token re-mint, shared `realtimeAgentService`); **S3-4** (retract already-pushed tool rows — touches live persisted rows); **S2-1/S2-2** (prompt-chip grounding — product decision); **S2-4** (summit-60 override durability — data decision). S4 differentiation out of launch scope.
