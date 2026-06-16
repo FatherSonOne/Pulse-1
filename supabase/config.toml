@@ -447,6 +447,25 @@ verify_jwt = false
 [functions.gmail-push-receiver]
 verify_jwt = false
 
+# maps-* edge fns (Stadia geocode / geosearch / directions / distance / route). They
+# take a user JWT and rely on the platform verify_jwt=true default; pinning it
+# explicitly matches the declared fns above so a CLI redeploy can't silently drift the
+# posture. See docs/MAP_HORIZON_REDESIGN_HANDOFF_2026-06-15.md §P7 / §3.7.
+[functions.maps-geocode]
+verify_jwt = true
+
+[functions.maps-geosearch]
+verify_jwt = true
+
+[functions.maps-directions]
+verify_jwt = true
+
+[functions.maps-distance]
+verify_jwt = true
+
+[functions.maps-route]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327
