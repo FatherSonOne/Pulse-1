@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-15
 **Surface:** Relay ("Voice Studio", formerly Voxer) — the studio SHELL + chrome + 6 surface bodies
-**Status:** PLANNED — not started. Execute in a future focused session **with the app running** (live eyeball required; see §1).
+**Status:** IN PROGRESS — **P0/P1/P2 shipped to `main` 2026-06-15** (`6325f14` / `0267a9f` / `695fe51`). All three are tsc-clean and desktop-byte-identical at ≥640px, but the **sub-640px VISUAL is not yet eyeballed**: the headless overflow probe loaded the logged-out landing page because the e2e auth token was stale (see §9). **P3–P7 remain** — pending the §10 decisions + a live eyeball. Execute the rest **with the app running**.
 **Owner:** solo (Pulse). Direct-to-`main`, additive commits per phase.
 
 ---
@@ -122,7 +122,10 @@ Channels must be verified on a real device or a logged-in browser at phone width
 - **StudioFooter** (`studio/StudioFooter.tsx` + `studio-footer.css`): L90 playing row is a **single non-wrapping flex** (play 44px + meta `__center` flex:1 min-width:0 + 4 actions all `flex-shrink:0`, css L121) at **fixed 24px side padding** (css L3); 120-bar waveform (`count={120}`, L127); L159-193 recording state = 60-bar wave + Cancel/Stop. `flex-shrink:0` in normal flow (NOT position:fixed). Scrub reads `getBoundingClientRect().width` (L83-87); playhead `left:${pct}%` (L131). **Only @media is `prefers-reduced-motion` (css L225).**
 - **FloatingMic** (`studio/FloatingMic.tsx` + `floating-mic.css`): css L5-9 `position:absolute; bottom:88px; right:24px; z-index:20`; L10-11 fixed `56x56`; L33 `pulseRing` idle halo; **no env(safe-area), no narrow reposition, no `var(--pulse-bottom-bar)`.** L34 `requireRecorder && !hasRecorder → return null` (per-mode gating).
 - **StudioCard** (`studio/StudioCard.tsx` + `studio-card.css`): `width:100%`, fluid — **safe on mobile, no change needed.**
+- **StudioMessageCard** (`studio/StudioMessageCard.tsx`): the shared **flat voice-message row** primitive (header + transport + section-composed body) that wraps `StudioCard`; consumed by ClassicMode, TeamVoxMode, and VoxNotesMode (verified consumers + the barrel) for the rows in their scroll lists. Width-fluid (rides StudioCard's `width:100%`); `bodyIndent` is a fixed px (default 48, L118) and the header is a single non-wrapping flex (`flex items-center gap-3`, L152) with a `truncate` title (L157) and `ml-auto` meta (L168) — these are the rows that reflow inside each surface at phone width. No width-based logic of its own.
 - **Waveform** (`studio/Waveform.tsx`): N flex `<i>` bars; 120 bars compress sub-pixel at phone width but don't overflow.
+- **useRelayModeRecorder** (`studio/useRelayModeRecorder.ts`): the hook each mode uses to register its capture pipeline into the shell (start/stop/cancel + the `recording`-flag mirror that drives `hasRecorder`/`requireRecorder`/`studio.toggleRecording`). **This is the actual file behind the "preserve the FloatingMic dual-role record chain" warnings in §3/§5/risks — see §1.** No mobile concern of its own, but any reposition/hide of the mic must keep this registration intact.
+- **Barrel** (`studio/index.ts`): the public surface re-exporting `RelayStudioProvider`/`useRelayStudio`, `useRelayModeRecorder`, `useElementWidth`, `Waveform`, `StudioCard`, `StudioMasthead`, `StudioMessageCard`, `SourcesRail`, `StudioFooter`, `FloatingMic`. Mode bodies + the shell import from here — touch it only if you add/rename a primitive.
 
 ### Surface bodies (which already collapse, with file:line)
 
@@ -175,6 +178,9 @@ Channels must be verified on a real device or a logged-in browser at phone width
 | Contacts master/detail toggle | `src/components/contacts/hybrid/ContactsHybridPeople.tsx:122,565,616,618` | Model for list↔detail + `!isDesktop && selected` back button |
 | Mobile utility hooks | `src/utils/mobile.ts` (`useVirtualKeyboard` L390, `useSafeAreaInsets` L458, `useDeviceType` L47, `hapticFeedback` L372) | Keyboard occlusion + safe-area + haptics |
 | Focus trap / Android back | `src/hooks/useFocusTrap.ts:35`; `src/hooks/useAndroidBackButton.ts:12-16` (`interceptBack`) | Any Relay mobile overlay/sheet; close-sheet-on-back |
+| `StudioMessageCard` (flat voice-message row) | `src/components/Relay/studio/StudioMessageCard.tsx` | The shared per-message row used by ClassicMode/TeamVoxMode/VoxNotesMode; width-fluid already. A mobile pass tightens `padding`/`bodyIndent` props at the call sites — do NOT fork the component |
+| `useRelayModeRecorder` (per-mode recorder registration) | `src/components/Relay/studio/useRelayModeRecorder.ts` | **The load-bearing FloatingMic dual-role record chain.** Any mic reposition/hide MUST preserve each mode's `registerRecorder`/`notifyRecording` wiring — do not break `enabled`/`requireRecorder` gating |
+| Studio barrel | `src/components/Relay/studio/index.ts` | Import studio primitives from here; only edit when adding/renaming a primitive |
 | Existing single-pane convention | `.classic--single-pane` (`ClassicMode.css:721-729`), `.pulse-radio--single-pane`+`.pane-visible/.pane-hidden` (`PulseRadio.css:76-80`) | Mirror this shape for Inbox/Notes if they need it |
 | Reachable-drawer pattern | `TeamVoxMode.tsx:967-990` (`absolute inset-0 z-40` slide-in + scrim, header-button toggled) | Keep a side column reachable rather than vanished |
 | Canonical tokens | `src/styles/pulse-tokens.css` (rose family, surfaces, `--pulse-ease`, `.pulse-modal-scrim`, `html[data-large-touch-targets]` 48px) | All new CSS consumes `var(--pulse-*)` — no hex (CLAUDE.md §4) |
@@ -213,8 +219,9 @@ Channels must be verified on a real device or a logged-in browser at phone width
 ### P3 — FloatingMic + StudioFooter clear the global slim bar + safe area
 - **Goal:** stop the mic/footer colliding with `MobileBottomNav` and the home indicator.
 - **Files:** `floating-mic.css`, `studio-footer.css` (scoped `@media (max-width:767px)` blocks only).
-- **Additive approach:** in a phone media block, layer `bottom: calc(88px + var(--pulse-bottom-bar))` on `.pulse-floating-mic` (token is 0 at md+, so the desktop `bottom:88px` is untouched); add `padding-bottom: max(12px, env(safe-area-inset-bottom))` to the footer. Consider shrinking the mic to 48px on phones and nudging it off the slim-bar "+" thumb zone (G6) — but mic restyle is **load-bearing** (dual-role), so keep position/size changes additive and behind the phone media block. Do NOT change the mic's role wiring in `Relay.tsx:377-385`.
-- **Risk:** medium — the mic is the only record affordance in Direct/Channel/Broadcast/Notes; footer is the canonical transport. Touch both together (offset is coupled to footer height). Verify recording still starts in each wired mode.
+- **Additive approach:** in a phone media block, layer `bottom: calc(88px + var(--pulse-bottom-bar))` on `.pulse-floating-mic` (token is 0 at md+, so the desktop `bottom:88px` is untouched); add `padding-bottom: max(12px, env(safe-area-inset-bottom))` to the footer. Consider shrinking the mic to 48px on phones and nudging it off the slim-bar "+" thumb zone (G6) — but mic restyle is **load-bearing** (dual-role; the record chain it triggers is `useRelayModeRecorder.ts`), so keep position/size changes additive and behind the phone media block. Do NOT change the mic's role wiring in `Relay.tsx:377-385`.
+- **⚠️ Per-STATE, not per-width, coupling:** the `88px` offset is calibrated against the footer's height, but the footer has **two different heights**: playing/base padding `12px 24px` + 1px top border (`studio-footer.css:6`) vs **recording** padding `16px 24px` + a `2px` top border (`studio-footer.css:154-155`). The recording state is the taller one — and it's the very mode where the mic AND the footer are both active. A single static `88px` (or `calc(88px + …)`) offset tuned to the playing footer can still let the mic overlap the recording footer's Cancel/Stop controls. Either bump the offset specifically while `--recording` is active (e.g. a `body:has(.pulse-studio-footer--recording) .pulse-floating-mic` raise, or a JS class off `studio.isRecording`) or add enough headroom to clear the tallest (recording) state. Treat this as a per-state coupling, not just a per-width one.
+- **Risk:** medium — the mic is the only record affordance in Direct/Channel/Broadcast/Notes; footer is the canonical transport. Touch both together (offset is coupled to footer height, which varies by recording-vs-playing STATE). Verify recording still starts in each wired mode.
 - **Verify:** live device — open keyboard in a per-mode record block, confirm mic/footer stay reachable and clear the slim bar; record+play in each mode.
 
 ### P4 — Broadcast viewport-trap fix (per-surface, surgical)
@@ -297,7 +304,7 @@ Rationale:
 ### Headless Playwright (CAN cover)
 - `SECTION=Relay node e2e/_verify-section.mjs` — Pixel 5, saved auth, auto-dismisses trial paywall, reports the widest horizontal-overflow offender. Covers: shell mount, Inbox, Notes, Broadcast, rail/chrome at 360px. Target `http://localhost:5174` (or set `TARGET`).
 - Extend the NARROW tour in `e2e/relay-pathc-verify.spec.ts` (in-app resize, no reload). **Navigate by `data-section` ids, NOT visible text** — labels leave the DOM when the rail collapses (spec L118-120). The spec's L130-134 already documents the exact md:-vs-pane clip failure this pass fixes — assert it's gone.
-- If the token is stale: **delete `e2e/.auth/user.json`** then re-run `auth.setup.ts` (short-circuits if the file exists, L39-50). Token is ~1hr (see MEMORY e2e refresh notes).
+- **Token-refresh gotcha (will burn a cycle if missed):** the e2e session's `refresh_token` ROTATES and **server-side refresh fails** for this harness (per the prior Path C state + MEMORY `reference_pulse_e2e_token_export`/`reference_pulse_e2e_auth_refresh`), so you cannot just let Playwright silently refresh a stale token. The token is ~1hr. To re-capture: **delete `e2e/.auth/user.json` first** (`auth.setup.ts:39-50` short-circuits if the file exists), then EITHER re-run `auth.setup.ts` (Google OAuth, no headless login) OR use the repo's **token-export / Blob-download** path — paste the DevTools `localStorage`-export snippet (note: `copy()` fails silently, so it Blob-downloads `user.json` into `Downloads`, a Claude working dir, and is moved into `e2e/.auth/`). Don't assume a "valid-looking" file is fresh — if Direct/Channels won't load, suspect the token before the code.
 - `npx tsc --noEmit` after each phase — gate on **no NEW** type errors (repo has ~1234 pre-existing; use `NODE_OPTIONS=--max-old-space-size=8192` to avoid the OOM false-clean).
 
 ### Live device / browser (REQUIRED — headless gaps)
@@ -327,4 +334,18 @@ Generated 2026-06-15 from a 5-area investigation (Relay shell + SourcesRail; stu
 the 6 surface bodies; existing Pulse mobile/responsive conventions; CSS/breakpoints/tokens).
 All cited file:line refs were spot-verified against the working tree before writing
 (`Relay.tsx:238-385`, `RelayStudioContext.tsx:432-436`, `sources-rail.css:1-12`,
-`useMediaQuery.ts:15`, `index.css:16-17`, `App.tsx:1718-1727`, harness/primitive paths).
+`useElementWidth.ts:7-11`, `useMediaQuery.ts:15`, `index.css:16-17`, `App.tsx:1718-1727`,
+`useRelayModeRecorder.ts:35-62`, `StudioMessageCard.tsx:101-241`, `studio/index.ts`,
+`studio-footer.css:6,154-155`, `floating-mic.css:5-9`, harness/primitive paths).
+
+**Revision 2026-06-15 (critique pass):** added the previously-omitted `useRelayModeRecorder.ts`
+(the load-bearing FloatingMic dual-role record chain — §1, §2, §4), `StudioMessageCard.tsx`
+(the flat per-message row primitive that reflows in each surface — §2, §4), and the studio
+`index.ts` barrel (§2, §4); corrected the `useElementWidth` docstring citation from `:9-12`
+to `:7-11` (the quoted text is verbatim-correct; only the range drifted); added the per-STATE
+(not per-width) footer-height coupling caveat to P3 (recording footer is taller: `16px 24px`
++ 2px border vs playing `12px 24px` + 1px); and documented the rotating-`refresh_token` /
+failed-server-side-refresh e2e gotcha + the token-export/Blob-download re-capture path in §9.
+A stale source comment in `useMediaQuery.ts:11` ("returns `false` until the effect runs")
+contradicts the actual synchronous init at L16-22 — this doc deliberately describes the CODE
+(synchronous, first-paint-safe), so trust the doc over that source comment.
