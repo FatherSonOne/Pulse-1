@@ -99,7 +99,12 @@ export async function submitWizardOutput(
         deadline: task.deadline,
         status: task.status,
         assignee_id: task.assignee_id,
-        metadata: { ...(task.metadata ?? {}), linked_decision: newDecision.id },
+        // Canonical decision↔task link key is `generated_from_decision` (read by
+        // CockpitHub.linkedTaskCounts + queueModel). The wizard previously wrote a
+        // divergent `linked_decision` key that nothing read, so wizard-origin tasks
+        // went uncounted (launch-readiness 1.5). Existing rows backfilled in
+        // migration 20260616000005.
+        metadata: { ...(task.metadata ?? {}), generated_from_decision: newDecision.id },
       });
     }
   }
