@@ -241,8 +241,11 @@ export const decisionTemplateService = {
    * Called when a decision is created from a template
    */
   async trackUsage(templateId: string): Promise<void> {
-    const { error } = await supabase.rpc('increment_template_usage', {
-      template_id: templateId
+    // increment_decision_template_usage targets decision_templates. The older
+    // increment_template_usage RPC points at message_templates (+ a user_id filter
+    // this table lacks), so it silently no-ops here — do not use it.
+    const { error } = await supabase.rpc('increment_decision_template_usage', {
+      p_template_id: templateId
     });
 
     if (error) {
