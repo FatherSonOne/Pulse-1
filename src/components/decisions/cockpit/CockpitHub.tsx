@@ -21,7 +21,7 @@ import { Plus, Zap, Download, RotateCw } from 'lucide-react';
 import { User } from '../../../types';
 import { CockpitMasthead, type CockpitTab } from './CockpitMasthead';
 import { useRegisterCommands, type Command } from '../../../contexts/CommandPaletteContext';
-import { PropertyFilterBar, type ViewKind, type ViewAssignee } from './filters/PropertyFilterBar';
+import { PropertyFilterBar, type ViewKind, type ViewAssignee, type SortKey } from './filters/PropertyFilterBar';
 import { type SavedViewPreset } from './filters/SavedViews';
 import { TriageView } from './triage/TriageView';
 import { type QueueEntry, type QueueRetroItem } from './triage/queueModel';
@@ -105,6 +105,7 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
   // assignee. SavedViews presets set these alongside FilterState.
   const [viewKind, setViewKind] = useState<ViewKind>('all');
   const [viewAssignee, setViewAssignee] = useState<ViewAssignee>('all');
+  const [sortBy, setSortBy] = useState<SortKey>('recent');
   const [savedView, setSavedView] = useState<string>('all');
 
   // ── Place-aware filtering: flat task→place map + the workspace's places ──
@@ -761,6 +762,24 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
     [tasks]
   );
 
+  // Sort reorders WITHIN the triage groups (queueModel re-buckets by status). 'recent'
+  // is the default DB order (extracted_at desc) so it's a no-op passthrough. 3a.
+  const sortedTasks = useMemo(() => {
+    if (sortBy === 'recent') return filteredTasks;
+    const rank: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
+    const arr = [...filteredTasks];
+    if (sortBy === 'priority') {
+      arr.sort((a, b) => (rank[a.priority] ?? 9) - (rank[b.priority] ?? 9));
+    } else if (sortBy === 'due') {
+      arr.sort((a, b) => {
+        const da = a.deadline ? new Date(a.deadline).getTime() : Infinity;
+        const db = b.deadline ? new Date(b.deadline).getTime() : Infinity;
+        return da - db;
+      });
+    }
+    return arr;
+  }, [filteredTasks, sortBy]);
+
   const filteredDecisions = useMemo(() => {
     if (viewKind === 'tasks') return [];
     let filtered = decisions;
@@ -819,10 +838,12 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
             setViewAssignee={setViewAssignee}
             availablePlaces={availablePlaces}
             availableTags={availableTags}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
             onClearAll={clearAllFilters}
           />
           <TriageView
-            tasks={filteredTasks}
+            tasks={sortedTasks}
             decisions={filteredDecisions}
             retros={retros}
             currentUserId={user?.id}

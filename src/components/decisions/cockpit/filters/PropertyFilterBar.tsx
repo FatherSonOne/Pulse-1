@@ -5,13 +5,20 @@
  * apply known combinations. Drives the queue via CockpitHub's filtered sets.
  */
 import { useState, useEffect } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, ArrowDownWideNarrow } from 'lucide-react';
 import type { FilterState } from '../../FilterBar';
 import type { Place } from '../../../../types/placeTypes';
 import { SavedViews, type SavedViewPreset } from './SavedViews';
 
 export type ViewKind = 'all' | 'tasks' | 'decisions';
 export type ViewAssignee = 'all' | 'me';
+export type SortKey = 'recent' | 'priority' | 'due';
+
+const SORT_LABELS: Record<SortKey, string> = {
+  recent: 'Recent',
+  priority: 'Priority',
+  due: 'Due date',
+};
 
 interface PropertyFilterBarProps {
   presets: SavedViewPreset[];
@@ -26,6 +33,8 @@ interface PropertyFilterBarProps {
   availablePlaces: Place[];
   /** Distinct labels present across the loaded tasks (drives the Labels menu). */
   availableTags: string[];
+  sortBy: SortKey;
+  setSortBy: (k: SortKey) => void;
   onClearAll: () => void;
 }
 
@@ -37,9 +46,10 @@ const STATUS_LABELS: Record<string, string> = {
 export function PropertyFilterBar({
   presets, savedView, onSelectPreset,
   filters, setFilters, viewKind, setViewKind, viewAssignee, setViewAssignee,
-  availablePlaces, availableTags, onClearAll,
+  availablePlaces, availableTags, sortBy, setSortBy, onClearAll,
 }: PropertyFilterBarProps) {
   const [addOpen, setAddOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
   // Local preset key drives the Date pill label; FilterState only stores the
   // resolved {start,end} window (same approach as the legacy FilterBar).
   const [datePreset, setDatePreset] = useState<'' | '7d' | '30d' | '90d'>('');
@@ -153,7 +163,35 @@ export function PropertyFilterBar({
       {anyActive && (
         <button type="button" className="ck-pill ck-pill-add" onClick={onClearAll}>Clear</button>
       )}
-      {/* Sort pill hidden until real sorting is wired (launch-readiness 0.5). */}
+      {/* Real sort (launch-readiness 3a) — reorders within the triage groups. */}
+      <div className="ck-sv">
+        <button
+          type="button"
+          className="ck-pill ck-pill-add"
+          onClick={() => setSortOpen((o) => !o)}
+          aria-haspopup="menu"
+          aria-expanded={sortOpen}
+        >
+          <ArrowDownWideNarrow size={12} /> <span className="ck-pill-key">Sort</span> {SORT_LABELS[sortBy]}
+        </button>
+        {sortOpen && (
+          <>
+            <div className="ck-menu-backdrop" onClick={() => setSortOpen(false)} aria-hidden />
+            <div className="ck-menu" role="menu">
+              {(Object.entries(SORT_LABELS) as [SortKey, string][]).map(([key, label]) => (
+                <button
+                  key={key}
+                  className="ck-menu-item"
+                  aria-current={sortBy === key}
+                  onClick={() => { setSortBy(key); setSortOpen(false); }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
