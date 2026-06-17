@@ -101,11 +101,20 @@ function makeInstance(parent: CalendarEvent, date: Date): CalendarEvent {
   return {
     ...parent,
     id: `${parent.id}-${isoDate(date)}`,
+    // App-model Date fields — every consumer (Calendar grid, unified sort/dedup)
+    // keys off start/end, so virtual instances MUST carry their own Dates, not the
+    // parent's. Omitting these was why expansion rendered every instance on the
+    // parent's date (#128).
+    start: instanceStart,
+    end:   instanceEnd,
     date: isoDate(date),
     start_time: instanceStart.toISOString(),
     end_time:   instanceEnd.toISOString(),
     recurrence_parent_id: parent.id,
     is_recurring_exception: false,
+    // An instance is not itself a series parent — clear the rule so it is never
+    // re-expanded by a downstream consumer.
+    recurrence_rule: null,
   } as CalendarEvent;
 }
 

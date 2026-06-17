@@ -7,6 +7,7 @@ import { googleCalendarService, GoogleCalendar } from '../services/googleCalenda
 import { outlookCalendarService } from '../services/outlookCalendarService';
 import { supabase } from '../services/supabase';
 import { downloadICS } from '../services/calendarExportService';
+import { expandRecurringEvent } from '../services/recurringEventService';
 import { YearView, MonthView, WeekView, DayView, CalendarHeader, AgendaView, OverlayEvent } from './CalendarViews';
 import { CalendarTimelineView } from './Calendar/CalendarTimelineView';
 import { CalendarTodayView } from './Calendar/CalendarTodayView';
@@ -48,6 +49,52 @@ interface CalendarProps {
   openTaskPanel?: boolean;
   onNavigateToIntegrations?: () => void;
 }
+
+// ── Recurring-event expansion (#128) ─────────────────────────────────────────
+// Map the simple UI recurrence choice to an RFC-5545 RRULE persisted on the
+// parent row. COUNT values mirror the previous local-copy behavior (daily +30,
+// others +12) so the visible series length is unchanged.
+const RECURRENCE_RRULE: Record<Exclude<RecurrenceType, 'none'>, string> = {
+  daily:   'FREQ=DAILY;COUNT=31',
+  weekly:  'FREQ=WEEKLY;COUNT=13',
+  monthly: 'FREQ=MONTHLY;COUNT=13',
+  yearly:  'FREQ=YEARLY;COUNT=13',
+};
+
+// Generous display window for expansion. All UI-generated rules are COUNT-bounded,
+// so the window only needs to be wide enough that COUNT (not the window edge) governs.
+const RECUR_WINDOW_BACK_YEARS = 10;
+const RECUR_WINDOW_FWD_YEARS = 20;
+
+/**
+ * Expand persisted recurring parents (rows carrying an RRULE) into virtual
+ * instances for display. The real parent row keeps its UUID as occurrence #1 so
+ * edit/delete on the original event still hits the right DB row; the remaining
+ * occurrences are virtual (synthetic ids, regenerated on every load).
+ */
+const expandPersistedRecurring = (events: CalendarEvent[]): CalendarEvent[] => {
+  const now = new Date();
+  const winStart = new Date(now); winStart.setFullYear(now.getFullYear() - RECUR_WINDOW_BACK_YEARS);
+  const winEnd = new Date(now); winEnd.setFullYear(now.getFullYear() + RECUR_WINDOW_FWD_YEARS);
+
+  const out: CalendarEvent[] = [];
+  for (const ev of events) {
+    const isSeriesParent = !!ev.recurrence_rule && !ev.recurrence_parent_id && !ev.is_recurring_exception;
+    if (!isSeriesParent) { out.push(ev); continue; }
+
+    const instances = expandRecurringEvent(ev, winStart, winEnd);
+    if (instances.length <= 1) { out.push(ev); continue; } // bad/empty rule → keep the real event
+
+    // Occurrence #1 corresponds to the original event date: substitute the real
+    // parent row (preserves UUID + editability); append the rest as virtual.
+    let parentUsed = false;
+    for (const inst of instances) {
+      if (!parentUsed) { out.push(ev); parentUsed = true; }
+      else out.push(inst);
+    }
+  }
+  return out;
+};
 
 const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, onNavigateToIntegrations }) => {
   // Current user ID from Supabase auth
@@ -316,7 +363,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
       try {
         const e = await fetchCalendarEvents();
         const t = await fetchTasks();
-        setEvents(e);
+        setEvents(expandPersistedRecurring(e));
         setTasks(t);
       } finally {
         // Skeleton goes away once the local fetch resolves, even if it returns
@@ -1372,6 +1419,13 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
           event_status: newEventStatus,
       };
 
+      // Persist recurrence as an RRULE on the parent row so the series survives a
+      // reload (#128). On the local/Supabase path this single row is expanded back
+      // into instances on read; Google events keep their own server-side recurrence.
+      if (newEventRecurrence !== 'none') {
+        newEvent.recurrence_rule = RECURRENCE_RRULE[newEventRecurrence];
+      }
+
       // Create in Google Calendar if connected
       if (googleConnected) {
         try {
@@ -1429,6 +1483,10 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             id: `${newEvent.id}-${i}`,
             start: recurStart,
             end: recurEnd,
+            // Optimistic virtual instance — mirrors what expandPersistedRecurring
+            // regenerates on the next load (the real series lives on the parent row).
+            recurrence_parent_id: newEvent.id,
+            recurrence_rule: null,
           });
         }
 

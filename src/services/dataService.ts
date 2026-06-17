@@ -94,6 +94,12 @@ export interface DBCalendarEvent {
   calendar_id: string;
   all_day: boolean;
   event_type: CalendarEvent['type'];
+  // Recurrence (columns added by 20260311000001_calendar_recurring_events.sql)
+  recurrence_rule?: string | null;
+  recurrence_end?: string | null;
+  recurrence_parent_id?: string | null;
+  is_recurring_exception?: boolean | null;
+  event_status?: CalendarEvent['event_status'];
   created_at: string;
   updated_at: string;
 }
@@ -251,10 +257,23 @@ function dbToEvent(db: DBCalendarEvent): CalendarEvent {
     calendarId: db.calendar_id,
     allDay: db.all_day,
     type: db.event_type,
+    // Recurrence fields — forwarded so the RRULE survives a read round-trip and
+    // recurringEventService.expandRecurringEvent (which reads start_time/recurrence_rule)
+    // can expand the series into virtual instances. Previously dropped here, which
+    // silently disabled recurrence persistence (#128).
+    start_time: db.start_time,
+    end_time: db.end_time,
+    recurrence_rule: db.recurrence_rule ?? null,
+    recurrence_end: db.recurrence_end ?? null,
+    recurrence_parent_id: db.recurrence_parent_id ?? null,
+    is_recurring_exception: db.is_recurring_exception ?? false,
+    event_status: db.event_status,
   };
 }
 
 function eventToDb(event: Partial<CalendarEvent>, userId: string): Partial<DBCalendarEvent> {
+  // Note: `undefined` keys are dropped during JSON serialization by supabase-js,
+  // so non-recurring writes leave recurrence columns untouched (no accidental nulling).
   return {
     user_id: userId,
     title: event.title,
@@ -267,6 +286,10 @@ function eventToDb(event: Partial<CalendarEvent>, userId: string): Partial<DBCal
     calendar_id: event.calendarId,
     all_day: event.allDay,
     event_type: event.type,
+    // Persist the recurrence rule onto the parent row (#128) and the event status.
+    recurrence_rule: event.recurrence_rule ?? undefined,
+    recurrence_end: event.recurrence_end ?? undefined,
+    event_status: event.event_status ?? undefined,
   };
 }
 
