@@ -18,6 +18,7 @@ import { consensusDetectorService } from '../../../../services/consensusDetector
 import { supabase } from '../../../../services/supabaseClient';
 import type { User } from '../../../../types';
 import PlacePicker from '../../../map/PlacePicker';
+import { ScoringMatrixEditor } from './ScoringMatrix';
 import { Prop, PropertyTable } from './PropertyTable';
 import { FocalScaffold, ActBtn } from './FocalActions';
 import { ActivityLog } from './ActivityLog';
@@ -265,6 +266,9 @@ export function DecisionDetail({
         <div style={{ maxWidth: 360, marginBottom: 8 }}>
           <PlacePicker entityType="decision" entityId={decision.id} role="venue" />
         </div>
+
+        {/* Weighted option-scoring matrix (3d) */}
+        <ScoringMatrixEditor decisionId={decision.id} initial={decision.scoring_matrix} />
 
         <ActivityLog source="decision" itemId={decision.id} members={members} />
         <CommentsSection

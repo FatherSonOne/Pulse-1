@@ -986,3 +986,30 @@ button.ck-pill:hover { color: var(--pulse-ink); box-shadow: inset 0 0 0 1px var(
 }
 .ck-bulkbar-btn:hover { background: color-mix(in oklab, var(--pulse-rose) 8%, transparent); }
 .ck-bulkbar-danger { color: var(--dt-status-overdue); border-color: var(--dt-status-overdue); }
+
+/* Option-scoring matrix (DecisionDetail, 3d) — winner tint is rose (brand), not coral */
+.ck-scorematrix { margin: 8px 0; }
+.ck-sm-scroll { overflow-x: auto; }
+.ck-sm-table { border-collapse: collapse; font-size: 12px; width: 100%; }
+.ck-sm-table th, .ck-sm-table td {
+  border: 1px solid var(--pulse-border); padding: 4px 6px; text-align: center; vertical-align: middle;
+}
+.ck-sm-corner, .ck-sm-opt { text-align: left; }
+.ck-sm-crit-label {
+  width: 84px; border: none; background: transparent; color: var(--pulse-ink); font-size: 12px; font-weight: 600;
+}
+.ck-sm-weight { display: inline-flex; align-items: center; gap: 2px; color: var(--pulse-ink-3); }
+.ck-sm-weight-input {
+  width: 34px; border: 1px solid var(--pulse-border); border-radius: 4px; background: transparent;
+  color: var(--pulse-ink-2); font-size: 11px; padding: 1px 3px;
+}
+.ck-sm-opt-label { width: 120px; border: none; background: transparent; color: var(--pulse-ink); font-size: 12px; }
+.ck-sm-score {
+  width: 42px; border: 1px solid var(--pulse-border); border-radius: 4px; background: transparent;
+  color: var(--pulse-ink); font-size: 12px; padding: 2px 4px; text-align: center;
+}
+.ck-sm-total, .ck-sm-total-h { font-weight: 700; color: var(--pulse-ink); }
+.ck-sm-table tr[data-winner] { background: color-mix(in oklab, var(--pulse-rose) 10%, transparent); }
+.ck-sm-x { background: none; border: none; cursor: pointer; color: var(--pulse-ink-3); padding: 0; vertical-align: middle; }
+.ck-sm-x:hover { color: var(--pulse-ink); }
+.ck-sm-actions { display: flex; gap: 6px; margin-top: 6px; }

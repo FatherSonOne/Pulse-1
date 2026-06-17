@@ -2,6 +2,7 @@ import { supabase } from './supabaseClient';
 import { ecosystemNotifyService } from './ecosystemNotifyService';
 import { invokeAIJson } from './ai/aiService';
 import type { User as PulseUser } from '../types';
+import type { ScoringMatrix } from './decisionScoring';
 
 export interface Decision {
   id: string;
@@ -16,6 +17,7 @@ export interface Decision {
   final_decision?: string;
   archived_at?: string; // NEW: When decision was archived
   metadata: Record<string, any>;
+  scoring_matrix?: ScoringMatrix; // weighted-criteria option matrix (3d)
   created_at: string;
   updated_at: string;
 }
