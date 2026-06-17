@@ -16,6 +16,9 @@ import { taskService, type Task } from '../../../../services/taskService';
 import { decisionService, type DecisionWithVotes } from '../../../../services/decisionService';
 import { ArchiveMetrics, type ArchiveMetricValues } from './ArchiveMetrics';
 import { ArchiveRow } from './ArchiveRow';
+import { ActivityLog } from '../focal/ActivityLog';
+import { CommentsSection } from '../focal/CommentsSection';
+import type { User } from '../../../../types';
 
 export type ArchiveItem = (Task | DecisionWithVotes) & {
   type: 'task' | 'decision';
@@ -27,11 +30,13 @@ type GroupBy = 'week' | 'month' | 'none';
 
 interface ArchiveViewProps {
   workspaceId: string;
+  currentUserId: string;
+  members: User[];
   /** Called after a reopen so the parent can refresh its active lists. */
   onChanged?: () => void;
 }
 
-export function ArchiveView({ workspaceId, onChanged }: ArchiveViewProps) {
+export function ArchiveView({ workspaceId, currentUserId, members, onChanged }: ArchiveViewProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [decisions, setDecisions] = useState<DecisionWithVotes[]>([]);
   const [loading, setLoading] = useState(true);
@@ -187,7 +192,7 @@ export function ArchiveView({ workspaceId, onChanged }: ArchiveViewProps) {
         </div>
 
         <div className="ck-focal">
-          {selected ? <ArchiveFocal item={selected} onReopen={() => handleReopen(selected)} /> : (
+          {selected ? <ArchiveFocal item={selected} currentUserId={currentUserId} members={members} workspaceId={workspaceId} onReopen={() => handleReopen(selected)} /> : (
             <div className="ck-focal-placeholder">
               <span className="ck-caughtup-badge"><ArchiveIcon size={28} /></span>
               <span className="ck-focal-note">Select an archived item to review it.</span>
@@ -199,9 +204,12 @@ export function ArchiveView({ workspaceId, onChanged }: ArchiveViewProps) {
   );
 }
 
-function ArchiveFocal({ item, onReopen }: { item: ArchiveItem; onReopen: () => void }) {
+function ArchiveFocal({ item, currentUserId, members, workspaceId, onReopen }: { item: ArchiveItem; currentUserId: string; members: User[]; workspaceId: string; onReopen: () => void }) {
   const isTask = item.type === 'task';
   const decision = !isTask ? (item as DecisionWithVotes) : null;
+  // item.type ('task'|'decision') is exactly the ActivitySource union the
+  // ActivityLog/CommentsSection consume.
+  const source = item.type;
   return (
     <>
       <div className="ck-focal-body">
@@ -221,6 +229,9 @@ function ArchiveFocal({ item, onReopen }: { item: ArchiveItem; onReopen: () => v
               <p className="ck-ai-note"><strong>Decision:</strong> {decision.final_decision}</p>
             </div>
           )}
+          {/* Activity + discussion on the archived item (Phase 9 gap / 2b). */}
+          <ActivityLog source={source} itemId={item.id} members={members} />
+          <CommentsSection source={source} itemId={item.id} workspaceId={workspaceId} currentUserId={currentUserId} members={members} />
         </div>
       </div>
       <div className="ck-focal-foot">

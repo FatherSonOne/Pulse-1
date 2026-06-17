@@ -705,6 +705,16 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
         return filters.placeId === null ? !placeId : placeId === filters.placeId;
       });
     }
+    if (filters.dateRange) {
+      const { start, end } = filters.dateRange;
+      // extracted_tasks keys off extracted_at (created_at is optional/compat).
+      filtered = filtered.filter((t) => {
+        const ts = t.extracted_at || t.created_at;
+        if (!ts) return false;
+        const d = new Date(ts);
+        return d >= start && d <= end;
+      });
+    }
     return filtered;
   }, [tasks, filters, taskPlaceMap, viewKind, viewAssignee, user?.id]);
 
@@ -716,6 +726,14 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
       filtered = filtered.filter(
         (d) => d.title.toLowerCase().includes(q) || d.description?.toLowerCase().includes(q)
       );
+    }
+    if (filters.dateRange) {
+      const { start, end } = filters.dateRange;
+      filtered = filtered.filter((d) => {
+        if (!d.created_at) return false;
+        const dt = new Date(d.created_at);
+        return dt >= start && dt <= end;
+      });
     }
     return filtered;
   }, [decisions, filters, viewKind]);
@@ -780,6 +798,8 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
       ) : (
         <ArchiveView
           workspaceId={effectiveWorkspaceId}
+          currentUserId={user?.id ?? ''}
+          members={workspaceMembers}
           onChanged={() => { loadTasks(); loadDecisions(); loadDuePrompts(); }}
         />
       )}
