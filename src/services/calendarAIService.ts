@@ -40,6 +40,12 @@ export interface MeetingPrepBriefing {
   questionsToAsk: string[];
   contextNotes: string;
   generatedAt: Date;
+  /**
+   * True when the LLM call failed and this object is a non-AI fallback (default
+   * prep checklist), NOT a generated briefing. The UI must render this as a
+   * visible error state without the Claude provenance chip (#129).
+   */
+  failed?: boolean;
 }
 
 export interface AttendeeInsight {
@@ -575,6 +581,8 @@ Return ONLY the JSON object.`;
     } catch (error) {
       rethrowRouterErrors(error);
       console.error('Failed to generate meeting prep:', error);
+      // NOT an AI briefing — a static default checklist. Flagged so the UI renders
+      // a distinct "couldn't generate" state without the Claude chip (#129).
       return {
         eventId: event.id,
         attendees: attendeeInsights,
@@ -583,6 +591,7 @@ Return ONLY the JSON object.`;
         questionsToAsk: [],
         contextNotes: 'Unable to generate AI briefing. Please review the meeting details manually.',
         generatedAt: new Date(),
+        failed: true,
       };
     }
   }

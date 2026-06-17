@@ -119,6 +119,19 @@ export interface CalendarAIPanelProps {
   onFollowUpSkip: (id: string) => void;
 }
 
+/**
+ * Neutral section label for rule-based (pure-math) panel features. Deliberately
+ * NOT the rose AIProvenanceChip: these features never call an LLM, so labelling
+ * them "CLAUDE" was a factual-honesty problem and spent the coral = AI-signal
+ * budget on non-AI surfaces. Only NL-create and meeting-prep keep the Claude
+ * chip (#129).
+ */
+const RuleBadge: React.FC<{ label: string }> = ({ label }) => (
+  <span className="inline-flex items-center px-2 py-1 rounded font-mono text-[11px] font-medium uppercase tracking-[0.1em] bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-400">
+    {label}
+  </span>
+);
+
 export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
   if (!props.showAIPanel) return null;
 
@@ -258,7 +271,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
               {props.schedulingSuggestions.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <AIProvenanceChip vendor="CLAUDE" type="SUGGESTIONS" />
+                    <RuleBadge label="SUGGESTIONS" />
                     <span className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500">{props.schedulingSuggestions.length} times</span>
                   </div>
                   <div className="space-y-2">
@@ -296,7 +309,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
               {props.focusBlocks.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <AIProvenanceChip vendor="CLAUDE" type="FOCUS BLOCKS" />
+                    <RuleBadge label="FOCUS BLOCKS" />
                     <span className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500">{props.focusBlocks.length} suggested</span>
                   </div>
                   <div className="space-y-2">
@@ -327,7 +340,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
               {props.conflicts.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <AIProvenanceChip vendor="CLAUDE" type="CONFLICTS" />
+                    <RuleBadge label="CONFLICTS" />
                     <span className="font-mono text-[11px] tracking-[0.1em] uppercase text-[var(--pulse-tone-warning)]">{props.conflicts.length} detected</span>
                   </div>
                   <div className="space-y-2">
@@ -362,7 +375,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
               {props.travelBuffers.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <AIProvenanceChip vendor="CLAUDE" type="TRAVEL" />
+                    <RuleBadge label="TRAVEL" />
                     <span className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500">{props.travelBuffers.length} alerts</span>
                   </div>
                   <div className="space-y-2">
@@ -382,7 +395,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
           {props.aiPanelTab === 'insights' && !props.aiLoading && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <AIProvenanceChip vendor="CLAUDE" type="INSIGHTS" />
+                <RuleBadge label="INSIGHTS" />
                 <button
                   onClick={props.onAnalyzeRelationships}
                   className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 hover:text-[var(--pulse-rose)] transition flex items-center gap-1.5"
@@ -440,7 +453,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
           {props.aiPanelTab === 'analytics' && !props.aiLoading && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <AIProvenanceChip vendor="CLAUDE" type="ANALYTICS" />
+                <RuleBadge label="ANALYTICS" />
                 <button
                   onClick={props.onGenerateAnalytics}
                   className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 hover:text-[var(--pulse-rose)] transition flex items-center gap-1.5"
@@ -492,7 +505,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                   {props.analytics.recommendations.length > 0 && (
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <AIProvenanceChip vendor="CLAUDE" type="IDEAS" />
+                        <RuleBadge label="IDEAS" />
                       </div>
                       <ul className="space-y-2.5">
                         {props.analytics.recommendations.map((rec, i) => (
@@ -555,7 +568,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
               {/* Goal Alignments */}
               {props.goalAlignments.length > 0 && (
                 <div className="space-y-3">
-                  <AIProvenanceChip vendor="CLAUDE" type="ALIGNMENT" />
+                  <RuleBadge label="ALIGNMENT" />
                   {props.goalAlignments.map(alignment => (
                     <div key={alignment.goal.id} className="p-3 bg-zinc-50 dark:bg-white/[0.03] rounded-xl border border-zinc-200 dark:border-white/[0.06]">
                       <div className="flex items-center justify-between mb-2">
@@ -587,7 +600,16 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
           <div className="bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-2xl w-full max-w-lg shadow-2xl animate-scale-in max-h-[90vh] overflow-hidden flex flex-col">
             <div className="p-6 border-b border-[var(--pulse-border)] flex items-center justify-between">
               <div className="flex flex-col gap-1.5">
-                <AIProvenanceChip vendor="CLAUDE" type="MEETING PREP" />
+                {props.meetingPrep.failed ? (
+                  // AI failed → static default checklist. No Claude chip: this is
+                  // not a generated briefing (#129).
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded font-mono text-[11px] font-medium uppercase tracking-[0.1em] bg-[var(--pulse-tone-warning-soft)] text-[var(--pulse-tone-warning)] self-start">
+                    <AlertTriangle className="w-3 h-3" aria-hidden="true" />
+                    Briefing Unavailable
+                  </span>
+                ) : (
+                  <AIProvenanceChip vendor="CLAUDE" type="MEETING PREP" />
+                )}
                 <h3 className="text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">{props.prepEvent.title}</h3>
               </div>
               <button onClick={props.onCloseMeetingPrep} aria-label="Close" className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition">
@@ -595,6 +617,16 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* AI-failure notice — distinguishes the default checklist from a real briefing (#129) */}
+              {props.meetingPrep.failed && (
+                <div className="p-3 rounded-xl bg-[var(--pulse-tone-warning-soft)] border border-[var(--pulse-tone-warning-soft)] flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-[var(--pulse-tone-warning)] mt-0.5" aria-hidden="true" />
+                  <p className="text-sm text-[var(--pulse-ink-2)] leading-relaxed">
+                    Couldn't generate an AI briefing right now — showing a default prep checklist. The meeting details below are unchanged.
+                  </p>
+                </div>
+              )}
+
               {/* Attendees */}
               {props.meetingPrep.attendees.length > 0 && (
                 <div>
@@ -683,7 +715,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
             <div className="p-6 border-b border-[var(--pulse-border)]">
               <div className="flex items-start justify-between">
                 <div className="flex flex-col gap-1.5">
-                  <AIProvenanceChip vendor="CLAUDE" type="RESCHEDULE" />
+                  <RuleBadge label="RESCHEDULE" />
                   <h3 className="text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">{props.rescheduleEvent.title}</h3>
                 </div>
                 <button onClick={props.onCloseRescheduleModal} aria-label="Close" className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition">
