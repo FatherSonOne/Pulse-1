@@ -24,6 +24,8 @@ interface PropertyFilterBarProps {
   viewAssignee: ViewAssignee;
   setViewAssignee: (a: ViewAssignee) => void;
   availablePlaces: Place[];
+  /** Distinct labels present across the loaded tasks (drives the Labels menu). */
+  availableTags: string[];
   onClearAll: () => void;
 }
 
@@ -35,7 +37,7 @@ const STATUS_LABELS: Record<string, string> = {
 export function PropertyFilterBar({
   presets, savedView, onSelectPreset,
   filters, setFilters, viewKind, setViewKind, viewAssignee, setViewAssignee,
-  availablePlaces, onClearAll,
+  availablePlaces, availableTags, onClearAll,
 }: PropertyFilterBarProps) {
   const [addOpen, setAddOpen] = useState(false);
   // Local preset key drives the Date pill label; FilterState only stores the
@@ -67,7 +69,8 @@ export function PropertyFilterBar({
 
   const anyActive =
     viewAssignee !== 'all' || viewKind !== 'all' || filters.status !== 'all' ||
-    !!filters.priority || filters.placeId !== undefined || !!filters.dateRange || !!filters.search;
+    !!filters.priority || filters.placeId !== undefined || !!filters.dateRange ||
+    !!filters.tag || !!filters.search;
 
   return (
     <div className="ck-filterbar">
@@ -91,6 +94,9 @@ export function PropertyFilterBar({
       )}
       {filters.dateRange && (
         <Pill k="Date" v={dateLabel} onClear={() => { patch({ dateRange: undefined }); setDatePreset(''); }} />
+      )}
+      {filters.tag && (
+        <Pill k="Label" v={filters.tag} scope="tasks" onClear={() => patch({ tag: undefined })} />
       )}
       {filters.search && (
         <Pill k="Search" v={filters.search} onClear={() => patch({ search: '' })} />
@@ -117,6 +123,16 @@ export function PropertyFilterBar({
                   {p.charAt(0).toUpperCase() + p.slice(1)}
                 </button>
               ))}
+              {availableTags.length > 0 && (
+                <>
+                  <div className="ck-menu-label">Labels</div>
+                  {availableTags.map((tag) => (
+                    <button key={tag} className="ck-menu-item" onClick={() => { patch({ tag }); setAddOpen(false); }}>
+                      {tag}
+                    </button>
+                  ))}
+                </>
+              )}
               <div className="ck-menu-label">Date</div>
               {([['7d', 'Last 7 days'], ['30d', 'Last 30 days'], ['90d', 'Last 90 days']] as const).map(([key, label]) => (
                 <button key={key} className="ck-menu-item" onClick={() => applyDatePreset(key)}>

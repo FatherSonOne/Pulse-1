@@ -266,7 +266,7 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
   );
 
   const clearAllFilters = useCallback(() => {
-    setFilters({ search: '', status: 'all', priority: undefined, dateRange: undefined, placeId: undefined });
+    setFilters({ search: '', status: 'all', priority: undefined, dateRange: undefined, placeId: undefined, tag: undefined });
     setViewKind('all');
     setViewAssignee('all');
   }, []);
@@ -715,8 +715,15 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
         return d >= start && d <= end;
       });
     }
+    if (filters.tag) filtered = filtered.filter((t) => (t.tags ?? []).includes(filters.tag!));
     return filtered;
   }, [tasks, filters, taskPlaceMap, viewKind, viewAssignee, user?.id]);
+
+  // Distinct labels across loaded tasks — drives the PropertyFilterBar Labels menu.
+  const availableTags = useMemo(
+    () => [...new Set(tasks.flatMap((t) => t.tags ?? []))].sort((a, b) => a.localeCompare(b)),
+    [tasks]
+  );
 
   const filteredDecisions = useMemo(() => {
     if (viewKind === 'tasks') return [];
@@ -775,6 +782,7 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
             viewAssignee={viewAssignee}
             setViewAssignee={setViewAssignee}
             availablePlaces={availablePlaces}
+            availableTags={availableTags}
             onClearAll={clearAllFilters}
           />
           <TriageView

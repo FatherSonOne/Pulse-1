@@ -26,6 +26,8 @@ export interface FilterState {
    * The "no place" option is helpful for finding tasks that haven't been geo-tagged yet.
    */
   placeId?: string | null;
+  /** Free-text label filter (matches tasks whose tags include this value). */
+  tag?: string;
 }
 
 interface FilterBarProps {

@@ -16,6 +16,7 @@ export interface Task {
   blocked_at?: string; // NEW: When task was blocked
   archived_at?: string; // NEW: When task was archived
   metadata: Record<string, any>;
+  tags?: string[]; // Free-text labels (text[] column, default '{}')
   extracted_at: string; // PRIMARY: extracted_tasks uses this instead of created_at
   updated_at: string;
   created_at?: string; // Optional: for compatibility
@@ -54,6 +55,7 @@ export interface CreateTaskData {
   deadline?: string;
   status?: Task['status'];
   metadata?: Record<string, any>;
+  tags?: string[];
 }
 
 export const taskService = {
@@ -74,7 +76,8 @@ export const taskService = {
         priority: data.priority || 'medium',
         assignee_id: data.assignee_id,
         deadline: data.deadline,
-        metadata
+        metadata,
+        ...(data.tags ? { tags: data.tags } : {}),
       })
       .select()
       .single();

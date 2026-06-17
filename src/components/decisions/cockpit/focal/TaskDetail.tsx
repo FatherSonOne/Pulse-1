@@ -11,7 +11,7 @@
  * status palette; priority is neutral; everything else is rose/neutral.
  */
 import { useState } from 'react';
-import { Check, RotateCcw, UserCog, CalendarClock, Trash2, Ban } from 'lucide-react';
+import { Check, RotateCcw, UserCog, CalendarClock, Trash2, Ban, X } from 'lucide-react';
 import type { Task } from '../../../../services/taskService';
 import type { User } from '../../../../types';
 import { SubtaskList } from '../../SubtaskList';
@@ -204,6 +204,10 @@ export function TaskDetail({
           )}
         </PropertyTable>
 
+        {/* Labels (free-text tags) */}
+        <div className="ck-focal-section-label">Labels</div>
+        <TagEditor tags={task.tags ?? []} onChange={(next) => onPatch(task.id, { tags: next })} />
+
         {/* AI intelligence block (coral — AI-output surface) */}
         {hasAI && (
           <div className="ck-ai-block">
@@ -252,5 +256,45 @@ export function TaskDetail({
         />
       </div>
     </FocalScaffold>
+  );
+}
+
+/**
+ * TagEditor — free-text label chips with an inline add-input. Enter (or blur)
+ * commits; the trailing Backspace removes the last chip; duplicates (case-
+ * insensitive) are ignored. Persists via the parent's onChange (→ onPatch tags).
+ */
+function TagEditor({ tags, onChange }: { tags: string[]; onChange: (next: string[]) => void }) {
+  const [draft, setDraft] = useState('');
+  const add = () => {
+    const t = draft.trim();
+    if (!t) return;
+    if (!tags.some((x) => x.toLowerCase() === t.toLowerCase())) onChange([...tags, t]);
+    setDraft('');
+  };
+  const remove = (t: string) => onChange(tags.filter((x) => x !== t));
+  return (
+    <div className="ck-tags">
+      {tags.map((t) => (
+        <span key={t} className="ck-tag-chip">
+          {t}
+          <button type="button" className="ck-tag-x" onClick={() => remove(t)} aria-label={`Remove label ${t}`}>
+            <X size={11} />
+          </button>
+        </span>
+      ))}
+      <input
+        className="ck-tag-input"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') { e.preventDefault(); add(); }
+          else if (e.key === 'Backspace' && !draft && tags.length) remove(tags[tags.length - 1]);
+        }}
+        onBlur={add}
+        placeholder={tags.length ? 'Add label…' : 'Add a label…'}
+        aria-label="Add label"
+      />
+    </div>
   );
 }

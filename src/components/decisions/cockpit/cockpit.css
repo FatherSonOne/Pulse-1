@@ -949,3 +949,22 @@ button.ck-pill:hover { color: var(--pulse-ink); box-shadow: inset 0 0 0 1px var(
 @media (prefers-reduced-motion: reduce) {
   .ck-root *, .ck-cmdk-backdrop, .ck-cmdk-panel { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* Labels / tags editor (TaskDetail) */
+.ck-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 4px 0 8px; }
+.ck-tag-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 6px 2px 8px; border-radius: 6px;
+  background: var(--pulse-surface-raised); color: var(--pulse-ink-2);
+  border: 1px solid var(--pulse-border); font-size: 12px; line-height: 1.4;
+}
+.ck-tag-x {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer; color: var(--pulse-ink-3); padding: 0;
+}
+.ck-tag-x:hover { color: var(--pulse-ink); }
+.ck-tag-input {
+  flex: 1; min-width: 90px; border: none; background: transparent;
+  color: var(--pulse-ink); font-size: 12px; padding: 3px 2px; outline: none;
+}
+.ck-tag-input::placeholder { color: var(--pulse-ink-3); }
