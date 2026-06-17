@@ -80,16 +80,26 @@ into the cockpit create flow as a new `template` `CreateMode`.
 - Deferred sub-option (not built): path 2 (template-prefilled wizard) remains available if
   higher-fidelity prefill is ever wanted — `decisionTemplateService.loadTemplateAsWizardState`.
 
-### C. 2e — "Open source" cross-surface deep-links (DEFERRED — Sprint-4 territory)
-The control is currently hidden (0.5). Provenance ids exist (`extracted_tasks.origin_message_id`
-→ pulse_messages; `metadata.email_id`/`metadata.source`). Wiring real navigation needs:
-- An `onNavigate(view, focusKey)` prop threaded from `App.tsx` into `CockpitHub`
-  (CockpitHub currently has no nav prop).
-- Per-surface focus handoff (Messages already has `sessionStorage 'pulse_focus_thread'`;
-  **Email has no specific-email focus key** — would need one).
-- Re-show the hidden "Open" affordance in `TaskDetail` (handler `handleOpenSource` + prop
-  `onOpenSource` plumbing are intact — see 0.5 commit).
-This is the audit's Sprint-4 "one-click jump to originating email/message/meeting".
+### C. 2e — "Open source" cross-surface deep-links ✅ ROUTING DONE (2026-06-17); item-focus deferred
+Shipped section-level routing (commit `d9a0dcc`). Corrections to the original plan,
+discovered by reading the real code/schema:
+- **No prop threading needed.** The handoff guessed an `onNavigate` prop; the app already
+  has a global `pulse:navigate` CustomEvent bus (App.tsx:1277) used everywhere. `handleOpenSource`
+  dispatches it — no new CockpitHub prop.
+- **There is NO `pulse_focus_thread`.** Messages only has `pulse_focus_nudge` (section-level).
+  The handoff's claim was wrong.
+- New `cockpit/taskSource.ts` `taskSourceView(task)` is the single predicate (shared by
+  navigation + affordance visibility): `metadata.source`/`email_id`/`origin_message_id` →
+  `AppView.{EMAIL,MESSAGES,MEETINGS,RELAY}` | null. The "Open <source>" button in `TaskDetail`
+  renders only when provenance is routable. Verified live (email-source task → Email section).
+
+**Item-focus (open the exact email/message) intentionally DEFERRED** — two real blockers:
+1. `pulse_messages` has `thread_id` but no clean `conversation_id`; the Messages UI works off a
+   separate "conversation" abstraction (`activePulseConversation` vs `activeThreadId`), so
+   `origin_message_id` → openable thread is non-trivial surgery in the 5,900-line `Messages.tsx`.
+2. Provenance data is sparse today (1 task with `origin_message_id`, 0 with `source`). Writers
+   exist (Email action-items `ActionItemExtractor`/`gmailService`; message context-menu
+   `Messages.tsx:2192`), so it accrues going forward — revisit item-focus once it does.
 
 ### D. Sprint 4 — differentiation (POST-LAUNCH, from the audit)
 - Real cross-device reminders — **DONE in 0.6** (the others below remain).
