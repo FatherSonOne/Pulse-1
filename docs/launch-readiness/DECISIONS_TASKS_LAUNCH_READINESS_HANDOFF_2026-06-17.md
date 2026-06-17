@@ -102,12 +102,17 @@ discovered by reading the real code/schema:
    `Messages.tsx:2192`), so it accrues going forward — revisit item-focus once it does.
 
 ### D. Sprint 4 — differentiation (POST-LAUNCH, from the audit)
-- Real cross-device reminders — **DONE in 0.6** (the others below remain).
-- AI "is the investigation complete enough to decide?" loop.
-- Workspace-shared decision AI context (the `ragService.chat` in `DecisionMission` currently
-  passes empty context arrays — ungrounded; audit item #5).
-- Next-best-decision surfacing.
-- Deeper cross-surface provenance (overlaps with C).
+- Real cross-device reminders — **DONE in 0.6**.
+- Workspace-shared decision AI context (audit #5) — ✅ **DONE (2026-06-17, commit `54fcef2`)**.
+  The cockpit Ask-Pulse-AI mission (`CreateOverlay`) was calling `ragService.chat(message, [], …)`
+  — empty `documents`, zero grounding. Now `loadWorkspaceContext` fetches the workspace's
+  decisions + tasks once (cached per overlay), maps them to `ragService.chat`'s `{content}`
+  document contract (capped 30 decisions / 50 tasks), and passes them in. Verified: tsc clean +
+  workspace confirmed to hold groundable content (1 decision / 6 tasks). Note: `ragService.chat`'s
+  `apiKey` param is vestigial (Gemini is server-side) — passed `''`.
+- AI "is the investigation complete enough to decide?" loop — **net-new, deferred** (own session).
+- Next-best-decision surfacing — **net-new, deferred** (own session).
+- Deeper cross-surface provenance — overlaps with C item-focus (deferred there).
 
 ---
 
