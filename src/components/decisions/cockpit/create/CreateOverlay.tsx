@@ -5,7 +5,7 @@
  *   ai       → DecisionMission chat (ragService), in a cockpit modal shell
  * All paths refresh the cockpit via onCreated; wizard/task also close on save.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import { X } from 'lucide-react';
@@ -15,6 +15,7 @@ import { CreateTaskModal } from '../../../tasks/CreateTaskModal';
 import { DecisionMission } from '../../../WarRoom/missions/DecisionMission';
 import { DecisionTemplates } from '../../DecisionTemplates';
 import { taskService, type Task } from '../../../../services/taskService';
+import { decisionService } from '../../../../services/decisionService';
 import { ragService, type AIMessage, type ThinkingStep } from '../../../../services/ragService';
 import { useAIErrorHandler } from '../../../../hooks/useAIErrorHandler';
 import type { User } from '../../../../types';
@@ -40,13 +41,41 @@ export function CreateOverlay({
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [thinkingLogs, setThinkingLogs] = useState<Map<string, ThinkingStep[]>>(new Map());
+  // Workspace context for grounding the advisory (audit #5). Fetched once on first
+  // send, then reused — so "Ask Pulse AI" reasons over real decisions/tasks instead
+  // of the empty context it used to pass.
+  const contextRef = useRef<{ content: string }[] | null>(null);
+
+  const loadWorkspaceContext = useCallback(async (): Promise<{ content: string }[]> => {
+    if (contextRef.current) return contextRef.current;
+    try {
+      const [decRes, taskRes] = await Promise.all([
+        decisionService.getWorkspaceDecisions(workspaceId),
+        taskService.getWorkspaceTasks(workspaceId),
+      ]);
+      const docs = [
+        ...decRes.decisions.slice(0, 30).map((d) => ({
+          content: `Decision: "${d.title}" — status: ${d.status}${d.description ? `. ${d.description}` : ''}`,
+        })),
+        ...taskRes.tasks.slice(0, 50).map((t) => ({
+          content: `Task: "${t.title}" — status: ${t.status}${t.deadline ? `, due ${t.deadline.slice(0, 10)}` : ''}`,
+        })),
+      ];
+      contextRef.current = docs;
+      return docs;
+    } catch (err) {
+      console.error('Failed to load workspace context for AI grounding:', err);
+      return [];
+    }
+  }, [workspaceId]);
 
   const handleSend = useCallback(async (message: string) => {
     const userMessage: AIMessage = { id: `msg-${Date.now()}`, role: 'user', content: message, created_at: new Date().toISOString() };
     setMessages((prev) => [...prev, userMessage]);
     setLoading(true);
     try {
-      const response = await ragService.chat(message, [], '', (logs) => {
+      const documents = await loadWorkspaceContext();
+      const response = await ragService.chat(message, documents, '', (logs) => {
         setThinkingLogs(new Map([[userMessage.id, logs]]));
       });
       setMessages((prev) => [...prev, { id: `msg-${Date.now()}-ai`, role: 'assistant', content: response, created_at: new Date().toISOString() }]);
@@ -58,7 +87,7 @@ export function CreateOverlay({
     } finally {
       setLoading(false);
     }
-  }, [handleAIError]);
+  }, [handleAIError, loadWorkspaceContext]);
 
   if (mode === 'decision') {
     return (
