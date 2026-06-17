@@ -42,14 +42,20 @@
 
 ## 2. Remaining work (priority order)
 
-### A. Eyeball gap — recurring regenerate-on-complete (SMALL, do first)
+### A. Eyeball gap — recurring regenerate-on-complete ✅ VERIFIED LIVE (2026-06-17)
 The RRULE engine is unit-proven (`src/__tests__/services/taskRecurrence.test.ts`, 12/12)
-and the `RecurrencePicker` renders on TaskDetail. **Not exercised live:** setting a
-recurrence on a real task, marking it done, and confirming the next instance spawns.
+and the `RecurrencePicker` renders on TaskDetail. **Now also exercised live end-to-end.**
 - Code: `CockpitHub.regenerateRecurring` (called from `handleQuickAction` + `handleStatusChange`).
-- To verify: set a task to "Repeats daily", mark done, confirm a new task appears with
-  `deadline` = next occurrence and `recurrence_parent_id` set. (Mutates real data — do in
-  a throwaway task.)
+- How verified: seeded a throwaway `FREQ=DAILY` task via MCP into the active workspace
+  (`Quantum Ecosystems`, `60373be9`), user clicked **Mark done** in their live browser,
+  then MCP confirmed the spawned child row — `status=todo`, `recurrence_parent_id` → seed,
+  `recurrence_rule` preserved, `tags` + `metadata.created_by`/`recurred_from` carried.
+  Both throwaway rows deleted after. Deadline advanced exactly one **local** day (engine is
+  local-midnight based; a UTC-midnight seed reads as the prior local evening in EDT — not a bug).
+- Headless note: `e2e/_verify-dt-recurring.mjs` exists but **does not complete headless** —
+  `WorkspaceContext` won't resolve `currentWorkspace` under storageState, so the cockpit loads
+  0 tasks and the row never renders (same known Relay/Direct headless-auth limit). The live
+  user-click + MCP-assert path above is the verification of record.
 
 ### B. Template picker (2c, DEFERRED — low value until templates exist)
 Save-as-template now works (shared + personal, RLS fixed), but saved templates are **not
