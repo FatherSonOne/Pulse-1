@@ -5,7 +5,7 @@
  * apply known combinations. Drives the queue via CockpitHub's filtered sets.
  */
 import { useState } from 'react';
-import { Plus, X, ArrowDownWideNarrow } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import type { FilterState } from '../../FilterBar';
 import type { Place } from '../../../../types/placeTypes';
 import { SavedViews, type SavedViewPreset } from './SavedViews';
@@ -107,9 +107,7 @@ export function PropertyFilterBar({
       {anyActive && (
         <button type="button" className="ck-pill ck-pill-add" onClick={onClearAll}>Clear</button>
       )}
-      <span className="ck-pill ck-pill-add" aria-hidden>
-        <ArrowDownWideNarrow size={12} /> <span className="ck-pill-key">Sort</span> Priority
-      </span>
+      {/* Sort pill hidden until real sorting is wired (launch-readiness 0.5). */}
     </div>
   );
 }

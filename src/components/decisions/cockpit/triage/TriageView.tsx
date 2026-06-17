@@ -77,7 +77,8 @@ export function TriageView({
   const selected = visibleFlat.find((i) => i.id === selectedId);
   const total = visibleFlat.length;
 
-  // Keyboard: J/K move selection; E = primary act (done/approve); S = snooze.
+  // Keyboard: J/K move selection; E = primary act (done/approve).
+  // (S = snooze is hidden until persistence is wired — launch-readiness 0.5.)
   // Bails when typing or a modifier is held (so it never clashes with the
   // global KeyboardChordsLayer or text inputs).
   useEffect(() => {
@@ -96,7 +97,6 @@ export function TriageView({
       const sel = visibleFlat.find((i) => i.id === selectedId);
       if (!sel) return;
       if (key === 'e') { e.preventDefault(); onQuickAction(sel, 'done'); }
-      else if (key === 's') { e.preventDefault(); onQuickAction(sel, 'snooze'); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -154,7 +154,6 @@ export function TriageView({
 
         <div className="ck-rail-foot">
           <span><span className="ck-keycap">E</span> done</span>
-          <span><span className="ck-keycap">S</span> snooze</span>
           <span><span className="ck-keycap">⌘K</span> jump</span>
         </div>
       </div>

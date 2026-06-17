@@ -11,7 +11,7 @@
  * status palette; priority is neutral; everything else is rose/neutral.
  */
 import { useState } from 'react';
-import { Check, RotateCcw, UserCog, CalendarClock, Trash2, ExternalLink, Ban } from 'lucide-react';
+import { Check, RotateCcw, UserCog, CalendarClock, Trash2, Ban } from 'lucide-react';
 import type { Task } from '../../../../services/taskService';
 import type { User } from '../../../../types';
 import { SubtaskList } from '../../SubtaskList';
@@ -57,7 +57,8 @@ const isOverdue = (t: Task) => !!t.deadline && t.status !== 'done' && new Date(t
 
 export function TaskDetail({
   task, members, allTasks, currentUserId,
-  onStatusChange, onPatch, onMarkDone, onReassign, onExtend, onDelete, onOpenSource,
+  onStatusChange, onPatch, onMarkDone, onReassign, onExtend, onDelete,
+  // onOpenSource kept in TaskActions + CockpitHub plumbing; affordance hidden (0.5).
 }: TaskDetailProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -107,9 +108,8 @@ export function TaskDetail({
         onClick={handleDelete}
         title={confirmDelete ? 'Click again to confirm' : 'Delete task'}
       />
-      {resolvedSource && (
-        <ActBtn icon={ExternalLink} label={`Open ${resolvedSource.label}`} onClick={() => onOpenSource(task)} />
-      )}
+      {/* "Open source" deep-link hidden until cross-surface navigation is wired
+          (launch-readiness 0.5); provenance still shown via SourceContext below. */}
     </>
   );
 
@@ -133,7 +133,7 @@ export function TaskDetail({
         <h2 className="ck-focal-h2">{task.title}</h2>
         {task.description && <p className="ck-focal-desc">{task.description}</p>}
 
-        <SourceContext source={source} meta={sourceMeta} quote={quote} onOpen={() => onOpenSource(task)} />
+        <SourceContext source={source} meta={sourceMeta} quote={quote} />
 
         {task.status === 'blocked' && task.blocked_reason && (
           <div className="ck-blocked-banner">

@@ -9,7 +9,7 @@
 import { useState } from 'react';
 import {
   AlertCircle, Ban, Eye, Hammer, ListTodo, CheckCircle2, Scale, Circle,
-  Mail, MessageSquare, Video, Mic, Pencil, Check, Clock, History,
+  Mail, MessageSquare, Video, Mic, Pencil, Check, History,
   type LucideIcon,
 } from 'lucide-react';
 import type { Task } from '../../../../services/taskService';
@@ -133,14 +133,7 @@ export function QueueItem({ entry, active, onSelect, onQuickAction }: QueueItemP
           >
             <Check size={14} />
           </button>
-          <button
-            className="ck-qa-btn"
-            title="Snooze"
-            aria-label="Snooze"
-            onClick={() => onQuickAction(entry, 'snooze')}
-          >
-            <Clock size={14} />
-          </button>
+          {/* Snooze quick-action hidden until persistence is wired (launch-readiness 0.5). */}
         </div>
       )}
     </div>
