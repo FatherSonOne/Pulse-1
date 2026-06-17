@@ -1,8 +1,9 @@
 # Full Multi-Surface Deep-Link Integration — Spec & Handoff
 
 **Date:** 2026-06-17
-**Status:** Spec for a deferred follow-up. **Section-level routing already shipped**
-(launch item C, commit `d9a0dcc`); this doc covers the remaining **exact-item focus**.
+**Status:** **IMPLEMENTED (P1/P2/P3) — see §0 Implementation status.** Section-level routing
+shipped earlier (launch item C, `d9a0dcc`); the exact-item focus this doc specced is now built
+for Messages, Email, and Relay-Notes/Broadcast. Meetings exact-open is deferred (blocked — §0).
 **Parent:** `docs/launch-readiness/DECISIONS_TASKS_LAUNCH_READINESS_HANDOFF_2026-06-17.md` (item C)
 **Owner surface:** Decisions & Tasks cockpit task focal pane → originating surface.
 
@@ -13,6 +14,49 @@
 > and folded into §3–§4 with line refs. The only remaining `[VERIFY at build]` flags are
 > implementation choices (e.g. Email "ensure-loaded" path; which task table each focal pane reads) —
 > small, build-time, not blocking the plan.
+
+---
+
+## 0. Implementation status (2026-06-17, build pass)
+
+Built this session on `main`. Commits: P-infra/P0/P1 `4216733`, P2 `124e6b7`,
+P3-Meetings `e9ac487`, P3-Relay `0689a07`. Type-checked (no new errors vs the ~1234
+baseline). **Not yet eyeball-verified live** (the seed→live-click loop in §6 is the
+verification method; headless can't reach the cockpit — workspace resolution).
+
+| Phase | Surface | What shipped | Exact-item? |
+|-------|---------|--------------|-------------|
+| P-infra | — | `taskSourceTarget(task)→{view,focus}`; `CockpitHub.handleOpenSource` writes `pulse_focus_*` sentinels then navigates; `taskSourceView` now wraps `taskSourceTarget` | n/a |
+| P0 | Messages | `handleCreateTaskFromMessage` stamps `metadata.source='messages'` | n/a |
+| P1 | **Messages** | `pulseService.getThreadIdForMessage`; `Messages.tsx` reader drains `pulse_focus_message`→resolve thread→`selectPulseConversation`→scroll+rose-flash on `[data-message-id]`; `msgFocusFlash` CSS | ✅ exact message |
+| P2 | **Email** | `EmailHybridClient` reader drains `pulse_focus_email`→`openReaderPanel(cached_emails.id)`; `EmailReaderPanel` gains additive lazy-fetch-by-id fallback (no list pollution) | ✅ exact email |
+| P3 | **Meetings** | `MeetingSummaryView` now writes `extracted_tasks` (was legacy `tasks`) w/ `metadata.source='meeting'` | ⚠️ section-level only — exact open **blocked** (below) |
+| P3 | **Relay** | New "Create task from note" affordance (VoxNotesMode) → `extracted_tasks` w/ `relay_store`/`relay_vox_id`; `Relay.tsx` reader drains `pulse_focus_relay` JSON | ✅ Notes + Broadcast; ⚠️ Direct/Channel section-level |
+
+### Meetings exact-open — DEFERRED, architecturally blocked (verified, not assumed)
+Three concrete reasons the exact-meeting open can't be wired without new work:
+1. **No meeting DB id at task-creation.** `activeRoom` is `{ roomUrl, roomName }` (a Daily.co
+   room *name*); the `pulse_video_rooms` row is created **async, server-side** by the Daily
+   webhook — the client never holds that id when action-items become tasks (`Meetings.tsx:157`).
+2. **Resolver can't rebuild the view.** `meetingService.getMeetingRecordingById` returns
+   `summary: null` + no `actionItems/keyPoints/decisions` (meetingService.ts:311-345) — it can't
+   reconstruct `MeetingSummaryData`.
+3. **Durable record is elsewhere.** Real action-items come only from the live-meeting-end summary
+   (`Meetings.tsx:853`); the recap paths that *do* carry an id (`archives` note id) set
+   `actionItems: []`. The `meeting_note` archive is written outside this flow.
+   → To unblock: persist the structured end-of-meeting summary (archive or a meetings row) with
+   an id, stamp it on the task (`metadata.meeting_id`), and add a reader that rebuilds the summary
+   from it. `taskSourceTarget` already emits `pulse_focus_meeting` when `meeting_id` is present.
+
+### Known follow-ups (net-new, not regressions to fix now)
+- **Tasks-table split:** meeting tasks now land in `extracted_tasks`; Dashboard / daily briefing /
+  Glimpse / unified search read the legacy `tasks` table and will not show NEW meeting tasks until
+  they also read `extracted_tasks` (accepted trade-off — see `e9ac487`). Same applies to
+  `ActionItemExtractor.tsx` email tasks (still → `tasks`, no `email_id`).
+- **Relay Direct/Channel exact-open:** Direct opens by *contact* not message; Channel (`TeamVoxMode`)
+  has no message-open hook (`focusThreadId` declared but not forwarded). Currently section-level.
+- **Relay creation coverage:** only Notes has a create-task affordance so far; Broadcast/Channel/
+  Direct have none (so the reader's broadcast branch is ready but untriggered).
 
 ---
 
