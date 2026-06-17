@@ -196,6 +196,34 @@ export const proactiveSuggestionsService = {
       });
     }
 
+    // 6.5 WIP limit — too many tasks in progress at once (context-switching /
+    // flow cost). Distinct from #6 (total active workload): this counts only
+    // in_progress per assignee against a healthy concurrent-WIP cap.
+    const WIP_LIMIT = 5;
+    const inProgressByAssignee = new Map<string, number>();
+    tasks.filter(t => t.status === 'in_progress').forEach(t => {
+      const a = t.assignee_id || 'Unassigned';
+      inProgressByAssignee.set(a, (inProgressByAssignee.get(a) || 0) + 1);
+    });
+    const overWip = Array.from(inProgressByAssignee.entries())
+      .filter(([a, n]) => a !== 'Unassigned' && n > WIP_LIMIT)
+      .sort((x, y) => y[1] - x[1]);
+
+    if (overWip.length > 0) {
+      const [assignee, count] = overWip[0];
+      const isMe = assignee === user.id;
+      nudges.push({
+        id: `wip-limit-${assignee}`,
+        type: 'workload',
+        priority: 'important',
+        message: `${isMe ? 'You have' : 'A teammate has'} ${count} tasks in progress at once — finish a few before starting more`,
+        action: 'Review in-progress work',
+        actionType: 'review',
+        relatedId: isMe ? undefined : assignee,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
     // 7. AI-powered advanced suggestions
     if (nudges.length < 5) {
       try {
