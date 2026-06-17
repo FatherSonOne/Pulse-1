@@ -17,6 +17,8 @@ export interface Task {
   archived_at?: string; // NEW: When task was archived
   metadata: Record<string, any>;
   tags?: string[]; // Free-text labels (text[] column, default '{}')
+  recurrence_rule?: string; // RFC-5545 RRULE; regenerates next instance on complete
+  recurrence_parent_id?: string; // links a spawned instance back to its series origin
   extracted_at: string; // PRIMARY: extracted_tasks uses this instead of created_at
   updated_at: string;
   created_at?: string; // Optional: for compatibility
@@ -56,6 +58,8 @@ export interface CreateTaskData {
   status?: Task['status'];
   metadata?: Record<string, any>;
   tags?: string[];
+  recurrence_rule?: string;
+  recurrence_parent_id?: string;
 }
 
 export const taskService = {
@@ -78,6 +82,8 @@ export const taskService = {
         deadline: data.deadline,
         metadata,
         ...(data.tags ? { tags: data.tags } : {}),
+        ...(data.recurrence_rule ? { recurrence_rule: data.recurrence_rule } : {}),
+        ...(data.recurrence_parent_id ? { recurrence_parent_id: data.recurrence_parent_id } : {}),
       })
       .select()
       .single();

@@ -17,6 +17,7 @@ import type { User } from '../../../../types';
 import { SubtaskList } from '../../SubtaskList';
 import { Prop, PropertyTable } from './PropertyTable';
 import { SourceContext } from './SourceContext';
+import { RecurrencePicker } from '../../../Calendar/RecurrencePicker';
 import { FocalScaffold, ActBtn } from './FocalActions';
 import { ActivityLog } from './ActivityLog';
 import { CommentsSection } from './CommentsSection';
@@ -196,6 +197,13 @@ export function TaskDetail({
                 <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
               ))}
             </select>
+          </Prop>
+          <Prop label="Repeats">
+            <RecurrencePicker
+              value={task.recurrence_rule ?? null}
+              onChange={(rule) => onPatch(task.id, { recurrence_rule: rule ?? null } as Partial<Task>)}
+              eventDate={task.deadline ? task.deadline.slice(0, 10) : new Date().toISOString().slice(0, 10)}
+            />
           </Prop>
           {resolvedSource && (
             <Prop label="Source">

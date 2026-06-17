@@ -46,6 +46,7 @@ import { decisionAnalyticsService, DecisionMetrics } from '../../../services/dec
 import { proactiveSuggestionsService, Nudge } from '../../../services/proactiveSuggestionsService';
 import { decisionContextService, type RetrospectivePrompt } from '../../../services/decisionContextService';
 import { dependenciesService } from '../../../services/dependenciesService';
+import { nextRecurringTask } from '../../../services/taskRecurrence';
 import { workspaceService } from '../../../services/workspaceService';
 import { useDecisionTaskRealtime } from '../../../hooks/useDecisionTaskRealtime';
 import { ArchiveView } from './archive/ArchiveView';
@@ -328,6 +329,38 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
 
   // Queue row hover quick-actions. `done` marks a task done (realtime refreshes
   // the queue) or casts an Approve vote on a decision. Snooze lands in Phase 8.
+  // When a recurring task is completed, spawn its next occurrence (client-side
+  // regeneration). Returns silently when the task isn't recurring or the series
+  // has ended (COUNT exhausted / past UNTIL → nextRecurringTask returns null). 2d.
+  const regenerateRecurring = useCallback(
+    async (task: Task) => {
+      if (!task.recurrence_rule) return;
+      const next = nextRecurringTask(task.recurrence_rule, task.deadline);
+      if (!next) return;
+      try {
+        await taskService.createTask({
+          workspace_id: task.workspace_id,
+          title: task.title,
+          description: task.description,
+          priority: task.priority,
+          assignee_id: task.assignee_id,
+          status: 'todo',
+          deadline: next.dueDate.toISOString(),
+          tags: task.tags,
+          recurrence_rule: next.nextRule,
+          recurrence_parent_id: task.recurrence_parent_id ?? task.id,
+          created_by: user?.id,
+          metadata: { ...(task.metadata ?? {}), recurred_from: task.id },
+        });
+        loadTasks();
+        toast(`Next occurrence created · ${next.dueDate.toLocaleDateString()}`, { icon: '🔁' });
+      } catch (e) {
+        console.error('Failed to spawn next recurring task:', e);
+      }
+    },
+    [user?.id, loadTasks]
+  );
+
   const handleQuickAction = useCallback(
     async (entry: QueueEntry, action: 'done' | 'snooze') => {
       if (action === 'snooze') {
@@ -339,6 +372,7 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
           await taskService.updateTaskStatus(entry.task.id, 'done');
           setTasks((prev) => prev.map((t) => (t.id === entry.task.id ? { ...t, status: 'done' } : t)));
           toast.success('Marked done');
+          void regenerateRecurring(entry.task);
         } catch (error) {
           console.error('Failed to mark task done:', error);
           toast.error('Could not update task');
@@ -356,7 +390,7 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
         toast.error('Could not record vote');
       }
     },
-    [user?.id, loadDecisions]
+    [user?.id, loadDecisions, regenerateRecurring]
   );
 
   // ── Focal task actions (property-table edits + footer actions) ──
@@ -370,6 +404,8 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
       try {
         await taskService.updateTaskStatus(taskId, status);
         if (status === 'done') {
+          const completed = tasks.find((t) => t.id === taskId);
+          if (completed) void regenerateRecurring(completed);
           const unblocked = await dependenciesService.getNewlyUnblockedTasks(taskId, effectiveWorkspaceId);
           if (unblocked.length) {
             toast.success(`${unblocked.length} task${unblocked.length > 1 ? 's' : ''} unblocked`);
@@ -381,7 +417,7 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
         loadTasks();
       }
     },
-    [patchTaskLocal, effectiveWorkspaceId, loadTasks]
+    [patchTaskLocal, effectiveWorkspaceId, loadTasks, tasks, regenerateRecurring]
   );
 
   const handlePatchTask = useCallback(
