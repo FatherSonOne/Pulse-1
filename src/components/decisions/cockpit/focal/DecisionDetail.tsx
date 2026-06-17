@@ -15,7 +15,7 @@ import { Bell, ListTodo, CheckCircle, ThumbsUp, ThumbsDown, AlertTriangle, Minus
 import { decisionService, type DecisionWithVotes, type DecisionVote } from '../../../../services/decisionService';
 import { decisionAnalyticsService, type RiskAssessment } from '../../../../services/decisionAnalyticsService';
 import { consensusDetectorService } from '../../../../services/consensusDetectorService';
-import { notificationService } from '../../../../services/notificationService';
+import { supabase } from '../../../../services/supabaseClient';
 import type { User } from '../../../../types';
 import PlacePicker from '../../../map/PlacePicker';
 import { Prop, PropertyTable } from './PropertyTable';
@@ -114,12 +114,22 @@ export function DecisionDetail({
 
   const handleSendReminder = async () => {
     try {
-      await notificationService.notifyDecisionEvent({
-        type: 'new_vote',
-        decisionTitle: decision.title,
-        actionUrl: `/decisions?id=${decision.id}`,
+      // Real cross-device dispatch via the Web Push pipeline (push_subscriptions
+      // + send-push). The RPC returns how many teammates were actually reminded
+      // (members who still need to vote AND have notifications enabled), so the
+      // toast is honest instead of an unconditional "Reminder sent" (0.6).
+      const { data, error } = await supabase.rpc('notify_decision_voters', {
+        p_decision_id: decision.id,
       });
-      toast.success('Reminder sent');
+      if (error) throw error;
+      const count = typeof data === 'number' ? data : 0;
+      if (count > 0) {
+        toast.success(`Reminder sent to ${count} ${count === 1 ? 'teammate' : 'teammates'}`);
+      } else {
+        toast('No one to remind — everyone has voted, or teammates haven’t enabled notifications', {
+          icon: '🔕',
+        });
+      }
     } catch (error) {
       console.error('Failed to send reminder:', error);
       toast.error('Could not send reminder');
