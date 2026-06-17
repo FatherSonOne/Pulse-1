@@ -1405,14 +1405,16 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     if (!messageId) return;
     sessionStorage.removeItem('pulse_focus_message');
 
-    let cancelled = false;
-    (async () => {
+    // One-shot side effect — intentionally NO cancellation guard. A cleanup-set
+    // `cancelled` flag is tripped by React StrictMode's dev double-invoke (mount →
+    // cleanup → mount), which would abort the only real run because the sentinel was
+    // already drained synchronously above, so the second run no-ops. Mirrors the
+    // Email (pulse_focus_email) and Relay (pulse_focus_relay) focus readers.
+    void (async () => {
       const threadId = await pulseService.getThreadIdForMessage(messageId);
-      if (cancelled || !threadId) return;
+      if (!threadId) return;
       await selectPulseConversation(threadId);
-      if (cancelled) return;
       setTimeout(() => {
-        if (cancelled) return;
         const el = document.querySelector<HTMLElement>(`[data-message-id="${messageId}"]`);
         if (!el) return;
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1420,8 +1422,6 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         setTimeout(() => el.removeAttribute('data-focus-flash'), 2200);
       }, 450);
     })();
-
-    return () => { cancelled = true; };
   }, [selectPulseConversation]);
 
   // Load more (older) messages for pagination

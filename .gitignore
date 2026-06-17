@@ -236,3 +236,4 @@ build-output.txt
 .relay-verify/
 .warroom-verify/
 .dt-verify/
+.deeplink-verify/
