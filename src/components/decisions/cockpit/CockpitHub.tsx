@@ -460,6 +460,43 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
     toast(`Opening from ${source} arrives with cross-surface deep links`, { icon: '🔗' });
   }, []);
 
+  // ── Bulk actions over selected task ids (3b) ──
+  const handleBulkComplete = useCallback(
+    async (taskIds: string[]) => {
+      if (taskIds.length === 0) return;
+      const idSet = new Set(taskIds);
+      const completed = tasks.filter((t) => idSet.has(t.id));
+      setTasks((prev) => prev.map((t) => (idSet.has(t.id) ? { ...t, status: 'done' } : t)));
+      try {
+        await Promise.all(taskIds.map((id) => taskService.updateTaskStatus(id, 'done')));
+        for (const t of completed) void regenerateRecurring(t);
+        toast.success(`${taskIds.length} marked done`);
+      } catch (error) {
+        console.error('Bulk complete failed:', error);
+        toast.error('Could not update some tasks');
+        loadTasks();
+      }
+    },
+    [tasks, regenerateRecurring, loadTasks]
+  );
+
+  const handleBulkDelete = useCallback(
+    async (taskIds: string[]) => {
+      if (taskIds.length === 0) return;
+      const idSet = new Set(taskIds);
+      setTasks((prev) => prev.filter((t) => !idSet.has(t.id)));
+      try {
+        await Promise.all(taskIds.map((id) => taskService.deleteTask(id)));
+        toast.success(`${taskIds.length} deleted`);
+      } catch (error) {
+        console.error('Bulk delete failed:', error);
+        toast.error('Could not delete some tasks');
+        loadTasks();
+      }
+    },
+    [loadTasks]
+  );
+
   const taskActions: TaskActions = useMemo(
     () => ({
       members: workspaceMembers,
@@ -858,6 +895,8 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
             hasMore={hasMoreDecisions || hasMoreTasks}
             loadingMore={loadingMore}
             onLoadMore={handleLoadMore}
+            onBulkComplete={handleBulkComplete}
+            onBulkDelete={handleBulkDelete}
           />
         </>
       ) : (

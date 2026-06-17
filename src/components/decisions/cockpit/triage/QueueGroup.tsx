@@ -14,10 +14,14 @@ interface QueueGroupProps {
   selectedId?: string;
   onSelect: (id: string) => void;
   onQuickAction: (entry: QueueEntry, action: 'done' | 'snooze') => void;
+  /** Bulk-select state keyed by task.id (task rows only). */
+  checkedIds?: Set<string>;
+  onToggleCheck?: (taskId: string) => void;
 }
 
 export function QueueGroup({
   group, collapsed, onToggleCollapse, selectedId, onSelect, onQuickAction,
+  checkedIds, onToggleCheck,
 }: QueueGroupProps) {
   return (
     <div>
@@ -34,15 +38,20 @@ export function QueueGroup({
       </button>
 
       {!collapsed &&
-        group.items.map((entry) => (
-          <QueueItem
-            key={entry.id}
-            entry={entry}
-            active={entry.id === selectedId}
-            onSelect={() => onSelect(entry.id)}
-            onQuickAction={onQuickAction}
-          />
-        ))}
+        group.items.map((entry) => {
+          const taskId = entry.kind === 'task' ? entry.task.id : null;
+          return (
+            <QueueItem
+              key={entry.id}
+              entry={entry}
+              active={entry.id === selectedId}
+              onSelect={() => onSelect(entry.id)}
+              onQuickAction={onQuickAction}
+              selected={taskId ? checkedIds?.has(taskId) : undefined}
+              onToggleSelect={taskId && onToggleCheck ? () => onToggleCheck(taskId) : undefined}
+            />
+          );
+        })}
     </div>
   );
 }

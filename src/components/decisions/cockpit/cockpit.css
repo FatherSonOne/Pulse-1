@@ -968,3 +968,21 @@ button.ck-pill:hover { color: var(--pulse-ink); box-shadow: inset 0 0 0 1px var(
   color: var(--pulse-ink); font-size: 12px; padding: 3px 2px; outline: none;
 }
 .ck-tag-input::placeholder { color: var(--pulse-ink-3); }
+
+/* Bulk multi-select (triage queue) */
+.ck-qitem-check { margin: 0 2px 0 0; accent-color: var(--pulse-rose); cursor: pointer; flex: none; }
+.ck-qitem[data-selected] { background: color-mix(in oklab, var(--pulse-rose) 9%, transparent); }
+.ck-bulkbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; margin: 0 0 4px;
+  background: var(--pulse-surface-raised); border: 1px solid var(--pulse-border);
+  border-radius: 8px; font-size: 12px;
+}
+.ck-bulkbar-count { color: var(--pulse-ink-2); font-weight: 600; margin-right: auto; }
+.ck-bulkbar-btn {
+  background: none; border: 1px solid var(--pulse-border); border-radius: 6px;
+  padding: 3px 8px; font-size: 12px; color: var(--pulse-ink); cursor: pointer;
+  transition: background 120ms;
+}
+.ck-bulkbar-btn:hover { background: color-mix(in oklab, var(--pulse-rose) 8%, transparent); }
+.ck-bulkbar-danger { color: var(--dt-status-overdue); border-color: var(--dt-status-overdue); }

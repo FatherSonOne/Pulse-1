@@ -22,6 +22,9 @@ interface QueueItemProps {
   active: boolean;
   onSelect: () => void;
   onQuickAction: (entry: QueueEntry, action: QuickAction) => void;
+  /** Bulk-select (task rows only). When provided, a checkbox renders. */
+  selected?: boolean;
+  onToggleSelect?: () => void;
 }
 
 const STATUS_ICON: Record<string, LucideIcon> = {
@@ -46,7 +49,7 @@ function taskDisplayStatus(task: Task, overdue: boolean): string {
   return overdue && task.status !== 'blocked' ? 'overdue' : task.status;
 }
 
-export function QueueItem({ entry, active, onSelect, onQuickAction }: QueueItemProps) {
+export function QueueItem({ entry, active, onSelect, onQuickAction, selected, onToggleSelect }: QueueItemProps) {
   const [hover, setHover] = useState(false);
 
   // Retro look-back rows are their own shape (no task/decision payload).
@@ -99,8 +102,19 @@ export function QueueItem({ entry, active, onSelect, onQuickAction }: QueueItemP
       onMouseLeave={() => setHover(false)}
       className="ck-qitem"
       data-active={active}
+      data-selected={selected || undefined}
     >
       {active && <span className="ck-qitem-stripe" aria-hidden />}
+      {onToggleSelect && (
+        <input
+          type="checkbox"
+          className="ck-qitem-check"
+          checked={!!selected}
+          onClick={stop}
+          onChange={onToggleSelect}
+          aria-label="Select task for bulk action"
+        />
+      )}
       <span className="ck-qitem-status" style={{ color: statusColor }}>
         <StatusIcon size={15} strokeWidth={2.2} />
       </span>

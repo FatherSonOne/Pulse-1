@@ -36,6 +36,9 @@ interface TriageViewProps {
   hasMore: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
+  /** Bulk actions over selected task ids. */
+  onBulkComplete: (taskIds: string[]) => void;
+  onBulkDelete: (taskIds: string[]) => void;
 }
 
 const isTypingTarget = (target: EventTarget | null): boolean => {
@@ -47,7 +50,7 @@ const isTypingTarget = (target: EventTarget | null): boolean => {
 export function TriageView({
   tasks, decisions, retros, currentUserId, loading, connectionStatus,
   onQuickAction, taskActions, decisionActions, retroActions, onNewDecision, onAskAI,
-  hasMore, loadingMore, onLoadMore,
+  hasMore, loadingMore, onLoadMore, onBulkComplete, onBulkDelete,
 }: TriageViewProps) {
   const groups: QueueGroupModel[] = useMemo(
     () => buildQueue(tasks, decisions, currentUserId, retros).filter((g) => g.items.length > 0),
@@ -56,6 +59,27 @@ export function TriageView({
 
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
+  // Bulk-select set, keyed by task.id (distinct from the focal `selectedId`).
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+
+  const toggleCheck = (taskId: string) =>
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      next.has(taskId) ? next.delete(taskId) : next.add(taskId);
+      return next;
+    });
+
+  // Prune checked ids that have left the task set (completed/deleted/filtered)
+  // so the bulk-bar count stays honest.
+  useEffect(() => {
+    const taskIds = new Set(tasks.map((t) => t.id));
+    setCheckedIds((prev) => {
+      let changed = false;
+      const next = new Set<string>();
+      prev.forEach((id) => { if (taskIds.has(id)) next.add(id); else changed = true; });
+      return changed ? next : prev;
+    });
+  }, [tasks]);
 
   // Flattened list of currently-visible (non-collapsed) entries — drives J/K.
   const visibleFlat = useMemo(
@@ -133,6 +157,29 @@ export function TriageView({
           )}
         </div>
 
+        {checkedIds.size > 0 && (
+          <div className="ck-bulkbar" role="toolbar" aria-label="Bulk actions">
+            <span className="ck-bulkbar-count">{checkedIds.size} selected</span>
+            <button
+              type="button"
+              className="ck-bulkbar-btn"
+              onClick={() => { onBulkComplete([...checkedIds]); setCheckedIds(new Set()); }}
+            >
+              Mark done
+            </button>
+            <button
+              type="button"
+              className="ck-bulkbar-btn ck-bulkbar-danger"
+              onClick={() => { onBulkDelete([...checkedIds]); setCheckedIds(new Set()); }}
+            >
+              Delete
+            </button>
+            <button type="button" className="ck-bulkbar-btn" onClick={() => setCheckedIds(new Set())}>
+              Clear
+            </button>
+          </div>
+        )}
+
         <div className="ck-rail-list" role="listbox" aria-label="Triage queue">
           {groups.map((g) => (
             <QueueGroup
@@ -143,6 +190,8 @@ export function TriageView({
               selectedId={selectedId}
               onSelect={setSelectedId}
               onQuickAction={onQuickAction}
+              checkedIds={checkedIds}
+              onToggleCheck={toggleCheck}
             />
           ))}
           {hasMore && (
