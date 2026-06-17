@@ -9,7 +9,7 @@
  * Coral budget (CLAUDE.md §4): all chrome → rose / neutral tokens only.
  */
 import { useState } from 'react';
-import { CheckSquare, Search, Bell, Activity, Bot, Plus, ChevronDown, Inbox, Archive, Scale, Sparkles } from 'lucide-react';
+import { CheckSquare, Search, Bell, Activity, Bot, Plus, ChevronDown, Inbox, Archive, Scale, Sparkles, LayoutTemplate } from 'lucide-react';
 
 export type CockpitTab = 'triage' | 'archive';
 
@@ -24,6 +24,7 @@ interface CockpitMastheadProps {
   onOpenCommand: () => void;
   onNewDecision?: () => void;
   onNewTask?: () => void;
+  onNewTemplate?: () => void;
   onAskAI?: () => void;
   onAlerts?: () => void;
   onActivity?: () => void;
@@ -40,6 +41,7 @@ export function CockpitMasthead({
   onOpenCommand,
   onNewDecision,
   onNewTask,
+  onNewTemplate,
   onAskAI,
   onAlerts,
   onActivity,
@@ -83,6 +85,9 @@ export function CockpitMasthead({
                 <div className="ck-menu" role="menu" style={{ left: 'auto', right: 0, minWidth: 180 }}>
                   <button className="ck-menu-item" role="menuitem" onClick={() => pick(onNewDecision)}><Scale size={15} /> New decision</button>
                   <button className="ck-menu-item" role="menuitem" onClick={() => pick(onNewTask)}><Plus size={15} /> Quick task</button>
+                  {onNewTemplate && (
+                    <button className="ck-menu-item" role="menuitem" onClick={() => pick(onNewTemplate)}><LayoutTemplate size={15} /> New from template</button>
+                  )}
                   <button className="ck-menu-item" role="menuitem" onClick={() => pick(onAskAI)}><Sparkles size={15} /> Ask Pulse AI</button>
                 </div>
               </>

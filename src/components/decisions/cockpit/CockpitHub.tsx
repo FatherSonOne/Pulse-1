@@ -286,6 +286,7 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
     () => [
       { id: 'dt-new-decision', label: 'New decision', desc: 'Open the decision wizard', icon: Plus, kind: 'action', group: 'Decisions & Tasks', keywords: ['create'], run: () => setCreateMode({ mode: 'decision' }) },
       { id: 'dt-quick-task', label: 'Quick task', desc: 'Create a task', icon: Plus, kind: 'action', group: 'Decisions & Tasks', keywords: ['create', 'new'], shortcut: 'c', run: () => setCreateMode({ mode: 'task' }) },
+      { id: 'dt-new-template', label: 'New from template', desc: 'Start a decision from a saved template', icon: Plus, kind: 'action', group: 'Decisions & Tasks', keywords: ['create', 'template'], run: () => setCreateMode({ mode: 'template' }) },
       { id: 'dt-prioritize', label: 'Prioritize tasks with AI', icon: Zap, kind: 'action', group: 'Decisions & Tasks', run: () => setShowPrioritizer(true) },
       { id: 'dt-export', label: 'Export decisions & tasks (CSV)', icon: Download, kind: 'action', group: 'Decisions & Tasks', run: handleExportCSV },
       { id: 'dt-refresh', label: 'Refresh decisions & tasks', icon: RotateCw, kind: 'action', group: 'Decisions & Tasks', run: handleRefresh },
@@ -597,6 +598,7 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
   // Create entry points → the New overlay.
   const handleNewDecision = useCallback(() => setCreateMode({ mode: 'decision' }), []);
   const handleNewTask = useCallback(() => setCreateMode({ mode: 'task' }), []);
+  const handleNewTemplate = useCallback(() => setCreateMode({ mode: 'template' }), []);
   const handleAskAI = useCallback(() => setCreateMode({ mode: 'ai' }), []);
   const handleCreated = useCallback(() => { loadDecisions(); loadTasks(); loadDuePrompts(); }, [loadDecisions, loadTasks, loadDuePrompts]);
 
@@ -850,6 +852,7 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
         onOpenCommand={openCommandPalette}
         onNewDecision={handleNewDecision}
         onNewTask={handleNewTask}
+        onNewTemplate={handleNewTemplate}
         onAskAI={handleAskAI}
         onAlerts={() => setShowAlerts((o) => !o)}
         onActivity={() => setShowActivity(true)}

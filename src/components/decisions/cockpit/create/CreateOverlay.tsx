@@ -13,13 +13,15 @@ import { DecisionWizard } from '../../wizard/DecisionWizard';
 import type { FrameId } from '../../wizard/types';
 import { CreateTaskModal } from '../../../tasks/CreateTaskModal';
 import { DecisionMission } from '../../../WarRoom/missions/DecisionMission';
+import { DecisionTemplates } from '../../DecisionTemplates';
 import { taskService, type Task } from '../../../../services/taskService';
 import { ragService, type AIMessage, type ThinkingStep } from '../../../../services/ragService';
 import { useAIErrorHandler } from '../../../../hooks/useAIErrorHandler';
 import type { User } from '../../../../types';
 import { submitWizardOutput } from './wizardSubmit';
+import { submitTemplateSelection } from './templateSubmit';
 
-export type CreateMode = 'decision' | 'task' | 'ai';
+export type CreateMode = 'decision' | 'task' | 'template' | 'ai';
 
 interface CreateOverlayProps {
   mode: CreateMode;
@@ -102,6 +104,30 @@ export function CreateOverlay({
         }}
       />,
       document.body
+    );
+  }
+
+  if (mode === 'template') {
+    // DecisionTemplates self-portals and calls onClose() right after onSelectTemplate.
+    // The async create runs to completion in this closure (services + onCreated outlive
+    // the unmount), then refreshes the cockpit.
+    return (
+      <DecisionTemplates
+        workspaceId={workspaceId}
+        onClose={onClose}
+        onSelectTemplate={(template, variables) => {
+          const t = toast.loading('Creating from template…');
+          submitTemplateSelection(template, variables, { workspaceId, userId: currentUserId })
+            .then(() => {
+              toast.success('Decision created from template', { id: t });
+              onCreated();
+            })
+            .catch((error) => {
+              console.error('Failed to create from template:', error);
+              toast.error('Could not create from template', { id: t });
+            });
+        }}
+      />
     );
   }
 
