@@ -57,24 +57,28 @@ and the `RecurrencePicker` renders on TaskDetail. **Now also exercised live end-
   0 tasks and the row never renders (same known Relay/Direct headless-auth limit). The live
   user-click + MCP-assert path above is the verification of record.
 
-### B. Template picker (2c, DEFERRED — low value until templates exist)
-Save-as-template now works (shared + personal, RLS fixed), but saved templates are **not
-surfaced for selection** in the cockpit create flow. There are currently **0 user templates**
-(5 system seeds only), so value is low until people save some.
-
-Two build paths (pick one — this is the open design decision):
-1. **Reuse the orphaned `DecisionTemplates`** (`src/components/decisions/DecisionTemplates.tsx`)
-   — a complete picker (search, variable substitution, `onSelectTemplate(template, variables)`
-   callback) that is **exported but rendered nowhere**. Wire it as a new "New from template"
-   create path: add a `template` mode to `CreateOverlay`, render `DecisionTemplates`, and on
-   select call `decisionTemplateService.applyTemplate(...)` → `decisionService.createDecision`
-   + its `suggested_tasks`. Lowest-effort; self-contained.
-2. **Prefill the wizard** — `DecisionWizard` (`src/components/decisions/wizard/DecisionWizard.tsx`)
-   has `initialFrameId` but **no template-prefill prop**. Adding one is real surgery on the
-   multi-step `WizardState`. Use `decisionTemplateService.loadTemplateAsWizardState(id)` →
-   feed as initial state. Higher fidelity, higher effort.
-
-Recommendation: path 1.
+### B. Template picker ✅ DONE & VERIFIED LIVE (2026-06-17) — path 1
+Shipped via the recommended path 1: the orphaned `DecisionTemplates` picker is now wired
+into the cockpit create flow as a new `template` `CreateMode`.
+- `+ New ▾ → "New from template"` (and a command-palette entry) opens the picker.
+- New `create/templateSubmit.ts` mirrors `wizardSubmit`: `applyTemplate` → `createDecision`
+  (status `proposed`, matching the wizard) → activity log → `suggested_tasks` linked via the
+  canonical `metadata.generated_from_decision` (+ `generated_from_template`) → `trackUsage`.
+- **Schema gotcha handled:** template `default_decision_type` is a *voting method*
+  (`consensus`/`majority_vote`); `decisions.decision_type` is a *category*. Orthogonal, no
+  CHECK constraint — so `templateSubmit` does NOT pass it; createDecision defaults to `general`.
+- **Pre-existing bug found + fixed:** `decisionTemplateService.trackUsage` called
+  `increment_template_usage`, which updates **`message_templates`** (wrong table + a `user_id`
+  filter decision_templates lacks) → usage_count never moved. Added dedicated SECURITY DEFINER
+  RPC `increment_decision_template_usage(uuid)` (migration `20260617000000`, REVOKE from anon)
+  and repointed `trackUsage`.
+- Verified: non-destructive Playwright UI harness (`e2e/_verify-dt-template-picker.mjs`, all
+  green) + live user create-clicks with MCP DB asserts — decision (`proposed`, `general`) + 5
+  linked tasks created in the correct workspace, and `usage_count` ticked 0→1 via the live
+  client→RPC round-trip. Throwaway rows cleaned + template counter reset.
+- Commits: `fa6c3cc` (picker path + harness), `caa24fc` (usage_count RPC fix + migration).
+- Deferred sub-option (not built): path 2 (template-prefilled wizard) remains available if
+  higher-fidelity prefill is ever wanted — `decisionTemplateService.loadTemplateAsWizardState`.
 
 ### C. 2e — "Open source" cross-surface deep-links (DEFERRED — Sprint-4 territory)
 The control is currently hidden (0.5). Provenance ids exist (`extracted_tasks.origin_message_id`
