@@ -11,9 +11,10 @@
  * status palette; priority is neutral; everything else is rose/neutral.
  */
 import { useState } from 'react';
-import { Check, RotateCcw, UserCog, CalendarClock, Trash2, Ban, X } from 'lucide-react';
+import { Check, RotateCcw, UserCog, CalendarClock, Trash2, Ban, X, ExternalLink } from 'lucide-react';
 import type { Task } from '../../../../services/taskService';
 import type { User } from '../../../../types';
+import { taskSourceView, taskSourceLabel } from '../taskSource';
 import { SubtaskList } from '../../SubtaskList';
 import { Prop, PropertyTable } from './PropertyTable';
 import { SourceContext } from './SourceContext';
@@ -58,8 +59,7 @@ const isOverdue = (t: Task) => !!t.deadline && t.status !== 'done' && new Date(t
 
 export function TaskDetail({
   task, members, allTasks, currentUserId,
-  onStatusChange, onPatch, onMarkDone, onReassign, onExtend, onDelete,
-  // onOpenSource kept in TaskActions + CockpitHub plumbing; affordance hidden (0.5).
+  onStatusChange, onPatch, onMarkDone, onReassign, onExtend, onDelete, onOpenSource,
 }: TaskDetailProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -79,6 +79,9 @@ export function TaskDetail({
   const sourceMeta = (m.source_meta ?? m.sender ?? m.channel) as string | undefined;
   const quote = (m.source_excerpt ?? m.source_quote ?? m.quote ?? m.context_snippet) as string | undefined;
   const resolvedSource = resolveSource(source);
+  // Cross-surface deep-link (item C): only show "Open source" when the task carries
+  // provenance we can route to (email / message / meeting / relay).
+  const sourceView = taskSourceView(task);
 
   const assigneeName = (id?: string) => members.find((mem) => mem.id === id)?.name;
 
@@ -109,8 +112,14 @@ export function TaskDetail({
         onClick={handleDelete}
         title={confirmDelete ? 'Click again to confirm' : 'Delete task'}
       />
-      {/* "Open source" deep-link hidden until cross-surface navigation is wired
-          (launch-readiness 0.5); provenance still shown via SourceContext below. */}
+      {sourceView && (
+        <ActBtn
+          icon={ExternalLink}
+          label={`Open ${taskSourceLabel(sourceView)}`}
+          onClick={() => onOpenSource(task)}
+          title="Jump to where this task came from"
+        />
+      )}
     </>
   );
 

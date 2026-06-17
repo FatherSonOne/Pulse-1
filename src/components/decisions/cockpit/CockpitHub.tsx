@@ -33,6 +33,7 @@ import { ReassignTaskModal } from '../ReassignTaskModal';
 import { ExtendDeadlineDialog } from '../ExtendDeadlineDialog';
 import { DecisionDecomposer } from '../DecisionDecomposer';
 import { CreateOverlay, type CreateMode } from './create/CreateOverlay';
+import { taskSourceView } from './taskSource';
 import type { FrameId } from '../wizard/types';
 import { AlertsPanel } from '../AlertsPanel';
 import { ConversationalAssistant } from '../ConversationalAssistant';
@@ -457,8 +458,16 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
   );
 
   const handleOpenSource = useCallback((task: Task) => {
-    const source = (task.metadata?.source as string | undefined) ?? 'its origin';
-    toast(`Opening from ${source} arrives with cross-surface deep links`, { icon: '🔗' });
+    // Cross-surface deep-link (launch item C): route to the originating surface via
+    // the global pulse:navigate bus (App.tsx listener). Section-level for now; exact
+    // email/message focus is a deferred follow-up. taskSourceView is the single
+    // predicate shared with TaskDetail's affordance visibility.
+    const view = taskSourceView(task);
+    if (!view) {
+      toast('This task has no linked source yet', { icon: '🔗' });
+      return;
+    }
+    window.dispatchEvent(new CustomEvent('pulse:navigate', { detail: { view } }));
   }, []);
 
   // ── Bulk actions over selected task ids (3b) ──
