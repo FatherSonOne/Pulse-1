@@ -25,7 +25,9 @@
  * mount JSX stays untouched.
  */
 import { useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { CalendarEvent, Contact, Task } from '../types';
+import { useAIErrorHandler } from './useAIErrorHandler';
 import {
   calendarAIService,
   SchedulingSuggestion,
@@ -73,6 +75,11 @@ export function useCalendarAI(args: UseCalendarAIArgs) {
     setNewEventType, setNewEventLocation, setNewEventDesc, setNewEventAllDay,
     setNewEventAttendees, setShowEventModal,
   } = args;
+
+  // Canonical AI-router error UX (cap → upgrade toast, trial → paywall,
+  // provider-down → transient toast). The two LLM-backed handlers below route
+  // their catches through this so a usage cap is no longer swallowed (#130).
+  const handleAIError = useAIErrorHandler();
 
   // ─── Panel visibility + input ────────────────────────────────────────
   const [showAIPanel, setShowAIPanel] = useState(false);
@@ -148,11 +155,13 @@ export function useCalendarAI(args: UseCalendarAIArgs) {
         setNaturalLanguageInput('');
       }
     } catch (error) {
+      if (handleAIError(error)) return; // cap/trial/provider — handled (toast/paywall)
       console.error('Failed to parse natural language:', error);
+      toast.error("Couldn't create an event from that text — try rephrasing.");
     } finally {
       setAILoading(false);
     }
-  }, [naturalLanguageInput, contacts, setNewEventTitle, setNewEventDate, setNewEventTime, setNewEventEndTime, setNewEventType, setNewEventLocation, setNewEventDesc, setNewEventAllDay, setNewEventAttendees, setShowEventModal]);
+  }, [naturalLanguageInput, contacts, handleAIError, setNewEventTitle, setNewEventDate, setNewEventTime, setNewEventEndTime, setNewEventType, setNewEventLocation, setNewEventDesc, setNewEventAllDay, setNewEventAttendees, setShowEventModal]);
 
   const handleGetSuggestions = useCallback(async (duration: number = 30) => {
     setAILoading(true);
@@ -177,11 +186,16 @@ export function useCalendarAI(args: UseCalendarAIArgs) {
       setMeetingPrep(prep);
       setShowMeetingPrepModal(true);
     } catch (error) {
+      // generateMeetingPrep returns a `failed` fallback for ordinary errors and
+      // re-throws only the typed router errors (cap/trial/provider) — route those
+      // through the canonical handler instead of swallowing them (#130).
+      if (handleAIError(error)) return;
       console.error('Failed to generate meeting prep:', error);
+      toast.error("Couldn't generate the meeting briefing right now.");
     } finally {
       setAILoading(false);
     }
-  }, [contacts, events]);
+  }, [contacts, events, handleAIError]);
 
   const handleDetectConflicts = useCallback(async () => {
     setAILoading(true);

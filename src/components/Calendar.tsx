@@ -507,7 +507,10 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         setGoogleConnected(false);
         setSyncError(null); // Don't show error, just show connect button
       } else {
-        setSyncError(error.userMessage || error.message || 'Failed to sync');
+        const msg = error.userMessage || error.message || 'Failed to sync';
+        setSyncError(msg);
+        // Surface as a toast too, not only sidebar text (#130).
+        toast.error(`Google Calendar sync failed: ${msg}`);
         if (error.message?.includes('re-authenticate') || error.message?.includes('401')) {
           setGoogleConnected(false);
         }
@@ -540,7 +543,10 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
       setOutlookConnected(true);
     } catch (err: any) {
       console.error('[Outlook] Sync failed:', err);
-      setOutlookError(err.message || 'Failed to sync Outlook Calendar');
+      const msg = err.message || 'Failed to sync Outlook Calendar';
+      setOutlookError(msg);
+      // Surface as a toast too, not only sidebar text (#130).
+      toast.error(`Outlook sync failed: ${msg}`);
       if (err.message?.includes('expired') || err.message?.includes('reconnect')) {
         setOutlookConnected(false);
       }
@@ -775,9 +781,15 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
           event.calendarId || 'primary'
         ).catch(err => console.error('Failed to delete from Outlook Calendar:', err));
       }
-      dataService.deleteEvent(event.id).catch(err =>
-        console.error('Failed to delete event from DB:', err)
-      );
+      // deleteEvent returns false on failure (errors swallowed), so branch on the
+      // result — the row was already removed optimistically, so a silent failure
+      // means it silently reappears on reload (#130).
+      dataService.deleteEvent(event.id).then(ok => {
+        if (!ok) toast.error("Couldn't delete event — it may reappear on refresh.");
+      }).catch(err => {
+        console.error('Failed to delete event from DB:', err);
+        toast.error("Couldn't delete event — it may reappear on refresh.");
+      });
     };
 
     const rollback = () => setEvents(prev => [...prev, event]);
@@ -1393,10 +1405,14 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         }
       }
 
-      // Persist update to Supabase (non-blocking)
-      dataService.updateEvent(editingEvent.id, updatedEvent).catch(err =>
-        console.error('Failed to persist event update:', err)
-      );
+      // Persist update to Supabase (non-blocking). updateEvent returns null on
+      // failure (errors swallowed there), so branch on the result to surface it (#130).
+      dataService.updateEvent(editingEvent.id, updatedEvent).then(saved => {
+        if (!saved) toast.error("Couldn't save changes — check your connection and try again.");
+      }).catch(err => {
+        console.error('Failed to persist event update:', err);
+        toast.error("Couldn't save changes — check your connection and try again.");
+      });
 
       setEvents(prev => prev.map(ev =>
         ev.id === editingEvent.id ? updatedEvent : ev
@@ -1439,13 +1455,25 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         }
       }
 
-      // Persist to Supabase (non-blocking)
+      // Persist to Supabase (non-blocking). dataService.createEvent swallows its
+      // errors and returns null, so we branch on the result — not just .catch — to
+      // surface a save failure and revert the optimistic row(s) instead of leaving
+      // a phantom event that vanishes on the next reload (#130).
       if (!newEvent.googleEventId) {
+        const revertOptimistic = () =>
+          setEvents(prev => prev.filter(ev => ev.id !== newEvent.id && ev.recurrence_parent_id !== newEvent.id));
         dataService.createEvent(newEvent).then(saved => {
           if (saved) {
             setEvents(prev => prev.map(ev => ev.id === newEvent.id ? { ...ev, id: saved.id } : ev));
+          } else {
+            toast.error("Couldn't save event — check your connection and try again.");
+            revertOptimistic();
           }
-        }).catch(err => console.error('Failed to persist event:', err));
+        }).catch(err => {
+          console.error('Failed to persist event:', err);
+          toast.error("Couldn't save event — check your connection and try again.");
+          revertOptimistic();
+        });
       }
 
       setEvents(prev => [...prev, newEvent]);
