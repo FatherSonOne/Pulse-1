@@ -235,3 +235,4 @@ package.json.patch
 build-output.txt
 .relay-verify/
 .warroom-verify/
+.dt-verify/
