@@ -72,6 +72,9 @@ interface VoxNotesModeProps {
   isDarkMode?: boolean;
   /** Note id to select on mount (e.g. from a triage row deep-link). */
   initialNoteId?: string;
+  /** Promote a note into a cockpit task (deep-link P3). Owned by Relay (it holds
+   *  the workspace + auth context); VoxNotesMode just renders the affordance. */
+  onCreateTask?: (note: VoxNote) => void | Promise<void>;
 }
 
 const LINK_TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -87,6 +90,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
   onBack,
   isDarkMode = false,
   initialNoteId,
+  onCreateTask,
 }) => {
   const [notes, setNotes] = useState<VoxNote[]>([]);
   const [selectedNote, setSelectedNote] = useState<VoxNote | null>(null);
@@ -970,6 +974,16 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                     >
                       <Copy className="w-5 h-5" />
                     </button>
+                    {onCreateTask && (
+                      <button
+                        onClick={() => onCreateTask(selectedNote)}
+                        className={`p-2 rounded-xl ${tc.btnGhost}`}
+                        aria-label="Create task from note"
+                        title="Create task from note"
+                      >
+                        <CheckSquare className="w-5 h-5" />
+                      </button>
+                    )}
                     <button
                       onClick={() => handleDeleteNote(selectedNote)}
                       className={`p-2 rounded-xl ${tc.btnGhost}`}

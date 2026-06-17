@@ -30,7 +30,11 @@ import { Settings as SettingsIcon, Headphones } from 'lucide-react';
 import { Contact } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import { useFeatures } from '../contexts/FeatureContext';
+import { useWorkspace } from '../contexts/WorkspaceContext';
 import { settingsService } from '../services/settingsService';
+import { taskService } from '../services/taskService';
+import type { VoxNote } from '../services/relay/voxModeTypes';
+import toast from 'react-hot-toast';
 
 // Deterministic avatar color from a user id — shared with the Voice Studio
 // message card + every Relay section. Status hues and the brand rose are
@@ -136,6 +140,8 @@ const RELAY_VIEWS: readonly RelayView[] = [
 const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, isDarkMode = false, intent, onIntentConsumed }) => {
   // user.id powers the Triage stream's voice-source queries.
   const { user } = useAuth();
+  // currentWorkspace scopes vox→task creation (deep-link P3) to extracted_tasks.
+  const { currentWorkspace } = useWorkspace();
 
   // Live (Voice Rooms) is gated OFF for GA — no WebRTC peer transport yet, so
   // the rail entry is hidden and the Live view shows a "coming soon" placeholder
@@ -156,8 +162,11 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
   const [view, setView] = useState<RelayView>(initialContactId ? 'direct' : 'triage');
   useEffect(() => {
     // Skip the preference load when the parent forced a destination via
-    // initialContactId — the deep-link wins by design.
+    // initialContactId, OR when a cross-surface deep-link is pending
+    // (pulse_focus_relay) — the deep-link wins by design. The pulse_focus_relay
+    // reader below runs after this effect and drains the sentinel.
     if (initialContactId) return;
+    if (sessionStorage.getItem('pulse_focus_relay')) return;
     let cancelled = false;
     settingsService
       .get('relayDefaultView')
@@ -221,6 +230,67 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
     // on the intent key.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [intent?.key]);
+
+  // Promote a voice note into a cockpit task (deep-link P3). Writes the canonical
+  // extracted_tasks table with Relay provenance so the task appears in the
+  // Decisions cockpit and "Open source" deep-links BACK to the exact note (the
+  // pulse_focus_relay reader below reuses VoxNotesMode's initialNoteId).
+  const handleCreateTaskFromNote = async (note: VoxNote) => {
+    if (!currentWorkspace) {
+      toast.error('No active workspace');
+      return;
+    }
+    const title = (note.title?.trim() || note.transcript?.trim() || 'Voice note')
+      .replace(/\s+/g, ' ')
+      .slice(0, 120);
+    const created = await taskService.createTask({
+      workspace_id: currentWorkspace.id,
+      title,
+      status: 'todo',
+      priority: 'medium',
+      created_by: user?.id,
+      metadata: { source: 'relay', relay_store: 'vox_notes', relay_vox_id: note.id },
+    });
+    toast[created ? 'success' : 'error'](created ? 'Added to Tasks' : 'Could not add to Tasks');
+  };
+
+  // Exact-item deep-link reader (cross-surface, P3) — the Decisions cockpit's
+  // "Open source" affordance sets sessionStorage.pulse_focus_relay =
+  // JSON{ store, id, channelId? } before dispatching pulse:navigate → App mounts
+  // <Relay> fresh → this drains the sentinel and routes to the right section with
+  // the item focused, reusing the existing initial*Id open-by-id hooks.
+  //   vox_notes → Notes (initialNoteId), broadcasts → Broadcast (initialBroadcastId).
+  //   quick_vox/team_vox → section-level only (Direct opens by contact, not message;
+  //   Channel open-by-message is deferred — see the deep-link handoff doc).
+  useEffect(() => {
+    const raw = sessionStorage.getItem('pulse_focus_relay');
+    if (!raw) return;
+    sessionStorage.removeItem('pulse_focus_relay');
+    let payload: { store?: string; id?: string; channelId?: string } | null = null;
+    try { payload = JSON.parse(raw); } catch { return; }
+    if (!payload?.store) return;
+
+    switch (payload.store) {
+      case 'vox_notes':
+        if (payload.id) setFocusNoteId(payload.id);
+        setView('notes');
+        break;
+      case 'broadcasts':
+      case 'broadcast':
+        if (payload.id) setFocusBroadcastId(payload.id);
+        setView('broadcast');
+        break;
+      case 'quick_vox':
+        setView('direct');
+        break;
+      case 'team_vox_messages':
+        if (payload.channelId) setFocusThreadId(payload.channelId);
+        setView('channel');
+        break;
+      default:
+        break;
+    }
+  }, []);
 
   // T/D/C/B/N/L switches the view directly. The active-tab style on the
   // rail already communicates the change, so no toast is fired — repeated
@@ -330,6 +400,7 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
                   apiKey={apiKey}
                   isDarkMode={isDarkMode}
                   initialNoteId={focusNoteId ?? undefined}
+                  onCreateTask={handleCreateTaskFromNote}
                 />
               )}
               {view === 'live' && liveEnabled && user && (
