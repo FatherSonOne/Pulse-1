@@ -11,6 +11,7 @@ import React, { useEffect, useState } from 'react';
 import { X, Maximize2, Minimize2, UserRound } from 'lucide-react';
 import { useEmailStore } from '../../../store/emailStore';
 import { useEmailUIStore } from '../../../store/emailUIStore';
+import { emailSyncService, type CachedEmail } from '../../../services/emailSyncService';
 import { Avatar } from './primitives';
 import { InlineReader } from './cockpit/InlineReader';
 import { RelationshipPanel } from '../RelationshipPanel';
@@ -50,13 +51,41 @@ export const EmailReaderPanel: React.FC = () => {
     }
   }, [readerPanelEmailId, renderId]);
 
+  // Deep-link / stale-list fallback: a reader target — e.g. from the Decisions
+  // cockpit's "Open source" deep-link (pulse_focus_email) — can reference an email
+  // that isn't in the currently-loaded folder page. Resolve from the store first;
+  // on a miss, lazily fetch the single email by id rather than self-closing. This
+  // keeps the folder list untouched (no pollution) and also covers any genuinely
+  // gone email (fetch → null → close, preserving the original behavior).
+  const storeEmail = renderId ? emails.find((e) => e.id === renderId) : undefined;
+  const [fetchedEmail, setFetchedEmail] = useState<CachedEmail | null>(null);
+  const [fetchMissId, setFetchMissId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!renderId || storeEmail) {
+      setFetchedEmail(null);
+      setFetchMissId(null);
+      return;
+    }
+    if (fetchedEmail?.id === renderId) return; // already fetched this id
+    let cancelled = false;
+    void emailSyncService.getEmail(renderId).then((e) => {
+      if (cancelled) return;
+      if (e) setFetchedEmail(e);
+      else setFetchMissId(renderId);
+    });
+    return () => { cancelled = true; };
+  }, [renderId, storeEmail, fetchedEmail]);
+
   if (!renderId) return null;
 
-  const email = emails.find((e) => e.id === renderId);
+  const email = storeEmail ?? (fetchedEmail?.id === renderId ? fetchedEmail : undefined);
   if (!email) {
-    // Email left the store mid-view (archived/trashed elsewhere) — nothing to
-    // animate an exit for; close immediately.
-    if (readerPanelEmailId) setTimeout(() => setReaderPanelEmailId(null), 0);
+    // Confirmed absent (by-id fetch returned null → email truly gone, e.g. archived
+    // /trashed elsewhere) — close. Otherwise a fetch is in flight: render nothing
+    // this pass; the effect re-renders the panel when it resolves.
+    if (fetchMissId === renderId && readerPanelEmailId) {
+      setTimeout(() => setReaderPanelEmailId(null), 0);
+    }
     return null;
   }
 

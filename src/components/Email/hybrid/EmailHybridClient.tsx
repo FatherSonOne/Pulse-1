@@ -233,6 +233,23 @@ export const EmailHybridClient: React.FC<EmailHybridClientProps> = ({ userEmail,
     }, 150);
   }, [setMode, setNudgeFocused]);
 
+  // pulse_focus_email deep-link (cross-surface, P2) — the Decisions cockpit's
+  // "Open source" affordance sets sessionStorage.pulse_focus_email = <cached_emails.id>
+  // before dispatching pulse:navigate → App mounts <EmailHybridClient> fresh → this
+  // drains the sentinel and opens that exact email in the reader panel. EmailReaderPanel
+  // lazily fetches the email by id if it isn't in the currently-loaded folder, so no
+  // folder switch is needed here. Modeled on the pulse_focus_nudge reader above.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const emailId = sessionStorage.getItem('pulse_focus_email');
+    if (!emailId) return;
+    sessionStorage.removeItem('pulse_focus_email');
+    setMode('cockpit');
+    setTimeout(() => {
+      useEmailUIStore.getState().openReaderPanel(emailId, { maximized: true });
+    }, 150);
+  }, [setMode]);
+
   // pulse:compose-email — warm path. Fires when this client is already mounted
   // (you're on Email and trigger compose from the palette). Also clears any
   // pending sessionStorage intent so the cold-drain effect below can't re-open a
