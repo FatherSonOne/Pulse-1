@@ -33,26 +33,38 @@ export const CommentThread: React.FC<CommentThreadProps> = ({
 }) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
 
-  // Initial load.
+  // Initial load. A fetch error MUST clear `loading` and surface a retry —
+  // without the .catch() a failed load left the spinner up forever.
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setLoadError(false);
     const fetcher =
       source === 'decision'
         ? decisionCommentsService.listForDecision(itemId)
         : decisionCommentsService.listForTask(itemId);
-    fetcher.then((data) => {
-      if (!cancelled) {
-        setComments(data);
-        setLoading(false);
-      }
-    });
+    fetcher
+      .then((data) => {
+        if (!cancelled) {
+          setComments(data);
+          setLoading(false);
+        }
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          console.error('[CommentThread] failed to load comments', e);
+          setLoadError(true);
+          setLoading(false);
+        }
+      });
     return () => {
       cancelled = true;
     };
-  }, [source, itemId]);
+  }, [source, itemId, reloadKey]);
 
   // Live subscription.
   useEffect(() => {
@@ -148,6 +160,13 @@ export const CommentThread: React.FC<CommentThreadProps> = ({
         <div className="dc-thread-loading">
           <Loader2 size={14} className="dc-spinner" aria-hidden="true" />
           <span>Loading comments</span>
+        </div>
+      ) : loadError ? (
+        <div className="dc-thread-empty" role="alert">
+          <span>Couldn’t load comments.</span>{' '}
+          <button type="button" className="dc-thread-retry" onClick={() => setReloadKey((k) => k + 1)}>
+            Retry
+          </button>
         </div>
       ) : groups.length === 0 ? (
         <p className="dc-thread-empty">No comments yet. Start the discussion.</p>

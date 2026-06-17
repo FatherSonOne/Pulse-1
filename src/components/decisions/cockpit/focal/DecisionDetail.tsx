@@ -87,13 +87,13 @@ export function DecisionDetail({
         try {
           const r = await decisionAnalyticsService.assessDecisionRisk(decision, '');
           if (!cancelled) setRisk(r);
-        } catch { /* non-critical */ }
+        } catch (e) { console.warn('[DecisionDetail] risk assessment failed', e); }
       }
       if (decision.status === 'voting' && votes.length >= 3) {
         try {
           const c = consensusDetectorService.detectConsensus(decision);
           if (!cancelled) setConsensus({ reached: c.reached, winning_choice: c.winning_choice, reasoning: c.reasoning });
-        } catch { /* non-critical */ }
+        } catch (e) { console.warn('[DecisionDetail] consensus detection failed', e); }
       }
     })();
     return () => { cancelled = true; };

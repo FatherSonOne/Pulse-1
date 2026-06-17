@@ -60,13 +60,13 @@ export function PropertyFilterBar({
         <Pill k="Kind" v={viewKind === 'tasks' ? 'Tasks' : 'Decisions'} onClear={() => setViewKind('all')} />
       )}
       {filters.status !== 'all' && (
-        <Pill k="Status" v={STATUS_LABELS[filters.status] ?? filters.status} onClear={() => patch({ status: 'all' })} />
+        <Pill k="Status" v={STATUS_LABELS[filters.status] ?? filters.status} scope="tasks" onClear={() => patch({ status: 'all' })} />
       )}
       {filters.priority && (
-        <Pill k="Priority" v={filters.priority} onClear={() => patch({ priority: undefined })} />
+        <Pill k="Priority" v={filters.priority} scope="tasks" onClear={() => patch({ priority: undefined })} />
       )}
       {filters.placeId !== undefined && (
-        <Pill k="Place" v={placeName} onClear={() => patch({ placeId: undefined })} />
+        <Pill k="Place" v={placeName} scope="tasks" onClear={() => patch({ placeId: undefined })} />
       )}
       {filters.search && (
         <Pill k="Search" v={filters.search} onClear={() => patch({ search: '' })} />
@@ -112,11 +112,15 @@ export function PropertyFilterBar({
   );
 }
 
-function Pill({ k, v, onClear }: { k: string; v: string; onClear: () => void }) {
+function Pill({ k, v, onClear, scope }: { k: string; v: string; onClear: () => void; scope?: string }) {
   return (
     <span className="ck-pill">
       <span className="ck-pill-key">{k}</span>
       <strong>{v}</strong>
+      {/* `scope` is an honesty marker: Status/Priority/Place are task-only
+          attributes (decisions have no such fields), so the chip is labelled
+          "· tasks" to make clear it doesn't narrow decisions (launch-readiness 1.1). */}
+      {scope && <span className="ck-pill-scope" style={{ opacity: 0.6, marginLeft: 4 }}>· {scope}</span>}
       <button type="button" className="ck-pill-x" onClick={onClear} aria-label={`Clear ${k} filter`}>
         <X size={11} />
       </button>

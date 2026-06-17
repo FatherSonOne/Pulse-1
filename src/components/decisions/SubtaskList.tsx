@@ -147,7 +147,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
 
       } else {
         console.warn('AI subtask generation returned no results');
-        toast.error('Could not generate subtasks. Check your API key in Settings.', { duration: 4500 });
+        toast.error('Couldn’t generate subtasks right now. Please try again.', { duration: 4500 });
       }
     } catch (error) {
       console.error('Error generating AI subtasks:', error);
