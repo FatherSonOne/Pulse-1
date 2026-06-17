@@ -10,7 +10,9 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { DraftAnalysis, ThreadContext, CatchUpSummary, AsyncSuggestion, Task, TeamHealth, Nudge, HandoffSummary, VoiceAnalysis, ChannelArtifact } from "../types";
-import { googleCalendarService } from "./googleCalendarService";
+// googleCalendarService is imported dynamically inside getCalendarContextForAI (its only
+// use) to keep this svc-ai anchor module from statically pulling in svc-calendar — a
+// cross-chunk edge that forms an init cycle and trips TDZ on first load. See vite.config.ts §132.
 import { withFormattedOutput } from "./aiFormattingService";
 import { rateLimitService } from "./rateLimitService";
 import { retryService } from "./retryService";
@@ -52,6 +54,7 @@ export const getCalendarContextForAI = async (): Promise<string> => {
   }
 
   try {
+    const { googleCalendarService } = await import("./googleCalendarService");
     const context = await googleCalendarService.getCalendarContextForAI();
     calendarContextCache = { context, timestamp: Date.now() };
     return context;

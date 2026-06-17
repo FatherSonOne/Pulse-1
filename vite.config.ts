@@ -137,13 +137,17 @@ export default defineConfig(({ mode }) => {
               // to `import type` if it is type-only.
               if (id.includes('/src/services/')) {
                 // Voice / Relay — heavy, only needed in voice features
+                // slackChannelsService is pinned here because it statically imports
+                // relay/relayAIService (summarizeConversation) — would otherwise create
+                // svc-core -> svc-voice and feed the init cycle that tripped TDZ.
                 if (id.includes('/relay/') ||
                     id.includes('voiceCommand') || id.includes('voiceIntelligence') ||
                     id.includes('voiceGuardrail') || id.includes('voiceRoom') ||
                     id.includes('voiceSearch') || id.includes('audioVoice') ||
                     id.includes('audioService') || id.includes('assemblyService') ||
                     id.includes('whisperService') || id.includes('elevenLabs') ||
-                    id.includes('nativeVoice')) {
+                    id.includes('nativeVoice') ||
+                    id.includes('slackChannelsService')) {
                   return 'svc-voice';
                 }
 
@@ -157,7 +161,7 @@ export default defineConfig(({ mode }) => {
                     id.includes('conversationalAI') || id.includes('ragService') ||
                     id.includes('realtimeAgent') || id.includes('aiInsights') ||
                     id.includes('aiFormatting') || id.includes('aiLab') ||
-                    id.includes('smartCompose') || id.includes('proactiveSuggestions') ||
+                    id.includes('proactiveSuggestions') ||
                     id.includes('toolRegistry') ||
                     id.includes('agentHandoffService') ||
                     id.includes('conversationIntelligenceService')) {
@@ -169,7 +173,11 @@ export default defineConfig(({ mode }) => {
                 // pinned here because they statically import emailSyncService /
                 // gmailService / unifiedInboxService at runtime — would otherwise
                 // create svc-core -> svc-email.
-                if (id.includes('emailSync') || id.includes('emailAI') ||
+                // smartComposeService is pinned here (was svc-ai) because it statically
+                // imports emailAIService — would otherwise create svc-ai -> svc-email,
+                // keeping svc-ai out of the leaf-foundation set and feeding the cycle.
+                if (id.includes('smartComposeService') ||
+                    id.includes('emailSync') || id.includes('emailAI') ||
                     id.includes('emailFilter') || id.includes('emailMeet') ||
                     id.includes('emailSearch') || id.includes('emailSignature') ||
                     id.includes('emailTemplate') || id.includes('emailAccounts') ||
@@ -188,7 +196,12 @@ export default defineConfig(({ mode }) => {
                 // videoConferencingService is pinned here because it statically
                 // imports outlookCalendarService at runtime — would otherwise create
                 // svc-core -> svc-calendar.
-                if (id.includes('googleCalendar') || id.includes('calendarAI') ||
+                // dailyBriefingService is pinned here (was svc-core) because it statically
+                // imports googleCalendarService + gmailService + dataService — it was the
+                // sole source of svc-core -> svc-calendar/email/storage, the edges that
+                // formed the svc-core -> svc-calendar -> svc-messaging -> svc-core TDZ cycle.
+                if (id.includes('dailyBriefingService') ||
+                    id.includes('googleCalendar') || id.includes('calendarAI') ||
                     id.includes('customEventTypes') || id.includes('conflictDetection') ||
                     id.includes('meetingDetection') || id.includes('postMeeting') ||
                     id.includes('inviteService') || id.includes('briefingService') ||
