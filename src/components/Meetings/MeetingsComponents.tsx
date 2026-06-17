@@ -18,7 +18,9 @@ import {
   ExportStatus,
 } from '../../services/meetingService';
 import { syncPendingRecordings } from '../../services/pulseVideoService';
-import { dataService } from '../../services/dataService';
+import { taskService } from '../../services/taskService';
+import { useAuth } from '../../hooks/useAuth';
+import { useWorkspace } from '../../contexts/WorkspaceContext';
 import toast from 'react-hot-toast';
 
 // ============================================
@@ -2017,6 +2019,12 @@ interface MeetingSummaryViewProps {
 }
 
 export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, loading, onBack }) => {
+  // Deep-link P3: meeting action-items are promoted into the canonical
+  // extracted_tasks table (what the Decisions cockpit reads) with meeting
+  // provenance, so they appear in the cockpit and "Open source" routes back to
+  // the Meetings section. Needs workspace + auth context to write extracted_tasks.
+  const { user } = useAuth();
+  const { currentWorkspace } = useWorkspace();
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [actionItems, setActionItems] = useState<ActionItem[]>(data?.actionItems || []);
   const [copiedToast, setCopiedToast] = useState(false);
@@ -2057,16 +2065,25 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
     }));
   };
 
-  // Promote a single Gemini-extracted action item into the real tasks table via
-  // the canonical dataService.createTask path (handles the text user_id + RLS).
+  // Promote a single Gemini-extracted action item into the canonical
+  // extracted_tasks table (deep-link P3) so it appears in the Decisions cockpit
+  // with meeting provenance. metadata.source='meeting' → cockpit "Open source"
+  // routes to the Meetings section (exact-meeting open is deferred — the client
+  // holds no pulse_video_rooms.id at meeting-end; see the deep-link handoff doc).
   const handleCreateTask = async (item: ActionItem) => {
     const signature = sigFor(item.title);
     if (addedTaskSigs.has(signature)) return;
-    const created = await dataService.createTask({
+    if (!currentWorkspace) {
+      toast.error('No active workspace', { duration: 3000, position: 'bottom-right' });
+      return;
+    }
+    const created = await taskService.createTask({
+      workspace_id: currentWorkspace.id,
       title: item.title,
-      completed: item.status === 'completed',
-      listId: 'work',
-      assigneeId: item.assignee?.id,
+      status: item.status === 'completed' ? 'done' : 'todo',
+      assignee_id: item.assignee?.id,
+      created_by: user?.id,
+      metadata: { source: 'meeting', meeting_title: data?.meetingTitle },
     });
     if (!created) {
       toast.error('Could not add to Tasks', { duration: 3000, position: 'bottom-right' });
@@ -2085,14 +2102,20 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
   const handleAddAllTasks = async () => {
     const pending = actionItems.filter(a => !addedTaskSigs.has(sigFor(a.title)));
     if (pending.length === 0) return;
+    if (!currentWorkspace) {
+      toast.error('No active workspace', { duration: 3000, position: 'bottom-right' });
+      return;
+    }
     setAddingAllTasks(true);
     const added: string[] = [];
     for (const item of pending) {
-      const created = await dataService.createTask({
+      const created = await taskService.createTask({
+        workspace_id: currentWorkspace.id,
         title: item.title,
-        completed: item.status === 'completed',
-        listId: 'work',
-        assigneeId: item.assignee?.id,
+        status: item.status === 'completed' ? 'done' : 'todo',
+        assignee_id: item.assignee?.id,
+        created_by: user?.id,
+        metadata: { source: 'meeting', meeting_title: data?.meetingTitle },
       });
       if (created) added.push(sigFor(item.title));
     }
