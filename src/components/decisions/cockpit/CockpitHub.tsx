@@ -33,7 +33,7 @@ import { ReassignTaskModal } from '../ReassignTaskModal';
 import { ExtendDeadlineDialog } from '../ExtendDeadlineDialog';
 import { DecisionDecomposer } from '../DecisionDecomposer';
 import { CreateOverlay, type CreateMode } from './create/CreateOverlay';
-import { taskSourceView } from './taskSource';
+import { taskSourceTarget } from './taskSource';
 import type { FrameId } from '../wizard/types';
 import { AlertsPanel } from '../AlertsPanel';
 import { ConversationalAssistant } from '../ConversationalAssistant';
@@ -458,16 +458,24 @@ export function CockpitHub({ user, workspaceId }: CockpitHubProps) {
   );
 
   const handleOpenSource = useCallback((task: Task) => {
-    // Cross-surface deep-link (launch item C): route to the originating surface via
-    // the global pulse:navigate bus (App.tsx listener). Section-level for now; exact
-    // email/message focus is a deferred follow-up. taskSourceView is the single
-    // predicate shared with TaskDetail's affordance visibility.
-    const view = taskSourceView(task);
-    if (!view) {
+    // Cross-surface deep-link: route to the originating surface via the global
+    // pulse:navigate bus (App.tsx listener), AND set any exact-item focus sentinels so
+    // the target surface opens the specific email/message/etc. taskSourceTarget is the
+    // single predicate shared with TaskDetail's affordance visibility (via taskSourceView).
+    // When provenance has no resolvable item id, `focus` is empty → section-level only.
+    const target = taskSourceTarget(task);
+    if (!target) {
       toast('This task has no linked source yet', { icon: '🔗' });
       return;
     }
-    window.dispatchEvent(new CustomEvent('pulse:navigate', { detail: { view } }));
+    try {
+      for (const [key, value] of Object.entries(target.focus)) {
+        sessionStorage.setItem(key, value);
+      }
+    } catch {
+      // sessionStorage unavailable — degrade to section-level navigation.
+    }
+    window.dispatchEvent(new CustomEvent('pulse:navigate', { detail: { view: target.view } }));
   }, []);
 
   // ── Bulk actions over selected task ids (3b) ──

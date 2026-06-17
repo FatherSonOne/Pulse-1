@@ -338,6 +338,26 @@ class PulseService {
   }
 
   /**
+   * Resolve a single message id to its conversation (thread_id). Used by the
+   * cross-surface deep-link (Decisions cockpit → Messages): a task carries an
+   * origin_message_id (a pulse_messages.id) and the Messages surface needs the
+   * conversation to open. One narrow query; returns null if the message is gone.
+   */
+  async getThreadIdForMessage(messageId: string): Promise<string | null> {
+    const { data, error } = await supabase
+      .from('pulse_messages')
+      .select('thread_id')
+      .eq('id', messageId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error resolving thread for message:', error);
+      return null;
+    }
+    return data?.thread_id ?? null;
+  }
+
+  /**
    * Get messages for a conversation
    */
   async getMessages(conversationId: string, limit: number = 50): Promise<PulseMessage[]> {

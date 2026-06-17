@@ -1391,6 +1391,39 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     }
   }, []);
 
+  // Deep-link focus reader (cross-surface, P1) — the Decisions cockpit's "Open source"
+  // affordance sets sessionStorage.pulse_focus_message = <pulse_messages.id> before
+  // dispatching pulse:navigate → App mounts <Messages> fresh → this drains the sentinel.
+  // Resolve the message's conversation, open it, then scroll to + flash the exact bubble.
+  // Sequenced on a trailing setTimeout AFTER selectPulseConversation resolves so it wins
+  // the open-time auto-scroll-to-bottom (the pulseMessages effect at ~L1085 / scrollToBottom
+  // force the list to the latest message on load). If the origin message is older than the
+  // most-recent 50 loaded, the conversation still opens (graceful degrade) but the bubble
+  // won't be in the DOM to scroll to. Modeled on the pulse_focus_nudge reader (~L1009).
+  useEffect(() => {
+    const messageId = sessionStorage.getItem('pulse_focus_message');
+    if (!messageId) return;
+    sessionStorage.removeItem('pulse_focus_message');
+
+    let cancelled = false;
+    (async () => {
+      const threadId = await pulseService.getThreadIdForMessage(messageId);
+      if (cancelled || !threadId) return;
+      await selectPulseConversation(threadId);
+      if (cancelled) return;
+      setTimeout(() => {
+        if (cancelled) return;
+        const el = document.querySelector<HTMLElement>(`[data-message-id="${messageId}"]`);
+        if (!el) return;
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.setAttribute('data-focus-flash', 'true');
+        setTimeout(() => el.removeAttribute('data-focus-flash'), 2200);
+      }, 450);
+    })();
+
+    return () => { cancelled = true; };
+  }, [selectPulseConversation]);
+
   // Load more (older) messages for pagination
   const loadMorePulseMessages = useCallback(async () => {
     if (!activePulseConversation || isLoadingMoreMessages || !hasMorePulseMessages) return;
@@ -2194,6 +2227,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         created_by: currentUser.id,
         priority: 'medium',
         status: 'todo',
+        // Provenance normalization (deep-link P0): stamp source explicitly so the
+        // cockpit "Open source" affordance routes to Messages without relying solely
+        // on the origin_message_id inference. taskSource.ts reads metadata.source.
+        metadata: { source: 'messages' },
       });
       if (created) setDmTasks(prev => [created, ...prev]); // optimistic — rail updates
     },
