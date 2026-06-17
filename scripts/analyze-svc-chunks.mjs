@@ -5,32 +5,33 @@ import { join, resolve, dirname } from 'node:path';
 
 const SVC = resolve('src/services');
 
+// NOTE: this MUST mirror the manualChunks(id) classification in vite.config.ts.
+// If you change the service-chunk patterns there, update them here too — this
+// guard's whole job is to fail when svc-core/svc-ai stop being clean foundations.
 function classify(id) {
   id = id.replace(/\\/g, '/');
   if (!id.includes('/src/services/')) return null;
-  if (process.env.FIX) {
-    if (id.includes('dailyBriefingService')) return 'svc-calendar';
-    if (id.includes('smartComposeService')) return 'svc-email';
-    if (id.includes('slackChannelsService')) return 'svc-voice';
-  }
   if (id.includes('/relay/') || id.includes('voiceCommand') || id.includes('voiceIntelligence') ||
       id.includes('voiceGuardrail') || id.includes('voiceRoom') || id.includes('voiceSearch') ||
       id.includes('audioVoice') || id.includes('audioService') || id.includes('assemblyService') ||
-      id.includes('whisperService') || id.includes('elevenLabs') || id.includes('nativeVoice')) return 'svc-voice';
+      id.includes('whisperService') || id.includes('elevenLabs') || id.includes('nativeVoice') ||
+      id.includes('slackChannelsService')) return 'svc-voice';
   if (id.includes('geminiService') || id.includes('openAiService') || id.includes('anthropicService') ||
       id.includes('perplexity') || id.includes('unifiedAIService') || id.includes('advancedAI') ||
       id.includes('conversationalAI') || id.includes('ragService') || id.includes('realtimeAgent') ||
       id.includes('aiInsights') || id.includes('aiFormatting') || id.includes('aiLab') ||
-      id.includes('smartCompose') || id.includes('proactiveSuggestions') || id.includes('toolRegistry') ||
+      id.includes('proactiveSuggestions') || id.includes('toolRegistry') ||
       id.includes('agentHandoffService') || id.includes('conversationIntelligenceService')) return 'svc-ai';
-  if (id.includes('emailSync') || id.includes('emailAI') || id.includes('emailFilter') ||
+  if (id.includes('smartComposeService') ||
+      id.includes('emailSync') || id.includes('emailAI') || id.includes('emailFilter') ||
       id.includes('emailMeet') || id.includes('emailSearch') || id.includes('emailSignature') ||
       id.includes('emailTemplate') || id.includes('emailAccounts') || id.includes('gmailService') ||
       id.includes('enhancedEmail') || id.includes('offlineEmail') || id.includes('confidentialEmail') ||
       id.includes('vacationResponder') || id.includes('emailService') || id.includes('unifiedInbox') ||
       id.includes('bulkOperationsService') || id.includes('emailCampaignService') ||
       id.includes('labelService') || id.includes('webhookService')) return 'svc-email';
-  if (id.includes('googleCalendar') || id.includes('calendarAI') || id.includes('customEventTypes') ||
+  if (id.includes('dailyBriefingService') ||
+      id.includes('googleCalendar') || id.includes('calendarAI') || id.includes('customEventTypes') ||
       id.includes('conflictDetection') || id.includes('meetingDetection') || id.includes('postMeeting') ||
       id.includes('inviteService') || id.includes('briefingService') || id.includes('outlookCalendar') ||
       id.includes('unifiedCalendar') || id.includes('videoConferencingService')) return 'svc-calendar';
@@ -88,8 +89,6 @@ for (const f of files) {
   const fromChunk = classify(f);
   const src = readFileSync(f, 'utf8');
   for (const m of src.matchAll(importRe)) {
-    // model geminiService dynamic-import fix: its calendar import becomes dynamic
-    if (process.env.GEMINI_DYN && f.replace(/\\/g, '/').endsWith('geminiService.ts') && m[1] === './googleCalendarService') continue;
     const target = resolveImport(f, m[1]);
     if (!target) continue;
     const toChunk = classify(target);
@@ -125,9 +124,39 @@ for (const c of cycles) {
   console.log(norm);
 }
 
-console.log('\n=== edge provenance for suspect edges ===');
-for (const k of ['svc-core -> svc-calendar', 'svc-core -> svc-email', 'svc-core -> svc-storage', 'svc-core -> svc-voice',
-                 'svc-ai -> svc-calendar', 'svc-ai -> svc-core', 'svc-ai -> svc-email']) {
-  console.log(`\n${k}:`);
-  (why.get(k) || ['  (none)']).forEach(l => console.log(l));
+// ── Gate ─────────────────────────────────────────────────────────────────────
+// The foundation invariant (vite.config.ts §132): svc-core must import NO other
+// svc-* chunk, and svc-ai may import only svc-core. These two conditions keep the
+// chunks every other chunk depends on free of init cycles, which is what prevents
+// the "Cannot access 'X' before initialization" TDZ crash on first load.
+// `--check` exits non-zero (CI gate) when they are violated; the residual
+// svc-calendar <-> svc-email cycle is intentionally NOT gated (pre-existing,
+// touches neither foundation chunk nor svc-messaging).
+const out = (c) => [...(edges.get(c) || [])].sort();
+const coreOut = out('svc-core');
+const aiOut = out('svc-ai').filter((c) => c !== 'svc-core');
+const violations = [];
+if (coreOut.length) violations.push(['svc-core', coreOut]);
+if (aiOut.length) violations.push(['svc-ai', aiOut]);
+
+if (process.argv.includes('--check')) {
+  if (!violations.length) {
+    console.log('\n✓ chunk-foundation invariant holds: svc-core is a pure sink; svc-ai imports only svc-core.');
+    process.exit(0);
+  }
+  console.error('\n✗ chunk-foundation invariant VIOLATED — this will trip a first-load TDZ crash.');
+  for (const [chunk, targets] of violations) {
+    for (const t of targets) {
+      console.error(`\n  ${chunk} -> ${t}  (forbidden) — caused by:`);
+      (why.get(`${chunk} -> ${t}`) || ['    (unknown)']).forEach((l) => console.error(l));
+    }
+  }
+  console.error('\nFix: pin the offending file into the importee\'s chunk in vite.config.ts manualChunks,');
+  console.error('or convert the offending import to `import type` / a dynamic import(). See vite.config.ts §132.');
+  process.exit(1);
+} else {
+  console.log('\n=== foundation check (run with --check to gate) ===');
+  console.log(violations.length
+    ? `✗ ${violations.map(([c, t]) => `${c} -> ${t.join(', ')}`).join(' ; ')}`
+    : '✓ svc-core pure sink; svc-ai -> svc-core only');
 }

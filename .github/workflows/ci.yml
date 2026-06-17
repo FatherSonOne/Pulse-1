@@ -33,6 +33,9 @@ jobs:
       - name: Type check (no new errors vs baseline)
         run: npm run typecheck:gate
 
+      - name: Chunk-foundation invariant (svc-core sink / svc-ai -> core only)
+        run: npm run chunks:gate
+
   test:
     name: Run Tests
     runs-on: ubuntu-latest

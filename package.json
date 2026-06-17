@@ -15,6 +15,7 @@
     "typecheck": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc --noEmit",
     "typecheck:baseline": "node scripts/tsc-baseline.mjs --update",
     "typecheck:gate": "node scripts/tsc-baseline.mjs",
+    "chunks:gate": "node scripts/analyze-svc-chunks.mjs --check",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
