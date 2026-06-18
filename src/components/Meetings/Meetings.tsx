@@ -30,7 +30,6 @@ import {
   RecordingsModal,
   DeviceTestModal,
   MeetingSettingsModal,
-  BreakoutRoomsModal,
   MeetingSummaryView,
 } from './MeetingsComponents';
 import {
@@ -106,7 +105,6 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey = '', contacts, initialConta
   const [showRecordings, setShowRecordings] = useState(false);
   const [showDeviceTest, setShowDeviceTest] = useState(false);
   const [showMeetingSettings, setShowMeetingSettings] = useState(false);
-  const [showBreakoutRooms, setShowBreakoutRooms] = useState(false);
   const [showToolsMenu, setShowToolsMenu] = useState(false);
   const [agendaItems, setAgendaItems] = useState<AgendaItem[]>([]);
   const [actionItems, setActionItems] = useState<ActionItem[]>(() => {
@@ -516,7 +514,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey = '', contacts, initialConta
   const anyModalOpen =
     showRolodex || showTemplates || showAgendaBuilder || showActionItems ||
     showAnalytics || showRecordings || showDeviceTest || showMeetingSettings ||
-    showBreakoutRooms || showToolsMenu;
+    showToolsMenu;
 
   const { cursorRowId, setCursorRowId } = useMeetingsKeyboardShortcuts({
     rows: railRows,
@@ -581,11 +579,6 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey = '', contacts, initialConta
         <RecordingsModal isOpen={showRecordings} onClose={() => setShowRecordings(false)} />
         <DeviceTestModal isOpen={showDeviceTest} onClose={() => setShowDeviceTest(false)} />
         <MeetingSettingsModal isOpen={showMeetingSettings} onClose={() => setShowMeetingSettings(false)} />
-        <BreakoutRoomsModal
-          isOpen={showBreakoutRooms}
-          onClose={() => setShowBreakoutRooms(false)}
-          activeParticipants={activeParticipants}
-        />
         <MeetingsShortcutsOverlay
           open={showShortcuts}
           onClose={() => setShowShortcuts(false)}
@@ -600,7 +593,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey = '', contacts, initialConta
           onOpenSettings={() => setShowMeetingSettings(true)}
         />
 
-        {/* Tools popover — Templates / Agenda / Recordings / Analytics / Bulk Invite / Breakout / Device Test */}
+        {/* Tools popover — Templates / Agenda / Recordings / Analytics / Bulk Invite / Device Test */}
         <MeetingsToolsMenu
           open={showToolsMenu}
           onClose={() => setShowToolsMenu(false)}
@@ -609,7 +602,6 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey = '', contacts, initialConta
           onRecordings={() => setShowRecordings(true)}
           onAnalytics={() => setShowAnalytics(true)}
           onBulkInvite={() => openBulkInvite('pulse')}
-          onBreakout={() => setShowBreakoutRooms(true)}
           onDeviceTest={() => setShowDeviceTest(true)}
         />
 

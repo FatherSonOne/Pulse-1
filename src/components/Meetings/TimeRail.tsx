@@ -8,7 +8,7 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import {
   Calendar, ChevronDown, FileText, Inbox, Megaphone, Mic, Monitor,
-  Plus, Settings, Sliders, SplitSquareVertical, UserPlus, Video, Wand2, Zap,
+  Plus, Settings, Sliders, UserPlus, Video, Wand2, Zap,
   CheckCircle2, Copy, BarChart, PlayCircle, ListChecks, X,
 } from 'lucide-react';
 import { CalendarEvent, ArchiveItem, Contact } from '../../types';
@@ -428,12 +428,11 @@ export interface MeetingsToolsMenuProps {
   onRecordings: () => void;
   onAnalytics: () => void;
   onBulkInvite: () => void;
-  onBreakout: () => void;
   onDeviceTest: () => void;
 }
 
 export const MeetingsToolsMenu: React.FC<MeetingsToolsMenuProps> = ({
-  open, onClose, onTemplates, onAgenda, onRecordings, onAnalytics, onBulkInvite, onBreakout, onDeviceTest,
+  open, onClose, onTemplates, onAgenda, onRecordings, onAnalytics, onBulkInvite, onDeviceTest,
 }) => {
   if (!open) return null;
   const items: Array<{ icon: React.ReactNode; label: string; desc: string; onClick: () => void; disabled?: boolean; badge?: string }> = [
@@ -442,11 +441,10 @@ export const MeetingsToolsMenu: React.FC<MeetingsToolsMenuProps> = ({
     { icon: <PlayCircle size={16} />, label: 'RECORDINGS', desc: 'Past meeting recordings', onClick: () => { onClose(); onRecordings(); } },
     { icon: <BarChart size={16} />, label: 'ANALYTICS', desc: 'Frequency, duration, trends', onClick: () => { onClose(); onAnalytics(); } },
     { icon: <UserPlus size={16} />, label: 'BULK INVITE', desc: 'Invite from contacts', onClick: () => { onClose(); onBulkInvite(); } },
-    // Gated for honest-v1: live breakout rooms aren't wired (no Daily SDK; the
-    // modal's Start/Broadcast/Recall buttons are no-ops). Kept disabled + SOON
-    // rather than deleted — re-enable by removing `disabled`/`badge`. The modal
-    // component and onBreakout wiring are preserved intact.
-    { icon: <SplitSquareVertical size={16} />, label: 'BREAKOUT', desc: 'Live breakout rooms', onClick: () => { onClose(); onBreakout(); }, disabled: true, badge: 'SOON' },
+    // Breakout rooms are an IN-CALL feature (see BreakoutController, gated on the
+    // breakoutRooms flag + isHost inside the live meeting). The old disabled
+    // dashboard entry + inert modal were removed once the real in-call surface
+    // shipped — there is no dashboard breakout path (breakouts need a live call).
     { icon: <Mic size={16} />, label: 'DEVICE TEST', desc: 'Mic + camera check', onClick: () => { onClose(); onDeviceTest(); } },
   ];
   return (
