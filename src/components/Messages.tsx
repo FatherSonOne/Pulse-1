@@ -496,6 +496,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   // Proposal-mode is gated until real multi-user voting is wired up
   // (votes are currently simulated client-side). See deep-dive issue #3.
   const proposalModeEnabled = useFeatureFlag('proposalMode', currentUser?.id);
+  // #104 Tier-1: close the gating gap — the in-memory SMS mock was reachable
+  // from the Messages drawer even though the standalone SMS section is gated.
+  const inAppSmsEnabled = useFeatureFlag('inAppSms', currentUser?.id, false);
   // Ref so the static-deps keyboard handler reads the current value.
   const proposalModeEnabledRef = useRef(proposalModeEnabled);
   useEffect(() => {
@@ -3726,7 +3729,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   }
 
   // Cellular SMS Sub-page
-  if (showCellularSMS) {
+  if (showCellularSMS && inAppSmsEnabled) {
     return (
       <div className="h-full bg-[#f8f8f8] dark:bg-black rounded-2xl border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] overflow-hidden">
         <CellularSMS

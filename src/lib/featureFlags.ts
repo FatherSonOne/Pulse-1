@@ -170,6 +170,35 @@ const featureFlagsConfig: FeatureFlagConfig = {
     version: '0.1.0'
   },
 
+  // Calendar post-meeting follow-up prompt (#104 Tier-1). The PostMeetingPrompt
+  // overlay presents "follow-up suggestions" after a meeting ends, but
+  // postMeetingService.generateSuggestions() returns HARDCODED templates
+  // (Follow-up: <title>, "Review action items", "Send meeting notes",
+  // "Document key takeaways") — no AI, no real action-item extraction. Hidden
+  // for v1 so users aren't shown fabricated "AI" output. Unhide once it calls a
+  // real extractor. Local dev override: `?ff_postMeetingFollowups=on`.
+  postMeetingFollowups: {
+    enabled: false,
+    rolloutPercentage: 0,
+    targetUsers: ['internal'],
+    description: 'HIDDEN for v1 — post-meeting follow-up suggestions are hardcoded templates, not AI; unhide when wired to a real extractor',
+    version: '0.1.0'
+  },
+
+  // Map location-share precision levels (#104 Tier-1). The Precise/Approximate/
+  // City selector in LocationSharePanel writes `share_level` but NO code path
+  // ever coarsens the broadcast coordinates — non-precise levels still send
+  // exact coords (a privacy control that lies). Gated OFF so only the honest
+  // "Precise" state shows; unhide once locationService actually coarsens coords
+  // per level. Local dev override: `?ff_locationPrecisionLevels=on`.
+  locationPrecisionLevels: {
+    enabled: false,
+    rolloutPercentage: 0,
+    targetUsers: ['internal'],
+    description: 'HIDDEN for v1 — location precision selector is UI-only (coords never coarsened); unhide when locationService coarsens per level',
+    version: '0.1.0'
+  },
+
   // Email → Campaigns (the bulk-send surface inside the Email client) is
   // HIDDEN for v1. What's gated: the "Campaigns" nav entry + the
   // EmailCampaignsDashboard / EmailCampaignBuilder sub-views in

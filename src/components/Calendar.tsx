@@ -8,6 +8,7 @@ import { outlookCalendarService } from '../services/outlookCalendarService';
 import { supabase } from '../services/supabase';
 import { downloadICS } from '../services/calendarExportService';
 import { expandRecurringEvent } from '../services/recurringEventService';
+import { useFeatureFlag } from '../lib/featureFlags';
 import { YearView, MonthView, WeekView, DayView, CalendarHeader, AgendaView, OverlayEvent } from './CalendarViews';
 import { CalendarTimelineView } from './Calendar/CalendarTimelineView';
 import { CalendarTodayView } from './Calendar/CalendarTodayView';
@@ -108,6 +109,9 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   const [currentUserId, setCurrentUserId] = useState<string>('');
   // Current user email — used for the real RSVP organizer check (#132).
   const [currentUserEmail, setCurrentUserEmail] = useState<string>('');
+  // #104 Tier-1: post-meeting follow-up prompt is a hardcoded-template stub
+  // (no AI) — hidden for v1 behind a flag.
+  const postMeetingFollowupsEnabled = useFeatureFlag('postMeetingFollowups', currentUserId);
 
   // Mobile detection
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -634,6 +638,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
 
   // Post-meeting follow-up monitoring
   useEffect(() => {
+    if (!postMeetingFollowupsEnabled) return; // #104 Tier-1: stub hidden for v1
     // Start monitoring for ended meetings
     postMeetingService.startMonitoring(events);
 
@@ -657,7 +662,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
       window.removeEventListener('pulse:meeting-ended', handleMeetingEnded as EventListener);
       window.removeEventListener('pulse:followup-updated', handleFollowUpUpdated);
     };
-  }, [events]);
+  }, [events, postMeetingFollowupsEnabled]);
 
   // Navigation handlers — defined here so keyboard shortcut useEffect can reference them
   const handlePrev = useCallback(() => {

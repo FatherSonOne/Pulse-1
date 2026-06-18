@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
 import { Contact } from '../../../types';
+import { useFeatureFlag } from '../../../lib/featureFlags';
 import {
   checkLocationConsent,
   upsertLocationConsent,
@@ -28,6 +29,9 @@ const LocationSharePanel: React.FC<LocationSharePanelProps> = ({ contact, myUser
   const [loading, setLoading] = useState(true);
   const [isSharing, setIsSharing] = useState(false);
   const [shareLevel, setShareLevel] = useState<'precise' | 'approximate' | 'city_only'>('precise');
+  // #104 Tier-1: the Approximate/City options never coarsen the broadcast coords
+  // (UI-only). Hidden for v1 so the panel only offers the honest "Precise" state.
+  const precisionLevelsEnabled = useFeatureFlag('locationPrecisionLevels', myUserId);
   const [expiryHours, setExpiryHours] = useState(0);
   const [saving, setSaving] = useState(false);
 
@@ -103,21 +107,25 @@ const LocationSharePanel: React.FC<LocationSharePanelProps> = ({ contact, myUser
         <>
           <div className="space-y-1">
             <p className={labelCls}>Precision</p>
-            <div className={`flex rounded-lg overflow-hidden text-xs ${isDarkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
-              {(['precise', 'approximate', 'city_only'] as const).map(lvl => (
-                <button
-                  key={lvl}
-                  onClick={() => setShareLevel(lvl)}
-                  className={`flex-1 py-1 capitalize transition-colors text-xs ${
-                    shareLevel === lvl
-                      ? 'bg-rose-500 text-white'
-                      : isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                  }`}
-                >
-                  {lvl === 'city_only' ? 'City' : lvl.charAt(0).toUpperCase() + lvl.slice(1)}
-                </button>
-              ))}
-            </div>
+            {precisionLevelsEnabled ? (
+              <div className={`flex rounded-lg overflow-hidden text-xs ${isDarkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
+                {(['precise', 'approximate', 'city_only'] as const).map(lvl => (
+                  <button
+                    key={lvl}
+                    onClick={() => setShareLevel(lvl)}
+                    className={`flex-1 py-1 capitalize transition-colors text-xs ${
+                      shareLevel === lvl
+                        ? 'bg-rose-500 text-white'
+                        : isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                    }`}
+                  >
+                    {lvl === 'city_only' ? 'City' : lvl.charAt(0).toUpperCase() + lvl.slice(1)}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Shares your precise location.</p>
+            )}
           </div>
 
           <div className="space-y-1">

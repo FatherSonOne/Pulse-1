@@ -1,5 +1,6 @@
 import React from 'react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useFeatureFlag } from '../../lib/featureFlags';
 import {
   AtSign,
   CheckCircle2,
@@ -187,6 +188,9 @@ export interface MessagesTopModalsProps {
 }
 
 export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
+  // #104 Tier-1: hide the Cellular SMS entry — it's an in-memory mock shell,
+  // gated by the same inAppSms flag as the standalone SMS section.
+  const inAppSmsEnabled = useFeatureFlag('inAppSms');
   // Focus traps for each inline modal (sub-component modals manage their own traps).
   const newChatRef = useFocusTrap<HTMLDivElement>({
     active: props.showNewChatModal,
@@ -621,9 +625,11 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
               <button onClick={() => { props.setShowInviteModal(true); props.closeDrawer(); }} className="w-12 h-12 rounded-lg text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30 flex items-center justify-center transition" title="Invite team member">
                 <UserPlus className="text-sm" />
               </button>
-              <button onClick={() => { props.setShowCellularSMS(true); props.closeDrawer(); }} className="w-12 h-12 rounded-lg text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 flex items-center justify-center transition" title="Cellular SMS">
-                <Smartphone className="text-sm" />
-              </button>
+              {inAppSmsEnabled && (
+                <button onClick={() => { props.setShowCellularSMS(true); props.closeDrawer(); }} className="w-12 h-12 rounded-lg text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 flex items-center justify-center transition" title="Cellular SMS">
+                  <Smartphone className="text-sm" />
+                </button>
+              )}
               <button onClick={() => { props.setShowShortcuts(true); props.closeDrawer(); }} className="w-12 h-12 rounded-lg text-zinc-400 hover:bg-[var(--pulse-surface-raised)] flex items-center justify-center transition" title="Keyboard shortcuts">
                 <Keyboard className="text-sm" />
               </button>
