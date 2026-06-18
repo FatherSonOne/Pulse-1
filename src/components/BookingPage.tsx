@@ -46,6 +46,7 @@ export const BookingPage: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -72,10 +73,21 @@ export const BookingPage: React.FC = () => {
     setSubmitting(true);
     setError(null);
     try {
-      await confirmBooking(page.id, selectedSlot, { name, email, notes });
+      const { emailSent: sent } = await confirmBooking(page.id, selectedSlot, { name, email, notes });
+      setEmailSent(sent);
       setStep('confirmed');
     } catch (err) {
-      setError((err as Error).message);
+      const msg = (err as Error).message;
+      if (msg === 'SLOT_TAKEN') {
+        // Someone grabbed this slot first — bounce back to slot selection with fresh availability.
+        setError('That time was just booked by someone else. Please pick another slot.');
+        setStep('time');
+        if (selectedDate) {
+          getAvailableSlots(page.slug, selectedDate).then(setSlots).catch(() => { /* keep stale list */ });
+        }
+      } else {
+        setError('Something went wrong confirming your booking. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -124,7 +136,11 @@ export const BookingPage: React.FC = () => {
               {selectedSlot && `${fmtTime(selectedSlot.start)} – ${fmtTime(selectedSlot.end)}`}
             </p>
             <p className="text-zinc-400 text-sm">{selectedDate}</p>
-            <p className="mt-4 text-sm text-zinc-500">A confirmation will be sent to {email}</p>
+            <p className="mt-4 text-sm text-zinc-500">
+              {emailSent
+                ? `A confirmation has been sent to ${email}`
+                : "You're all set — this time is now on the organizer's calendar."}
+            </p>
           </div>
         ) : (
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl overflow-hidden">

@@ -225,58 +225,61 @@ export async function getAvailableSlots(slug: string, date: string): Promise<Tim
 
 // ── Booking confirmation ──────────────────────────────────────────────────────
 
+export interface BookingResult {
+  request: BookingRequest;
+  /** True when the server-side confirmation email was actually sent. */
+  emailSent: boolean;
+}
+
+/** Pull the typed error code out of a FunctionsHttpError (non-2xx) response body. */
+async function extractFnErrorCode(error: unknown): Promise<string | null> {
+  try {
+    const ctx = (error as { context?: { json?: () => Promise<{ error?: string }> } })?.context;
+    if (ctx && typeof ctx.json === 'function') {
+      const body = await ctx.json();
+      return body?.error ?? null;
+    }
+  } catch { /* body already consumed or not JSON */ }
+  return null;
+}
+
 /**
- * Confirms a booking: creates a booking_request row and a calendar event
- * on the organiser's calendar. Public — no auth required for the insert.
+ * Confirms a booking via the public `book-slot` edge function. The function runs
+ * entirely server-side: it atomically claims the slot (DB-level unique lock) and
+ * creates the organiser's calendar event via the confirm_booking RPC, then sends
+ * the booker a confirmation email. The anon client can no longer write the
+ * organiser's calendar directly (that path was RLS-blocked and silently failing).
+ *
+ * Throws Error('SLOT_TAKEN') when the slot was already booked so the UI can
+ * prompt for another time. (#131)
  */
 export async function confirmBooking(
   pageId: string,
   slot: TimeSlot,
   booker: BookerInfo,
-): Promise<BookingRequest> {
-  // Get the page to find the organiser
-  const { data: page, error: pageErr } = await supabase
-    .from('booking_pages')
-    .select('*')
-    .eq('id', pageId)
-    .single();
-  if (pageErr) throw pageErr;
+): Promise<BookingResult> {
+  const { data, error } = await supabase.functions.invoke('book-slot', {
+    body: {
+      page_id: pageId,
+      start:   slot.start.toISOString(),
+      end:     slot.end.toISOString(),
+      name:    booker.name,
+      email:   booker.email,
+      notes:   booker.notes ?? null,
+    },
+  });
 
-  // Create a calendar event for the organiser
-  const { data: calEvent } = await supabase
-    .from('calendar_events')
-    .insert({
-      user_id:     page.user_id,
-      title:       `${booker.name} — ${page.title}`,
-      description: booker.notes ?? '',
-      date:        slot.start.toISOString().split('T')[0],
-      start_time:  slot.start.toISOString(),
-      end_time:    slot.end.toISOString(),
-      color:       'bg-rose-500',
-      type:        'meet',
-      all_day:     false,
-    })
-    .select('id')
-    .single();
+  if (error) {
+    const code = await extractFnErrorCode(error);
+    if (code === 'slot_taken') throw new Error('SLOT_TAKEN');
+    throw new Error(code || (error as Error).message || 'BOOKING_FAILED');
+  }
+  if (!data?.ok) {
+    if (data?.error === 'slot_taken') throw new Error('SLOT_TAKEN');
+    throw new Error(data?.error || 'BOOKING_FAILED');
+  }
 
-  // Insert the booking request
-  const { data: request, error: reqErr } = await supabase
-    .from('booking_requests')
-    .insert({
-      page_id:        pageId,
-      booker_name:    booker.name,
-      booker_email:   booker.email,
-      booker_notes:   booker.notes ?? null,
-      proposed_start: slot.start.toISOString(),
-      proposed_end:   slot.end.toISOString(),
-      status:         'confirmed',
-      event_id:       calEvent?.id ?? null,
-    })
-    .select('*')
-    .single();
-
-  if (reqErr) throw reqErr;
-  return request as BookingRequest;
+  return { request: data.request as BookingRequest, emailSent: !!data.emailSent };
 }
 
 export async function getBookingRequests(pageId: string): Promise<BookingRequest[]> {

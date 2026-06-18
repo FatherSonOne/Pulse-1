@@ -401,6 +401,13 @@ verify_jwt = false
 [functions.send-email]
 verify_jwt = false
 
+# book-slot: PUBLIC booking endpoint for /book/:slug. The booker is anonymous
+# (sends no JWT), so verify_jwt MUST be off or the gateway 401s before the
+# function can run. It self-guards by running entirely server-side (service
+# role + the slot-locking confirm_booking RPC) — no client writes.
+[functions.book-slot]
+verify_jwt = false
+
 # send-push: server-to-server dispatcher (called by check-search-alerts and
 # other notification triggers, plus admin/cron). It does NOT receive a user
 # JWT — it self-guards with the PUSH_DISPATCH_SECRET header. Platform-level
