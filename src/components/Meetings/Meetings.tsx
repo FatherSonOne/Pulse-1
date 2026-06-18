@@ -396,33 +396,6 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey = '', contacts, initialConta
     }
   };
 
-  // ============================================
-  // FEATURE HANDLERS (NEW)
-  // ============================================
-
-  const handleFeatureClick = (featureId: string) => {
-    switch (featureId) {
-      case 'templates':
-        setShowTemplates(true);
-        break;
-      case 'agenda':
-        setShowAgendaBuilder(true);
-        break;
-      case 'actions':
-        setShowActionItems(true);
-        break;
-      case 'analytics':
-        setShowAnalytics(true);
-        break;
-      case 'recordings':
-        setShowRecordings(true);
-        break;
-      case 'breakout':
-        setShowBreakoutRooms(true);
-        break;
-    }
-  };
-
   const handleTemplateSelect = (template: MeetingTemplate) => {
     setShowTemplates(false);
     setScheduleTitle(template.name);

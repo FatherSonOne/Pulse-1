@@ -269,6 +269,25 @@ const featureFlagsConfig: FeatureFlagConfig = {
     description: 'ON (Phase 10) — War Room Notebook (Path A) 3-pane redesign is the primary surface; legacy StudioLayout kept one release for rollback (Phase 11 deletes it).',
     version: '1.0.0'
   },
+
+  // Meetings → Breakout Rooms. Today the 3-panel BreakoutRoomsModal
+  // (MeetingsComponents.tsx:1719) is a fully-built but provably-unreachable
+  // no-op: every action button only flips local state (no Daily room creation,
+  // no participant moves), and both entrances are disabled (Tools "BREAKOUT" is
+  // disabled+SOON, the only other trigger handleFeatureClick is dead code). This
+  // flag gates the REAL build — host-orchestrated ephemeral Daily sub-rooms
+  // (create N rooms via createPulseRoom + move each client leave()→join() over
+  // app-messages). OFF until the in-call BreakoutController + Start/Recall/
+  // Broadcast wiring lands (P1–P6); no Daily wiring exists yet at P0. When ON,
+  // the entrances also gate on isHost. Plan: docs/MEETINGS_BREAKOUT_ROOMS_HANDOFF_2026-06-18.md.
+  // Local dev override: `?ff_breakoutRooms=on`.
+  breakoutRooms: {
+    enabled: false,
+    rolloutPercentage: 0,
+    targetUsers: ['internal'],
+    description: 'OFF for v1 — Breakout Rooms UI is built but inert; this flag gates the real host-orchestrated Daily sub-room build (P1–P6). No Daily wiring yet at P0.',
+    version: '0.1.0'
+  },
 };
 
 // User group definitions
