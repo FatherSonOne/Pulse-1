@@ -170,6 +170,17 @@ export async function saveTranscript(roomName: string, transcript: string, summa
   await callEdge({ action: 'save-transcript', roomName, transcript, summary });
 }
 
+/**
+ * Delete a Daily room (via the daily-rooms `delete-room` action). Used to reap
+ * ephemeral breakout sub-rooms on recall (D4). Best-effort on the server side:
+ * an already-expired room deletes as a no-op. NOTE: this deletes the Daily room
+ * only — the pulse_video_rooms row that create-room upserts is left behind
+ * (owned by the host; harmless, status stays 'waiting').
+ */
+export async function deleteRoom(roomName: string): Promise<void> {
+  await callEdge({ action: 'delete-room', roomName });
+}
+
 // ── Supabase queries ───────────────────────────────────────────────────────────
 
 export interface VideoRoomRecord {

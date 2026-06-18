@@ -398,7 +398,9 @@ const MeetingRoom: React.FC<{
   // breakoutRooms flag (OFF for v1; ?ff_breakoutRooms=on to dev-test) AND isHost.
   const breakoutEnabled = useFeatureFlag('breakoutRooms') && isHost;
   const [breakoutPanelOpen, setBreakoutPanelOpen] = useState(false);
-  void breakout; // consumed by the participant-facing UI in P3+
+  // Guards the participant move effect so each breakout session moves us exactly
+  // once (the app-message can arrive / re-render more than once).
+  const movedForBreakoutRef = useRef<string | null>(null);
   const startTimeRef = useRef<number>(Date.now());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const allParticipants = localId ? [localId, ...remoteIds] : remoteIds;
@@ -501,15 +503,43 @@ const MeetingRoom: React.FC<{
       }]);
       return;
     }
-    // Breakout signaling rides the same channel. P1: route into receiver state
-    // (+ log) so a manually-sent message is observable; the actual move/recall
-    // behavior is wired in P3/P4. localId resolves THIS client's assignment.
+    // Breakout signaling rides the same channel. Route into receiver state; the
+    // participant MOVE is performed by the effect below (keyed on the resolved
+    // assignment). localId resolves THIS client's assignment.
     if (isBreakoutMsg(evt?.data)) {
       console.debug('[breakout] app-message', evt.data);
       setBreakout(prev => applyBreakoutMsg(prev, evt.data as Parameters<typeof applyBreakoutMsg>[1], localId));
       return;
     }
   }, [localId]));
+
+  // ── Breakout participant move (P3) ───────────────────────────────────────────
+  // When a breakout starts and THIS client has an assignment, mint a sub-room
+  // token and move: leave() the main room, join() the sub-room. The host stays
+  // in main (D2) and never has an assignment, so it never moves. Guarded to run
+  // once per breakout session. Recall (the move back) lands in P4.
+  useEffect(() => {
+    if (isHost) return;
+    if (!breakout.active) { movedForBreakoutRef.current = null; return; }
+    if (!daily || !breakout.breakoutId || !breakout.myAssignment) return;
+    if (movedForBreakoutRef.current === breakout.breakoutId) return;
+
+    const target = breakout.myAssignment;
+    movedForBreakoutRef.current = breakout.breakoutId;
+    (async () => {
+      try {
+        const displayName = daily.participants()?.local?.user_name;
+        const subToken = await getMeetingToken(target.roomName, false, displayName);
+        await daily.leave();
+        await daily.join({ url: target.roomUrl, token: subToken });
+        toast.success('Joined your breakout room.', { duration: 3000, position: 'bottom-right' });
+      } catch (err) {
+        console.error('[breakout] move failed:', err);
+        toast.error('Could not join your breakout room.', { duration: 4000, position: 'bottom-right' });
+        movedForBreakoutRef.current = null; // allow a retry on the next state tick
+      }
+    })();
+  }, [daily, isHost, breakout.active, breakout.breakoutId, breakout.myAssignment]);
 
   // daily-js@0.87.0 transcription-message (index.d.ts:1557-1566): each event is a
   // finalized Deepgram segment carrying { participantId, text, timestamp,
@@ -984,6 +1014,7 @@ const MeetingRoom: React.FC<{
       {/* ── Breakout control panel (host-only, flag-gated; P2 scaffold) ──────── */}
       {breakoutEnabled && breakoutPanelOpen && (
         <BreakoutController
+          mainRoomName={roomName}
           meetingName={meetingTitle}
           onClose={() => setBreakoutPanelOpen(false)}
         />

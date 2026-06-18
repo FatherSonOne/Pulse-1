@@ -20,7 +20,10 @@
 
 import React, { useState } from 'react';
 import { useDaily, useParticipantIds, useLocalSessionId } from '@daily-co/daily-react';
-import { SplitSquareVertical, X, Plus, Play, Square, Megaphone, Users } from 'lucide-react';
+import { SplitSquareVertical, X, Plus, Play, Megaphone, Users, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { startBreakout, type StartedBreakout } from '../../services/breakoutService';
+import { makeBreakoutStart } from './breakoutProtocol';
 
 // Local copy of the breakout differentiation palette (the modal's BREAKOUT_COLORS
 // is a non-exported const in MeetingsComponents; duplicated here to avoid coupling
@@ -42,11 +45,14 @@ interface BreakoutRoomDraft {
 }
 
 interface BreakoutControllerProps {
+  /** Daily room NAME of the main meeting (FK key for persistence). */
+  mainRoomName: string;
+  /** Friendly meeting title (display only). */
   meetingName: string;
   onClose: () => void;
 }
 
-export const BreakoutController: React.FC<BreakoutControllerProps> = ({ meetingName, onClose }) => {
+export const BreakoutController: React.FC<BreakoutControllerProps> = ({ mainRoomName, meetingName, onClose }) => {
   const daily = useDaily();
   const localId = useLocalSessionId();
   // Assignable pool = remote participants (the host orchestrates and, by default,
@@ -70,6 +76,10 @@ export const BreakoutController: React.FC<BreakoutControllerProps> = ({ meetingN
   const [timerMinutes, setTimerMinutes] = useState(15);
   const [broadcastMode, setBroadcastMode] = useState(false);
   const [broadcastMsg, setBroadcastMsg] = useState('');
+  const [starting, setStarting] = useState(false);
+  // The active breakout session once started (null = not started). Recall/End
+  // wiring that consumes this lands in P4.
+  const [activeSession, setActiveSession] = useState<StartedBreakout | null>(null);
 
   const assignedIds = new Set(rooms.flatMap(r => r.memberIds));
   // Drop any assigned id that has since left the call (best-effort live sync).
@@ -104,18 +114,48 @@ export const BreakoutController: React.FC<BreakoutControllerProps> = ({ meetingN
     setRooms(prev => prev.map(r => (r.id === roomId ? { ...r, name } : r)));
   };
 
-  // P2: inert. The real create-rooms + leave()/join() orchestration lands in P3,
-  // recall+cleanup in P4, broadcast in P5. Logged so the scaffold is observable.
-  const handleStart = () => {
-    console.debug('[breakout] Start (inert in P2)', { rooms, timerMinutes, totalAssigned });
+  // P3: real orchestration. Create one Daily sub-room per populated room, persist
+  // the session + assignments, then broadcast breakout-start so each participant
+  // client mints its own token and moves (leave()->join()). The host stays in the
+  // main room (D2). Recall/cleanup is wired in P4; broadcast-to-rooms in P5.
+  const handleStart = async () => {
+    if (!daily || starting || activeSession) return;
+    setStarting(true);
+    try {
+      const plan = rooms.map(r => ({
+        name: r.name,
+        memberIds: r.memberIds.filter(id => remoteIds.includes(id)),
+      }));
+      const started = await startBreakout(mainRoomName, plan, timerMinutes, nameOf);
+      daily.sendAppMessage(
+        makeBreakoutStart(started.breakoutId, started.assignments, started.endsAt),
+        '*',
+      );
+      setActiveSession(started);
+      toast.success('Breakout started — participants are moving to their rooms.', {
+        duration: 4000, position: 'bottom-right',
+      });
+    } catch (err) {
+      console.error('[breakout] start failed:', err);
+      toast.error(err instanceof Error ? err.message : 'Could not start the breakout.', {
+        duration: 5000, position: 'bottom-right',
+      });
+    } finally {
+      setStarting(false);
+    }
   };
+
+  // P3 placeholders — wired in P4 (recall + cleanup) and P5 (broadcast). Kept
+  // inert here so a started breakout isn't torn down without the participant
+  // return-move (which lands in P4); otherwise deleting sub-rooms would strand
+  // people mid-breakout.
   const handleSendBroadcast = () => {
-    console.debug('[breakout] Broadcast (inert in P2)', broadcastMsg);
+    console.debug('[breakout] Broadcast (wired in P5)', broadcastMsg);
     setBroadcastMode(false);
     setBroadcastMsg('');
   };
   const handleRecall = () => {
-    console.debug('[breakout] Recall (inert in P2)');
+    console.debug('[breakout] Recall (wired in P4)');
     onClose();
   };
 
@@ -239,13 +279,19 @@ export const BreakoutController: React.FC<BreakoutControllerProps> = ({ meetingN
                   </div>
                 </div>
 
-                {/* Start (inert in P2) */}
+                {/* Start (P3: real). Disabled once a session is active. */}
                 <button
                   className="meetings-breakout-start-btn"
-                  disabled={totalAssigned === 0}
+                  disabled={starting || !!activeSession || totalAssigned === 0}
                   onClick={handleStart}
                 >
-                  <Play />Start Breakout
+                  {starting ? (
+                    <><Loader2 size={16} className="animate-spin" />Starting…</>
+                  ) : activeSession ? (
+                    <><SplitSquareVertical />Breakout Active</>
+                  ) : (
+                    <><Play />Start Breakout</>
+                  )}
                 </button>
 
                 {/* Broadcast (inert in P2) */}
