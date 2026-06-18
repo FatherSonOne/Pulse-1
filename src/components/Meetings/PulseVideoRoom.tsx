@@ -38,12 +38,15 @@ import {
 import { supabase } from '../../services/supabaseClient';
 import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 import {
-  isBreakoutMsg,
   applyBreakoutMsg,
   initialBreakoutState,
+  makeBreakoutStart,
+  makeBreakoutRecall,
   type BreakoutReceiverState,
 } from './breakoutProtocol';
 import { BreakoutController } from './BreakoutController';
+import { useBreakoutChannel } from './useBreakoutChannel';
+import { startBreakout, endBreakout, type BreakoutPlanRoom, type StartedBreakout } from '../../services/breakoutService';
 import { useFeatureFlag } from '../../lib/featureFlags';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -398,9 +401,9 @@ const MeetingRoom: React.FC<{
   // breakoutRooms flag (OFF for v1; ?ff_breakoutRooms=on to dev-test) AND isHost.
   const breakoutEnabled = useFeatureFlag('breakoutRooms') && isHost;
   const [breakoutPanelOpen, setBreakoutPanelOpen] = useState(false);
-  // Guards the participant move effect so each breakout session moves us exactly
-  // once (the app-message can arrive / re-render more than once).
-  const movedForBreakoutRef = useRef<string | null>(null);
+  // The breakoutId this client is currently moved into (null = in the main room).
+  // Guards the move/return effect so each transition runs exactly once.
+  const movedBreakoutIdRef = useRef<string | null>(null);
   const startTimeRef = useRef<number>(Date.now());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const allParticipants = localId ? [localId, ...remoteIds] : remoteIds;
@@ -491,55 +494,109 @@ const MeetingRoom: React.FC<{
     setTranscriptEnabled(false);
   }, []));
 
-  useDailyEvent('app-message', useCallback((evt: { data?: unknown }) => {
-    const data = evt?.data as { type?: string; text?: string; sender?: string } | undefined;
-    if (data?.type === 'chat') {
+  useDailyEvent('app-message', useCallback((evt: { data?: { type?: string; text?: string; sender?: string } }) => {
+    if (evt?.data?.type === 'chat') {
       setChatMessages(prev => [...prev, {
         id: crypto.randomUUID(),
-        sender: data.sender ?? 'Guest',
-        text: data.text ?? '',
+        sender: evt.data?.sender ?? 'Guest',
+        text: evt.data?.text ?? '',
         time: new Date(),
         isLocal: false,
       }]);
-      return;
     }
-    // Breakout signaling rides the same channel. Route into receiver state; the
-    // participant MOVE is performed by the effect below (keyed on the resolved
-    // assignment). localId resolves THIS client's assignment.
-    if (isBreakoutMsg(evt?.data)) {
-      console.debug('[breakout] app-message', evt.data);
-      setBreakout(prev => applyBreakoutMsg(prev, evt.data as Parameters<typeof applyBreakoutMsg>[1], localId));
-      return;
-    }
+  }, []));
+
+  // ── Breakout signaling (cross-room) ──────────────────────────────────────────
+  // Breakout messages travel over a Supabase Realtime channel, NOT Daily
+  // app-messages, because app-messages are room-scoped and can't reach
+  // participants once they've moved into sub-rooms (handoff R3). Inbound messages
+  // fold into the receiver state; the move/return effects below act on it.
+  const sendBreakout = useBreakoutChannel(roomName, useCallback((msg) => {
+    setBreakout(prev => applyBreakoutMsg(prev, msg, localId));
   }, [localId]));
 
-  // ── Breakout participant move (P3) ───────────────────────────────────────────
-  // When a breakout starts and THIS client has an assignment, mint a sub-room
-  // token and move: leave() the main room, join() the sub-room. The host stays
-  // in main (D2) and never has an assignment, so it never moves. Guarded to run
-  // once per breakout session. Recall (the move back) lands in P4.
+  // ── Breakout participant move + return (P3/P4) ───────────────────────────────
+  // On breakout-start with an assignment, mint a sub-room token and move
+  // (leave()->join()). On recall (breakout no longer active), return to the main
+  // room with a freshly-minted token (handoff R1). The host stays in main (D2)
+  // and never has an assignment, so it never moves. movedBreakoutIdRef holds the
+  // breakoutId we're currently inside (null = in the main room).
   useEffect(() => {
-    if (isHost) return;
-    if (!breakout.active) { movedForBreakoutRef.current = null; return; }
-    if (!daily || !breakout.breakoutId || !breakout.myAssignment) return;
-    if (movedForBreakoutRef.current === breakout.breakoutId) return;
+    if (isHost || !daily) return;
 
-    const target = breakout.myAssignment;
-    movedForBreakoutRef.current = breakout.breakoutId;
-    (async () => {
-      try {
-        const displayName = daily.participants()?.local?.user_name;
-        const subToken = await getMeetingToken(target.roomName, false, displayName);
-        await daily.leave();
-        await daily.join({ url: target.roomUrl, token: subToken });
-        toast.success('Joined your breakout room.', { duration: 3000, position: 'bottom-right' });
-      } catch (err) {
-        console.error('[breakout] move failed:', err);
-        toast.error('Could not join your breakout room.', { duration: 4000, position: 'bottom-right' });
-        movedForBreakoutRef.current = null; // allow a retry on the next state tick
-      }
-    })();
-  }, [daily, isHost, breakout.active, breakout.breakoutId, breakout.myAssignment]);
+    // Move OUT to an assigned sub-room.
+    if (breakout.active && breakout.breakoutId && breakout.myAssignment) {
+      if (movedBreakoutIdRef.current === breakout.breakoutId) return;
+      const target = breakout.myAssignment;
+      movedBreakoutIdRef.current = breakout.breakoutId;
+      (async () => {
+        try {
+          const displayName = daily.participants()?.local?.user_name;
+          const subToken = await getMeetingToken(target.roomName, false, displayName);
+          await daily.leave();
+          await daily.join({ url: target.roomUrl, token: subToken });
+          toast.success('Joined your breakout room.', { duration: 3000, position: 'bottom-right' });
+        } catch (err) {
+          console.error('[breakout] move failed:', err);
+          toast.error('Could not join your breakout room.', { duration: 4000, position: 'bottom-right' });
+          movedBreakoutIdRef.current = null; // allow a retry on the next state tick
+        }
+      })();
+      return;
+    }
+
+    // Return to the main room once the breakout ends (recall) — only if we moved.
+    if (!breakout.active && movedBreakoutIdRef.current !== null) {
+      movedBreakoutIdRef.current = null;
+      (async () => {
+        try {
+          const displayName = daily.participants()?.local?.user_name;
+          const mainToken = await getMeetingToken(roomName, false, displayName); // R1: fresh token
+          await daily.leave();
+          await daily.join({ url: roomUrl, token: mainToken });
+          toast('Returned to the main room.', { duration: 3000, position: 'bottom-right' });
+        } catch (err) {
+          console.error('[breakout] return failed:', err);
+          toast.error('Could not return to the main room.', { duration: 4000, position: 'bottom-right' });
+        }
+      })();
+    }
+  }, [daily, isHost, roomUrl, roomName, breakout.active, breakout.breakoutId, breakout.myAssignment]);
+
+  // ── Host orchestration (start / recall) ──────────────────────────────────────
+  const [hostBreakout, setHostBreakout] = useState<StartedBreakout | null>(null);
+
+  const handleStartBreakout = useCallback(async (plan: BreakoutPlanRoom[], durationMinutes: number) => {
+    const nameOf = (sid: string) =>
+      (sid === localId
+        ? daily?.participants()?.local?.user_name?.trim() || 'You'
+        : daily?.participants()?.[sid]?.user_name?.trim() || 'Guest');
+    const started = await startBreakout(roomName, plan, durationMinutes, nameOf);
+    sendBreakout(makeBreakoutStart(started.breakoutId, started.assignments, started.endsAt));
+    setHostBreakout(started);
+  }, [daily, localId, roomName, sendBreakout]);
+
+  const handleRecallBreakout = useCallback(() => {
+    if (!hostBreakout) return;
+    // Tell everyone to come back, then reap the sub-rooms after a grace period so
+    // the orderly leave()->join(main) completes before the rooms are deleted.
+    sendBreakout(makeBreakoutRecall(hostBreakout.breakoutId));
+    const { breakoutId, subRoomNames } = hostBreakout;
+    setTimeout(() => {
+      endBreakout(breakoutId, subRoomNames).catch(err =>
+        console.warn('[breakout] endBreakout cleanup failed:', err));
+    }, 4000);
+    setHostBreakout(null);
+  }, [hostBreakout, sendBreakout]);
+
+  // Timer auto-recall — when the duration elapses, the host recalls everyone.
+  useEffect(() => {
+    if (!hostBreakout?.endsAt) return;
+    const ms = hostBreakout.endsAt - Date.now();
+    if (ms <= 0) { handleRecallBreakout(); return; }
+    const t = setTimeout(() => handleRecallBreakout(), ms);
+    return () => clearTimeout(t);
+  }, [hostBreakout?.endsAt, handleRecallBreakout]);
 
   // daily-js@0.87.0 transcription-message (index.d.ts:1557-1566): each event is a
   // finalized Deepgram segment carrying { participantId, text, timestamp,
@@ -1014,8 +1071,10 @@ const MeetingRoom: React.FC<{
       {/* ── Breakout control panel (host-only, flag-gated; P2 scaffold) ──────── */}
       {breakoutEnabled && breakoutPanelOpen && (
         <BreakoutController
-          mainRoomName={roomName}
           meetingName={meetingTitle}
+          activeSession={hostBreakout}
+          onStart={handleStartBreakout}
+          onRecall={handleRecallBreakout}
           onClose={() => setBreakoutPanelOpen(false)}
         />
       )}
