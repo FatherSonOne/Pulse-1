@@ -42,6 +42,7 @@ import {
   initialBreakoutState,
   makeBreakoutStart,
   makeBreakoutRecall,
+  makeBreakoutBroadcast,
   type BreakoutReceiverState,
 } from './breakoutProtocol';
 import { BreakoutController } from './BreakoutController';
@@ -589,6 +590,11 @@ const MeetingRoom: React.FC<{
     setHostBreakout(null);
   }, [hostBreakout, sendBreakout]);
 
+  const handleBroadcastBreakout = useCallback((text: string) => {
+    if (!hostBreakout || !text.trim()) return;
+    sendBreakout(makeBreakoutBroadcast(hostBreakout.breakoutId, text.trim()));
+  }, [hostBreakout, sendBreakout]);
+
   // Timer auto-recall — when the duration elapses, the host recalls everyone.
   useEffect(() => {
     if (!hostBreakout?.endsAt) return;
@@ -597,6 +603,14 @@ const MeetingRoom: React.FC<{
     const t = setTimeout(() => handleRecallBreakout(), ms);
     return () => clearTimeout(t);
   }, [hostBreakout?.endsAt, handleRecallBreakout]);
+
+  // Toast each new host broadcast as it arrives in a sub-room (the banner shows
+  // the latest persistently; this surfaces the moment it lands).
+  useEffect(() => {
+    if (breakout.active && breakout.lastBroadcast) {
+      toast(breakout.lastBroadcast, { icon: '📣', duration: 5000, position: 'top-center' });
+    }
+  }, [breakout.lastBroadcast, breakout.active]);
 
   // daily-js@0.87.0 transcription-message (index.d.ts:1557-1566): each event is a
   // finalized Deepgram segment carrying { participantId, text, timestamp,
@@ -817,6 +831,11 @@ const MeetingRoom: React.FC<{
     <div className="flex flex-col h-full bg-[#080808] text-white">
       {/* ── DailyAudio handles all remote audio automatically */}
       <DailyAudio />
+
+      {/* ── Breakout banner (participant, in a sub-room): countdown + broadcast */}
+      {!isHost && breakout.active && breakout.myAssignment && (
+        <BreakoutBanner endsAt={breakout.endsAt} broadcast={breakout.lastBroadcast} />
+      )}
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-4 py-2.5 bg-[#080808]/80 border-b border-white/10 backdrop-blur-sm">
@@ -1075,6 +1094,7 @@ const MeetingRoom: React.FC<{
           activeSession={hostBreakout}
           onStart={handleStartBreakout}
           onRecall={handleRecallBreakout}
+          onBroadcast={handleBroadcastBreakout}
           onClose={() => setBreakoutPanelOpen(false)}
         />
       )}
@@ -1121,6 +1141,49 @@ const MeetingRoom: React.FC<{
             )}
           </div>
         </div>
+      )}
+    </div>
+  );
+};
+
+// ── Breakout banner (participant view inside a sub-room) ───────────────────────
+// Shows a persistent "you're in a breakout" strip with a live countdown to
+// auto-recall and the latest host broadcast. Self-ticks once per second.
+const BreakoutBanner: React.FC<{ endsAt: number | null; broadcast: string | null }> = ({ endsAt, broadcast }) => {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (!endsAt) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [endsAt]);
+
+  const remainingMs = endsAt ? Math.max(0, endsAt - now) : null;
+  const mm = remainingMs !== null ? Math.floor(remainingMs / 60000) : 0;
+  const ss = remainingMs !== null ? Math.floor((remainingMs % 60000) / 1000) : 0;
+  const ending = remainingMs !== null && remainingMs <= 30000;
+
+  return (
+    <div
+      className={`flex items-center justify-center gap-3 px-4 py-2 text-[11px] font-mono uppercase tracking-[0.1em] border-b ${
+        ending
+          ? 'bg-rose-500/20 text-rose-200 border-rose-500/30'
+          : 'bg-white/[0.06] text-white/70 border-white/10'
+      }`}
+      role="status"
+      aria-live="polite"
+    >
+      <span className="flex items-center gap-1.5">
+        <SplitSquareVertical size={13} /> BREAKOUT ROOM
+      </span>
+      {remainingMs !== null && (
+        <span className="tabular-nums" style={{ fontVariantNumeric: 'tabular-nums' }}>
+          {ending ? 'RETURNING IN ' : ''}{String(mm).padStart(2, '0')}:{String(ss).padStart(2, '0')}
+        </span>
+      )}
+      {broadcast && (
+        <span className="normal-case tracking-normal font-sans text-white/90 truncate max-w-md">
+          📣 {broadcast}
+        </span>
       )}
     </div>
   );

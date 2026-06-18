@@ -18,7 +18,7 @@
  * see it.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDaily, useParticipantIds, useLocalSessionId } from '@daily-co/daily-react';
 import { SplitSquareVertical, X, Plus, Play, Megaphone, Users, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -53,11 +53,13 @@ interface BreakoutControllerProps {
   onStart: (plan: BreakoutPlanRoom[], durationMinutes: number) => Promise<void>;
   /** Broadcast recall + reap sub-rooms (no-op if nothing is active). */
   onRecall: () => void;
+  /** Send a broadcast message to every sub-room (only meaningful when active). */
+  onBroadcast: (text: string) => void;
   onClose: () => void;
 }
 
 export const BreakoutController: React.FC<BreakoutControllerProps> = ({
-  meetingName, activeSession, onStart, onRecall, onClose,
+  meetingName, activeSession, onStart, onRecall, onBroadcast, onClose,
 }) => {
   const daily = useDaily();
   const localId = useLocalSessionId();
@@ -142,9 +144,10 @@ export const BreakoutController: React.FC<BreakoutControllerProps> = ({
     }
   };
 
-  // P5 will wire broadcast-to-all over the breakout channel. Inert for now.
+  // Broadcast a message to every sub-room (cross-room via the breakout channel).
   const handleSendBroadcast = () => {
-    console.debug('[breakout] Broadcast (wired in P5)', broadcastMsg);
+    const text = broadcastMsg.trim();
+    if (text) onBroadcast(text);
     setBroadcastMode(false);
     setBroadcastMsg('');
   };
@@ -276,6 +279,9 @@ export const BreakoutController: React.FC<BreakoutControllerProps> = ({
                   </div>
                 </div>
 
+                {/* Live countdown while a breakout is active. */}
+                {activeSession && <HostCountdown endsAt={activeSession.endsAt} />}
+
                 {/* Start (P3: real). Disabled once a session is active. */}
                 <button
                   className="meetings-breakout-start-btn"
@@ -320,7 +326,12 @@ export const BreakoutController: React.FC<BreakoutControllerProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <button className="meetings-breakout-broadcast-btn" onClick={() => setBroadcastMode(true)}>
+                  <button
+                    className="meetings-breakout-broadcast-btn"
+                    onClick={() => setBroadcastMode(true)}
+                    disabled={!activeSession}
+                    title={activeSession ? undefined : 'Start a breakout first'}
+                  >
                     <Megaphone /> Broadcast to All
                   </button>
                 )}
@@ -342,6 +353,29 @@ export const BreakoutController: React.FC<BreakoutControllerProps> = ({
           <button className="meetings-modal-btn" onClick={onClose}>Close</button>
         </div>
       </div>
+    </div>
+  );
+};
+
+// Host-side live countdown for the active breakout (self-ticks each second).
+const HostCountdown: React.FC<{ endsAt: number | null }> = ({ endsAt }) => {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (!endsAt) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [endsAt]);
+
+  if (!endsAt) {
+    return <div className="meetings-breakout-timer">Breakout active · no timer</div>;
+  }
+  const remaining = Math.max(0, endsAt - now);
+  const mm = Math.floor(remaining / 60000);
+  const ss = Math.floor((remaining % 60000) / 1000);
+  const cls = remaining <= 120000 ? (remaining <= 30000 ? 'over' : 'warning') : '';
+  return (
+    <div className={`meetings-breakout-timer ${cls}`}>
+      {String(mm).padStart(2, '0')}:{String(ss).padStart(2, '0')}
     </div>
   );
 };
