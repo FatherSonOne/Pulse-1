@@ -199,9 +199,6 @@ export const ContactGoalModal: React.FC<ContactGoalModalProps> = ({
               </div>
               <p className="text-xs text-rose-600 dark:text-rose-400 mt-0.5 leading-relaxed">
                 When it's time, this goal surfaces as a priority nudge in Today.
-                <span className="block text-[10px] text-rose-500/70 dark:text-rose-400/70 mt-0.5">
-                  AI-drafted replies coming soon.
-                </span>
               </p>
             </div>
             <button

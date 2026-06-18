@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { User, AppView, BatchedNotification, CalendarEvent, Task, Thread, Contact } from '../types';
 import { generateDailyBriefing, generateThinkingResponse } from '../services/geminiService';
 import { dataService } from '../services/dataService';
+import { navigateToTeamInvite } from '../utils/inviteTeammateNavigation';
 import { useWorkspaceData, useWorkspacePermissions } from '../contexts/WorkspaceContext';
 import { dailyBriefingService, BriefingContext } from '../services/dailyBriefingService';
 import { useAIErrorHandler } from '../hooks/useAIErrorHandler';
@@ -2596,9 +2597,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                           <div className="flex items-center gap-2">
                             {!contact.pulseUserId && (
                               <button
-                                disabled
-                                className="px-2 py-1 text-xs font-medium text-zinc-400 dark:text-zinc-600 cursor-not-allowed rounded"
-                                title="Invite to Pulse, coming soon"
+                                onClick={(e) => { e.stopPropagation(); navigateToTeamInvite({ source: 'dashboard-team-builder' }); }}
+                                className="px-2 py-1 text-xs font-medium text-[var(--pulse-rose-text)] hover:text-[var(--pulse-rose-deep)] rounded transition"
+                                title="Invite to Pulse"
                               >
                                 <Send />
                               </button>

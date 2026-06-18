@@ -103,7 +103,7 @@ import { AttachmentManager } from './MessageEnhancements/AttachmentManager';
 import { BackupSync } from './MessageEnhancements/BackupSync';
 import { SmartSuggestions } from './MessageEnhancements/SmartSuggestions';
 import { useRegisterCommands, Command as PaletteCommand } from '../contexts/CommandPaletteContext';
-import { getAllToolActions, fuzzySearchTools, saveRecentTool, suggestToolsFromContext, getRecentTools, getToolOverlayType } from '../services/toolRegistry';
+import { getAllToolActions, fuzzySearchTools, saveRecentTool, getRecentTools, getToolOverlayType } from '../services/toolRegistry';
 import type { ToolAction } from '../services/toolRegistry';
 import { messageEnhancementsService } from '../services/messageEnhancementsService';
 import type { LiveCollaborator } from '../types/messageEnhancements';
@@ -763,8 +763,6 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const [showArchived, setShowArchived] = useState(false);
   const [archivedThreads, setArchivedThreads] = useState<string[]>([]);
 
-  // Tool suggestion state for contextual AI tool recommendations
-  const [suggestedTool, setSuggestedTool] = useState<ToolAction | null>(null);
 
   // Thread statistics panel
   const [showStatsPanel, setShowStatsPanel] = useState(false);
@@ -1233,31 +1231,6 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
     return () => clearTimeout(timeout);
   }, [pulseUserSearch]);
-
-  // Tool suggestion based on input text content (Phase 2A)
-  useEffect(() => {
-    if (inputText.length > 10) {
-      const tools = getAllToolActions((toolId) => {
-        saveRecentTool(toolId);
-        // TODO: Implement actual tool launch logic via ToolOverlay
-      });
-
-      const suggestions = suggestToolsFromContext(
-        {
-          messageContent: inputText,
-        },
-        tools
-      );
-
-      if (suggestions.length > 0) {
-        setSuggestedTool(suggestions[0]);
-      } else {
-        setSuggestedTool(null);
-      }
-    } else {
-      setSuggestedTool(null);
-    }
-  }, [inputText]);
 
   // ─── Command palette: register Messages' tools ────────────────────────────
   // Each tool action becomes a row in the global ⌘K palette while the user is
