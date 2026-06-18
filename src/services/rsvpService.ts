@@ -136,26 +136,48 @@ export async function sendRSVPInvites(
   }
 }
 
+export interface RSVPResponseResult {
+  status: RSVPStatus;
+  eventTitle: string | null;
+}
+
+/** Pull the typed error code out of a FunctionsHttpError (non-2xx) response body. */
+async function extractFnErrorCode(error: unknown): Promise<string | null> {
+  try {
+    const ctx = (error as { context?: { json?: () => Promise<{ error?: string }> } })?.context;
+    if (ctx && typeof ctx.json === 'function') {
+      const body = await ctx.json();
+      return body?.error ?? null;
+    }
+  } catch { /* body already consumed or not JSON */ }
+  return null;
+}
+
 /**
- * Updates the RSVP status for a given email address.
+ * Records an invitee's RSVP response via the public `rsvp-respond` edge function.
+ *
+ * Routed server-side because external invitees are anonymous and the event_rsvp
+ * RLS update policy requires auth.uid() — a direct client UPDATE is silently
+ * filtered to zero rows. Throws Error('not_invited') when no matching invite
+ * exists for (event, email). (#132)
  */
 export async function updateRSVP(
   eventId: string,
   email: string,
   status: RSVPStatus,
   notes?: string,
-): Promise<void> {
-  const { error } = await supabase
-    .from('event_rsvp')
-    .update({
-      status,
-      responded_at: new Date().toISOString(),
-      notes:        notes ?? null,
-    })
-    .eq('event_id', eventId)
-    .eq('email', email);
+): Promise<RSVPResponseResult> {
+  const { data, error } = await supabase.functions.invoke('rsvp-respond', {
+    body: { event_id: eventId, email, status, notes: notes ?? null },
+  });
 
-  if (error) throw error;
+  if (error) {
+    const code = await extractFnErrorCode(error);
+    throw new Error(code || (error as Error).message || 'RSVP_FAILED');
+  }
+  if (!data?.ok) throw new Error(data?.error || 'RSVP_FAILED');
+
+  return { status: (data.status as RSVPStatus) ?? status, eventTitle: data.eventTitle ?? null };
 }
 
 /**

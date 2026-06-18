@@ -10,6 +10,7 @@ import TermsOfService from './components/TermsOfService';
 import LandingPage from './components/LandingPage';
 import { WorkspaceInviteAccept } from './components/WorkspaceInviteAccept';
 import BookingPage from './components/BookingPage';
+import RSVPResponsePage from './components/RSVPResponsePage';
 import PulseVideoRoom from './components/Meetings/PulseVideoRoom';
 import { resolveRoomForJoin } from './services/pulseVideoService';
 
@@ -641,6 +642,11 @@ const App: React.FC = () => {
   // Public booking page — no auth required
   if (path.startsWith('/book/')) {
     return <BookingPage />;
+  }
+
+  // Public RSVP response page (Accept/Maybe/Decline email links) — no auth required
+  if (path === '/rsvp') {
+    return <RSVPResponsePage />;
   }
 
   // Workspace invite acceptance (handles auth check internally)

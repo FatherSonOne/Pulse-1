@@ -408,6 +408,13 @@ verify_jwt = false
 [functions.book-slot]
 verify_jwt = false
 
+# rsvp-respond: PUBLIC RSVP response endpoint for the /rsvp email-link flow.
+# External invitees are anonymous (no Pulse account), so verify_jwt MUST be off.
+# It applies the response server-side (service role), keyed by the unguessable
+# event UUID + email from the invite link.
+[functions.rsvp-respond]
+verify_jwt = false
+
 # send-push: server-to-server dispatcher (called by check-search-alerts and
 # other notification triggers, plus admin/cron). It does NOT receive a user
 # JWT — it self-guards with the PUSH_DISPATCH_SECRET header. Platform-level

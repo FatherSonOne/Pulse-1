@@ -99,6 +99,8 @@ const expandPersistedRecurring = (events: CalendarEvent[]): CalendarEvent[] => {
 const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, onNavigateToIntegrations }) => {
   // Current user ID from Supabase auth
   const [currentUserId, setCurrentUserId] = useState<string>('');
+  // Current user email — used for the real RSVP organizer check (#132).
+  const [currentUserEmail, setCurrentUserEmail] = useState<string>('');
 
   // Mobile detection
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -405,11 +407,13 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user?.id) setCurrentUserId(user.id);
+        if (user?.email) setCurrentUserEmail(user.email);
       } catch { /* auth not available yet */ }
     };
     resolve();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setCurrentUserId(session?.user?.id ?? '');
+      setCurrentUserEmail(session?.user?.email ?? '');
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -2456,7 +2460,16 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     {eventDetailTab === 'attendees' && (
                       <RSVPPanel
                         eventId={selectedEvent.id}
-                        isOrganizer={true}
+                        // Real organizer check (#132): the manage UI (invite / remove)
+                        // is gated to the event owner. A local event the user created
+                        // has no external organizer; a synced event carries the
+                        // organizer's email, so only a match grants organizer rights.
+                        // (RLS independently enforces this server-side.)
+                        isOrganizer={
+                          !selectedEvent.organizer?.email ||
+                          (!!currentUserEmail &&
+                            selectedEvent.organizer.email.toLowerCase() === currentUserEmail.toLowerCase())
+                        }
                       />
                     )}
 
