@@ -41,27 +41,13 @@ export interface HorizonStub {
 }
 
 export const HORIZON_STUBS = {
-  // ── §2.4 / P3 — base-style switch (replaces dead Sat/Terr/Hybrid) ───────────
-  contrastBaseStyle: {
-    id: 'contrastBaseStyle',
-    label: 'Contrast base map style',
-    status: 'net-new',
-    owner: 'P3',
-    honestFallback:
-      'buildCoralStyle is Light/Dark only. Until P3 ships a fully-styled Contrast ' +
-      'palette variant, the Contrast option must be disabled — never show it as ' +
-      'selectable while it renders an unstyled or half-styled map.',
-  },
-  mapDensity: {
-    id: 'mapDensity',
-    label: 'Map label/symbol density',
-    status: 'net-new',
-    owner: 'P3',
-    honestFallback:
-      'No density parameter exists in the Coral Cockpit style yet. Until P3 threads ' +
-      'a density param through the label/symbol layer filters, the density control ' +
-      'is disabled (it would change nothing — a Sat/Terr/Hybrid-style lie).',
-  },
+  // ── §2.4 / P3 — base-style switch ───────────────────────────────────────────
+  // SHIPPED (#104): contrastBaseStyle + mapDensity are no longer stubs. The
+  // CONTRAST palette (coralCockpitStyle.ts PALETTES.contrast) and the density
+  // param (coralLayers honors density === 'low') are fully built, and
+  // BaseStyleSwitch renders Light/Dark/Contrast + Detailed/Minimal as live
+  // controls. The old "must be disabled" entries were stale and consumed by
+  // nothing, so they're removed.
 
   // ── §2.6 / P9 — geofences drawer ────────────────────────────────────────────
   allGeofenceRings: {
