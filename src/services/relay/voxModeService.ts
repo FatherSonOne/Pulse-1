@@ -1,5 +1,15 @@
 // Vox Mode Service - Backend operations for all Vox communication styles
 import { supabase } from '../supabase';
+
+/** A subscriber of a Pulse Radio channel, joined with their pulse_users profile (#104). */
+export interface ChannelSubscriber {
+  subscriberId: string;
+  displayName: string;
+  handle: string | null;
+  avatarUrl: string | null;
+  subscribedAt: string | null;
+}
+
 import { transcribeMedia } from '../geminiService';
 import { usageTracker } from '../usageTracker';
 import { invokeAIPrompt, invokeAIJson } from '../ai/aiService';
@@ -513,6 +523,56 @@ class VoxModeService {
 
     if (error || !data) return [];
     return data.map(channel => this.mapDbToChannel(channel));
+  }
+
+  /**
+   * List the subscribers of a channel, joined with their pulse_users profile (#104).
+   * RLS lets the channel owner read all subscriptions for their channel.
+   */
+  async getChannelSubscribers(channelId: string): Promise<ChannelSubscriber[]> {
+    const { data: subs, error } = await supabase
+      .from('pulse_channel_subscriptions')
+      .select('subscriber_id, created_at')
+      .eq('channel_id', channelId)
+      .order('created_at', { ascending: true });
+
+    if (error || !subs || subs.length === 0) return [];
+
+    const ids = subs.map(s => s.subscriber_id).filter(Boolean);
+    const { data: users } = await supabase
+      .from('pulse_users')
+      .select('auth_user_id, display_name, handle, avatar_url')
+      .in('auth_user_id', ids);
+
+    const byId = new Map((users ?? []).map(u => [u.auth_user_id, u]));
+    return subs.map(s => {
+      const u = byId.get(s.subscriber_id);
+      return {
+        subscriberId: s.subscriber_id,
+        displayName: u?.display_name ?? 'Pulse user',
+        handle: u?.handle ?? null,
+        avatarUrl: u?.avatar_url ?? null,
+        subscribedAt: s.created_at,
+      };
+    });
+  }
+
+  /**
+   * Remove a subscriber from a channel (#104). RLS lets the channel owner delete
+   * subscriptions for their channel. Returns false on failure.
+   */
+  async removeChannelSubscriber(channelId: string, subscriberId: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('pulse_channel_subscriptions')
+      .delete()
+      .eq('channel_id', channelId)
+      .eq('subscriber_id', subscriberId);
+
+    if (error) {
+      console.error('Failed to remove channel subscriber:', error);
+      return false;
+    }
+    return true;
   }
 
   async createBroadcast(

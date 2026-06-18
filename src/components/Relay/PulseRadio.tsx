@@ -35,7 +35,7 @@ import RecordingPreview from './RecordingPreview';
 import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { toastMicError } from '../../utils/micErrors';
-import { voxModeService } from '../../services/relay/voxModeService';
+import { voxModeService, type ChannelSubscriber } from '../../services/relay/voxModeService';
 import { supabase } from '../../services/supabase';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
 import { type PulseChannel, type Broadcast } from '../../services/relay/voxModeTypes';
@@ -118,6 +118,10 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   const [editingChannel, setEditingChannel] = useState(false);
   const [editChannelName, setEditChannelName] = useState('');
   const [editChannelDescription, setEditChannelDescription] = useState('');
+  // Manage Subscribers (#104) — real subscriber list/remove for the channel owner.
+  const [showManageSubscribers, setShowManageSubscribers] = useState(false);
+  const [subscribers, setSubscribers] = useState<ChannelSubscriber[]>([]);
+  const [loadingSubscribers, setLoadingSubscribers] = useState(false);
 
   // Phase 2: Selection Mode State
   const {
@@ -415,6 +419,32 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
     setChannels(data);
     if (data.length > 0 && !selectedChannel) {
       setSelectedChannel(data[0]);
+    }
+  };
+
+  // Manage Subscribers (#104) — owner-only list + remove for the selected channel.
+  const openManageSubscribers = async () => {
+    if (!selectedChannel) return;
+    setShowManageSubscribers(true);
+    setLoadingSubscribers(true);
+    try {
+      setSubscribers(await voxModeService.getChannelSubscribers(selectedChannel.id));
+    } catch (err) {
+      console.error('Failed to load subscribers:', err);
+      toast.error('Failed to load subscribers');
+    } finally {
+      setLoadingSubscribers(false);
+    }
+  };
+
+  const handleRemoveSubscriber = async (subscriberId: string) => {
+    if (!selectedChannel) return;
+    const ok = await voxModeService.removeChannelSubscriber(selectedChannel.id, subscriberId);
+    if (ok) {
+      setSubscribers(prev => prev.filter(s => s.subscriberId !== subscriberId));
+      toast.success('Subscriber removed');
+    } else {
+      toast.error("Couldn't remove subscriber");
     }
   };
 
@@ -1165,7 +1195,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                   </button>
                   <button
                     type="button"
-                    onClick={() => toast('Subscriber management coming soon', { icon: '\u2139\uFE0F' })}
+                    onClick={openManageSubscribers}
                   >
                     <Users className="w-5 h-5" /> Manage Subscribers
                   </button>
@@ -1249,6 +1279,63 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
               </button>
               <button type="button" onClick={() => setShowNotifyUsers(false)} className="pulse-radio-submit-btn">
                 Save ({selectedNotifyUsers.length})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Subscribers Modal (#104) */}
+      {showManageSubscribers && (
+        <div className="pulse-radio-modal-overlay">
+          <div className="pulse-radio-modal-backdrop" onClick={() => setShowManageSubscribers(false)} />
+          <div className="pulse-radio-modal">
+            <div className="pulse-radio-modal-header">
+              <h3>Manage Subscribers</h3>
+              <button type="button" onClick={() => setShowManageSubscribers(false)} title="Close">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="pulse-radio-modal-desc">
+              {loadingSubscribers
+                ? 'Loading…'
+                : `${subscribers.length} subscriber${subscribers.length === 1 ? '' : 's'}${selectedChannel ? ` to ${selectedChannel.name}` : ''}.`}
+            </p>
+
+            <div className="pulse-radio-user-list">
+              {loadingSubscribers ? (
+                <p className="pulse-radio-no-users">Loading subscribers…</p>
+              ) : subscribers.length === 0 ? (
+                <p className="pulse-radio-no-users">No subscribers yet</p>
+              ) : (
+                subscribers.map((sub) => (
+                  <div key={sub.subscriberId} className="pulse-radio-user">
+                    <div className="pulse-radio-user-avatar" style={{ backgroundColor: MODE_COLOR }}>
+                      {sub.avatarUrl
+                        ? <img src={sub.avatarUrl} alt="" className="w-full h-full rounded-full object-cover" />
+                        : (sub.displayName?.charAt(0) || '?')}
+                    </div>
+                    <div className="pulse-radio-user-info">
+                      <p>{sub.displayName}</p>
+                      {sub.handle && <span>@{sub.handle}</span>}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSubscriber(sub.subscriberId)}
+                      title={`Remove ${sub.displayName}`}
+                      aria-label={`Remove ${sub.displayName}`}
+                      style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: 'var(--pulse-tone-overdue, #ef4444)', cursor: 'pointer', padding: 4 }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="pulse-radio-modal-actions">
+              <button type="button" onClick={() => setShowManageSubscribers(false)} className="pulse-radio-submit-btn">
+                Done
               </button>
             </div>
           </div>
