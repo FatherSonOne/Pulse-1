@@ -368,5 +368,73 @@ optimizations — the happy path works with the existing single-room/single-toke
 
 ---
 
-*Authored as the kickoff handoff for the operator-approved "build it for real" path.
-No breakout code written yet — start at P0.*
+## 13. BUILD LOG — P0–P7 shipped 2026-06-18
+
+All phases built on `main`, flag-gated behind `breakoutRooms` (default OFF;
+`?ff_breakoutRooms=on` to dev-test). Commits: P0 `699d187`, P1 `52c9ce8`,
+P2 `e74e231`, P3a `d5c5d28`, P3b `30bb22f`, P4 `07b22cf`, P5 `99b6fb2`,
+P6 `209110a`, P7 (this).
+
+### Operator decisions (resolved)
+- **D1** — No recording/transcription in sub-rooms (participants get non-owner
+  tokens, which the edge fn mints without `enable_recording`).
+- **D2** — Host stays in main, may hop; host-leave ends all (no co-host v1).
+  Assignable pool = remote participants only.
+- **D3** — **Persist** (not ephemeral). Host-owned `meeting_breakout_sessions`
+  + `meeting_breakout_assignments` tables (migration 20260618000001).
+- **D4** — Explicit `delete-room` on recall (4s grace), 24h expiry as backstop.
+- **D5** — Sane defaults; max-rooms cap not enforced in v1 (note below).
+
+### Architecture deviation from the original plan
+- **Transport changed from Daily app-messages → Supabase Realtime broadcast**
+  channel (`breakout-<mainRoomName>`, `useBreakoutChannel`). Reason: R3 — Daily
+  app-messages are room-scoped and can't reach participants once they're in
+  sub-rooms, which would make recall/broadcast impossible. The Realtime channel
+  is room-agnostic. The protocol (`breakoutProtocol.ts`) is transport-agnostic,
+  so the reducer + 11 unit tests were unaffected.
+- **Dashboard surfaces removed** (operator choice, P6): the inert
+  `BreakoutRoomsModal`, its Tools-menu entry, and the dead Settings toggle were
+  deleted. The real feature is the in-call `BreakoutController` (host-only,
+  flag-gated), which reuses the same `meetings-breakout-*` styling.
+
+### §8 risk dispositions
+- **R1 token expiry** — HANDLED: return-move re-mints a fresh main token.
+- **R2 room expiry** — HANDLED: explicit `delete-room` on recall + 24h backstop.
+- **R3 cross-room broadcast** — HANDLED: Realtime channel (see deviation).
+- **R4 late-joiner** — DEFERRED: a participant joining main during an active
+  breakout is NOT auto-assigned (stays in main). Host re-unicast on
+  `participant-joined` is a future nicety. Acceptable v1 behavior.
+- **R5 host leaves mid-breakout** — HANDLED: `handleLeave` recalls everyone
+  before unmount; plus a participant self-return timer fires at `endsAt` even if
+  the host crashed and no recall arrives.
+- **R6 recording in breakouts** — HANDLED (D1): non-owner tokens, nobody starts
+  recording in sub-rooms.
+- **R7 reconnection** — HANDLED: Daily auto-rejoins the current room; breakout
+  state lives in MeetingRoom (survives a blip); self-return timer is a backstop.
+- **R8 mobile/Capacitor** — DEFERRED: `leave()`→`join()` + camera/mic
+  re-acquisition across the room switch needs on-device testing.
+- **R9 message size cap** — MITIGATED by the transport change (Realtime
+  broadcast, not the small Daily app-message budget). Per-room unicast for very
+  large meetings remains a future option.
+- **R10 host controls leak** — HANDLED: `BreakoutController` is `isHost`+flag
+  gated; participants only react to channel messages.
+
+### Still open / deferred (post-flag-flip)
+- **Live verification** — the AV truth (3+ real browsers split into sub-rooms,
+  hear only roommates, recall returns everyone, broadcast reaches every room)
+  is NOT YET VERIFIED. Daily media routing can't be exercised headless; needs a
+  real multi-browser session with `?ff_breakoutRooms=on`.
+- **Confirm Daily `user_id` for guests** (handoff §8) before adding per-
+  participant self-read RLS on the breakout tables (currently host-only).
+- **D5 caps** — no max-rooms / max-per-room enforcement yet.
+- **R4 late-joiner** auto-assignment; mid-breakout reassignment.
+- **R8 mobile** device pass.
+- **pulse_video_rooms hygiene** — `delete-room` reaps the Daily room but leaves
+  the `pulse_video_rooms` row (status 'waiting', host-owned). Harmless; could be
+  swept later.
+
+---
+
+*Authored as the kickoff handoff for the operator-approved "build it for real"
+path. P0–P7 shipped 2026-06-18 behind the `breakoutRooms` flag; live AV
+verification is the remaining gate before flipping the flag on.*

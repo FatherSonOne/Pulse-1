@@ -612,6 +612,17 @@ const MeetingRoom: React.FC<{
     }
   }, [breakout.lastBroadcast, breakout.active]);
 
+  // R5/R7 safety net: a participant self-returns when the timer elapses, even if
+  // the host's recall never arrives (host crashed / left abruptly / network
+  // blip). Clearing local breakout state flips us inactive, and the move/return
+  // effect above rejoins the main room. Belt-and-suspenders to the host recall.
+  useEffect(() => {
+    if (isHost || !breakout.active || !breakout.endsAt) return;
+    const ms = Math.max(0, breakout.endsAt - Date.now());
+    const t = setTimeout(() => setBreakout(() => initialBreakoutState), ms);
+    return () => clearTimeout(t);
+  }, [isHost, breakout.active, breakout.endsAt]);
+
   // daily-js@0.87.0 transcription-message (index.d.ts:1557-1566): each event is a
   // finalized Deepgram segment carrying { participantId, text, timestamp,
   // rawResponse } — there is NO top-level is_final and NO session_id. The prior
@@ -700,6 +711,10 @@ const MeetingRoom: React.FC<{
 
   const handleLeave = async () => {
     if (timerRef.current) clearInterval(timerRef.current);
+    // R5: if the host leaves with a breakout active, end it first so participants
+    // aren't stranded in sub-rooms (D2: host-leave ends all). Recall is broadcast
+    // synchronously before this component unmounts (tears down the channel).
+    if (isHost && hostBreakout) handleRecallBreakout();
     const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
     const wasRecording = isRecording;
 
