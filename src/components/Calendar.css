@@ -688,6 +688,32 @@
   height: 100%;
 }
 
+/* Week numbers (#133) — narrow gutter prepended to the header + grid. */
+.cal-weekday-header.with-week-numbers,
+.cal-month-grid.with-week-numbers {
+  grid-template-columns: 2.25rem repeat(7, minmax(0, 1fr));
+}
+
+.cal-weekday-cell.week-number-head {
+  padding: 12px 4px;
+  opacity: 0.6;
+}
+
+.cal-week-number {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 8px;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--cal-text-subtle);
+  opacity: 0.55;
+  border-right: 1px solid var(--cal-border);
+  border-bottom: 1px solid var(--cal-border);
+  min-width: 0;
+}
+
 .cal-day-cell {
   min-height: 0;
   border-right: 1px solid var(--cal-border-subtle);

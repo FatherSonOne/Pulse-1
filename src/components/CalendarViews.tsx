@@ -34,6 +34,10 @@ interface ViewProps {
   onEventReschedule?: (event: CalendarEvent, newStart: Date, newEnd: Date) => void;
   /** Render shimmer skeletons in day cells during the initial fetch. */
   loading?: boolean;
+  /** Week start preference — reorders day columns/headers. Default Sunday. (#133) */
+  weekStartsOn?: 'sunday' | 'monday';
+  /** Show ISO week numbers in the month grid gutter. (#133) */
+  showWeekNumbers?: boolean;
 }
 
 // ─── Drag-to-reschedule hook ──────────────────────────────────────────────────
@@ -179,6 +183,42 @@ const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frida
 const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const WEEKDAYS_MINI = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
+// ── Week-start + week-number helpers (#133) ──────────────────────────────────
+type WeekStart = 'sunday' | 'monday';
+
+/** Reorder a Sunday-indexed 7-array to start on Monday when requested. */
+const orderByWeekStart = <T,>(arr: T[], weekStartsOn: WeekStart): T[] =>
+  weekStartsOn === 'monday' ? [...arr.slice(1), arr[0]] : arr;
+
+/** Leading blank count before a month's 1st, given the week start. */
+const leadingOffset = (jsDay: number, weekStartsOn: WeekStart): number =>
+  weekStartsOn === 'monday' ? (jsDay + 6) % 7 : jsDay;
+
+/** Is a header column (0-based from the week start) a weekend day? */
+const isWeekendColumn = (col: number, weekStartsOn: WeekStart): boolean => {
+  const jsDay = weekStartsOn === 'monday' ? (col + 1) % 7 : col;
+  return jsDay === 0 || jsDay === 6;
+};
+
+/** ISO-8601 week number for the week containing `date`. */
+const isoWeekNumber = (date: Date): number => {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = (d.getUTCDay() + 6) % 7;       // Mon=0 … Sun=6
+  d.setUTCDate(d.getUTCDate() - dayNum + 3);    // shift to the week's Thursday
+  const firstThursday = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  const ftDayNum = (firstThursday.getUTCDay() + 6) % 7;
+  firstThursday.setUTCDate(firstThursday.getUTCDate() - ftDayNum + 3);
+  return 1 + Math.round((d.getTime() - firstThursday.getTime()) / 604800000);
+};
+
+/** Week number for a displayed row, anchored to the row's Monday so the value
+ *  matches the visible week regardless of the Sunday/Monday start. */
+const weekNumberForRow = (rowFirstDay: Date, weekStartsOn: WeekStart): number => {
+  const anchor = new Date(rowFirstDay);
+  if (weekStartsOn === 'sunday') anchor.setDate(anchor.getDate() + 1); // row's Monday
+  return isoWeekNumber(anchor);
+};
+
 // Single pill / block style used across Year, Month, Week, Day, and Agenda views.
 // Color discipline (matches the Today view): the category hue lives ONLY in a
 // 3px left tick — never the fill, text, or icon. A neutral surface + neutral
@@ -233,7 +273,8 @@ export const YearView: React.FC<ViewProps> = ({
   events,
   onDateClick,
   onEventClick,
-  onViewChange
+  onViewChange,
+  weekStartsOn = 'sunday',
 }) => {
   const year = currentDate.getFullYear();
   const today = new Date();
@@ -264,14 +305,14 @@ export const YearView: React.FC<ViewProps> = ({
         <div className="cal-mini-month-name" aria-hidden="true">{MONTH_NAMES[monthIndex]}</div>
 
         <div className="cal-mini-days-header" role="row" aria-hidden="true">
-          {WEEKDAYS_MINI.map((d, i) => (
+          {orderByWeekStart(WEEKDAYS_MINI, weekStartsOn).map((d, i) => (
             <div key={i} className="cal-mini-day-header">{d}</div>
           ))}
         </div>
 
         <div className="cal-mini-days-grid" role="grid" aria-label={`${MONTH_NAMES[monthIndex]} ${year}`}>
           {/* Empty cells for padding */}
-          {Array.from({ length: firstDay }).map((_, i) => (
+          {Array.from({ length: leadingOffset(firstDay, weekStartsOn) }).map((_, i) => (
             <div key={`empty-${i}`} className="cal-mini-day" role="gridcell" aria-hidden="true" />
           ))}
 
@@ -323,6 +364,8 @@ export const MonthView: React.FC<ViewProps> = ({
   onShowMoreEvents,
   onEventReschedule,
   loading,
+  weekStartsOn = 'sunday',
+  showWeekNumbers = false,
 }) => {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -386,8 +429,9 @@ export const MonthView: React.FC<ViewProps> = ({
   const calendarDays = useMemo(() => {
     const days: { date: Date; isCurrentMonth: boolean }[] = [];
 
-    // Previous month days
-    for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+    // Previous month days — leading blanks depend on the week-start preference.
+    const leadingDays = leadingOffset(firstDayOfMonth, weekStartsOn);
+    for (let i = leadingDays - 1; i >= 0; i--) {
       days.push({
         date: new Date(year, month - 1, daysInPrevMonth - i),
         isCurrentMonth: false
@@ -412,17 +456,18 @@ export const MonthView: React.FC<ViewProps> = ({
     }
 
     return days;
-  }, [year, month, daysInMonth, firstDayOfMonth, daysInPrevMonth]);
+  }, [year, month, daysInMonth, firstDayOfMonth, daysInPrevMonth, weekStartsOn]);
 
   return (
     <div className="cal-month-container" role="grid" aria-label={`${MONTH_NAMES[month]} ${year}`}>
       {/* Weekday Header */}
-      <div className="cal-weekday-header" role="row" aria-hidden="true">
-        {WEEKDAYS_SHORT.map((day, i) => (
+      <div className={`cal-weekday-header${showWeekNumbers ? ' with-week-numbers' : ''}`} role="row" aria-hidden="true">
+        {showWeekNumbers && <div className="cal-weekday-cell week-number-head" role="columnheader">Wk</div>}
+        {orderByWeekStart(WEEKDAYS_SHORT, weekStartsOn).map((day, i) => (
           <div
-            key={day}
+            key={i}
             role="columnheader"
-            className={`cal-weekday-cell ${i === 0 || i === 6 ? 'weekend' : ''}`}
+            className={`cal-weekday-cell ${isWeekendColumn(i, weekStartsOn) ? 'weekend' : ''}`}
           >
             {day}
           </div>
@@ -430,7 +475,7 @@ export const MonthView: React.FC<ViewProps> = ({
       </div>
 
       {/* Days Grid */}
-      <div className="cal-month-grid" role="rowgroup">
+      <div className={`cal-month-grid${showWeekNumbers ? ' with-week-numbers' : ''}`} role="rowgroup">
         {calendarDays.map(({ date, isCurrentMonth }, index) => {
           const dayEvents = getEventsForDay(date);
           const allDayEvents = dayEvents.filter(e => e.allDay);
@@ -440,8 +485,11 @@ export const MonthView: React.FC<ViewProps> = ({
           const isDragTarget = dragOverDate !== null && isSameDay(date, dragOverDate);
 
           return (
+            <React.Fragment key={index}>
+              {showWeekNumbers && index % 7 === 0 && (
+                <div className="cal-week-number" role="rowheader" aria-hidden="true">{weekNumberForRow(date, weekStartsOn)}</div>
+              )}
             <div
-              key={index}
               role="gridcell"
               aria-label={`${MONTH_NAMES[date.getMonth()]} ${date.getDate()}${dayIsToday ? ', today' : ''}${dayEvents.length > 0 ? `, ${dayEvents.length} event${dayEvents.length > 1 ? 's' : ''}` : ''}`}
               aria-current={dayIsToday ? 'date' : undefined}
@@ -529,6 +577,7 @@ export const MonthView: React.FC<ViewProps> = ({
                 )}
               </div>
             </div>
+            </React.Fragment>
           );
         })}
       </div>
@@ -547,22 +596,23 @@ export const WeekView: React.FC<ViewProps> = ({
   onDateClick,
   onEventClick,
   onEventReschedule,
+  weekStartsOn = 'sunday',
 }) => {
   const today = new Date();
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const bodyRef = useRef<HTMLDivElement>(null);
   const { onMouseDown: dragMouseDown, ghost } = useDragReschedule(48, onEventReschedule);
 
-  // Get week days
+  // Get week days — first column depends on the week-start preference.
   const weekDays = useMemo(() => {
     const start = new Date(currentDate);
-    start.setDate(start.getDate() - start.getDay());
+    start.setDate(start.getDate() - leadingOffset(start.getDay(), weekStartsOn));
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(start);
       d.setDate(d.getDate() + i);
       return d;
     });
-  }, [currentDate]);
+  }, [currentDate, weekStartsOn]);
 
   const getEventsForDay = (date: Date) => {
     return events.filter(e => isSameDay(e.start, date));

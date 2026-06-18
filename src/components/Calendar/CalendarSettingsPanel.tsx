@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertTriangle, CheckCircle, Grid3X3, Settings, Unplug, X } from 'lucide-react';
-import { EVENT_COLORS, TIME_ZONES, ViewMode, ReminderTime } from './calendarTypes';
+import { EVENT_COLORS, ViewMode, ReminderTime } from './calendarTypes';
 import { BookingPageManager } from './BookingPageManager';
 
 interface CalendarSettingsPanelProps {
@@ -12,8 +12,6 @@ interface CalendarSettingsPanelProps {
   setWeekStartsOn: (v: 'sunday' | 'monday') => void;
   showWeekNumbers: boolean;
   setShowWeekNumbers: (v: boolean) => void;
-  selectedTimeZone: string;
-  setSelectedTimeZone: (v: string) => void;
   googleConnected: boolean;
   syncGoogleCalendar: () => void;
   syncingGoogle: boolean;
@@ -37,7 +35,6 @@ export const CalendarSettingsPanel: React.FC<CalendarSettingsPanelProps> = ({
   viewMode, setViewMode,
   weekStartsOn, setWeekStartsOn,
   showWeekNumbers, setShowWeekNumbers,
-  selectedTimeZone, setSelectedTimeZone,
   googleConnected, syncGoogleCalendar, syncingGoogle, lastSynced, onNavigateToIntegrations,
   outlookConnected, outlookUserEmail, outlookError, syncOutlookCalendar, syncingOutlook, disconnectOutlook, connectOutlook,
   newEventReminder, setAndPersistReminder,
@@ -95,20 +92,6 @@ export const CalendarSettingsPanel: React.FC<CalendarSettingsPanelProps> = ({
               <span className="text-sm text-[var(--pulse-ink-2)]">Show Week Numbers</span>
             </label>
           </div>
-        </div>
-
-        {/* Time Zone */}
-        <div>
-          <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">Time Zone</h4>
-          <select
-            value={selectedTimeZone}
-            onChange={(e) => setSelectedTimeZone(e.target.value)}
-            className="w-full bg-[var(--pulse-canvas-soft)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg px-3 py-2 text-sm outline-none"
-          >
-            {TIME_ZONES.map(tz => (
-              <option key={tz.id} value={tz.id}>{tz.name} {tz.offset && `(UTC${tz.offset})`}</option>
-            ))}
-          </select>
         </div>
 
         {/* Google Calendar */}

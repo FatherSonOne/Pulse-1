@@ -36,7 +36,7 @@ import { CalendarInlineModals } from './Calendar/CalendarInlineModals';
 import { CalendarSettingsPanel } from './Calendar/CalendarSettingsPanel';
 import { RSVPPanel } from './Calendar/RSVPPanel';
 import { EventCommentThread } from './Calendar/EventCommentThread';
-import { ViewMode, RecurrenceType, ReminderTime, EVENT_COLORS, EVENT_TYPES, TIME_ZONES, Team, autoDetectEventType } from './Calendar/calendarTypes';
+import { ViewMode, RecurrenceType, ReminderTime, EVENT_COLORS, EVENT_TYPES, Team, autoDetectEventType } from './Calendar/calendarTypes';
 import {
   calendarAIService,
   MeetingEffectiveness,
@@ -303,7 +303,6 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   ], [customEventTypes]);
 
   // Settings Panel (showCalendarSettings used below)
-  const [selectedTimeZone, setSelectedTimeZone] = useState(TIME_ZONES[0].id);
   const [weekStartsOn, setWeekStartsOn] = useState<'sunday' | 'monday'>('sunday');
   const [showWeekNumbers, setShowWeekNumbers] = useState(false);
 
@@ -2889,6 +2888,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                    if (date) setCurrentDate(date);
                    setViewMode(view);
                  }}
+                 weekStartsOn={weekStartsOn}
                />
              )}
 
@@ -2909,6 +2909,8 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                    setShowDayDetail(true);
                  }}
                  onEventReschedule={handleEventReschedule}
+                 weekStartsOn={weekStartsOn}
+                 showWeekNumbers={showWeekNumbers}
                />
              )}
 
@@ -2939,6 +2941,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                  }}
                  onEventClick={openEventDetail}
                  onEventReschedule={handleEventReschedule}
+                 weekStartsOn={weekStartsOn}
                />
              )}
 
@@ -3073,8 +3076,6 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         setWeekStartsOn={setWeekStartsOn}
         showWeekNumbers={showWeekNumbers}
         setShowWeekNumbers={setShowWeekNumbers}
-        selectedTimeZone={selectedTimeZone}
-        setSelectedTimeZone={setSelectedTimeZone}
         googleConnected={googleConnected}
         syncGoogleCalendar={syncGoogleCalendar}
         syncingGoogle={syncingGoogle}
