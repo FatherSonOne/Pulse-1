@@ -36,6 +36,12 @@ import {
 } from '../../services/pulseVideoService';
 import { supabase } from '../../services/supabaseClient';
 import { AIProvenanceChip } from '../ui/AIProvenanceChip';
+import {
+  isBreakoutMsg,
+  applyBreakoutMsg,
+  initialBreakoutState,
+  type BreakoutReceiverState,
+} from './breakoutProtocol';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -382,6 +388,9 @@ const MeetingRoom: React.FC<{
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [showDevicePicker, setShowDevicePicker] = useState(false);
+  // Breakout receiver state (this client's view of the breakout it's in). P1
+  // wires routing + state only — no Daily moves yet; leave()/join() lands in P3.
+  const [breakout, setBreakout] = useState<BreakoutReceiverState>(initialBreakoutState);
   const startTimeRef = useRef<number>(Date.now());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const allParticipants = localId ? [localId, ...remoteIds] : remoteIds;
@@ -472,17 +481,27 @@ const MeetingRoom: React.FC<{
     setTranscriptEnabled(false);
   }, []));
 
-  useDailyEvent('app-message', useCallback((evt: { data?: { type?: string; text?: string; sender?: string } }) => {
-    if (evt?.data?.type === 'chat') {
+  useDailyEvent('app-message', useCallback((evt: { data?: unknown }) => {
+    const data = evt?.data as { type?: string; text?: string; sender?: string } | undefined;
+    if (data?.type === 'chat') {
       setChatMessages(prev => [...prev, {
         id: crypto.randomUUID(),
-        sender: evt.data?.sender ?? 'Guest',
-        text: evt.data?.text ?? '',
+        sender: data.sender ?? 'Guest',
+        text: data.text ?? '',
         time: new Date(),
         isLocal: false,
       }]);
+      return;
     }
-  }, []));
+    // Breakout signaling rides the same channel. P1: route into receiver state
+    // (+ log) so a manually-sent message is observable; the actual move/recall
+    // behavior is wired in P3/P4. localId resolves THIS client's assignment.
+    if (isBreakoutMsg(evt?.data)) {
+      console.debug('[breakout] app-message', evt.data);
+      setBreakout(prev => applyBreakoutMsg(prev, evt.data as Parameters<typeof applyBreakoutMsg>[1], localId));
+      return;
+    }
+  }, [localId]));
 
   // daily-js@0.87.0 transcription-message (index.d.ts:1557-1566): each event is a
   // finalized Deepgram segment carrying { participantId, text, timestamp,
