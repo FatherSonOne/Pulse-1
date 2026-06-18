@@ -23,6 +23,7 @@ import {
   Mic, MicOff, Video, VideoOff, Monitor, MonitorOff,
   Circle, Square, MessageSquare, Users, PhoneOff,
   Copy, ChevronDown, Loader2, Wand2, X, Settings, AlertCircle,
+  SplitSquareVertical,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
@@ -42,6 +43,8 @@ import {
   initialBreakoutState,
   type BreakoutReceiverState,
 } from './breakoutProtocol';
+import { BreakoutController } from './BreakoutController';
+import { useFeatureFlag } from '../../lib/featureFlags';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -391,6 +394,11 @@ const MeetingRoom: React.FC<{
   // Breakout receiver state (this client's view of the breakout it's in). P1
   // wires routing + state only — no Daily moves yet; leave()/join() lands in P3.
   const [breakout, setBreakout] = useState<BreakoutReceiverState>(initialBreakoutState);
+  // Host-only in-call breakout control panel (P2 scaffold). Gated on the
+  // breakoutRooms flag (OFF for v1; ?ff_breakoutRooms=on to dev-test) AND isHost.
+  const breakoutEnabled = useFeatureFlag('breakoutRooms') && isHost;
+  const [breakoutPanelOpen, setBreakoutPanelOpen] = useState(false);
+  void breakout; // consumed by the participant-facing UI in P3+
   const startTimeRef = useRef<number>(Date.now());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const allParticipants = localId ? [localId, ...remoteIds] : remoteIds;
@@ -910,6 +918,16 @@ const MeetingRoom: React.FC<{
               highlight={transcriptEnabled}
             />
           )}
+          {breakoutEnabled && (
+            <ControlButton
+              active={!breakoutPanelOpen}
+              onClick={() => setBreakoutPanelOpen(v => !v)}
+              activeIcon={<SplitSquareVertical size={18} />}
+              inactiveIcon={<SplitSquareVertical size={18} />}
+              label="Breakout"
+              highlight={breakoutPanelOpen}
+            />
+          )}
           <ControlButton
             active={!showDevicePicker}
             onClick={() => setShowDevicePicker(v => !v)}
@@ -962,6 +980,14 @@ const MeetingRoom: React.FC<{
           <span className="font-mono uppercase tracking-[0.1em] text-[10px]">LEAVE</span>
         </button>
       </div>
+
+      {/* ── Breakout control panel (host-only, flag-gated; P2 scaffold) ──────── */}
+      {breakoutEnabled && breakoutPanelOpen && (
+        <BreakoutController
+          meetingName={meetingTitle}
+          onClose={() => setBreakoutPanelOpen(false)}
+        />
+      )}
 
       {/* ── End call confirmation ────────────────────────────────────────────── */}
       {showEndConfirm && (
