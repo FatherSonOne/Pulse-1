@@ -270,22 +270,24 @@ const featureFlagsConfig: FeatureFlagConfig = {
     version: '1.0.0'
   },
 
-  // Meetings → Breakout Rooms. Today the 3-panel BreakoutRoomsModal
-  // (MeetingsComponents.tsx:1719) is a fully-built but provably-unreachable
-  // no-op: every action button only flips local state (no Daily room creation,
-  // no participant moves), and both entrances are disabled (Tools "BREAKOUT" is
-  // disabled+SOON, the only other trigger handleFeatureClick is dead code). This
-  // flag gates the REAL build — host-orchestrated ephemeral Daily sub-rooms
-  // (create N rooms via createPulseRoom + move each client leave()→join() over
-  // app-messages). OFF until the in-call BreakoutController + Start/Recall/
-  // Broadcast wiring lands (P1–P6); no Daily wiring exists yet at P0. When ON,
-  // the entrances also gate on isHost. Plan: docs/MEETINGS_BREAKOUT_ROOMS_HANDOFF_2026-06-18.md.
-  // Local dev override: `?ff_breakoutRooms=on`.
+  // Meetings → Breakout Rooms. Gates the REAL in-call build (P0–P7, shipped
+  // 2026-06-18): host-orchestrated ephemeral Daily sub-rooms — the in-call
+  // BreakoutController (host-only) creates N rooms via createPulseRoom, moves
+  // each participant leave()→join() over a Supabase Realtime channel, with
+  // recall/broadcast/timer + persisted assignments (meeting_breakout_* tables).
+  // The in-call entrance also gates on isHost. Plan + build log:
+  // docs/MEETINGS_BREAKOUT_ROOMS_HANDOFF_2026-06-18.md (§13).
+  //
+  // ON for TEAM TESTING (2026-06-18): Pulse is internal-team-only until the
+  // later-2026 customer launch, so the feature is exposed now for the team to
+  // exercise. ⚠️ Live multi-browser AV (real split/isolation/recall/broadcast)
+  // is still UNVERIFIED — this flip IS that verification step. Local override to
+  // turn OFF: `?ff_breakoutRooms=off`.
   breakoutRooms: {
-    enabled: false,
-    rolloutPercentage: 0,
-    targetUsers: ['internal'],
-    description: 'OFF for v1 — Breakout Rooms UI is built but inert; this flag gates the real host-orchestrated Daily sub-room build (P1–P6). No Daily wiring yet at P0.',
+    enabled: true,
+    rolloutPercentage: 100,
+    targetUsers: ['all'],
+    description: 'ON for team testing (pre-launch) — real in-call host-orchestrated Daily breakout rooms. Live AV verification is in progress via this flip.',
     version: '0.1.0'
   },
 };
