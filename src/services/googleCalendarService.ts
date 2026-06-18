@@ -405,6 +405,42 @@ class GoogleCalendarService {
         }
       }
 
+      // A 403 "insufficient authentication scopes" means the access token is
+      // VALID but was minted from a stored grant that predates the current
+      // Calendar scopes — refreshing can never widen scopes, so retrying is
+      // pointless. The only fix is a `prompt: consent` reconnect. Detect this
+      // (and an unrefreshable 401) and raise a typed reauth signal so the UI
+      // can surface a one-click Reconnect instead of an opaque error.
+      //
+      // Critically: clear the cached token AND arm the negative-cache so the
+      // calendar surface stops hammering the API (every call would otherwise
+      // re-throw 403 for the full 55-min token cache window → toast storm).
+      const reason = errorData.error?.errors?.[0]?.reason;
+      const status = errorData.error?.status;
+      const isScopeError =
+        response.status === 403 &&
+        (status === 'PERMISSION_DENIED' ||
+          reason === 'insufficientPermissions' ||
+          reason === 'ACCESS_TOKEN_SCOPE_INSUFFICIENT' ||
+          /insufficient (authentication scopes|permission)/i.test(errorData.error?.message || ''));
+
+      if (isScopeError || response.status === 401) {
+        this.accessToken = null;
+        this.tokenExpiry = 0;
+        if (this.refreshTimer) {
+          clearTimeout(this.refreshTimer);
+          this.refreshTimer = null;
+        }
+        noTokenUntil = Date.now() + NO_TOKEN_TTL_MS;
+        const reauth = new Error(
+          'Google Calendar access needs to be reconnected (the granted permissions are out of date).'
+        );
+        (reauth as any).code = 'GOOGLE_CALENDAR_REAUTH_REQUIRED';
+        (reauth as any).requiresReauth = true;
+        (reauth as any).userMessage = 'Reconnect Google to restore Calendar access.';
+        throw reauth;
+      }
+
       throw new Error(errorData.error?.message || `API request failed: ${response.status}`);
     }
 

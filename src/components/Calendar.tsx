@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { Contact, CalendarEvent, Task } from '../types';
-import { fetchCalendarEvents, fetchTasks } from '../services/authService';
+import { fetchCalendarEvents, fetchTasks, reauthorizeGoogle } from '../services/authService';
 import { dataService } from '../services/dataService';
 import { googleCalendarService, GoogleCalendar } from '../services/googleCalendarService';
 import { outlookCalendarService } from '../services/outlookCalendarService';
@@ -359,6 +359,11 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   const [syncingGoogle, setSyncingGoogle] = useState(false);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
+  // True when Google returns a reauth/scope failure — the stored grant is stale
+  // and only a `prompt: consent` reconnect can restore Calendar access. Drives
+  // the persistent reconnect banner.
+  const [googleNeedsReconnect, setGoogleNeedsReconnect] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
   const [loadedMonths, setLoadedMonths] = useState<Set<string>>(new Set());
   const [historicalSyncComplete, setHistoricalSyncComplete] = useState(false);
 
@@ -512,6 +517,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
 
       setLastSynced(new Date());
       setGoogleConnected(true);
+      setGoogleNeedsReconnect(false);
     } catch (error: any) {
       console.error('Failed to sync Google Calendar:', error);
 
@@ -520,11 +526,20 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         // This is expected when user hasn't connected Google Calendar yet
         setGoogleConnected(false);
         setSyncError(null); // Don't show error, just show connect button
+      } else if (error.code === 'GOOGLE_CALENDAR_REAUTH_REQUIRED' || error.requiresReauth) {
+        // Stale/insufficient grant — refreshing can't fix it; surface the
+        // persistent reconnect banner instead. De-dupe the toast with a stable
+        // id so parallel calendar/event calls don't stack identical toasts.
+        setGoogleNeedsReconnect(true);
+        setSyncError(null);
+        toast.error('Google Calendar disconnected — reconnect to restore access.', {
+          id: 'google-cal-reauth',
+        });
       } else {
         const msg = error.userMessage || error.message || 'Failed to sync';
         setSyncError(msg);
         // Surface as a toast too, not only sidebar text (#130).
-        toast.error(`Google Calendar sync failed: ${msg}`);
+        toast.error(`Google Calendar sync failed: ${msg}`, { id: 'google-cal-sync-error' });
         if (error.message?.includes('re-authenticate') || error.message?.includes('401')) {
           setGoogleConnected(false);
         }
@@ -533,6 +548,32 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
       setSyncingGoogle(false);
     }
   }, [syncingGoogle, currentDate, visibleCalendars, historicalSyncComplete, loadedMonths]);
+
+  // Reconnect Google in-place. reauthorizeGoogle() forces the consent screen
+  // (signInWithOAuth + `prompt: 'consent'` + full GOOGLE_SCOPES) — the proven
+  // pattern that re-grants Calendar scope on a stale grant WITHOUT a manual
+  // revoke (a plain re-login with `select_account` silently reuses the old,
+  // scope-short grant). It redirects out to Google and back to the current view.
+  const reconnectGoogle = useCallback(async () => {
+    if (reconnecting) return;
+    setReconnecting(true);
+    try {
+      const ok = await reauthorizeGoogle(window.location.pathname + window.location.search);
+      if (!ok) {
+        toast.error('Could not start Google reconnect. Try Settings → Integrations.', {
+          id: 'google-cal-reauth',
+        });
+        setReconnecting(false);
+      }
+      // On success the browser redirects to Google; no further work here.
+    } catch (err) {
+      console.error('[Calendar] Google reconnect failed to start:', err);
+      toast.error('Could not start Google reconnect. Try Settings → Integrations.', {
+        id: 'google-cal-reauth',
+      });
+      setReconnecting(false);
+    }
+  }, [reconnecting]);
 
   // Sync with Outlook Calendar
   const syncOutlookCalendar = useCallback(async () => {
@@ -599,8 +640,14 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         const newEvents = monthEvents.filter(e => !existingGoogleIds.has(e.googleEventId));
         return [...prev, ...newEvents];
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Failed to load events for ${year}-${month}:`, error);
+      if (error?.code === 'GOOGLE_CALENDAR_REAUTH_REQUIRED' || error?.requiresReauth) {
+        setGoogleNeedsReconnect(true);
+        toast.error('Google Calendar disconnected — reconnect to restore access.', {
+          id: 'google-cal-reauth',
+        });
+      }
     }
   }, [loadedMonths, googleConnected, syncingGoogle]);
 
@@ -2811,6 +2858,30 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
           </div>
         </div>
       </div>
+
+      {/* Google reconnect banner — shown when the stored grant is stale/scope-short
+          and only a consent reconnect can restore Calendar access. */}
+      {googleNeedsReconnect && (
+        <div className="mx-4 mt-3 flex items-center gap-3 rounded-xl border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 px-4 py-3">
+          <Unplug className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+              Google Calendar disconnected
+            </p>
+            <p className="text-xs text-amber-700 dark:text-amber-300/80">
+              Your Google permissions are out of date. Reconnect to restore calendar sync.
+            </p>
+          </div>
+          <button
+            onClick={reconnectGoogle}
+            disabled={reconnecting}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 disabled:opacity-60 px-3 py-1.5 text-xs font-semibold text-white transition"
+          >
+            {reconnecting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            {reconnecting ? 'Reconnecting…' : 'Reconnect Google'}
+          </button>
+        </div>
+      )}
 
       {/* Sync conflict resolution banner */}
       {syncConflicts.length > 0 && (

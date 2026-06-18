@@ -743,6 +743,38 @@ export const isSessionValid = async (): Promise<boolean> => {
   }
 };
 
+// Re-authorize Google IN PLACE for the primary login identity, forcing the
+// consent screen so a stale/scope-short grant is widened to the current
+// GOOGLE_SCOPES (Calendar + Contacts + Drive). This mirrors loginWithGoogle but
+// with `prompt: 'consent'` — the SAME proven pattern ReconnectGoogleModal uses
+// (signInWithOAuth, NOT linkIdentity, which can reject an already-linked
+// provider). The user is redirected to Google's consent screen and back to
+// `returnTo`; no manual revoke is ever required. Returns false if the OAuth
+// redirect could not be started (the success case redirects the browser).
+export const reauthorizeGoogle = async (returnTo?: string): Promise<boolean> => {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: getRedirectUrl(returnTo || '/'),
+      queryParams: {
+        access_type: 'offline',
+        // Forced consent re-shows the permission screen and re-issues the grant
+        // with every requested scope + a fresh refresh token — the only flow
+        // that recovers a scope-short grant without a manual revoke.
+        prompt: 'consent select_account',
+        include_granted_scopes: 'true',
+      },
+      scopes: GOOGLE_SCOPES,
+    },
+  });
+
+  if (error) {
+    console.error('[Auth] Google re-authorization failed to start:', error);
+    return false;
+  }
+  return true;
+};
+
 // Connect additional provider (link account)
 export const connectProvider = async (provider: 'google' | 'microsoft' | 'icloud'): Promise<boolean> => {
   if (provider === 'icloud') {
