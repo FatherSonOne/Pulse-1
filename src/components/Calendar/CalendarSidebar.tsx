@@ -48,6 +48,8 @@ interface CalendarSidebarProps {
   viewMode: ViewMode;
   overlayMemberIds: Set<string>;
   setOverlayMemberIds: React.Dispatch<React.SetStateAction<Set<string>>>;
+  /** When false (#134), the simulated busy-time overlay toggle is hidden. */
+  teamBusyOverlayEnabled: boolean;
 
   // Invite
   setInviteContact: (v: Contact) => void;
@@ -69,7 +71,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
   lastSynced, syncError, setShowCreateCalendarModal,
   onNavigateToIntegrations,
   teams, selectedTeam, selectedTeamId, setSelectedTeamId, teamMembers, setShowTeamModal, openEditTeam,
-  viewMode, overlayMemberIds, setOverlayMemberIds,
+  viewMode, overlayMemberIds, setOverlayMemberIds, teamBusyOverlayEnabled,
   setInviteContact, setShowInviteModal,
   showFreeTimeFinder, setShowFreeTimeFinder, freeTimeSlots,
   setNewEventDate, setNewEventTime, setShowEventModal,
@@ -284,7 +286,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
                         <span className="text-[10px] text-zinc-400 truncate block">{contact.email}</span>
                       </div>
                     </div>
-                    {(viewMode === 'week' || viewMode === 'day') && (
+                    {teamBusyOverlayEnabled && (viewMode === 'week' || viewMode === 'day') && (
                       <button
                         onClick={() => setOverlayMemberIds(prev => {
                           const next = new Set(prev);

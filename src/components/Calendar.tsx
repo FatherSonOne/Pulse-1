@@ -44,6 +44,13 @@ import {
 import { useCalendarAI } from '../hooks/useCalendarAI';
 import { useCalendarTeam } from '../hooks/useCalendarTeam';
 
+// Team busy-time overlay (#134). The overlay was rendered from pseudo-random
+// fabricated blocks under real contact names — there is no real teammate
+// availability source yet. Gated OFF for v1 so no fabricated data is shown;
+// flip to true once real teammate busy-times exist. Gating here also de-taints
+// the free-time finder (which subtracts overlayEvents from real availability).
+const TEAM_BUSY_OVERLAY_ENABLED = false;
+
 interface CalendarProps {
   contacts: Contact[];
   openTaskPanel?: boolean;
@@ -1106,6 +1113,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
    * different without real calendar data).
    */
   const overlayEvents = useMemo<OverlayEvent[]>(() => {
+    if (!TEAM_BUSY_OVERLAY_ENABLED) return []; // #134: no fabricated busy-times in v1
     if (overlayMemberIds.size === 0) return [];
     if (viewMode !== 'week' && viewMode !== 'day') return [];
 
@@ -1355,7 +1363,20 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   }, [showExportMenu]);
 
   const toggleTask = (taskId: string) => {
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t));
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const nextCompleted = !task.completed;
+    // Optimistic flip, then persist so it survives reload (#134). On failure,
+    // revert and surface a toast (same pattern as the event write paths).
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: nextCompleted } : t));
+    const revert = () => setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: !nextCompleted } : t));
+    dataService.updateTask(taskId, { completed: nextCompleted }).then(saved => {
+      if (!saved) { toast.error("Couldn't update task — check your connection and try again."); revert(); }
+    }).catch(err => {
+      console.error('Failed to persist task toggle:', err);
+      toast.error("Couldn't update task — check your connection and try again.");
+      revert();
+    });
   };
 
   const handleCreateEvent = async (e: React.FormEvent) => {
@@ -2824,6 +2845,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
            viewMode={viewMode}
            overlayMemberIds={overlayMemberIds}
            setOverlayMemberIds={setOverlayMemberIds}
+           teamBusyOverlayEnabled={TEAM_BUSY_OVERLAY_ENABLED}
            setInviteContact={setInviteContact}
            setShowInviteModal={setShowInviteModal}
            showFreeTimeFinder={showFreeTimeFinder}
@@ -3025,12 +3047,9 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                              </div>
                          </div>
                      ))}
-                     
-                     <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                         <button className="flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition w-full p-2 rounded">
-                             <Plus /> Add new task
-                         </button>
-                     </div>
+                     {tasks.length === 0 && (
+                         <p className="text-sm text-zinc-400 text-center py-6">No tasks yet.</p>
+                     )}
                  </div>
              </div>
          )}
