@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertCircle, Lock, UserPlus, UsersRound, WifiOff, X } from 'lucide-react';
 import {
   discoverPulseUsers,
+  findPulseUserByHandle,
   DiscoveredPulseUser,
   PulseUserDiscoveryError,
 } from '../../services/pulseUserDiscoveryService';
@@ -99,6 +100,27 @@ export function FindTeammatesSheet({ isOpen, onClose, workspaceId, onAdd }: Prop
       setAddedIds((prev) => new Set(prev).add(user.user_id));
     } finally {
       setAddingId(null);
+    }
+  };
+
+  // Cross-org find by exact @handle (#104) — public profiles only.
+  const [handleQuery, setHandleQuery] = useState('');
+  const [handleSearching, setHandleSearching] = useState(false);
+  const [handleResult, setHandleResult] = useState<DiscoveredPulseUser | null>(null);
+  const [handleSearched, setHandleSearched] = useState(false);
+
+  const searchByHandle = async () => {
+    const q = handleQuery.trim();
+    if (!q) return;
+    setHandleSearching(true);
+    setHandleSearched(false);
+    try {
+      setHandleResult(await findPulseUserByHandle(q));
+    } catch {
+      setHandleResult(null);
+    } finally {
+      setHandleSearched(true);
+      setHandleSearching(false);
     }
   };
 
@@ -267,23 +289,60 @@ export function FindTeammatesSheet({ isOpen, onClose, workspaceId, onAdd }: Prop
           )}
         </div>
 
-        {/* Phase 2 stub */}
+        {/* Cross-org find by exact @handle (#104) — public profiles only */}
         <div className="border-t flex-shrink-0" style={{ borderColor: 'var(--pulse-border)' }}>
           <div className="px-4 py-2 flex items-center gap-1.5">
             <div className="flex-1 h-px" style={{ background: 'var(--pulse-border)' }} />
-            <span className="text-[11px] uppercase tracking-wider" style={{ color: 'var(--pulse-ink-3)' }}>Coming later</span>
+            <span className="text-[11px] uppercase tracking-wider" style={{ color: 'var(--pulse-ink-3)' }}>Find by @handle</span>
             <div className="flex-1 h-px" style={{ background: 'var(--pulse-border)' }} />
           </div>
-          <div className="px-3 pb-3">
-            <input
-              disabled
-              aria-disabled="true"
-              aria-label="Cross-org handle search — not yet available"
-              placeholder="Search by @handle"
-              className="w-full rounded-lg border px-3 py-2 text-sm"
-              style={{ opacity: 0.45, cursor: 'not-allowed', pointerEvents: 'none', borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)', color: 'var(--pulse-ink-3)' }}
-            />
-          </div>
+          <form className="px-3 pb-3" onSubmit={(e) => { e.preventDefault(); void searchByHandle(); }}>
+            <div className="flex gap-2">
+              <input
+                value={handleQuery}
+                onChange={(e) => { setHandleQuery(e.target.value); setHandleSearched(false); }}
+                aria-label="Find a Pulse user by exact handle"
+                placeholder="Search by @handle"
+                className="flex-1 rounded-lg border px-3 py-2 text-sm outline-none"
+                style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)', color: 'var(--pulse-ink)' }}
+              />
+              <button
+                type="submit"
+                disabled={handleSearching || !handleQuery.trim()}
+                className="px-3 py-2 rounded-lg text-sm font-medium min-h-[40px] disabled:opacity-50"
+                style={{ background: 'var(--pulse-rose)', color: '#fff' }}
+              >
+                {handleSearching ? '…' : 'Find'}
+              </button>
+            </div>
+
+            {handleSearched && !handleSearching && (
+              handleResult ? (
+                <div className="mt-2 flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--pulse-canvas-soft)' }}>
+                  <AvatarFallback name={handleResult.display_name} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate" style={{ color: 'var(--pulse-ink)' }}>{handleResult.display_name}</p>
+                    {handleResult.handle && (
+                      <p className="text-xs truncate" style={{ color: 'var(--pulse-ink-3)' }}>@{handleResult.handle}</p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void handleAdd(handleResult)}
+                    disabled={addingId === handleResult.user_id || addedIds.has(handleResult.user_id)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-60"
+                    style={{ background: 'var(--pulse-tone-info-soft)', color: 'var(--pulse-tone-info)' }}
+                  >
+                    {addedIds.has(handleResult.user_id) ? 'Added' : addingId === handleResult.user_id ? 'Adding…' : 'Add'}
+                  </button>
+                </div>
+              ) : (
+                <p className="mt-2 text-xs" style={{ color: 'var(--pulse-ink-3)' }}>
+                  No public Pulse user found with that handle.
+                </p>
+              )
+            )}
+          </form>
         </div>
       </div>
     </div>
