@@ -392,17 +392,32 @@ expensive moves visible so they're a choice, not an accident.
 ### 7.2 MCP is sticky — prefer local, narrow, and disposable
 
 **Every MCP tool result stays in context for the rest of the session.**
-That is why Supabase alone was 30% of usage. Order of preference for
+That is why Supabase alone was 30% of usage (43% by 2026-06-18 — it is
+the single biggest line item and trending UP). Order of preference for
 schema/data work:
 
-1. **Read a local file** — `supabase/migrations/*.sql`, generated types,
-   or service code. File reads are cheap and can be flushed with
-   `/compact`; MCP results can't be selectively removed.
+1. **Read a local file** — `supabase/migrations/*.sql`, the committed
+   generated types at `src/types/database.types.ts` (see below), or
+   service code. For one table's shape, **`Grep` the types file for
+   `table_name: {`** — surgical and cheap; do NOT read the 338-table
+   file whole. File reads are cheap and can be flushed with `/compact`;
+   MCP results can't be selectively removed.
 2. **Narrow `execute_sql`** — `SELECT specific_cols ... LIMIT n`, or
    query `information_schema.columns WHERE table_name = 'one_table'`.
    Never `list_tables` when you need one table's shape.
 3. **Full introspection (`list_tables`) only as a last resort**, and
    per 7.1 announce it first.
+
+**The `claude.ai Supabase` connector stays DISCONNECTED by default.**
+Connect it via `/mcp` only for a specific live-schema or migration task,
+extract what's needed to a local file/answer, then disconnect again.
+A connected MCP server's results stay in context for the whole session —
+the connection itself is the cost, not just the individual call.
+
+**Schema source of truth — `src/types/database.types.ts`.** Generated
+once via `generate_typescript_types` and committed. Answer single-table
+shape questions by grepping it, NOT by hitting the live MCP. Regenerate
+(and re-announce per 7.1) only after a migration changes the schema.
 
 After a necessary heavy MCP pull, suggest `/compact` to the user to
 flush the result once you've extracted what you need.
@@ -432,10 +447,13 @@ they multiply cost. Before spawning:
 
 ### 7.4 Session length
 
-66% of usage was at >150k context — long sessions are expensive even
-when cached. **`/clear` when switching to an unrelated task; `/compact`
-mid-task** when a thread has accumulated large tool outputs you no
-longer need.
+66% of usage was at >150k context (77% by 2026-06-18, trending UP) —
+long sessions are expensive even when cached. **`/clear` at every task
+boundary, not just unrelated ones; `/compact` mid-task** when a thread
+has accumulated large tool outputs you no longer need. Treat crossing
+~150k context as a prompt to wrap the current thread and clear — a long
+cached session is still billed, and staying under the 150k band is
+cheaper than riding above it.
 
 ### 7.5 Baseline MCP servers
 
