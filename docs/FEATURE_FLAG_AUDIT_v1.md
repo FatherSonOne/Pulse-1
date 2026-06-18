@@ -182,3 +182,62 @@ checklist is the script:
 - `?ff_workspaceGroups=on` — reveal the Groups card
 
 Each persists to `localStorage` (`featureFlags.ts:258-280`); append `=off` to clear.
+
+---
+
+## Addendum — 2026-06-18 re-audit + gating/build pass
+
+The 2026-05-26 run concluded "nothing to gate" because every then-known stub was
+already flagged or owned elsewhere. A second sweep on 2026-06-18 (5 parallel
+read-only Explore passes over every reachable surface) found a small set of
+*newly-reachable* or *mislabeled* affordances and closed them. This addendum is
+the current state; the master inventory above still holds for the top-level
+`AppView` surfaces.
+
+### Tier-1 — non-real surfaces gated OFF this pass (commit `989c4b3`)
+
+| Surface | Why it wasn't honest | Action | Evidence |
+|---|---|---|---|
+| **Cellular SMS inside Messages** | The top-level `SMS` nav was gated via `inAppSms`, but the **mock** Cellular-SMS drawer was still reachable *from within Messages* (drawer button + render), so the mock surface leaked around the nav gate. | Extended `inAppSms` to also guard the in-Messages render + drawer button. | `Messages.tsx` (`inAppSmsEnabled` guard on CellularSMS render), `Messages/MessagesTopModals.tsx` (`useFeatureFlag('inAppSms')` gates the drawer button), `Calendar.tsx` (`if (showCellularSMS && inAppSmsEnabled)`) |
+| **Post-meeting follow-up prompts** | A monitoring effect surfaced post-meeting AI prompts whose real path is an Entomate handoff (owned by #106), i.e. it advertised a capability not wired for v1. | New `postMeetingFollowups` flag (OFF); gates the monitoring effect. | `featureFlags.ts` (`postMeetingFollowups`, off), `Calendar.tsx` (`useFeatureFlag('postMeetingFollowups', …)`) |
+| **Location precision selector** | The map location-share panel offered precise / approximate / city-only, but no coordinate-coarsening code exists — non-precise levels still flow precise coords (the `shareLevelCoarsening` stub). Showing the selector implied it changed what the viewer sees. | New `locationPrecisionLevels` flag (OFF); off → render an honest "Shares your precise location." note instead of the selector. | `featureFlags.ts` (`locationPrecisionLevels`, off), `map/contacts/LocationSharePanel.tsx` |
+
+### Tier-2 — dead / mislabeled affordances resolved this pass
+
+| # | Surface | Resolution | Commit |
+|---|---|---|---|
+| 1 | ContactGoalModal "AI-drafted replies coming soon." caption | Removed (the real copy sits under an actual toggle; the caption was orphaned) | `cca516f` |
+| 2 | Messages tool-suggestion effect | Removed dead code — the effect computed a `suggestedTool` that was never rendered (Tools surface is off) | `cca516f` |
+| 3 | Dashboard "Invite to Pulse" button | Wired to the canonical invite path (`navigateToTeamInvite({ source: 'dashboard-team-builder' })`) | `cca516f` |
+| 6 | Map "Contrast" base style + density | **False positive** — already fully built (`coralCockpitStyle.ts` `PALETTES.contrast` + density-aware `coralLayers`; `BaseStyleSwitch` renders live). Removed stale `horizonStubs.ts` entries that were consumed by nothing. | `c3dee6d` |
+| 4 | PulseRadio "Manage Subscribers" | **Built real** — list channel subscribers (`getChannelSubscribers`) + remove (`removeChannelSubscriber`); replaced the placeholder toast with a working modal. RLS already supported it (no migration). | `a631541` |
+| 5 | FindTeammatesSheet "Find by @handle" | **Built real** — exact, **public-only**, cross-org handle lookup (`findPulseUserByHandle` → `user_profiles.is_public`) → add-as-contact. Replaced the disabled "Coming later" stub. Browse/fuzzy stays workspace-scoped by design. | `0905651` |
+
+### Verified honest as-is — no action needed
+
+- **Breakout Rooms** (`MeetingsComponents.tsx` `BreakoutRoomsModal` ~1719) — a
+  fully-built 3-panel UI whose action buttons are **no-ops** (Start/End flips
+  local state only, "Broadcast to All" clears a local field, "Call Everyone Back"
+  just closes; **no Daily SDK**). It is **provably unreachable**: the Tools-menu
+  "BREAKOUT" item is a `disabled` native button + "SOON" badge
+  (`TimeRail.tsx:449,461` — a disabled `<button>` cannot fire onClick); its only
+  other trigger, `handleFeatureClick('breakout')` (`Meetings.tsx:420`), is in a
+  function that is **never called** (dead); and the MeetingSettings toggle
+  (`MeetingsComponents.tsx:1591`) is `disabled` + "Coming Soon". The built UI is
+  preserved as an asset for when Daily breakout wiring lands (Rule A: additive >
+  subtractive). No reviewer can reach a fake control.
+- **Push notifications** — REAL (verified live `sent:1`, #101). The prod
+  dependency is VAPID/dispatch secrets, not code; not a theatrical surface.
+- **Meetings analytics "People" tab** — honest empty state, not a fake.
+- **Recall.ai "Meet Mate" bot** — a *landing-page* marketing claim, not an in-app
+  control; tracked separately, no in-product surface to gate.
+
+### AC status
+
+- **AC1 (documented inventory):** ✅ this doc (master inventory 2026-05-26 +
+  this addendum).
+- **AC2 (each non-real surface flagged OFF, one mechanism):** ✅ all Tier-1 leaks
+  closed via `src/lib/featureFlags.ts`; Tier-2 dead/mislabeled affordances removed
+  or built real.
+- **AC3 (click-through QA):** human/QA pass — script in
+  [How to verify](#how-to-verify-acceptance-3--click-through-qa); ties to **#115**.
