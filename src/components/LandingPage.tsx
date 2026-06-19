@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef, useId, lazy, Suspense } from 'react';
 import './LandingPage.css';
 
 import { Apple, ArrowDown, Battery, Bell, Book, BookOpen, Check, ChevronUp, Download, ExternalLink, Eye, Gavel, Heart, HeartPulse, HelpCircle, Info, Keyboard, Layers, LayoutGrid, MapPin, Mic, Network, Play, Radar, Rocket, Search, ShieldHalf, Signal, Smartphone, Users, Video, Wand2, Wifi, X } from 'lucide-react';
@@ -11,14 +11,27 @@ interface LandingPageProps {
   onGetStarted: () => void;
 }
 
-// QntmEcos Abstract Q Logo — solid rose #f43f5e
-const QntmEcosIcon = ({ size = 28 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <path d="M 40 10 A 28 28 0 1 1 40 68" stroke="#f43f5e" strokeWidth="5" strokeLinecap="round" fill="none" />
-    <line x1="54" y1="56" x2="68" y2="72" stroke="#f43f5e" strokeWidth="5" strokeLinecap="round" />
-    <circle cx="40" cy="40" r="5" fill="#f43f5e" />
-  </svg>
-);
+// Pulse Globe — the sole brand mark. A rose→pink disc with the heartbeat knocked out
+// (a real transparent gap, so the pulse reads as whatever surface sits behind the mark).
+const QntmEcosIcon = ({ size = 28 }: { size?: number }) => {
+  const uid = useId();
+  const g = `pgGlobe-${uid}`, m = `pgCut-${uid}`;
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id={g} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#f43f5e" />
+          <stop offset="1" stopColor="#ec4899" />
+        </linearGradient>
+        <mask id={m}>
+          <rect width="100" height="100" fill="#fff" />
+          <path d="M6 50 H38 L44 32 L52 68 L58 50 H94" fill="none" stroke="#000" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+        </mask>
+      </defs>
+      <circle cx="50" cy="50" r="43" fill={`url(#${g})`} mask={`url(#${m})`} />
+    </svg>
+  );
+};
 
 // Data arrays imported from ./LandingPage/landingData.ts
 
