@@ -126,12 +126,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
   }, [liveTranscriptPhrase]);
 
   // ── Theme toggle (dark = default, persisted to localStorage) ──
-  // Marketing landing is a fixed dark-hero → light-body flow (Logos Vision model):
-  // the nav + hero zone is always dark, every section below is always light. No
-  // user theme toggle. `heroDark` styles the dark zone; `isDarkMode` stays false so
-  // the existing per-section light styling renders throughout the body.
+  // Marketing landing has no user theme toggle. `heroDark` styles the dark nav +
+  // hero zone (always dark). `isDarkMode` drives the body: HOME is a fixed
+  // dark-hero → light-body flow (false → the .lp-light wrapper renders every
+  // section light). FEATURES/DEMO emit their dark classes (true) and the body
+  // wrapper is dark, so sections render dark by default; alternating sections
+  // get an `lp-light` class to flip back to light (dark/light rhythm).
   const heroDark = true;
-  const isDarkMode = false;
+  const isDarkMode = variant === 'home' ? false : true;
 
   // Reveal-on-scroll for section headings and divider SVGs. Picks up every
   // <h2> inside #main-content, every .lp-section-divider, and any explicit
@@ -1385,7 +1387,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
       )}{/* end hero (home only) */}
 
       {/* ── Light body zone — every section below the dark hero (Logos Vision model) ── */}
-      <div className="lp-light">
+      <div className={variant === 'home' ? 'lp-light' : 'bg-[#0f172a]'}>
 
       {/* ── Capability strip (home) — breadth grid; deep-links into /features clusters ── */}
       {variant === 'home' && (
@@ -1715,7 +1717,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
         <SectionDivider />
 
         {/* Section A2 — Glimpse (video-player mock, Wave 4.1) */}
-        <section id="section-glimpse" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
+        <section id="section-glimpse" className={`lp-light py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
           <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
             <div className="absolute inset-0" style={{
               background: 'radial-gradient(ellipse at 70% 40%, rgba(244,63,94,0.10) 0%, transparent 55%), radial-gradient(ellipse at 25% 70%, rgba(236,72,153,0.06) 0%, transparent 50%)',
@@ -2195,7 +2197,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
         </div>
       </div>
 {/* Section B — War Room (terminal-mock layout, Wave 4.1) */}
-        <section id="section-warroom" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
+        <section id="section-warroom" className={`lp-light py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
           <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
             <div className="absolute inset-0" style={{
               background: 'radial-gradient(ellipse at 30% 40%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 70% 60%, rgba(236,72,153,0.05) 0%, transparent 50%)',
@@ -2541,7 +2543,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
         <SectionDivider />
 
         {/* Section B5 — Analytics (hero-chart layout, Wave 4.1) */}
-        <section id="section-analytics" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
+        <section id="section-analytics" className={`lp-light py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
           <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
             <div className="absolute inset-0" style={{
               background: 'radial-gradient(ellipse at 50% 50%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 80% 30%, rgba(236,72,153,0.05) 0%, transparent 50%)',
@@ -3005,7 +3007,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
         </div>
       </div>
 {/* Section B4 — Calendar (agenda-strip layout, Wave 4.1) */}
-        <section id="section-calendar" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
+        <section id="section-calendar" className={`lp-light py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
           <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
             <div className="absolute inset-0" style={{
               background: 'radial-gradient(ellipse at 40% 30%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 60% 70%, rgba(236,72,153,0.05) 0%, transparent 50%)',
@@ -3376,7 +3378,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
       <SectionDivider />
 
       {/* ── Section F — Workspaces (compact band, no card grid) ── */}
-      <section id="section-workspaces" className={`py-16 px-6 relative${isDarkMode ? '' : ' bg-stone-50'}`}>
+      <section id="section-workspaces" className={`lp-light py-16 px-6 relative${isDarkMode ? '' : ' bg-stone-50'}`}>
         <div className="max-w-5xl mx-auto">
           <div className={`flex flex-col md:flex-row gap-8 md:gap-12 items-start md:items-center p-8 md:p-10 rounded-2xl border${isDarkMode ? ' bg-zinc-900/60 border-zinc-800' : ' bg-white border-stone-200 shadow-sm'}`}>
             <div className="flex-shrink-0 flex items-center gap-3">
@@ -3575,7 +3577,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
       </section>
 
       {/* ── Ecosystem (Trinity) Section ── */}
-      <section id="ecosystem" className="py-24 px-6 border-b border-zinc-800/50 relative">
+      <section id="ecosystem" className="lp-light py-24 px-6 border-b border-zinc-800/50 relative">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 animate-fade-in">
             <h2 className="text-3xl sm:text-5xl font-bold mb-6 text-zinc-50">The Trinity of Productivity</h2>

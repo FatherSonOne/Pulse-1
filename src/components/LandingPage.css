@@ -576,6 +576,22 @@ a.duration-300,
    ============================================================ */
 
 /* ── Canvas & root ── */
+/* Make .lp-light a self-contained LIGHT island: re-declare the light tokens on
+   the lp-light element itself so any lp-light zone renders light even under the
+   app's global dark class (.dark / [data-theme="dark"] set these vars dark). A
+   custom property set on the element wins over an inherited dark-ancestor value.
+   Without this, light features sections (which lack explicit bg classes) fell to
+   the dark --lp-bg (#000). */
+.lp-light {
+  --lp-bg:             #fafaf9;
+  --lp-surface:        #ffffff;
+  --lp-surface-raised: #f5f4f1;
+  --lp-border:         #e7e5e4;
+  --lp-border-raised:  #d6d3d1;
+  --lp-text-main:      #1c1917;
+  --lp-text-secondary: #57534e;
+  --lp-text-muted:     #78716c;
+}
 .lp-light { background-color: var(--lp-bg) !important; color: var(--lp-text-main) !important; }
 
 /* ── Opaque zinc backgrounds ── */
