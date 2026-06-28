@@ -2023,7 +2023,10 @@
 }
 
 /* === HIDDEN UTIL ================================================ */
-.hidden {
+/* Scoped to .pulse-voice-chat — this was previously a bare `.hidden` that leaked
+   app-wide and (being !important + extra props) defeated Tailwind's responsive
+   reveals like `hidden md:block` / `hidden sm:flex` everywhere. */
+.pulse-voice-chat .hidden {
   display: none !important;
   visibility: hidden;
   width: 0;

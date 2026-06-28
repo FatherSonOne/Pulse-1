@@ -644,6 +644,51 @@ a.duration-300,
 .lp-light .lp-pricing-featured .text-zinc-500 { color: #a1a1aa !important; }
 .lp-light .lp-pricing-featured .text-rose-300 { color: #fda4af !important; }
 
+/* ============================================================
+   FEATURES — light-section contrast hardening (2026-06-28)
+   Root cause: the app's global audit-fixes.css coerces text inside the
+   .dark root — `.dark [class*="text-zinc-300"]` (0,2,0 !important) — and the
+   landing renders inside .dark, so it TIES .lp-light's overrides and wins on
+   source order. That left zinc-300 body/list text faint on our light sections.
+   ============================================================ */
+
+/* (B) Genuinely-light surfaces (white cards) whose zinc-300 text was forced
+   light-gray. id-scoped (1,2,0) so it beats audit-fixes without touching the
+   dark insets that legitimately keep light text (Glimpse video, War Room mock). */
+.dark #section-workspaces.lp-light [class*="text-zinc-300"],
+.dark #ecosystem.lp-light [class*="text-zinc-300"] {
+  color: var(--lp-text-secondary) !important;
+}
+
+/* (A) War Room terminal — keep it a genuine DARK inset on the light section
+   (a terminal reads as dark: Stripe/Linear/Vercel pattern). The .lp-light layer
+   was half-flattening it (bg→light, text stayed light → invisible). Re-declare
+   the design tokens to DARK on the mock so every var()-based override resolves
+   dark, then restore the few hardcoded light conversions and re-assert bright
+   accents at higher specificity. */
+.lp-light .lp-warroom {
+  --lp-bg:             #09090b;
+  --lp-surface:        #18181b;
+  --lp-surface-raised: #27272a;
+  --lp-border:         #27272a;
+  --lp-border-raised:  #3f3f46;
+  --lp-text-main:      #fafafa;
+  --lp-text-secondary: #d4d4d8;
+  --lp-text-muted:     #a1a1aa;
+}
+/* Give the dark mock a light default color so any unclassed text node inherits
+   light (the section's `color:var(--lp-text-main)` computes dark and inherits in). */
+.lp-light .lp-warroom { color: var(--lp-text-main) !important; }
+.dark .lp-light .lp-warroom [class*="bg-zinc-900\/"] { background-color: rgba(24, 24, 27, 0.50) !important; }
+.dark .lp-light .lp-warroom [class*="border-zinc-8"] { border-color: rgba(63, 63, 70, 0.70) !important; }
+.dark .lp-light .lp-warroom [class*="border-zinc-7"] { border-color: rgba(63, 63, 70, 0.80) !important; }
+.dark .lp-light .lp-warroom [class*="text-zinc-300"] { color: #d4d4d8 !important; }
+.dark .lp-light .lp-warroom .uppercase.tracking-widest { color: var(--lp-text-muted) !important; }
+.dark .lp-light .lp-warroom .text-rose-400    { color: #fb7185 !important; }
+.dark .lp-light .lp-warroom .text-rose-500    { color: #fb7185 !important; }
+.dark .lp-light .lp-warroom .text-purple-400  { color: #c084fc !important; }
+.dark .lp-light .lp-warroom .text-emerald-400 { color: #34d399 !important; }
+
 /* ── Border colours ── */
 .lp-light .border-zinc-800 { border-color: var(--lp-border) !important; }
 .lp-light .border-zinc-700 { border-color: var(--lp-border-raised) !important; }
