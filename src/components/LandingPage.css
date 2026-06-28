@@ -608,12 +608,25 @@ a.duration-300,
 
 /* ── Text colours ── */
 .lp-light .text-white      { color: var(--lp-text-main) !important; }
+.lp-light .text-zinc-50    { color: var(--lp-text-main) !important; } /* was missing — white-on-white (e.g. pricing $ amounts) */
 .lp-light .text-zinc-100   { color: var(--lp-text-main) !important; }
+.lp-light .text-zinc-200   { color: var(--lp-text-secondary) !important; } /* was missing — rendered faint on light (pricing feature lists etc.) */
+.lp-light .text-rose-300   { color: #be123c !important; } /* faint on light (outline-button labels); featured card overrides back to light below */
 .lp-light .text-zinc-300   { color: var(--lp-text-secondary) !important; }
 .lp-light .text-zinc-400   { color: var(--lp-text-secondary) !important; }
 .lp-light .text-zinc-500   { color: var(--lp-text-muted) !important; }
 .lp-light .text-zinc-600   { color: var(--lp-text-muted) !important; } /* stone-500 — preserves hierarchy */
 .lp-light .hover\:text-white:hover { color: var(--lp-text-main) !important; }
+
+/* Pricing: the featured Solo card keeps its dark gradient surface in the light
+   body (deliberate highlight, like a "most popular" inverted card). Re-protect
+   its text from the .lp-light remaps above so it stays legible on the dark card. */
+.lp-light .lp-pricing-featured .text-white,
+.lp-light .lp-pricing-featured h3             { color: #ffffff !important; }
+.lp-light .lp-pricing-featured .text-zinc-200 { color: #e4e4e7 !important; }
+.lp-light .lp-pricing-featured .text-zinc-400,
+.lp-light .lp-pricing-featured .text-zinc-500 { color: #a1a1aa !important; }
+.lp-light .lp-pricing-featured .text-rose-300 { color: #fda4af !important; }
 
 /* ── Border colours ── */
 .lp-light .border-zinc-800 { border-color: var(--lp-border) !important; }

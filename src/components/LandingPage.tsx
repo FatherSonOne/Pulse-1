@@ -126,21 +126,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
   }, [liveTranscriptPhrase]);
 
   // ── Theme toggle (dark = default, persisted to localStorage) ──
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
-    try {
-      const stored = localStorage.getItem('lp-theme');
-      if (stored === 'light') return false;
-      if (stored === 'dark')  return true;
-    } catch { /* private browsing */ }
-    return true;
-  });
-  const toggleTheme = () => {
-    setIsDarkMode(prev => {
-      const next = !prev;
-      try { localStorage.setItem('lp-theme', next ? 'dark' : 'light'); } catch {}
-      return next;
-    });
-  };
+  // Marketing landing is a fixed dark-hero → light-body flow (Logos Vision model):
+  // the nav + hero zone is always dark, every section below is always light. No
+  // user theme toggle. `heroDark` styles the dark zone; `isDarkMode` stays false so
+  // the existing per-section light styling renders throughout the body.
+  const heroDark = true;
+  const isDarkMode = false;
 
   // Reveal-on-scroll for section headings and divider SVGs. Picks up every
   // <h2> inside #main-content, every .lp-section-divider, and any explicit
@@ -519,7 +510,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
   };
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-zinc-950 lp-dark text-white selection:text-rose-200' : 'bg-stone-50 lp-light text-stone-900 selection:text-rose-700'} overflow-x-hidden overflow-y-auto selection:bg-rose-500/30`}>
+    <div className="min-h-screen bg-stone-50 text-stone-900 overflow-x-hidden overflow-y-auto selection:bg-rose-500/30 selection:text-rose-700">
 
       {/* ── Skip to main content (ADA) ── */}
       <a
@@ -1028,7 +1019,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
       `}</style>
 
       {/* ── Navigation ── */}
-      <nav aria-label="Main navigation" className={`fixed top-0 left-0 right-0 z-[100] backdrop-blur-xl border-b ${isDarkMode ? 'bg-zinc-950/85 border-zinc-800/50' : 'bg-white/85 border-stone-200/60'}`}>
+      <nav aria-label="Main navigation" className={`lp-dark fixed top-0 left-0 right-0 z-[100] backdrop-blur-xl border-b ${heroDark ? 'bg-zinc-950/85 border-zinc-800/50' : 'bg-white/85 border-stone-200/60'}`}>
         <div className="max-w-7xl mx-auto px-4 py-3 md:px-6 md:py-4 flex items-center justify-between">
 
           {/* Left: Pulse logo + QntmEcos badge */}
@@ -1044,7 +1035,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
                 <QntmEcosIcon size={36} />
               </span>
               <span
-                className={isDarkMode ? 'text-zinc-50' : 'text-zinc-900'}
+                className={heroDark ? 'text-zinc-50' : 'text-zinc-900'}
                 style={{
                   fontFamily: "'Syne', 'Inter', system-ui, sans-serif",
                   fontWeight: 800,
@@ -1078,7 +1069,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
               ] as const).map((item) => {
                 const active = currentPath === item.href;
                 return (
-                  <a key={item.href} href={item.href} aria-current={active ? 'page' : undefined} className={`relative px-2 sm:px-2.5 py-1.5 text-[13px] sm:text-sm font-medium rounded-md transition-colors ${active ? (isDarkMode ? 'text-white' : 'text-stone-900') : (isDarkMode ? 'text-zinc-400 hover:text-white' : 'text-stone-500 hover:text-stone-900')}`}>
+                  <a key={item.href} href={item.href} aria-current={active ? 'page' : undefined} className={`relative px-2 sm:px-2.5 py-1.5 text-[13px] sm:text-sm font-medium rounded-md transition-colors ${active ? (heroDark ? 'text-white' : 'text-stone-900') : (heroDark ? 'text-zinc-400 hover:text-white' : 'text-stone-500 hover:text-stone-900')}`}>
                     {item.label}
                     {active && <span className="absolute -bottom-0.5 left-2 right-2 h-0.5 rounded-full bg-rose-500" aria-hidden="true" />}
                   </a>
@@ -1087,9 +1078,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
             </nav>
           </div>
 
-          <div className={`hidden md:flex items-center gap-6 text-sm font-medium ${isDarkMode ? 'text-zinc-400' : 'text-stone-500'}`}>
+          <div className={`hidden md:flex items-center gap-6 text-sm font-medium ${heroDark ? 'text-zinc-400' : 'text-stone-500'}`}>
             {/* Primary nav */}
-            <button type="button" onClick={() => scrollToSection('pricing')} className={`transition ${isDarkMode ? 'hover:text-white' : 'hover:text-stone-900'}`}>Pricing</button>
+            <button type="button" onClick={() => scrollToSection('pricing')} className={`transition ${heroDark ? 'hover:text-white' : 'hover:text-stone-900'}`}>Pricing</button>
 
             {/* ── Downloads dropdown ── */}
             <div
@@ -1198,17 +1189,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
             </div>
 
             {/* Divider */}
-            <span className={`w-px h-4 ${isDarkMode ? 'bg-zinc-800' : 'bg-stone-300'}`} aria-hidden="true" />
+            <span className={`w-px h-4 ${heroDark ? 'bg-zinc-800' : 'bg-stone-300'}`} aria-hidden="true" />
             {/* Docs & legal */}
-            <button type="button" onClick={() => setIsGuideOpen(true)} className={`flex items-center gap-1.5 transition ${isDarkMode ? 'hover:text-white' : 'hover:text-stone-900'}`}>
+            <button type="button" onClick={() => setIsGuideOpen(true)} className={`flex items-center gap-1.5 transition ${heroDark ? 'hover:text-white' : 'hover:text-stone-900'}`}>
               <Book className="text-[11px]" />
               Docs
             </button>
-            <a href="/privacy" className={`flex items-center gap-1.5 transition ${isDarkMode ? 'hover:text-white' : 'hover:text-stone-900'}`}>
+            <a href="/privacy" className={`flex items-center gap-1.5 transition ${heroDark ? 'hover:text-white' : 'hover:text-stone-900'}`}>
               <ShieldHalf className="text-[11px]" />
               Privacy
             </a>
-            <a href="/terms" className={`flex items-center gap-1.5 transition ${isDarkMode ? 'hover:text-white' : 'hover:text-stone-900'}`}>
+            <a href="/terms" className={`flex items-center gap-1.5 transition ${heroDark ? 'hover:text-white' : 'hover:text-stone-900'}`}>
               <Gavel className="text-[11px]" />
               Terms
             </a>
@@ -1223,7 +1214,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
               aria-expanded={mobileMenuOpen}
               aria-controls="lp-mobile-menu"
               className={`md:hidden w-11 h-11 flex items-center justify-center rounded-lg border transition-all duration-200 hover:scale-105 active:scale-95 ${
-                isDarkMode
+                heroDark
                   ? 'border-zinc-700/70 bg-zinc-900/60 hover:border-zinc-500/50 text-zinc-400 hover:text-white'
                   : 'border-stone-300 bg-white hover:border-stone-400 text-stone-500 hover:text-stone-900'
               }`}
@@ -1260,30 +1251,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
                 />
               </svg>
             </button>
-            {/* Theme toggle — sun (dark→light) / moon (light→dark) */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-              title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-              className={`w-9 h-9 flex items-center justify-center rounded-lg border transition-all duration-200 hover:scale-105 active:scale-95 ${
-                isDarkMode
-                  ? 'border-zinc-700/70 bg-zinc-900/60 hover:border-amber-400/50 text-zinc-400 hover:text-amber-400'
-                  : 'border-stone-300 bg-white hover:border-rose-400/50 text-stone-500 hover:text-rose-500'
-              }`}
-            >
-              {isDarkMode ? (
-                /* Sun — click to go light */
-                <svg viewBox="0 0 20 20" width={16} height={16} fill="currentColor" aria-hidden="true">
-                  <path fillRule="evenodd" d="M10 2a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 2zm4.95 2.636a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.06-1.06l1.06-1.061a.75.75 0 011.06 0zM10 6a4 4 0 100 8 4 4 0 000-8zm-8 4a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5A.75.75 0 012 10zm13.5 0a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zm-2.636 4.95a.75.75 0 010-1.061l1.06-1.06a.75.75 0 111.061 1.06l-1.06 1.06a.75.75 0 01-1.061 0zm-8.84 0a.75.75 0 01-1.061 0l-1.06-1.06a.75.75 0 011.06-1.061l1.061 1.06a.75.75 0 010 1.061zM10 16.5a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5a.75.75 0 01.75-.75z" clipRule="evenodd" />
-                </svg>
-              ) : (
-                /* Moon — click to go dark */
-                <svg viewBox="0 0 20 20" width={16} height={16} fill="currentColor" aria-hidden="true">
-                  <path fillRule="evenodd" d="M7.455 2.004a.75.75 0 01.26.77 7 7 0 009.958 7.967.75.75 0 011.067.853A8.5 8.5 0 116.647 1.921a.75.75 0 01.808.083z" clipRule="evenodd" />
-                </svg>
-              )}
-            </button>
             {/* Secondary action — returning users. Hidden at the narrowest width so the
                 primary CTA always wins; on mobile, sign-in lives in the menu sheet. */}
             <button
@@ -1311,7 +1278,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
         id="lp-mobile-menu"
         role="navigation"
         aria-label="Mobile navigation"
-        className={`lp-mobile-menu ${mobileMenuOpen ? 'open' : 'closed'}`}
+        className={`lp-dark lp-mobile-menu ${mobileMenuOpen ? 'open' : 'closed'}`}
       >
         {/* Stacked nav links */}
         <a href="/" aria-current={currentPath === '/' ? 'page' : undefined} className={`lp-mobile-nav-link${currentPath === '/' ? ' text-rose-500 font-semibold' : ''}`}>Home</a>
@@ -1335,14 +1302,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
       {/* ── Hero Section — Asymmetric Signal ── */}
       {variant === 'home' && (
       <section
-        className="relative flex items-center min-h-screen overflow-hidden"
-        style={{ background: isDarkMode ? '#0f172a' : '#fafaf9' }}
+        className="lp-dark relative flex items-center min-h-screen overflow-hidden"
+        style={{ background: '#0f172a' }}
       >
         {/* Signal wave canvas — right 65%, absolute positioned */}
         <canvas
           ref={heroCanvasRef}
           className="hero-signal-canvas"
-          style={{ opacity: isDarkMode ? 1 : 0.2 }}
+          style={{ opacity: heroDark ? 1 : 0.2 }}
           aria-hidden="true"
         />
 
@@ -1353,7 +1320,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
         <div
           className="hero-asymm-fade"
           style={{
-            background: isDarkMode
+            background: heroDark
               ? 'linear-gradient(90deg, #0f172a 32%, rgba(15,23,42,0.78) 55%, transparent 80%)'
               : 'linear-gradient(90deg, #fafaf9 32%, rgba(250,250,249,0.78) 55%, transparent 80%)',
           }}
@@ -1361,7 +1328,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
         />
 
         {/* Grain texture — premium feel */}
-        <div className="hero-grain-overlay" style={{ opacity: isDarkMode ? 0.22 : 0.05 }} aria-hidden="true" />
+        <div className="hero-grain-overlay" style={{ opacity: heroDark ? 0.22 : 0.05 }} aria-hidden="true" />
 
         {/* Text content — left column */}
         <div className="hero-asymm-content">
@@ -1376,7 +1343,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
               fontWeight: 800,
               fontSize: '17px',
               letterSpacing: '0.1em',
-              color: isDarkMode ? '#ffffff' : '#1c1917',
+              color: heroDark ? '#ffffff' : '#1c1917',
               textTransform: 'uppercase',
             }}>PULSE</span>
           </div>
@@ -1393,7 +1360,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
           {/* Headline — hard stop at "Every Decision." */}
           <h1
             className="hero-asymm-headline animate-blur-reveal blur-delay-2"
-            style={{ color: isDarkMode ? '#ffffff' : '#1c1917' }}
+            style={{ color: heroDark ? '#ffffff' : '#1c1917' }}
           >
             <span className="ha-line">Every Signal.</span>
             <span className="ha-line">Every Voice.</span>
@@ -1416,6 +1383,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
       </section>
 
       )}{/* end hero (home only) */}
+
+      {/* ── Light body zone — every section below the dark hero (Logos Vision model) ── */}
+      <div className="lp-light">
 
       {/* ── Capability strip (home) — breadth grid; deep-links into /features clusters ── */}
       {variant === 'home' && (
@@ -3874,7 +3844,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
             {/* ─── Pulse Solo — Lane-A entry tier, highlighted ─── */}
             <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-rose-500/10 flex flex-col">
               <div className="h-1 bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-500" aria-hidden="true" />
-              <div className="bg-gradient-to-br from-zinc-950 to-zinc-900 border-x border-b border-zinc-700/60 rounded-b-2xl p-8 sm:p-10 space-y-6 flex-1 flex flex-col">
+              <div className="lp-pricing-featured bg-gradient-to-br from-zinc-950 to-zinc-900 border-x border-b border-zinc-700/60 rounded-b-2xl p-8 sm:p-10 space-y-6 flex-1 flex flex-col">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
@@ -4144,6 +4114,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
 
       <SectionDivider />
 
+      </div>{/* /lp-light body zone */}
       </main>{/* /#main-content */}
 
       {/* ── Footer ── */}
