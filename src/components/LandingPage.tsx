@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useId, lazy, Suspense } from 'react';
 import './LandingPage.css';
 
-import { Apple, ArrowDown, Battery, Bell, Book, BookOpen, Check, ChevronUp, Download, ExternalLink, Eye, Gavel, Heart, HeartPulse, HelpCircle, Info, Keyboard, Layers, LayoutGrid, MapPin, Mic, Network, Play, Radar, Rocket, Search, ShieldHalf, Signal, Smartphone, Users, Video, Wand2, Wifi, X } from 'lucide-react';
+import { Apple, ArrowDown, Battery, Bell, Book, BookOpen, Check, ChevronUp, Download, ExternalLink, Eye, Gavel, Heart, HeartPulse, HelpCircle, Info, Keyboard, Layers, LayoutGrid, MapPin, Mic, Network, Play, Radar, Rocket, Search, Signal, Smartphone, Users, Video, Wand2, Wifi, X } from 'lucide-react';
 import { RELAY_PEERS, FAQ_DATA, SHORTCUT_GROUPS, PULSE_SOLO_FEATURES, PULSE_SOLO_PRICING, PULSE_TEAM_FEATURES, PULSE_TEAM_PRICING, PULSE_GROWTH_FEATURES, PULSE_GROWTH_PRICING, CAPABILITY_CELLS, FEATURE_CLUSTERS } from './LandingPage/landingData';
 
 // Lazy-load the guide — guideData.ts is 26k lines and must NOT land in the main bundle
@@ -1192,19 +1192,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
 
             {/* Divider */}
             <span className={`w-px h-4 ${heroDark ? 'bg-zinc-800' : 'bg-stone-300'}`} aria-hidden="true" />
-            {/* Docs & legal */}
+            {/* Docs — product help affordance (legal links live in the footer + mobile drawer) */}
             <button type="button" onClick={() => setIsGuideOpen(true)} className={`flex items-center gap-1.5 transition ${heroDark ? 'hover:text-white' : 'hover:text-stone-900'}`}>
               <Book className="text-[11px]" />
               Docs
             </button>
-            <a href="/privacy" className={`flex items-center gap-1.5 transition ${heroDark ? 'hover:text-white' : 'hover:text-stone-900'}`}>
-              <ShieldHalf className="text-[11px]" />
-              Privacy
-            </a>
-            <a href="/terms" className={`flex items-center gap-1.5 transition ${heroDark ? 'hover:text-white' : 'hover:text-stone-900'}`}>
-              <Gavel className="text-[11px]" />
-              Terms
-            </a>
           </div>
 
           <div className="flex items-center gap-3">
