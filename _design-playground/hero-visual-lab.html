@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pulse · Hero Visual Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --rose:#f43f5e; --pink:#ec4899; --rose-l:#fb7185; --rose-d:#e11d48; --orange:#f97316;
+    --slate:#0f172a; --light:#fafaf9;
+    --ink-d:#f8fafc; --ink-l:#1c1917;
+    --panel:#0b1120; --line:rgba(244,63,94,.16);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    background:#060a14; color:#e2e8f0;
+    -webkit-font-smoothing:antialiased; overflow:hidden;
+  }
+  .app{display:flex;flex-direction:column;height:100vh}
+
+  /* ── Control rail ── */
+  .rail{
+    display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+    padding:12px 20px;background:rgba(8,12,22,.92);
+    border-bottom:1px solid var(--line);backdrop-filter:blur(12px);z-index:10;
+  }
+  .brand{display:flex;align-items:center;gap:10px;margin-right:6px}
+  .brand .gm{width:26px;height:26px}
+  .brand b{font-family:'Syne',sans-serif;font-weight:800;letter-spacing:.1em;font-size:14px;text-transform:uppercase}
+  .brand small{font-size:11px;color:#64748b;letter-spacing:.04em}
+  .tabs{display:flex;gap:6px;background:rgba(255,255,255,.04);padding:4px;border-radius:12px}
+  .tab{
+    appearance:none;border:0;cursor:pointer;font-family:inherit;font-weight:600;font-size:13px;
+    color:#94a3b8;background:transparent;padding:8px 14px;border-radius:9px;transition:all .25s cubic-bezier(.16,1,.3,1);
+    display:flex;align-items:center;gap:8px;white-space:nowrap;
+  }
+  .tab .dot{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.5}
+  .tab[aria-selected="true"]{background:linear-gradient(135deg,var(--rose),var(--pink));color:#fff;box-shadow:0 4px 14px rgba(244,63,94,.35)}
+  .tab[aria-selected="true"] .dot{opacity:1;background:#fff}
+  .ctl{display:flex;align-items:center;gap:9px;font-size:12px;color:#94a3b8}
+  .ctl label{font-weight:500;letter-spacing:.02em}
+  input[type=range]{
+    -webkit-appearance:none;width:96px;height:4px;border-radius:4px;
+    background:rgba(255,255,255,.12);outline:none;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+    background:var(--rose);box-shadow:0 0 0 4px rgba(244,63,94,.18);cursor:pointer;
+  }
+  .seg{display:flex;gap:0;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .seg button{
+    appearance:none;border:0;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;
+    color:#94a3b8;background:transparent;padding:7px 12px;transition:all .2s;
+  }
+  .seg button[aria-pressed="true"]{background:rgba(244,63,94,.16);color:#fda4af}
+  .spacer{flex:1}
+  .ghost{
+    appearance:none;border:1px solid var(--line);cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;
+    color:#cbd5e1;background:transparent;padding:8px 13px;border-radius:9px;transition:all .2s;display:flex;align-items:center;gap:7px;
+  }
+  .ghost:hover{border-color:rgba(244,63,94,.45);color:#fff}
+
+  /* ── Stage ── */
+  .stage{position:relative;flex:1;overflow:hidden;transition:background .5s ease}
+  .stage.dark{background:var(--slate)}
+  .stage.light{background:var(--light)}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .grid-ov{position:absolute;inset:0;pointer-events:none;
+    background-image:linear-gradient(rgba(244,63,94,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(244,63,94,.05) 1px,transparent 1px);
+    background-size:54px 54px;-webkit-mask-image:radial-gradient(120% 90% at 72% 50%,#000 0%,transparent 70%);mask-image:radial-gradient(120% 90% at 72% 50%,#000 0%,transparent 70%);opacity:.6}
+  .fade{position:absolute;inset:0;pointer-events:none;transition:background .5s ease}
+  .stage.dark .fade{background:linear-gradient(90deg,#0f172a 30%,rgba(15,23,42,.78) 54%,transparent 80%)}
+  .stage.light .fade{background:linear-gradient(90deg,#fafaf9 30%,rgba(250,250,249,.78) 54%,transparent 80%)}
+  .grain{position:absolute;inset:0;pointer-events:none;opacity:.18;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+  /* ── In-situ hero copy ── */
+  .copy{position:absolute;left:clamp(28px,6vw,90px);top:50%;transform:translateY(-50%);max-width:540px;z-index:5;transition:opacity .3s}
+  .copy.hidden{opacity:0}
+  .logo-row{display:flex;align-items:center;gap:11px;margin-bottom:26px}
+  .logo-row .gm{width:30px;height:30px}
+  .logo-row b{font-family:'Syne',sans-serif;font-weight:800;letter-spacing:.1em;font-size:17px;text-transform:uppercase}
+  .badge{display:inline-flex;align-items:center;gap:9px;font-size:13px;font-weight:500;
+    padding:7px 14px;border-radius:999px;border:1px solid rgba(244,63,94,.3);
+    background:rgba(244,63,94,.08);color:#fda4af;margin-bottom:26px}
+  .ping{position:relative;display:flex;width:8px;height:8px}
+  .ping i{position:absolute;inset:0;border-radius:50%;background:var(--rose);animation:ping 1.8s cubic-bezier(0,0,.2,1) infinite}
+  .ping b{position:relative;width:8px;height:8px;border-radius:50%;background:var(--rose)}
+  @keyframes ping{75%,100%{transform:scale(2.4);opacity:0}}
+  h1.head{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(40px,5.4vw,68px);line-height:1.02;letter-spacing:-.02em}
+  h1.head span{display:block}
+  .grad{background:linear-gradient(100deg,var(--rose),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .copy p.sub{margin-top:22px;font-size:17px;line-height:1.55;max-width:430px;color:#94a3b8}
+  .cta{margin-top:30px;display:inline-flex;align-items:center;gap:10px;font-weight:600;font-size:15px;color:#fff;
+    padding:14px 26px;border-radius:12px;background:linear-gradient(135deg,var(--rose),var(--pink));
+    box-shadow:0 8px 24px rgba(244,63,94,.4);cursor:pointer;border:0;font-family:inherit}
+  .stage.light h1.head{color:var(--ink-l)}
+  .stage.light .copy p.sub{color:#57534e}
+  .stage.light .logo-row b{color:var(--ink-l)}
+
+  /* ── Notes drawer ── */
+  .notes{position:absolute;right:0;top:0;bottom:0;width:340px;z-index:8;
+    background:rgba(8,12,22,.94);backdrop-filter:blur(16px);border-left:1px solid var(--line);
+    padding:24px;overflow-y:auto;transform:translateX(100%);transition:transform .35s cubic-bezier(.16,1,.3,1)}
+  .notes.open{transform:translateX(0)}
+  .notes h3{font-family:'Syne',sans-serif;font-size:15px;letter-spacing:.02em;margin-bottom:4px;color:#fff}
+  .notes .kicker{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#fb7185;font-weight:700;margin-bottom:14px}
+  .notes p{font-size:13px;line-height:1.6;color:#94a3b8;margin-bottom:14px}
+  .notes .tag{display:inline-block;font-size:11px;font-weight:600;color:#fda4af;background:rgba(244,63,94,.1);
+    border:1px solid var(--line);padding:3px 9px;border-radius:6px;margin:0 5px 6px 0}
+  .notes ul{margin:0 0 16px 16px}
+  .notes li{font-size:12.5px;line-height:1.55;color:#a8b3c4;margin-bottom:6px}
+  .divide{height:1px;background:var(--line);margin:18px 0}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Control rail -->
+  <div class="rail">
+    <div class="brand">
+      <span class="gm" id="railMark"></span>
+      <div><b>Pulse</b> &nbsp;<small>Hero Visual Lab</small></div>
+    </div>
+
+    <div class="tabs" role="tablist" id="tabs">
+      <button class="tab" role="tab" data-dir="A" aria-selected="true"><span class="dot"></span>A · Signal Core</button>
+      <button class="tab" role="tab" data-dir="B" aria-selected="false"><span class="dot"></span>B · Depth Field</button>
+      <button class="tab" role="tab" data-dir="C" aria-selected="false"><span class="dot"></span>C · Vital Lattice</button>
+      <button class="tab" role="tab" data-dir="D" aria-selected="false"><span class="dot"></span>D · Core Lattice ✦</button>
+    </div>
+
+    <div class="ctl"><label>Intensity</label><input type="range" id="intensity" min="40" max="130" value="92"></div>
+    <div class="ctl"><label>Speed</label><input type="range" id="speed" min="20" max="160" value="100"></div>
+
+    <div class="seg" id="theme">
+      <button data-theme="dark" aria-pressed="true">Dark</button>
+      <button data-theme="light" aria-pressed="false">Light</button>
+    </div>
+
+    <div class="spacer"></div>
+    <button class="ghost" id="toggleCopy">Toggle copy</button>
+    <button class="ghost" id="toggleNotes">Design notes</button>
+  </div>
+
+  <!-- Stage -->
+  <div class="stage dark" id="stage">
+    <canvas id="cv" aria-hidden="true"></canvas>
+    <div class="grid-ov"></div>
+    <div class="fade"></div>
+    <div class="grain"></div>
+
+    <div class="copy" id="copy">
+      <div class="logo-row"><span class="gm" id="copyMark"></span><b>Pulse</b></div>
+      <div class="badge"><span class="ping"><i></i><b></b></span> Every channel, one surface</div>
+      <h1 class="head"><span>Every Signal.</span><span>Every Voice.</span><span class="grad">Every Decision.</span></h1>
+      <p class="sub">Messaging, voice, and decisions on one calm surface, tuned by an assistant that understands the whole thread.</p>
+      <button class="cta">Launch Pulse →</button>
+    </div>
+
+    <!-- Notes -->
+    <div class="notes" id="notes">
+      <div class="kicker">Refinement brief</div>
+      <h3>Same soul, raised to the Quantum bar</h3>
+      <p>All three keep your ECG-heartbeat waves, the traveling pulse spike, and the rose→pink palette. None replace the imagery. What changes is craft: a focal point, real depth, additive bloom, and restraint.</p>
+      <div id="notesBody"></div>
+      <div class="divide"></div>
+      <p style="font-size:12px;color:#64748b">Reference: Logos Vision hero (ripple-core + bloom + staggered entrance). Pick a direction and I'll wire it into <b>LandingPage.tsx</b>, replacing the flat 7-wave canvas.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Pulse Hero Visual Lab — 3 refinements of the ECG-wave canvas
+   Vanilla canvas, additive bloom, DPR-aware. Double-click to run.
+   ============================================================ */
+
+// ---- Brand Globe mark (rose→pink disc, heartbeat knockout) ----
+const GLOBE = `<svg viewBox="0 0 100 100" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f43f5e"/><stop offset="1" stop-color="#ec4899"/></linearGradient>
+  <mask id="m"><rect width="100" height="100" fill="#fff"/><path d="M6 50 H38 L44 32 L52 68 L58 50 H94" fill="none" stroke="#000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></mask></defs>
+  <circle cx="50" cy="50" r="43" fill="url(#g)" mask="url(#m)"/></svg>`;
+document.getElementById('railMark').innerHTML = GLOBE;
+document.getElementById('copyMark').innerHTML = GLOBE;
+
+const PAL = ['#f43f5e','#ec4899','#fb7185','#e11d48','#db2777','#f97316'];
+const hexToRgb = h => { const n=parseInt(h.slice(1),16); return [n>>16&255,n>>8&255,n&255]; };
+const RGB = PAL.map(hexToRgb);
+
+// Authentic heartbeat ECG curve (from the live Pulse canvas)
+function ecgShape(t){
+  if(t<0.12) return t*0.6;
+  if(t<0.22) return 0.072-(t-0.12)*0.72;
+  if(t<0.33) return -(t-0.22)*1.8;
+  if(t<0.44) return -0.198+(t-0.33)*13;
+  if(t<0.55) return 1.23-(t-0.44)*15;
+  if(t<0.66) return -0.42+(t-0.55)*4.8;
+  return 0;
+}
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+let W=0,H=0,dpr=1;
+const state = { dir:'A', intensity:0.92, speed:1, theme:'dark', t:0, raf:0 };
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function resize(){
+  dpr = Math.min(window.devicePixelRatio||1, 2);
+  W = cv.offsetWidth; H = cv.offsetHeight;
+  cv.width = W*dpr; cv.height = H*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  build();
+}
+window.addEventListener('resize', resize);
+
+/* ============================================================
+   DIRECTION A — "Signal Core"
+   A focal Pulse core on the right. Waves emanate through it.
+   Every beat: the core flares + emits a concentric ripple ring
+   AND fires the ECG spike outward along the waves. Particles
+   stream toward the core and are absorbed. Additive bloom.
+   ============================================================ */
+const A = {
+  waves:[], parts:[], rings:[], beat:0, beatTimer:0,
+  build(){
+    this.waves = Array.from({length:5},(_,i)=>({
+      yf:0.30+i*0.10, freq:0.0024+i*0.0006, amp:14+i*5,
+      phase:i*1.1, spd:0.4+i*0.16, ci:i%PAL.length, op:0.18+i*0.07, lw:0.8+(i%2)*0.9
+    }));
+    this.parts = Array.from({length:46},()=>this.mkPart());
+    this.rings=[]; this.beatTimer=0; this.beat=0;
+  },
+  mkPart(){ return { x:Math.random()*W, wi:Math.floor(Math.random()*5), spd:0.4+Math.random()*1.6, sz:0.8+Math.random()*2, op:0.4+Math.random()*0.6 }; },
+  core(){ return { x:W*0.68, y:H*0.5, r:Math.min(W,H)*0.085 }; },
+  draw(dt){
+    const g=state.intensity, c=this.core();
+    // beat clock (~2.4s)
+    this.beatTimer += dt*state.speed;
+    if(this.beatTimer>2.4){ this.beatTimer=0; this.beat=1; this.rings.push({r:c.r,life:0}); }
+    this.beat *= 0.92;
+
+    // ambient core halo (additive)
+    ctx.globalCompositeOperation='lighter';
+    const halo=ctx.createRadialGradient(c.x,c.y,0,c.x,c.y,W*0.5);
+    halo.addColorStop(0,`rgba(244,63,94,${(0.16*g).toFixed(3)})`);
+    halo.addColorStop(0.4,`rgba(236,72,153,${(0.07*g).toFixed(3)})`);
+    halo.addColorStop(1,'rgba(244,63,94,0)');
+    ctx.fillStyle=halo; ctx.fillRect(0,0,W,H);
+
+    // waves — emanate from the core, ECG spike travels outward on beat
+    this.waves.forEach(w=>{
+      const baseY=c.y+(w.yf-0.5)*H*0.9;
+      const [r,gr,b]=RGB[w.ci];
+      const spikeX = this.beat>0.15 ? c.x-(1-this.beatTimer/2.4)*W : -999;
+      for(let pass=0;pass<2;pass++){
+        ctx.beginPath();
+        for(let x=0;x<=W;x+=3){
+          const dist=Math.abs(x-c.x);
+          const env=Math.max(0,1-dist/(W*0.62));            // amplitude swells near core
+          let y=baseY+Math.sin(x*w.freq+w.phase+state.t*w.spd)*w.amp*(0.5+env);
+          // ECG beat ripple radiating from core
+          const sd=Math.abs(x-spikeX);
+          if(sd<70 && this.beat>0.15){ y+=ecgShape(1-sd/70)*w.amp*2.4*this.beat*env; }
+          x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+        }
+        ctx.strokeStyle=`rgba(${r},${gr},${b},${(pass?w.op:w.op*0.4*g).toFixed(3)})`;
+        ctx.lineWidth=pass?w.lw:w.lw+3.5;
+        ctx.stroke();
+      }
+    });
+
+    // particles stream toward core, brighten, absorb
+    this.parts.forEach(p=>{
+      const w=this.waves[p.wi]; if(!w) return;
+      const baseY=c.y+(w.yf-0.5)*H*0.9;
+      const dir = p.x<c.x?1:-1;
+      p.x += dir*p.spd*state.speed*1.1;
+      const y=baseY+Math.sin(p.x*w.freq+w.phase+state.t*w.spd)*w.amp;
+      const dc=Math.hypot(p.x-c.x,y-c.y);
+      if(dc<c.r*0.8){ p.x=Math.random()<0.5?0:W; p.wi=Math.floor(Math.random()*5); }
+      const near=Math.max(0.25,1-dc/(W*0.5));
+      const [r,gr,b]=RGB[w.ci];
+      ctx.beginPath(); ctx.arc(p.x,y,p.sz*(0.6+near),0,7);
+      ctx.fillStyle=`rgba(${r},${gr},${b},${(p.op*near*g).toFixed(3)})`; ctx.fill();
+    });
+
+    // concentric ripple rings from beats (Logos Vision DNA)
+    this.rings=this.rings.filter(rg=>{
+      rg.life+=dt*state.speed; rg.r=c.r+rg.life*W*0.22;
+      const a=Math.max(0,1-rg.life/1.6)*0.5*g;
+      if(a<=0) return false;
+      ctx.beginPath(); ctx.arc(c.x,c.y,rg.r,0,7);
+      ctx.strokeStyle=`rgba(251,113,133,${a.toFixed(3)})`; ctx.lineWidth=1.4; ctx.stroke();
+      return true;
+    });
+
+    // the core itself: bloom + Globe heartbeat, scales on beat
+    const bs=1+this.beat*0.16;
+    const cr=c.r*bs;
+    const core=ctx.createRadialGradient(c.x,c.y,0,c.x,c.y,cr*2.4);
+    core.addColorStop(0,`rgba(255,228,233,${(0.9*g).toFixed(3)})`);
+    core.addColorStop(0.25,`rgba(244,63,94,${(0.8*g).toFixed(3)})`);
+    core.addColorStop(0.6,`rgba(236,72,153,${(0.25*g).toFixed(3)})`);
+    core.addColorStop(1,'rgba(236,72,153,0)');
+    ctx.fillStyle=core; ctx.beginPath(); ctx.arc(c.x,c.y,cr*2.4,0,7); ctx.fill();
+
+    ctx.globalCompositeOperation='source-over';
+    // solid disc + knockout heartbeat
+    const disc=ctx.createLinearGradient(c.x-cr,c.y-cr,c.x+cr,c.y+cr);
+    disc.addColorStop(0,'#f43f5e'); disc.addColorStop(1,'#ec4899');
+    ctx.fillStyle=disc; ctx.beginPath(); ctx.arc(c.x,c.y,cr,0,7); ctx.fill();
+    ctx.save();
+    ctx.globalCompositeOperation='destination-out';
+    ctx.beginPath();
+    const s=cr/50;
+    const pts=[[6,50],[38,50],[44,32],[52,68],[58,50],[94,50]];
+    pts.forEach((pt,i)=>{ const x=c.x+(pt[0]-50)*s, y=c.y+(pt[1]-50)*s; i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+    ctx.strokeStyle='#000'; ctx.lineWidth=8*s; ctx.lineJoin='round'; ctx.lineCap='round'; ctx.stroke();
+    ctx.restore();
+  }
+};
+
+/* ============================================================
+   DIRECTION B — "Depth Field"
+   3 parallax planes: far (thin/blurred/slow) → near (bold/sharp).
+   Heartbeat fires only on the in-focus near plane. A soft focus
+   band glows where the near waves live. Cinematic restraint.
+   ============================================================ */
+const B = {
+  planes:[], parts:[], beatTimer:0, beat:0,
+  build(){
+    const defs=[
+      {n:6, amp:8,  lw:0.7, op:0.10, spd:0.18, blur:8, depth:0.18},  // far
+      {n:4, amp:16, lw:1.1, op:0.22, spd:0.34, blur:3, depth:0.5 },  // mid
+      {n:2, amp:30, lw:2.0, op:0.5,  spd:0.6,  blur:0, depth:1.0 },  // near (focus)
+    ];
+    this.planes=defs.map((d,pi)=>({...d, waves:Array.from({length:d.n},(_,i)=>({
+      yf:0.2+ (i+0.5)/d.n*0.6 + (pi*0.04), freq:0.0018+i*0.0007+pi*0.0004,
+      amp:d.amp*(0.8+Math.random()*0.4), phase:Math.random()*6.28, ci:(i+pi)%PAL.length
+    }))}));
+    this.parts=Array.from({length:30},()=>({x:Math.random()*W, pl:2, sz:1+Math.random()*2, spd:0.5+Math.random()*1.4, op:0.4+Math.random()*0.5}));
+    this.beatTimer=0; this.beat=0;
+  },
+  draw(dt){
+    const g=state.intensity, sway=Math.sin(state.t*0.18)*10;
+    this.beatTimer+=dt*state.speed;
+    if(this.beatTimer>2.1){ this.beatTimer=0; this.beat=1; }
+    this.beat*=0.93;
+    const spikeX = this.beat>0.1 ? (1-this.beatTimer/2.1)*W : -999;
+
+    // focus band glow (where near plane lives)
+    ctx.globalCompositeOperation='lighter';
+    const band=ctx.createLinearGradient(0,H*0.34,0,H*0.66);
+    band.addColorStop(0,'rgba(244,63,94,0)');
+    band.addColorStop(0.5,`rgba(244,63,94,${(0.10*g).toFixed(3)})`);
+    band.addColorStop(1,'rgba(244,63,94,0)');
+    ctx.fillStyle=band; ctx.fillRect(0,0,W,H);
+
+    this.planes.forEach((pl,pi)=>{
+      const py=sway*pl.depth;                     // parallax
+      pl.waves.forEach(w=>{
+        const [r,gr,b]=RGB[w.ci];
+        const baseY=w.yf*H+py;
+        ctx.save();
+        if(pl.blur>0){ ctx.filter=`blur(${pl.blur}px)`; }
+        for(let pass=0;pass<2;pass++){
+          ctx.beginPath();
+          for(let x=0;x<=W;x+=3){
+            let y=baseY+Math.sin(x*w.freq+w.phase+state.t*pl.spd)*w.amp;
+            if(pi===2){ const sd=Math.abs(x-spikeX); if(sd<80&&this.beat>0.1){ y+=ecgShape(1-sd/80)*w.amp*2.2*this.beat; } }
+            x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+          }
+          ctx.strokeStyle=`rgba(${r},${gr},${b},${(pass?pl.op:pl.op*0.4*g).toFixed(3)})`;
+          ctx.lineWidth=pass?pl.lw:pl.lw+3; ctx.stroke();
+        }
+        ctx.restore();
+      });
+    });
+
+    // near-plane particles (sharp, depth-sized)
+    ctx.globalCompositeOperation='lighter';
+    this.parts.forEach(p=>{
+      const pl=this.planes[2]; const w=pl.waves[p.x%2|0]||pl.waves[0];
+      p.x+=p.spd*state.speed; if(p.x>W)p.x=0;
+      const y=w.yf*H+sway+Math.sin(p.x*w.freq+w.phase+state.t*pl.spd)*w.amp;
+      const [r,gr,b]=RGB[w.ci];
+      ctx.beginPath(); ctx.arc(p.x,y,p.sz,0,7);
+      ctx.fillStyle=`rgba(${r},${gr},${b},${(p.op*g).toFixed(3)})`; ctx.fill();
+    });
+    ctx.globalCompositeOperation='source-over';
+  }
+};
+
+/* ============================================================
+   DIRECTION C — "Vital Lattice"
+   Waves thread through a sparse node mesh. When the heartbeat
+   spike passes a node it ignites + briefly links to neighbors,
+   a cascade rippling through the network. "Every channel, one
+   surface." Links are transient — no static mesh clutter.
+   ============================================================ */
+const C = {
+  waves:[], nodes:[], beatTimer:0, beat:0, spikeX:-999,
+  build(){
+    this.waves=Array.from({length:4},(_,i)=>({
+      yf:0.28+i*0.15, freq:0.0022+i*0.0006, amp:16+i*4, phase:i*1.3, spd:0.4+i*0.15, ci:i%PAL.length, op:0.2+i*0.06, lw:1+(i%2)*0.8
+    }));
+    // nodes positioned along waves, right-biased spread
+    this.nodes=[];
+    this.waves.forEach((w,wi)=>{
+      const count=4+Math.floor(Math.random()*2);
+      for(let k=0;k<count;k++){
+        const fx=0.18+Math.random()*0.74;
+        this.nodes.push({wi, fx, ig:0, sz:2+Math.random()*2.4});
+      }
+    });
+    this.beatTimer=0; this.beat=0; this.spikeX=-999;
+  },
+  nodeXY(n){ const w=this.waves[n.wi]; const x=n.fx*W; const y=w.yf*H+Math.sin(x*w.freq+w.phase+state.t*w.spd)*w.amp; return [x,y,w]; },
+  draw(dt){
+    const g=state.intensity;
+    this.beatTimer+=dt*state.speed;
+    if(this.beatTimer>2.0){ this.beatTimer=0; this.beat=1; this.spikeX=0; }
+    this.beat*=0.94;
+    if(this.spikeX>=0) this.spikeX+=dt*state.speed*W*0.62;
+    if(this.spikeX>W) this.spikeX=-999;
+
+    // right-biased ambient glow
+    ctx.globalCompositeOperation='lighter';
+    const halo=ctx.createRadialGradient(W*0.66,H*0.5,0,W*0.66,H*0.5,W*0.5);
+    halo.addColorStop(0,`rgba(244,63,94,${(0.12*g).toFixed(3)})`);
+    halo.addColorStop(1,'rgba(244,63,94,0)');
+    ctx.fillStyle=halo; ctx.fillRect(0,0,W,H);
+
+    // waves
+    this.waves.forEach(w=>{
+      const [r,gr,b]=RGB[w.ci]; const baseY=w.yf*H;
+      for(let pass=0;pass<2;pass++){
+        ctx.beginPath();
+        for(let x=0;x<=W;x+=3){
+          let y=baseY+Math.sin(x*w.freq+w.phase+state.t*w.spd)*w.amp;
+          const sd=Math.abs(x-this.spikeX);
+          if(sd<70&&this.spikeX>=0){ y+=ecgShape(1-sd/70)*w.amp*2.4; }
+          x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+        }
+        ctx.strokeStyle=`rgba(${r},${gr},${b},${(pass?w.op:w.op*0.4*g).toFixed(3)})`;
+        ctx.lineWidth=pass?w.lw:w.lw+3; ctx.stroke();
+      }
+    });
+
+    // ignite nodes the spike passes
+    this.nodes.forEach(n=>{
+      const [x]=this.nodeXY(n);
+      if(this.spikeX>=0 && Math.abs(x-this.spikeX)<26) n.ig=1;
+      n.ig*=0.95;
+    });
+
+    // transient links between co-igniting near neighbors
+    ctx.globalCompositeOperation='lighter';
+    for(let i=0;i<this.nodes.length;i++){
+      const a=this.nodes[i]; if(a.ig<0.2) continue;
+      const [ax,ay]=this.nodeXY(a);
+      for(let j=i+1;j<this.nodes.length;j++){
+        const bn=this.nodes[j]; if(bn.ig<0.2) continue;
+        const [bx,by]=this.nodeXY(bn);
+        const d=Math.hypot(ax-bx,ay-by);
+        if(d<160){
+          ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by);
+          ctx.strokeStyle=`rgba(251,113,133,${(Math.min(a.ig,bn.ig)*0.5*g).toFixed(3)})`;
+          ctx.lineWidth=0.8; ctx.stroke();
+        }
+      }
+    }
+
+    // nodes
+    this.nodes.forEach(n=>{
+      const [x,y,w]=this.nodeXY(n); const [r,gr,b]=RGB[w.ci];
+      const flare=1+n.ig*2.2;
+      const gl=ctx.createRadialGradient(x,y,0,x,y,n.sz*4*flare);
+      gl.addColorStop(0,`rgba(${r},${gr},${b},${((0.25+n.ig*0.6)*g).toFixed(3)})`);
+      gl.addColorStop(1,`rgba(${r},${gr},${b},0)`);
+      ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(x,y,n.sz*4*flare,0,7); ctx.fill();
+      ctx.beginPath(); ctx.arc(x,y,n.sz*(0.7+n.ig*0.6),0,7);
+      ctx.fillStyle=`rgba(255,${228-n.ig*40},233,${(0.5+n.ig*0.5).toFixed(3)})`; ctx.fill();
+    });
+    ctx.globalCompositeOperation='source-over';
+  }
+};
+
+/* ============================================================
+   DIRECTION D — "Core Lattice"  (hybrid: A's core + C's cascade)
+   The focal beating core drives a RADIAL network cascade: each
+   beat emits a ripple ring; as the ring sweeps outward past a
+   channel-node it ignites and links to neighbors. One pulse,
+   every channel lights up. Restraint: ~14 nodes, transient links.
+   ============================================================ */
+const D = {
+  waves:[], parts:[], rings:[], nodes:[], beat:0, beatTimer:0,
+  build(){
+    this.waves = Array.from({length:5},(_,i)=>({
+      yf:0.30+i*0.10, freq:0.0024+i*0.0006, amp:13+i*5,
+      phase:i*1.1, spd:0.4+i*0.16, ci:i%PAL.length, op:0.16+i*0.06, lw:0.8+(i%2)*0.9
+    }));
+    this.parts = Array.from({length:34},()=>({x:Math.random()*W, wi:Math.floor(Math.random()*5), spd:0.4+Math.random()*1.5, sz:0.8+Math.random()*1.9, op:0.4+Math.random()*0.6}));
+    // channel-nodes seeded along waves, right-biased toward the core
+    this.nodes=[];
+    this.waves.forEach((w,wi)=>{ for(let k=0;k<3;k++){ this.nodes.push({wi, fx:0.34+Math.random()*0.6, ig:0, sz:1.8+Math.random()*2.2}); } });
+    this.rings=[]; this.beatTimer=0; this.beat=0;
+  },
+  core(){ return { x:W*0.68, y:H*0.5, r:Math.min(W,H)*0.082 }; },
+  nodeXY(n){ const w=this.waves[n.wi]; const x=n.fx*W; const y=(this.core().y+(w.yf-0.5)*H*0.9)+Math.sin(x*w.freq+w.phase+state.t*w.spd)*w.amp; return [x,y,w]; },
+  draw(dt){
+    const g=state.intensity, c=this.core();
+    this.beatTimer+=dt*state.speed;
+    if(this.beatTimer>2.5){ this.beatTimer=0; this.beat=1; this.rings.push({r:c.r,life:0}); }
+    this.beat*=0.92;
+
+    // ambient core halo
+    ctx.globalCompositeOperation='lighter';
+    const halo=ctx.createRadialGradient(c.x,c.y,0,c.x,c.y,W*0.55);
+    halo.addColorStop(0,`rgba(244,63,94,${(0.15*g).toFixed(3)})`);
+    halo.addColorStop(0.4,`rgba(236,72,153,${(0.06*g).toFixed(3)})`);
+    halo.addColorStop(1,'rgba(244,63,94,0)');
+    ctx.fillStyle=halo; ctx.fillRect(0,0,W,H);
+
+    // waves swelling toward the core
+    this.waves.forEach(w=>{
+      const baseY=c.y+(w.yf-0.5)*H*0.9; const [r,gr,b]=RGB[w.ci];
+      for(let pass=0;pass<2;pass++){
+        ctx.beginPath();
+        for(let x=0;x<=W;x+=3){
+          const env=Math.max(0,1-Math.abs(x-c.x)/(W*0.62));
+          const y=baseY+Math.sin(x*w.freq+w.phase+state.t*w.spd)*w.amp*(0.5+env);
+          x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+        }
+        ctx.strokeStyle=`rgba(${r},${gr},${b},${(pass?w.op:w.op*0.4*g).toFixed(3)})`;
+        ctx.lineWidth=pass?w.lw:w.lw+3.2; ctx.stroke();
+      }
+    });
+
+    // particles toward core
+    this.parts.forEach(p=>{
+      const w=this.waves[p.wi]; if(!w) return; const baseY=c.y+(w.yf-0.5)*H*0.9;
+      const dir=p.x<c.x?1:-1; p.x+=dir*p.spd*state.speed*1.05;
+      const y=baseY+Math.sin(p.x*w.freq+w.phase+state.t*w.spd)*w.amp;
+      const dc=Math.hypot(p.x-c.x,y-c.y);
+      if(dc<c.r*0.8){ p.x=Math.random()<0.5?0:W; p.wi=Math.floor(Math.random()*5); }
+      const near=Math.max(0.25,1-dc/(W*0.5)); const [r,gr,b]=RGB[w.ci];
+      ctx.beginPath(); ctx.arc(p.x,y,p.sz*(0.6+near),0,7);
+      ctx.fillStyle=`rgba(${r},${gr},${b},${(p.op*near*g).toFixed(3)})`; ctx.fill();
+    });
+
+    // ripple rings sweep outward + ignite nodes they pass (the cascade)
+    this.rings=this.rings.filter(rg=>{
+      rg.life+=dt*state.speed; rg.r=c.r+rg.life*W*0.24;
+      const a=Math.max(0,1-rg.life/1.7)*0.5*g;
+      if(a<=0) return false;
+      ctx.strokeStyle=`rgba(251,113,133,${a.toFixed(3)})`; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.arc(c.x,c.y,rg.r,0,7); ctx.stroke();
+      this.nodes.forEach(n=>{ const [x,y]=this.nodeXY(n); const d=Math.hypot(x-c.x,y-c.y); if(Math.abs(d-rg.r)<22) n.ig=1; });
+      return true;
+    });
+    this.nodes.forEach(n=>n.ig*=0.95);
+
+    // transient links between co-lit neighbors
+    for(let i=0;i<this.nodes.length;i++){ const a=this.nodes[i]; if(a.ig<0.25) continue; const [ax,ay]=this.nodeXY(a);
+      for(let j=i+1;j<this.nodes.length;j++){ const bn=this.nodes[j]; if(bn.ig<0.25) continue; const [bx,by]=this.nodeXY(bn);
+        if(Math.hypot(ax-bx,ay-by)<150){ ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by);
+          ctx.strokeStyle=`rgba(251,113,133,${(Math.min(a.ig,bn.ig)*0.45*g).toFixed(3)})`; ctx.lineWidth=0.8; ctx.stroke(); } } }
+
+    // nodes
+    this.nodes.forEach(n=>{ const [x,y,w]=this.nodeXY(n); const [r,gr,b]=RGB[w.ci]; const flare=1+n.ig*2;
+      const gl=ctx.createRadialGradient(x,y,0,x,y,n.sz*4*flare);
+      gl.addColorStop(0,`rgba(${r},${gr},${b},${((0.22+n.ig*0.6)*g).toFixed(3)})`); gl.addColorStop(1,`rgba(${r},${gr},${b},0)`);
+      ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(x,y,n.sz*4*flare,0,7); ctx.fill();
+      ctx.beginPath(); ctx.arc(x,y,n.sz*(0.7+n.ig*0.5),0,7); ctx.fillStyle=`rgba(255,${228-n.ig*40},233,${(0.45+n.ig*0.5).toFixed(3)})`; ctx.fill(); });
+
+    // core bloom
+    const bs=1+this.beat*0.16, cr=c.r*bs;
+    const core=ctx.createRadialGradient(c.x,c.y,0,c.x,c.y,cr*2.4);
+    core.addColorStop(0,`rgba(255,228,233,${(0.9*g).toFixed(3)})`);
+    core.addColorStop(0.25,`rgba(244,63,94,${(0.8*g).toFixed(3)})`);
+    core.addColorStop(0.6,`rgba(236,72,153,${(0.25*g).toFixed(3)})`);
+    core.addColorStop(1,'rgba(236,72,153,0)');
+    ctx.fillStyle=core; ctx.beginPath(); ctx.arc(c.x,c.y,cr*2.4,0,7); ctx.fill();
+
+    // core disc + heartbeat knockout
+    ctx.globalCompositeOperation='source-over';
+    const disc=ctx.createLinearGradient(c.x-cr,c.y-cr,c.x+cr,c.y+cr);
+    disc.addColorStop(0,'#f43f5e'); disc.addColorStop(1,'#ec4899');
+    ctx.fillStyle=disc; ctx.beginPath(); ctx.arc(c.x,c.y,cr,0,7); ctx.fill();
+    ctx.save(); ctx.globalCompositeOperation='destination-out'; ctx.beginPath();
+    const s=cr/50; [[6,50],[38,50],[44,32],[52,68],[58,50],[94,50]].forEach((pt,i)=>{ const x=c.x+(pt[0]-50)*s, y=c.y+(pt[1]-50)*s; i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+    ctx.strokeStyle='#000'; ctx.lineWidth=8*s; ctx.lineJoin='round'; ctx.lineCap='round'; ctx.stroke(); ctx.restore();
+  }
+};
+
+const DIRS={A,B,C,D};
+function build(){ DIRS[state.dir].build(); }
+
+let last=0;
+function loop(ts){
+  state.raf=requestAnimationFrame(loop);
+  const dt=Math.min(0.05,(ts-last)/1000||0.016); last=ts;
+  if(!reduce) state.t+=dt*state.speed*1.4;
+  ctx.clearRect(0,0,W,H);
+  DIRS[state.dir].draw(dt);
+}
+
+/* ---- Notes per direction ---- */
+const NOTES={
+  A:`<p><span class="tag">Focal core</span><span class="tag">Ripple beat</span><span class="tag">Bloom</span></p>
+     <p><b>Signal Core.</b> A focal Pulse mark anchors the right third. Waves swell as they reach it; every heartbeat the core flares, emits a concentric ripple, and fires the ECG spike outward along the waves. Particles stream in and are absorbed.</p>
+     <ul><li>Most brand-forward — the heartbeat mark becomes the literal subject</li><li>Closest to the Logos Vision ripple-core structure</li><li>5 waves, not 7; additive bloom replaces flat shadow</li></ul>`,
+  B:`<p><span class="tag">Parallax depth</span><span class="tag">DOF blur</span><span class="tag">Restraint</span></p>
+     <p><b>Depth Field.</b> Three planes — far (thin, blurred, slow) to near (bold, sharp). The heartbeat only fires on the in-focus near plane; a soft focus band glows behind it. Planes drift at different speeds for cinematic depth.</p>
+     <ul><li>"More refined" = depth & focus, fewer foreground elements</li><li>Quietest, most atmospheric — lets the headline lead</li><li>Real blur filter, true parallax</li></ul>`,
+  C:`<p><span class="tag">Signal mesh</span><span class="tag">Cascade</span><span class="tag">Narrative</span></p>
+     <p><b>Vital Lattice.</b> Waves thread through a sparse node network. When the heartbeat spike passes a node it ignites and briefly links to neighbors — a cascade rippling across channels. Links are transient, so no static mesh clutter.</p>
+     <ul><li>Most novel — visualizes "every channel, one surface"</li><li>Ties the hero to the product story (connected comms)</li><li>~18 nodes, links only on ignition</li></ul>`,
+  D:`<p><span class="tag">Hybrid ✦</span><span class="tag">Focal core</span><span class="tag">Radial cascade</span></p>
+     <p><b>Core Lattice.</b> The recommended mix: A's beating heartbeat core drives C's network cascade. Each beat emits a ripple ring; as it sweeps outward past a channel-node, the node ignites and links to neighbors. One pulse at the center, every channel lights up around it.</p>
+     <ul><li>Brand-forward focal point <b>and</b> the product narrative, unified</li><li>Cascade radiates <i>from</i> the heartbeat, not a flat horizontal sweep</li><li>Restraint kept: ~15 nodes, transient links, additive bloom</li></ul>`
+};
+function setNotes(){ document.getElementById('notesBody').innerHTML=NOTES[state.dir]; }
+
+/* ---- Wiring ---- */
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('.tab'); if(!b) return;
+  [...document.querySelectorAll('.tab')].forEach(t=>t.setAttribute('aria-selected', t===b));
+  state.dir=b.dataset.dir; build(); setNotes();
+});
+document.getElementById('intensity').addEventListener('input',e=>state.intensity=e.target.value/100);
+document.getElementById('speed').addEventListener('input',e=>state.speed=e.target.value/100);
+document.getElementById('theme').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  [...e.currentTarget.children].forEach(x=>x.setAttribute('aria-pressed', x===b));
+  state.theme=b.dataset.theme;
+  document.getElementById('stage').className='stage '+state.theme;
+});
+document.getElementById('toggleCopy').addEventListener('click',()=>document.getElementById('copy').classList.toggle('hidden'));
+document.getElementById('toggleNotes').addEventListener('click',()=>document.getElementById('notes').classList.toggle('open'));
+
+resize(); setNotes();
+state.raf=requestAnimationFrame(loop);
+</script>
+</body>
+</html>

@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pulse · Hero Visual 3D Lab — Propagation Mesh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --rose:#f43f5e; --pink:#ec4899; --slate:#0f172a; --line:rgba(244,63,94,.16); }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:'Inter',system-ui,sans-serif;background:#060a14;color:#e2e8f0;-webkit-font-smoothing:antialiased;overflow:hidden}
+  .app{display:flex;flex-direction:column;height:100vh}
+
+  .rail{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:11px 20px;
+    background:rgba(8,12,22,.92);border-bottom:1px solid var(--line);backdrop-filter:blur(12px);z-index:10}
+  .brand{display:flex;align-items:center;gap:10px;margin-right:4px}
+  .brand .gm{width:24px;height:24px}
+  .brand b{font-family:'Syne',sans-serif;font-weight:800;letter-spacing:.1em;font-size:13px;text-transform:uppercase}
+  .brand small{font-size:11px;color:#64748b}
+  .ctl{display:flex;align-items:center;gap:8px;font-size:12px;color:#94a3b8}
+  .ctl label{font-weight:500;white-space:nowrap}
+  input[type=range]{-webkit-appearance:none;width:84px;height:4px;border-radius:4px;background:rgba(255,255,255,.12);outline:none;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--rose);box-shadow:0 0 0 4px rgba(244,63,94,.18);cursor:pointer}
+  .spacer{flex:1}
+  .ghost{appearance:none;border:1px solid var(--line);cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;color:#cbd5e1;background:transparent;padding:8px 13px;border-radius:9px;transition:all .2s;display:flex;align-items:center;gap:7px}
+  .ghost:hover{border-color:rgba(244,63,94,.45);color:#fff}
+  .ghost.go{border-color:transparent;background:linear-gradient(135deg,var(--rose),var(--pink));color:#fff;box-shadow:0 4px 14px rgba(244,63,94,.35)}
+  .togs{display:flex;gap:6px}
+  .tog{appearance:none;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;color:#94a3b8;background:transparent;
+    border:1px solid var(--line);padding:7px 11px;border-radius:9px;transition:all .2s;display:flex;align-items:center;gap:7px;white-space:nowrap}
+  .tog::before{content:'';width:8px;height:8px;border-radius:50%;background:#475569;transition:all .2s;flex:none}
+  .tog[aria-pressed="true"]{color:#fda4af;border-color:rgba(244,63,94,.4);background:rgba(244,63,94,.1)}
+  .tog[aria-pressed="true"]::before{background:var(--rose);box-shadow:0 0 8px var(--rose)}
+
+  .stage{position:relative;flex:1;overflow:hidden;background:var(--slate)}
+  .toast{position:absolute;left:18px;bottom:16px;z-index:9;max-width:360px;padding:12px 14px;border-radius:11px;
+    background:rgba(8,12,22,.96);border:1px solid rgba(244,63,94,.4);box-shadow:0 12px 40px rgba(0,0,0,.5);
+    opacity:0;transform:translateY(8px);pointer-events:none;transition:all .3s cubic-bezier(.16,1,.3,1)}
+  .toast.show{opacity:1;transform:translateY(0)}
+  .toast .tmsg{font-size:12px;font-weight:600;color:#fda4af;margin-bottom:7px}
+  .toast pre{font-family:ui-monospace,monospace;font-size:11px;line-height:1.5;color:#cbd5e1;white-space:pre-wrap;user-select:all;margin:0}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 100% at 70% 45%,transparent 40%,rgba(6,10,20,.55) 100%)}
+  .fade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,#0f172a 26%,rgba(15,23,42,.72) 50%,transparent 76%)}
+  .grain{position:absolute;inset:0;pointer-events:none;opacity:.16;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+  .copy{position:absolute;left:clamp(28px,6vw,90px);top:50%;transform:translateY(-50%);max-width:560px;z-index:5;transition:opacity .3s}
+  .copy.hidden{opacity:0}
+  .logo-row{display:flex;align-items:center;gap:11px;margin-bottom:24px}
+  .logo-row .gm{width:34px;height:34px}
+  .logo-row b{font-family:'Syne',sans-serif;font-weight:800;letter-spacing:.1em;font-size:19px;text-transform:uppercase}
+  .badge{display:inline-flex;align-items:center;gap:9px;font-size:13px;font-weight:500;padding:7px 14px;border-radius:999px;
+    border:1px solid rgba(244,63,94,.3);background:rgba(244,63,94,.08);color:#fda4af;margin-bottom:24px}
+  .ping{position:relative;display:flex;width:8px;height:8px}
+  .ping i{position:absolute;inset:0;border-radius:50%;background:var(--rose);animation:ping 1.8s cubic-bezier(0,0,.2,1) infinite}
+  .ping b{position:relative;width:8px;height:8px;border-radius:50%;background:var(--rose)}
+  @keyframes ping{75%,100%{transform:scale(2.4);opacity:0}}
+  h1.head{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(42px,5.6vw,72px);line-height:1.0;letter-spacing:-.025em;color:#fff}
+  h1.head span{display:block}
+  .grad{background:linear-gradient(100deg,var(--rose),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .copy p.sub{margin-top:22px;font-size:17px;line-height:1.55;max-width:440px;color:#94a3b8}
+  .cta{margin-top:30px;display:inline-flex;align-items:center;gap:10px;font-weight:600;font-size:15px;color:#fff;padding:14px 26px;border-radius:12px;
+    background:linear-gradient(135deg,var(--rose),var(--pink));box-shadow:0 8px 24px rgba(244,63,94,.4);cursor:pointer;border:0;font-family:inherit}
+
+  .loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:13px;z-index:6}
+  .hint{position:absolute;right:18px;bottom:14px;font-size:11px;color:#475569;z-index:5;letter-spacing:.02em}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="rail">
+    <div class="brand"><span class="gm" id="railMark"></span><div><b>Pulse</b> <small>3D Hero · Propagation Mesh</small></div></div>
+    <div class="ctl"><label>Lattice</label><input type="range" id="lattice" min="0" max="100" value="40"></div>
+    <div class="ctl"><label>Pings</label><input type="range" id="pingDensity" min="0" max="100" value="20"></div>
+    <div class="ctl"><label>Nodes</label><input type="range" id="nodes" min="30" max="100" value="66"></div>
+    <div class="ctl"><label>Spin</label><input type="range" id="spin" min="0" max="200" value="100"></div>
+    <div class="ctl"><label>Beat&nbsp;s</label><input type="range" id="beat" min="40" max="600" value="220"></div>
+    <div class="ctl"><label>Glow</label><input type="range" id="glow" min="100" max="400" value="250"></div>
+    <div class="ctl"><label>Zoom</label><input type="range" id="zoom" min="50" max="180" value="98"></div>
+    <div class="togs">
+      <button class="tog" id="togSoft" aria-pressed="true">Soft burst</button>
+      <button class="tog" id="togPings" aria-pressed="true">Ping lines</button>
+      <button class="tog" id="togWaves" aria-pressed="false">2D waves</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="ghost go" id="pulseBtn">◉ Pulse</button>
+    <button class="ghost" id="copyCfg">⧉ Copy settings</button>
+    <button class="ghost" id="toggleCopy">Toggle copy</button>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="cv"></canvas>
+    <canvas id="cv2d"></canvas>
+    <div class="vignette"></div>
+    <div class="fade"></div>
+    <div class="grain"></div>
+    <div class="loading" id="loading">Loading Three.js…</div>
+
+    <div class="copy" id="copy">
+      <div class="logo-row"><span class="gm" id="copyMark"></span><b>Pulse</b></div>
+      <div class="badge"><span class="ping"><i></i><b></b></span> Every channel, one surface</div>
+      <h1 class="head"><span>Every signal.</span><span class="grad">One surface.</span></h1>
+      <p class="sub">Messaging, voice, async video, calendar and decisions on one screen, with a single cross-surface AI reading across all of it.</p>
+      <button class="cta">Launch Pulse →</button>
+    </div>
+    <div class="hint">click ◉ Pulse to fire a heartbeat</div>
+    <div class="toast" id="toast"><div class="tmsg"></div><pre></pre></div>
+  </div>
+</div>
+
+<!-- Brand Globe mark for chrome only -->
+<script>
+  const GLOBE = `<svg viewBox="0 0 100 100" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs><linearGradient id="g3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f43f5e"/><stop offset="1" stop-color="#ec4899"/></linearGradient>
+    <mask id="m3"><rect width="100" height="100" fill="#fff"/><path d="M6 50 H38 L44 32 L52 68 L58 50 H94" fill="none" stroke="#000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></mask></defs>
+    <circle cx="50" cy="50" r="43" fill="url(#g3)" mask="url(#m3)"/></svg>`;
+  document.getElementById('railMark').innerHTML = GLOBE;
+  document.getElementById('copyMark').innerHTML = GLOBE;
+</script>
+
+<script type="importmap">{ "imports": { "three": "https://esm.sh/three@0.184.0" } }</script>
+<script type="module">
+import * as THREE from 'three';
+
+/* ============================================================
+   Pulse "Propagation Mesh" — 3D hero field (ported & tuned from
+   qntmecos.com src/webgl/pulseSignal.ts). Spherical signal node
+   cloud + lattice links + heartbeat wavefront + pointer parallax.
+   The lattice lines are boosted here so they read like the ref.
+   ============================================================ */
+const ROSE=new THREE.Color(0xf43f5e), CORAL=new THREE.Color(0xfb7185), VIOLET=new THREE.Color(0x8b5cf6), WHITE=new THREE.Color(0xffffff);
+const TAU=Math.PI*2, RAD=7.2;
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+
+const P = { lattice:0.40, density:0.66, spin:1, beat:22, glow:2.5, zoom:0.98, paused:false,
+            softBurst:true, pings:true, pingDensity:0.20, waves2d:false };
+
+const stage=document.getElementById('stage');
+const cv=document.getElementById('cv');
+function dims(){ return { w:stage.clientWidth, h:stage.clientHeight }; }
+
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.setClearColor(0x000000,0);
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(56,1,0.1,200);
+camera.position.set(0,0,16);
+const group=new THREE.Group(); scene.add(group);
+
+function glowTexture(){
+  const s=128,c=document.createElement('canvas');c.width=c.height=s;const g=c.getContext('2d');
+  const grd=g.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
+  grd.addColorStop(0,'rgba(255,255,255,1)');grd.addColorStop(.25,'rgba(255,255,255,.65)');
+  grd.addColorStop(.55,'rgba(255,255,255,.18)');grd.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle=grd;g.fillRect(0,0,s,s);const t=new THREE.CanvasTexture(c);t.needsUpdate=true;return t;
+}
+const GLOW=glowTexture();
+
+// ── core glow sprite ──
+const coreMat=new THREE.SpriteMaterial({map:GLOW,color:ROSE.clone(),transparent:true,blending:THREE.AdditiveBlending,depthWrite:false});
+const core=new THREE.Sprite(coreMat); core.scale.setScalar(5); group.add(core);
+
+// ── mesh state (rebuildable) ──
+let N=0, positions, baseCol=[], radii, geo, mat, cloud, colAttr, sizAttr;
+let lineGeo, lineMat, links;
+
+function buildMesh(){
+  if(cloud){ group.remove(cloud); geo.dispose(); mat.dispose(); }
+  N=Math.round(2400*P.density);
+  positions=new Float32Array(N*3);
+  const colors=new Float32Array(N*3), sizes=new Float32Array(N);
+  radii=new Float32Array(N); baseCol=[];
+  for(let i=0;i<N;i++){
+    const u=Math.random(),v=Math.random();
+    const th=u*TAU, ph=Math.acos(2*v-1);
+    const r=RAD*(0.55+Math.random()*0.45);
+    positions[i*3]=r*Math.sin(ph)*Math.cos(th);
+    positions[i*3+1]=r*Math.sin(ph)*Math.sin(th);
+    positions[i*3+2]=r*Math.cos(ph);
+    radii[i]=r;
+    const base=new THREE.Color().lerpColors(ROSE,VIOLET,clamp((r/RAD-0.5)/0.5,0,1));
+    baseCol.push(base);
+    colors[i*3]=base.r;colors[i*3+1]=base.g;colors[i*3+2]=base.b;
+    sizes[i]=0.5+Math.random()*0.5;
+  }
+  geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(positions,3));
+  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
+  geo.setAttribute('size',new THREE.BufferAttribute(sizes,1));
+  mat=new THREE.ShaderMaterial({
+    uniforms:{uTex:{value:GLOW},uGlow:{value:P.glow}},
+    transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,
+    vertexShader:`attribute float size;attribute vec3 color;varying vec3 vC;
+      void main(){vC=color;vec4 mv=modelViewMatrix*vec4(position,1.0);gl_PointSize=size*300.0/(-mv.z);gl_Position=projectionMatrix*mv;}`,
+    fragmentShader:`uniform sampler2D uTex;uniform float uGlow;varying vec3 vC;
+      void main(){float a=texture2D(uTex,gl_PointCoord).a;gl_FragColor=vec4(vC*uGlow,a);}`,
+  });
+  cloud=new THREE.Points(geo,mat); group.add(cloud);
+  colAttr=geo.attributes.color; sizAttr=geo.attributes.size;
+  buildCandidates();
+  buildLinks();
+}
+
+// candidate neighbor edges — pool for the bright "ping" lines (independent of
+// the faint structural Lattice slider, so pings have a stable set to fire on)
+let candidateEdges=[]; const activePings=[];
+function buildCandidates(){
+  candidateEdges=[]; activePings.length=0;
+  const cs=Math.max(1,Math.floor(N/600));
+  for(let i=0;i<N;i+=cs){
+    let b1=-1,d1=1e9,b2=-1,d2=1e9;
+    for(let j=i+1;j<Math.min(N,i+cs*40);j++){
+      const dx=positions[i*3]-positions[j*3],dy=positions[i*3+1]-positions[j*3+1],dz=positions[i*3+2]-positions[j*3+2];
+      const d=dx*dx+dy*dy+dz*dz;
+      if(d<d1){d2=d1;b2=b1;d1=d;b1=j;} else if(d<d2){d2=d;b2=j;}
+    }
+    if(b1>=0&&d1<16) candidateEdges.push([i,b1]);
+    if(b2>=0&&d2<16) candidateEdges.push([i,b2]);
+  }
+}
+
+// ── ping lines: bright transient strands flashing between neighbor nodes ──
+const PING_CAP=260;
+let pingPos,pingCol,pingGeo,pingMat,pingLines;
+function initPings(){
+  pingPos=new Float32Array(PING_CAP*6); pingCol=new Float32Array(PING_CAP*6);
+  pingGeo=new THREE.BufferGeometry();
+  pingGeo.setAttribute('position',new THREE.BufferAttribute(pingPos,3));
+  pingGeo.setAttribute('color',new THREE.BufferAttribute(pingCol,3));
+  pingMat=new THREE.LineBasicMaterial({vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false});
+  pingLines=new THREE.LineSegments(pingGeo,pingMat); pingGeo.setDrawRange(0,0); group.add(pingLines);
+}
+function updatePings(dt){
+  if(!pingGeo) return;
+  if(!P.pings||candidateEdges.length===0){ pingGeo.setDrawRange(0,0); return; }
+  // few (density 0) → most (density 1) nodes pinging at once
+  const target=Math.min(PING_CAP, Math.round(2 + P.pingDensity*Math.min(candidateEdges.length,PING_CAP-2)));
+  let guard=0;
+  while(activePings.length<target && guard++<PING_CAP){ const ei=(Math.random()*candidateEdges.length)|0; activePings.push({ei,t:0,dur:0.7+Math.random()*1.2}); }
+  let c=0;
+  for(let k=activePings.length-1;k>=0;k--){
+    const pg=activePings[k]; pg.t+=dt;
+    if(pg.t>=pg.dur){ activePings.splice(k,1); continue; }
+    if(c>=PING_CAP) continue;
+    const e=candidateEdges[pg.ei]; if(!e) continue; const i=e[0],j=e[1];
+    const ax=positions[i*3],ay=positions[i*3+1],az=positions[i*3+2];
+    const bx=positions[j*3],by=positions[j*3+1],bz=positions[j*3+2];
+    // animate the strand DRAWING from node A toward node B, then fade
+    const grow=Math.min(1,pg.t/(pg.dur*0.5)), ease=1-Math.pow(1-grow,3);
+    const hx=ax+(bx-ax)*ease, hy=ay+(by-ay)*ease, hz=az+(bz-az)*ease;
+    const br=(grow<1?ease:1-(pg.t-pg.dur*0.5)/(pg.dur*0.5)); // ramp in while drawing, fade once connected
+    const I=Math.max(0,br)*1.5; const o=c*6;                 // glowing rose (#f43f5e)
+    pingPos[o]=ax;pingPos[o+1]=ay;pingPos[o+2]=az;
+    pingPos[o+3]=hx;pingPos[o+4]=hy;pingPos[o+5]=hz;
+    const r=0.957*I,g=0.247*I,bl=0.369*I;
+    pingCol[o]=r*0.6;pingCol[o+1]=g*0.6;pingCol[o+2]=bl*0.6;     // tail dimmer
+    pingCol[o+3]=r+0.12*I;pingCol[o+4]=g+0.08*I;pingCol[o+5]=bl+0.08*I; // bright travelling head
+    c++;
+  }
+  pingGeo.attributes.position.needsUpdate=true; pingGeo.attributes.color.needsUpdate=true; pingGeo.setDrawRange(0,c*2);
+}
+
+// ── optional 2D signal-wave overlay (the current landing-page hero canvas) ──
+const cv2=document.getElementById('cv2d'); const x2=cv2.getContext('2d');
+let W2=0,H2=0,t2=0,waves2=[],parts2=[];
+function ecg2(t){ if(t<0.12)return t*0.6; if(t<0.22)return 0.072-(t-0.12)*0.72; if(t<0.33)return -(t-0.22)*1.8; if(t<0.44)return -0.198+(t-0.33)*13; if(t<0.55)return 1.23-(t-0.44)*15; if(t<0.66)return -0.42+(t-0.55)*4.8; return 0; }
+function build2D(){
+  const ph=['#f43f5e','#ec4899','#fb7185','#f97316','#ef4444','#e11d48','#db2777'];
+  waves2=Array.from({length:7},(_,i)=>({yf:0.08+i*0.13,freq:0.0022+i*0.0007,amp:10+i*4,phase:(i*0.9)%(Math.PI*2),spd:0.35+i*0.15,color:ph[i%ph.length],op:0.14+i*0.06,lw:0.7+(i%3)*0.8,et:i*40,ec:180+i*40,ea:false,ep:0}));
+  parts2=Array.from({length:70},()=>({x:Math.random()*W2,wi:(Math.random()*7)|0,spd:0.3+Math.random()*1.8,sz:0.8+Math.random()*2.2,op:0.35+Math.random()*0.65,ph:Math.random()*6.28}));
+}
+function draw2D(dt){
+  if(!P.waves2d) return;
+  x2.clearRect(0,0,W2,H2); t2+=dt*1.4; const GA=0.6;
+  waves2.forEach(w=>{
+    const y=w.yf*H2;
+    w.et+=1.4*0.45; if(w.et>w.ec&&!w.ea){w.ea=true;w.ep=0;w.et=0;}
+    if(w.ea){w.ep+=1.4*3.5; if(w.ep>W2){w.ea=false;w.ep=0;}}
+    const stroke=()=>{ x2.beginPath(); let first=true;
+      for(let x=0;x<=W2;x+=2){ let wy;
+        if(w.ea&&x<w.ep){const rel=(w.ep-x)/90; wy=rel<1?y+ecg2(rel)*w.amp*2.8:y+Math.sin(x*w.freq+w.phase+t2*w.spd)*w.amp;}
+        else wy=y+Math.sin(x*w.freq+w.phase+t2*w.spd)*w.amp;
+        const fy=y+(wy-y)*(1-(x/W2)*0.45);
+        first?(x2.moveTo(x,fy),first=false):x2.lineTo(x,fy);
+      } x2.stroke();
+    };
+    x2.save(); x2.shadowColor=w.color; x2.shadowBlur=18*GA; x2.strokeStyle=w.color; x2.lineWidth=w.lw+2.5; x2.globalAlpha=w.op*0.35*GA; stroke();
+    x2.shadowBlur=0; x2.globalAlpha=w.op; x2.lineWidth=w.lw; stroke(); x2.restore();
+  });
+  parts2.forEach(p=>{ p.x+=p.spd*1.4*0.75; if(p.x>W2){p.x=0;p.wi=(Math.random()*waves2.length)|0;} const w=waves2[p.wi]; if(!w)return;
+    const by=w.yf*H2, wy=by+Math.sin(p.x*w.freq+w.phase+t2*w.spd+p.ph)*w.amp, fy=by+(wy-by)*(1-(p.x/W2)*0.45);
+    x2.beginPath(); x2.arc(p.x,fy,p.sz,0,7); x2.fillStyle=w.color; x2.globalAlpha=p.op*0.6; x2.shadowColor=w.color; x2.shadowBlur=9*GA; x2.fill(); x2.shadowBlur=0; x2.globalAlpha=1; });
+}
+
+function buildLinks(){
+  if(links){ group.remove(links); lineGeo.dispose(); lineMat.dispose(); }
+  // lattice slider scales how many nodes get linked + neighbor count
+  const seg=[];
+  const sampleStep=Math.max(1,Math.floor(N/(220+P.lattice*1500)));   // more samples = denser lattice
+  const neighbors=P.lattice>0.55?2:1;                                 // extra strands when boosted
+  const thresh=6+P.lattice*8;
+  for(let i=0;i<N;i+=sampleStep){
+    const found=[];
+    for(let j=i+1;j<Math.min(N,i+sampleStep*48);j++){
+      const dx=positions[i*3]-positions[j*3],dy=positions[i*3+1]-positions[j*3+1],dz=positions[i*3+2]-positions[j*3+2];
+      const d=dx*dx+dy*dy+dz*dz;
+      if(d<thresh) found.push([d,j]);
+    }
+    found.sort((a,b)=>a[0]-b[0]);
+    for(let k=0;k<Math.min(neighbors,found.length);k++) seg.push(i,found[k][1]);
+  }
+  const lp=new Float32Array(seg.length*3);
+  for(let k=0;k<seg.length;k++){ const idx=seg[k]; lp[k*3]=positions[idx*3];lp[k*3+1]=positions[idx*3+1];lp[k*3+2]=positions[idx*3+2]; }
+  lineGeo=new THREE.BufferGeometry();
+  lineGeo.setAttribute('position',new THREE.BufferAttribute(lp,3));
+  lineMat=new THREE.LineBasicMaterial({color:new THREE.Color().lerpColors(ROSE,VIOLET,0.5),transparent:true,
+    opacity:0.1,blending:THREE.AdditiveBlending,depthWrite:false});
+  links=new THREE.LineSegments(lineGeo,lineMat); group.add(links);
+}
+
+// ── heartbeat / wavefront ──
+function beatEnv(s){ const lub=Math.exp(-Math.pow(s/0.06,2)); const dub=0.5*Math.exp(-Math.pow((s-0.24)/0.07,2)); return Math.min(1,lub+dub); }
+const wavefronts=[];
+let beatT=0, lastPhase=1, manualBeat=-1;
+function fireBeat(){ wavefronts.push(0); manualBeat=0; }
+
+// nucleus: right-biased so copy stays clear on the left
+const nucleus=new THREE.Vector3();
+function placeNucleus(){
+  const halfH=Math.tan((camera.fov*Math.PI)/360)*camera.position.z, halfW=halfH*camera.aspect;
+  const {w,h}=dims(); const sx=w*0.70, sy=h*0.46;
+  const nx=(sx/w)*2-1, ny=-((sy/h)*2-1);
+  nucleus.set(nx*halfW,ny*halfH,0);
+}
+
+function resize(){
+  const {w,h}=dims();
+  camera.aspect=w/h; camera.updateProjectionMatrix();
+  renderer.setSize(w,h,false);
+  placeNucleus(); group.position.copy(nucleus);
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  W2=w; H2=h; cv2.width=w*dpr; cv2.height=h*dpr; x2.setTransform(dpr,0,0,dpr,0,0);
+  build2D();
+}
+window.addEventListener('resize',resize);
+
+const clock=new THREE.Clock();
+const tmp=new THREE.Color();
+let zoom=P.zoom;
+
+function frame(){
+  requestAnimationFrame(frame);
+  const dt=Math.min(clock.getDelta(),0.05), t=clock.elapsedTime;
+  if(P.paused) { renderer.render(scene,camera); return; }
+
+  // auto heartbeat on interval
+  beatT+=dt;
+  const phase=(beatT%P.beat)/P.beat;
+  if(phase<lastPhase) wavefronts.push(0);
+  lastPhase=phase;
+  const autoEnv=beatEnv(beatT%P.beat);
+  if(manualBeat>=0){ manualBeat+=dt; if(manualBeat>0.9) manualBeat=-1; }
+  const env=Math.max(autoEnv, manualBeat>=0?beatEnv(manualBeat):0);
+
+  // advance wavefronts
+  const wspd=0.12*12, bandW=0.98;
+  for(let i=wavefronts.length-1;i>=0;i--){ wavefronts[i]+=dt*wspd; if(wavefronts[i]>RAD*1.6+bandW) wavefronts.splice(i,1); }
+
+  // recolor nodes by wavefront proximity — Soft burst tames the white blowout
+  const wl=P.softBurst?0.34:0.7, szb=P.softBurst?1.3:2.4;
+  for(let i=0;i<N;i++){
+    let br=0;
+    for(let w=0;w<wavefronts.length;w++){ const d=Math.abs(radii[i]-wavefronts[w]); if(d<bandW) br=Math.max(br,1-d/bandW); }
+    tmp.copy(baseCol[i]).lerp(WHITE,br*wl).lerp(CORAL,br*0.24);
+    colAttr.array[i*3]=tmp.r; colAttr.array[i*3+1]=tmp.g; colAttr.array[i*3+2]=tmp.b;
+    sizAttr.array[i]=0.5+(i%7)*0.05+br*szb;
+  }
+  colAttr.needsUpdate=true; sizAttr.needsUpdate=true;
+
+  mat.uniforms.uGlow.value=P.glow;
+  // lattice opacity: slider base + heartbeat flash through the strands
+  lineMat.opacity=(0.04+P.lattice*0.42)*(0.6+env*0.9);
+  const cf=P.softBurst?0.3:0.55;
+  core.scale.setScalar(5*(1+env*cf));
+  coreMat.opacity=(0.4+env*(P.softBurst?0.25:0.45))*Math.min(1,P.glow/2.5);
+  updatePings(dt);
+
+  zoom+=(P.zoom-zoom)*0.08; group.scale.setScalar(zoom);
+  group.rotation.y=t*0.05*P.spin;
+  group.rotation.x=-0.1;
+  group.position.copy(nucleus);
+
+  renderer.render(scene,camera);
+  draw2D(dt);
+}
+
+// ── boot ──
+try{
+  resize(); buildMesh(); initPings();
+  document.getElementById('loading').style.display='none';
+  clock.getDelta(); requestAnimationFrame(frame);
+}catch(err){ document.getElementById('loading').textContent='Three.js failed to load: '+err.message; }
+
+// ── controls ──
+const $=id=>document.getElementById(id);
+$('lattice').addEventListener('input',e=>{ P.lattice=e.target.value/100; });
+$('lattice').addEventListener('change',()=>buildLinks());           // rebuild strands on release
+$('pingDensity').addEventListener('input',e=>P.pingDensity=e.target.value/100);
+$('nodes').addEventListener('change',e=>{ P.density=e.target.value/100; buildMesh(); });
+$('spin').addEventListener('input',e=>P.spin=e.target.value/100);
+$('beat').addEventListener('input',e=>P.beat=e.target.value/10);
+$('glow').addEventListener('input',e=>P.glow=e.target.value/100);
+$('zoom').addEventListener('input',e=>P.zoom=e.target.value/100);
+$('pulseBtn').addEventListener('click',fireBeat);
+$('toggleCopy').addEventListener('click',()=>$('copy').classList.toggle('hidden'));
+const flip=(btn,key,off)=>btn.addEventListener('click',()=>{ P[key]=!P[key]; btn.setAttribute('aria-pressed',P[key]); if(!P[key]&&off) off(); });
+flip($('togSoft'),'softBurst');
+flip($('togPings'),'pings',()=>{ if(pingGeo) pingGeo.setDrawRange(0,0); });
+flip($('togWaves'),'waves2d',()=>x2.clearRect(0,0,W2,H2));
+
+// ── export current settings so they can be pasted back verbatim ──
+function exportConfig(){
+  const v=id=>$(id).value, tog=id=>$(id).getAttribute('aria-pressed')==='true'?'on':'off';
+  return `PULSE HERO 3D — settings
+lattice=${v('lattice')}  pings=${v('pingDensity')}  nodes=${v('nodes')}  spin=${v('spin')}  beat=${v('beat')}  glow=${v('glow')}  zoom=${v('zoom')}
+softBurst=${tog('togSoft')}  pingLines=${tog('togPings')}  waves2d=${tog('togWaves')}
+(beat ≈ ${(v('beat')/10).toFixed(1)}s · glow ${(v('glow')/100).toFixed(2)} · zoom ${(v('zoom')/100).toFixed(2)})`;
+}
+function toast(msg,body){ const el=$('toast'); el.querySelector('.tmsg').textContent=msg; el.querySelector('pre').textContent=body||'';
+  el.classList.add('show'); clearTimeout(window.__tt); window.__tt=setTimeout(()=>el.classList.remove('show'),8000); }
+$('copyCfg').addEventListener('click',()=>{
+  const cfg=exportConfig();
+  const ok=()=>toast('Copied ✓  — paste this to me',cfg);
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(cfg).then(ok).catch(()=>fallbackCopy(cfg,ok)); }
+  else fallbackCopy(cfg,ok);
+});
+function fallbackCopy(s,ok){ const ta=document.createElement('textarea'); ta.value=s; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select(); let done=false; try{ done=document.execCommand('copy'); }catch(e){} ta.remove();
+  done?ok():toast('Select & copy the text below',s); }
+
+// expose for screenshot harness
+window.__fireBeat=fireBeat;
+window.__ready=true;
+</script>
+</body>
+</html>

@@ -149,3 +149,25 @@ export const PULSE_GROWTH_PRICING = {
   yearlyMonthlyEquiv: Math.round(3000 / 12), // ≈ $250/mo display value
   trialDays: 30,
 };
+
+// ── Landing capability strip + /features clusters ───────────────────────────
+// Single source of truth shared by the quiet home (CAPABILITY_CELLS breadth
+// grid) and the /features route (FEATURE_CLUSTERS sub-nav). Added 2026-06-25 in
+// the landing restructure to kill the inline-literal drift that caused the Relay
+// icon mismatch. `anchor` = the in-page section id on /features; `cluster` keys
+// match FEATURE_CLUSTERS.
+export const CAPABILITY_CELLS = [
+  { name: 'Relay',     blurb: 'Voice messaging, reimagined as triage.', stat: '5 peers + Triage stream',        cluster: 'communicate', anchor: 'section-relay' },
+  { name: 'Glimpse',   blurb: 'Async video with face-cam and screen.',  stat: 'AI transcript on every clip',     cluster: 'communicate', anchor: 'section-glimpse' },
+  { name: 'Messaging', blurb: 'Channels, DMs, and @mentions.',          stat: 'Slack mirror, opt-in',            cluster: 'communicate', anchor: 'section-messaging' },
+  { name: 'War Room',  blurb: 'AI research and strategy desk.',         stat: '8 slash commands',                cluster: 'decide',      anchor: 'section-warroom' },
+  { name: 'CRM',       blurb: 'Relationship intelligence, built in.',   stat: '4 native CRMs + health scores',   cluster: 'relate',      anchor: 'section-crm' },
+  { name: 'Maps',      blurb: 'Field ops with live ETA sharing.',       stat: 'Geofence alerts',                 cluster: 'operate',     anchor: 'section-maps' },
+] as const;
+
+export const FEATURE_CLUSTERS = [
+  { key: 'communicate', label: 'Communicate', blurb: 'Every conversation — voice, video, and text — on one surface.',     sections: ['section-relay', 'section-glimpse', 'section-messaging'] },
+  { key: 'decide',      label: 'Decide',      blurb: 'Turn signal into decisions with AI research, tasks, and analytics.', sections: ['section-warroom', 'section-decisions', 'section-analytics'] },
+  { key: 'relate',      label: 'Relate',      blurb: 'Keep every relationship warm with intelligence built in.',           sections: ['section-crm'] },
+  { key: 'operate',     label: 'Operate',     blurb: 'Run the day — calendar, field ops, and workspaces.',                 sections: ['section-calendar', 'section-maps', 'section-workspaces'] },
+] as const;

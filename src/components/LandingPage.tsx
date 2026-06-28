@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef, useId, lazy, Suspense } from 'react
 import './LandingPage.css';
 
 import { Apple, ArrowDown, Battery, Bell, Book, BookOpen, Check, ChevronUp, Download, ExternalLink, Eye, Gavel, Heart, HeartPulse, HelpCircle, Info, Keyboard, Layers, LayoutGrid, MapPin, Mic, Network, Play, Radar, Rocket, Search, ShieldHalf, Signal, Smartphone, Users, Video, Wand2, Wifi, X } from 'lucide-react';
-import { RELAY_PEERS, FAQ_DATA, SHORTCUT_GROUPS, PULSE_SOLO_FEATURES, PULSE_SOLO_PRICING, PULSE_TEAM_FEATURES, PULSE_TEAM_PRICING, PULSE_GROWTH_FEATURES, PULSE_GROWTH_PRICING } from './LandingPage/landingData';
+import { RELAY_PEERS, FAQ_DATA, SHORTCUT_GROUPS, PULSE_SOLO_FEATURES, PULSE_SOLO_PRICING, PULSE_TEAM_FEATURES, PULSE_TEAM_PRICING, PULSE_GROWTH_FEATURES, PULSE_GROWTH_PRICING, CAPABILITY_CELLS, FEATURE_CLUSTERS } from './LandingPage/landingData';
 
 // Lazy-load the guide — guideData.ts is 26k lines and must NOT land in the main bundle
 const UsersGuide = lazy(() => import('./UsersGuide/UsersGuide'));
 
 interface LandingPageProps {
+  /** 'home' = quiet landing; 'features' = deep showcase route (/features). */
+  variant?: 'home' | 'features' | 'demo';
   onGetStarted: () => void;
 }
 
@@ -53,7 +55,7 @@ const SectionDivider = () => (
   </div>
 );
 
-const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home' }) => {
   const [activeScenario, setActiveScenario] = useState<'enterprise' | 'voice'>('enterprise');
   const [sectionVis, setSectionVis] = useState<Record<string, number>>({});
   const [isGuideOpen, setIsGuideOpen] = useState(false);
@@ -228,152 +230,42 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
     };
   }, [mobileMenuOpen]);
 
-  // ── Hero signal-wave canvas animation ──────────────────────────────────────
+  // ── Hero "Propagation Mesh" — lazy-loaded 3D field (replaces the flat 2D wave
+  //    canvas). `three` lives in its own chunk, fetched only when this mounts. ──
   useEffect(() => {
+    if (variant !== 'home') return;
     const canvas = heroCanvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    let isVisible = true;
-    const visObs = new IntersectionObserver(([entry]) => { isVisible = entry.isIntersecting; }, { threshold: 0 });
-    visObs.observe(canvas);
+    let mesh: import('../webgl/pulseHeroMesh').PulseHeroMesh | null = null;
+    let io: IntersectionObserver | null = null;
+    let cancelled = false;
+    const onResize = () => mesh?.resize();
 
-    // Settings locked from playground: glow 92%, speed 47%, particles 100%
-    const GLOW     = 0.92;
-    const SPD_BASE = 0.18 + (47 / 100) * 2.6; // ≈ 1.40
-    const N_PARTS  = 90;
-
-    const pal = ['#f43f5e','#ec4899','#fb7185','#f97316','#ef4444','#e11d48','#db2777'];
-    const waves = Array.from({ length: 7 }, (_, i) => ({
-      yFrac:     0.08 + i * 0.13,
-      freq:      0.0022 + i * 0.0007,
-      amp:       10 + i * 4,
-      phase:     (i * 0.9) % (Math.PI * 2),
-      speedMul:  0.35 + i * 0.15,
-      color:     pal[i % pal.length],
-      opacity:   0.14 + i * 0.06,
-      lw:        0.7 + (i % 3) * 0.8,
-      ecgTimer:  i * 40,
-      ecgCool:   180 + i * 40,
-      ecgActive: false,
-      ecgProg:   0,
-    }));
-
-    type Pt = { x: number; wi: number; speed: number; size: number; opacity: number; phase: number };
-    const parts: Pt[] = [];
-    let W = canvas.offsetWidth;
-    let H = canvas.offsetHeight;
-    let time = 0;
-    let rafId = 0;
-
-    const makePt = (): Pt => ({
-      x:       Math.random() * W,
-      wi:      Math.floor(Math.random() * 7),
-      speed:   0.3 + Math.random() * 1.8,
-      size:    0.8 + Math.random() * 2.2,
-      opacity: 0.35 + Math.random() * 0.65,
-      phase:   Math.random() * Math.PI * 2,
-    });
-
-    const resize = () => {
-      const dpr = window.devicePixelRatio || 1;
-      W = canvas.offsetWidth;
-      H = canvas.offsetHeight;
-      canvas.width  = W * dpr;
-      canvas.height = H * dpr;
-      ctx.scale(dpr, dpr);
-    };
-
-    const ecgShape = (t: number): number => {
-      if (t < 0.12) return t * 0.6;
-      if (t < 0.22) return 0.072 - (t - 0.12) * 0.72;
-      if (t < 0.33) return -(t - 0.22) * 1.8;
-      if (t < 0.44) return -0.198 + (t - 0.33) * 13;
-      if (t < 0.55) return 1.23 - (t - 0.44) * 15;
-      if (t < 0.66) return -0.42 + (t - 0.55) * 4.8;
-      return 0;
-    };
-
-    const strokeWave = (w: (typeof waves)[0], y: number) => {
-      ctx.beginPath();
-      let first = true;
-      for (let x = 0; x <= W; x += 2) {
-        let wy: number;
-        if (w.ecgActive && x < w.ecgProg) {
-          const rel = (w.ecgProg - x) / 90;
-          wy = rel < 1
-            ? y + ecgShape(rel) * w.amp * 2.8
-            : y + Math.sin(x * w.freq + w.phase + time * w.speedMul) * w.amp;
-        } else {
-          wy = y + Math.sin(x * w.freq + w.phase + time * w.speedMul) * w.amp;
-        }
-        const fy = y + (wy - y) * (1 - (x / W) * 0.45);
-        if (first) { ctx.moveTo(x, fy); first = false; } else ctx.lineTo(x, fy);
-      }
-      ctx.stroke();
-    };
-
-    const loop = () => {
-      rafId = requestAnimationFrame(loop);
-      if (!isVisible) return;
-      ctx.clearRect(0, 0, W, H);
-      time += SPD_BASE * 0.016;
-
-      waves.forEach(w => {
-        const y = w.yFrac * H;
-        w.ecgTimer += SPD_BASE * 0.45;
-        if (w.ecgTimer > w.ecgCool && !w.ecgActive) { w.ecgActive = true; w.ecgProg = 0; w.ecgTimer = 0; }
-        if (w.ecgActive) { w.ecgProg += SPD_BASE * 3.5; if (w.ecgProg > W) { w.ecgActive = false; w.ecgProg = 0; } }
-
-        ctx.save();
-        ctx.shadowColor = w.color; ctx.shadowBlur = 18 * GLOW;
-        ctx.strokeStyle = w.color; ctx.lineWidth = w.lw + 2.5;
-        ctx.globalAlpha = w.opacity * 0.35 * GLOW;
-        strokeWave(w, y);
-        ctx.shadowBlur = 0; ctx.globalAlpha = w.opacity; ctx.lineWidth = w.lw;
-        strokeWave(w, y);
-        ctx.restore();
-      });
-
-      parts.forEach(p => {
-        p.x += p.speed * SPD_BASE * 0.75;
-        if (p.x > W) { p.x = 0; p.wi = Math.floor(Math.random() * waves.length); }
-        const w = waves[p.wi];
-        if (!w) return;
-        const baseY = w.yFrac * H;
-        const wy = baseY + Math.sin(p.x * w.freq + w.phase + time * w.speedMul + p.phase) * w.amp;
-        const fy = baseY + (wy - baseY) * (1 - (p.x / W) * 0.45);
-        ctx.beginPath();
-        ctx.arc(p.x, fy, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = w.color;
-        ctx.globalAlpha = p.opacity * (0.35 + 0.65 * GLOW);
-        ctx.shadowColor = w.color; ctx.shadowBlur = 9 * GLOW;
-        ctx.fill(); ctx.shadowBlur = 0;
-      });
-
-      const cx = W * 0.65, cy = H * 0.5;
-      const gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, W * 0.52);
-      gr.addColorStop(0,   `rgba(244,63,94,${(0.2 * GLOW).toFixed(2)})`);
-      gr.addColorStop(0.4, `rgba(236,72,153,${(0.09 * GLOW).toFixed(2)})`);
-      gr.addColorStop(1,   'rgba(244,63,94,0)');
-      ctx.beginPath();
-      ctx.arc(cx, cy, W * 0.52, 0, Math.PI * 2);
-      ctx.fillStyle = gr; ctx.globalAlpha = 1;
-      ctx.fill();
-    };
-
-    resize();
-    for (let i = 0; i < N_PARTS; i++) parts.push(makePt());
-    window.addEventListener('resize', resize);
-    loop();
+    import('../webgl/pulseHeroMesh')
+      .then(({ createPulseHeroMesh }) => {
+        if (cancelled || !heroCanvasRef.current) return;
+        const density = window.innerWidth < 768 ? 0.45 : undefined; // lighter cloud on phones
+        mesh = createPulseHeroMesh(heroCanvasRef.current, { reduced, density });
+        mesh.start();
+        window.addEventListener('resize', onResize);
+        // pause the rAF loop while the hero is scrolled off-screen
+        io = new IntersectionObserver(([entry]) => {
+          if (!mesh) return;
+          if (entry.isIntersecting) mesh.start(); else mesh.stop();
+        }, { threshold: 0 });
+        io.observe(canvas);
+      })
+      .catch(() => { /* three failed to load — hero falls back to the dark bg */ });
 
     return () => {
-      cancelAnimationFrame(rafId);
-      window.removeEventListener('resize', resize);
-      visObs.disconnect();
+      cancelled = true;
+      window.removeEventListener('resize', onResize);
+      io?.disconnect();
+      mesh?.dispose();
     };
-  }, []);
+  }, [variant]);
 
   // ── CRM mesh-network canvas ─────────────────────────────────────────────────
   useEffect(() => {
@@ -562,19 +454,33 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
     };
   }, []);
 
+  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
-    if (element) element.scrollIntoView({ behavior: 'smooth' });
+    if (element) { element.scrollIntoView({ behavior: 'smooth' }); return; }
+    // Target lives on the other route — navigate there with the hash so the
+    // browser scrolls to it on load. Keeps every nav link working across variants.
+    const onFeatures = ['features','section-relay','section-glimpse','section-messaging','section-warroom','section-decisions','section-analytics','section-crm','section-calendar','section-maps','section-workspaces','ecosystem','cluster-communicate','cluster-decide','cluster-relate','cluster-operate'];
+    window.location.href = (onFeatures.indexOf(id) >= 0 ? '/features#' : '/#') + id;
   };
 
   const handleLogoClick = () => {
-    window.location.href = '/?signin';
+    window.location.href = '/';
   };
 
-  // ── Animated SVG icons for Relay mode cards ────────────────────────────────
-  const voxSvg = (idx: number): React.ReactNode => {
+  // ── Animated SVG icons for the Relay peer cards ────────────────────────────
+  // Index-aligned to RELAY_PEERS (landingData.ts): 0 Triage · 1 Direct ·
+  // 2 Channel · 3 Broadcast · 4 Notes · 5 Live. The orbit/stack cards map by
+  // array index, so this order must mirror RELAY_PEERS exactly — kept in sync
+  // after the Voxer → Relay rebrand so each peer shows its own glyph.
+  const relayPeerIcon = (idx: number): React.ReactNode => {
     const icons: React.ReactNode[] = [
-      // 0 — Classic: 5-bar waveform equaliser
+      // 0 — Triage: inbox tray, the unified priority stream
+      <svg viewBox="0 0 20 20" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M5 4.5h10l2 7v3.5a1 1 0 01-1 1H4a1 1 0 01-1-1V11.5l2-7z" />
+        <path d="M3 11.5h3.3l1 1.8h5.4l1-1.8H17" />
+      </svg>,
+      // 1 — Direct: 5-bar waveform equaliser, one-to-one voice
       <svg viewBox="0 0 20 20" width={18} height={18} fill="currentColor" aria-hidden="true">
         <rect x="1"    y="9" width="2.5" height="2"  rx="1" className="lp-bar-a" />
         <rect x="4.5"  y="6" width="2.5" height="8"  rx="1" className="lp-bar-b" />
@@ -582,24 +488,20 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         <rect x="11.5" y="6" width="2.5" height="8"  rx="1" className="lp-bar-d" />
         <rect x="15"   y="9" width="2.5" height="2"  rx="1" className="lp-bar-e" />
       </svg>,
-      // 1 — Quick Vox: lightning bolt flash
-      <svg viewBox="0 0 20 20" width={18} height={18} fill="currentColor" aria-hidden="true">
-        <path d="M11 2L4 12h6l-1 6 7-10h-6z" className="lp-flash" />
-      </svg>,
-      // 2 — Team Vox: two silhouettes
-      <svg viewBox="0 0 20 20" width={18} height={18} fill="currentColor" aria-hidden="true">
+      // 2 — Channel: two silhouettes, group voice thread
+      <svg viewBox="0 0 20 20" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" aria-hidden="true">
         <circle cx="7" cy="6" r="2.5" />
         <path d="M2 17a5 5 0 0110 0" />
         <circle cx="14" cy="6" r="2" opacity={0.6} />
         <path d="M12 17a4 4 0 014 0" opacity={0.6} />
       </svg>,
-      // 3 — Vox Drop: clock with spinning hands
-      <svg viewBox="0 0 20 20" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" aria-hidden="true">
-        <circle cx="10" cy="10" r="7" />
-        <line x1="10" y1="10" x2="10" y2="5.5" className="lp-clock-sec" />
-        <line x1="10" y1="10" x2="13" y2="11"  className="lp-clock-min" />
+      // 3 — Broadcast: concentric rings, push-to-air to everyone
+      <svg viewBox="0 0 20 20" width={18} height={18} fill="none" aria-hidden="true">
+        <circle cx="10" cy="10" r="2.5" fill="currentColor" />
+        <circle cx="10" cy="10" r="5" stroke="currentColor" strokeWidth={1.2} className="lp-radio-a" />
+        <circle cx="10" cy="10" r="5" stroke="currentColor" strokeWidth={1}   className="lp-radio-b" opacity={0.55} />
       </svg>,
-      // 4 — Vox Notes: notepad
+      // 4 — Notes: notepad, personal voice journaling
       <svg viewBox="0 0 20 20" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" aria-hidden="true">
         <path d="M4 3h9l3 3v11a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z" />
         <line x1="6" y1="8"  x2="12" y2="8" />
@@ -607,22 +509,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         <line x1="6" y1="14" x2="9"  y2="14" />
         <polyline points="13,3 13,6 16,6" strokeWidth={1.2} />
       </svg>,
-      // 5 — Video Vox: camera with pulsing record dot
-      <svg viewBox="0 0 20 20" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" aria-hidden="true">
-        <rect x="1" y="6" width="11" height="9" rx="2" fill="currentColor" fillOpacity={0.15} />
-        <path d="M12 9l5.5-3v8L12 11" strokeLinejoin="round" />
-        <circle cx="17.5" cy="4" r="1.5" fill="#f43f5e" stroke="none" className="lp-rec-dot" />
-      </svg>,
-      // 6 — Pulse Radio: two expanding concentric rings
-      <svg viewBox="0 0 20 20" width={18} height={18} fill="none" aria-hidden="true">
-        <circle cx="10" cy="10" r="2.5" fill="currentColor" />
-        <circle cx="10" cy="10" r="5" stroke="currentColor" strokeWidth={1.2} className="lp-radio-a" />
-        <circle cx="10" cy="10" r="5" stroke="currentColor" strokeWidth={1}   className="lp-radio-b" opacity={0.55} />
-      </svg>,
-      // 7 — Voice Threads: stacked speech bubbles
-      <svg viewBox="0 0 20 20" width={18} height={18} fill="currentColor" aria-hidden="true">
-        <path d="M2 4a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H8L5 14v-3H4a2 2 0 01-2-2V4z" opacity={0.5} />
-        <path d="M7 8a2 2 0 012-2h6a2 2 0 012 2v4a2 2 0 01-2 2h-1v2l-2.5-2H9a2 2 0 01-2-2V8z" />
+      // 5 — Live: record/on-air dot, always-on voice room
+      <svg viewBox="0 0 20 20" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.4} aria-hidden="true">
+        <circle cx="10" cy="10" r="7" />
+        <circle cx="10" cy="10" r="3" fill="currentColor" stroke="none" className="lp-rec-dot" />
       </svg>,
     ];
     return icons[idx] ?? null;
@@ -1146,21 +1036,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <button
               type="button"
               onClick={handleLogoClick}
-              className="flex items-center gap-3 cursor-pointer group bg-transparent border-0 p-0"
-              aria-label="Pulse, return to sign in"
+              className="flex items-center gap-2.5 cursor-pointer group bg-transparent border-0 p-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+              aria-label="Pulse, return home"
             >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg border border-zinc-800 group-hover:scale-110 transition-transform duration-300 ${isDarkMode ? 'bg-[#0f172a]' : 'bg-stone-100'}`}>
-                <svg viewBox="0 0 64 64" className="w-6 h-6" aria-hidden="true">
-                  <defs>
-                    <linearGradient id="pulse-grad-nav" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#f43f5e"/>
-                      <stop offset="100%" stopColor="#ec4899"/>
-                    </linearGradient>
-                  </defs>
-                  <path d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32" stroke="url(#pulse-grad-nav)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                </svg>
-              </div>
-              <span className={`text-xl font-bold ${isDarkMode ? 'text-zinc-50' : 'text-zinc-900'}`}>Pulse</span>
+              {/* Brand Globe mark — same mark as hero, footer, favicon & asset library */}
+              <span className="inline-flex group-hover:scale-110 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
+                <QntmEcosIcon size={36} />
+              </span>
+              <span
+                className={isDarkMode ? 'text-zinc-50' : 'text-zinc-900'}
+                style={{
+                  fontFamily: "'Syne', 'Inter', system-ui, sans-serif",
+                  fontWeight: 800,
+                  fontSize: '20px',
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  marginRight: '-0.1em', /* cancel trailing tracking so the lockup reads centered */
+                }}
+              >Pulse</span>
             </button>
 
             {/* QntmEcos badge */}
@@ -1175,13 +1068,27 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <QntmEcosIcon size={16} />
               <span className="text-[11px] font-medium text-zinc-400 group-hover:text-rose-400 transition-colors">QntmEcos</span>
             </a>
+
+            {/* Page nav — always visible (cross-page navigation) */}
+            <nav aria-label="Pages" className="flex items-center gap-0.5 sm:gap-1 ml-1 sm:ml-2">
+              {([
+                { label: 'Home', href: '/' },
+                { label: 'Features', href: '/features' },
+                { label: 'Demo', href: '/demo' },
+              ] as const).map((item) => {
+                const active = currentPath === item.href;
+                return (
+                  <a key={item.href} href={item.href} aria-current={active ? 'page' : undefined} className={`relative px-2 sm:px-2.5 py-1.5 text-[13px] sm:text-sm font-medium rounded-md transition-colors ${active ? (isDarkMode ? 'text-white' : 'text-stone-900') : (isDarkMode ? 'text-zinc-400 hover:text-white' : 'text-stone-500 hover:text-stone-900')}`}>
+                    {item.label}
+                    {active && <span className="absolute -bottom-0.5 left-2 right-2 h-0.5 rounded-full bg-rose-500" aria-hidden="true" />}
+                  </a>
+                );
+              })}
+            </nav>
           </div>
 
           <div className={`hidden md:flex items-center gap-6 text-sm font-medium ${isDarkMode ? 'text-zinc-400' : 'text-stone-500'}`}>
             {/* Primary nav */}
-            <button type="button" onClick={() => scrollToSection('features')} className={`transition ${isDarkMode ? 'hover:text-white' : 'hover:text-stone-900'}`}>Features</button>
-            <button type="button" onClick={() => scrollToSection('ecosystem')} className={`transition ${isDarkMode ? 'hover:text-white' : 'hover:text-stone-900'}`}>Ecosystem</button>
-            <button type="button" onClick={() => scrollToSection('scenarios')} className={`transition ${isDarkMode ? 'hover:text-white' : 'hover:text-stone-900'}`}>Scenarios</button>
             <button type="button" onClick={() => scrollToSection('pricing')} className={`transition ${isDarkMode ? 'hover:text-white' : 'hover:text-stone-900'}`}>Pricing</button>
 
             {/* ── Downloads dropdown ── */}
@@ -1377,41 +1284,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 </svg>
               )}
             </button>
-            {/* User Guide button — always visible */}
-            <button
-              type="button"
-              onClick={() => setIsGuideOpen(true)}
-              aria-label="Open User Guide"
-              className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-zinc-700/70 bg-zinc-900/60 hover:border-rose-500/50 hover:bg-zinc-800/80 text-zinc-400 hover:text-rose-400 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95"
-            >
-              <BookOpen className="text-[13px]" />
-              <span className="hidden sm:inline" aria-hidden="true">User Guide</span>
-            </button>
-            {/* Plans — always visible, jumps to pricing */}
-            <button
-              type="button"
-              onClick={() => scrollToSection('pricing')}
-              aria-label="Jump to pricing plans"
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg border text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95 ${
-                isDarkMode
-                  ? 'border-zinc-700/70 bg-zinc-900/60 hover:border-rose-500/50 hover:bg-zinc-800/80 text-zinc-400 hover:text-rose-400'
-                  : 'border-stone-300 bg-white hover:border-rose-400/50 hover:bg-stone-100 text-stone-600 hover:text-rose-600'
-              }`}
-            >
-              <i className="fa-solid fa-tag text-[11px]" aria-hidden="true" />
-              <span className="hidden sm:inline">Plans</span>
-            </button>
+            {/* Secondary action — returning users. Hidden at the narrowest width so the
+                primary CTA always wins; on mobile, sign-in lives in the menu sheet. */}
             <button
               onClick={onGetStarted}
               type="button"
-              className="px-3 py-2 md:px-5 md:py-2.5 bg-zinc-800/90 backdrop-blur-sm border border-zinc-700/80 hover:border-rose-500/50 text-zinc-100 hover:text-white rounded-lg text-xs md:text-sm font-semibold transition-all duration-300 hover:scale-105 active:scale-95 hover:bg-zinc-700/90 hover:shadow-lg hover:shadow-rose-500/10"
+              className="hidden sm:block px-3 py-2 md:px-5 md:py-2.5 bg-zinc-800/90 backdrop-blur-sm border border-zinc-700/80 hover:border-rose-500/50 text-zinc-100 hover:text-white rounded-lg text-xs md:text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95 hover:bg-zinc-700/90 hover:shadow-lg hover:shadow-rose-500/10"
             >
               Log In
             </button>
+            {/* Primary CTA — always visible across every breakpoint. Styling owned by
+                the shared .lp-cta-primary design-system component. */}
             <button
               onClick={onGetStarted}
               type="button"
-              className="lp-cta-primary hidden sm:block px-5 py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 rounded-lg text-sm font-semibold text-white"
+              className="lp-cta-primary px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-semibold"
             >
               Get Started
             </button>
@@ -1427,9 +1314,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         className={`lp-mobile-menu ${mobileMenuOpen ? 'open' : 'closed'}`}
       >
         {/* Stacked nav links */}
-        <button type="button" onClick={() => { setMobileMenuOpen(false); scrollToSection('features'); }} className="lp-mobile-nav-link">Features</button>
-        <button type="button" onClick={() => { setMobileMenuOpen(false); scrollToSection('ecosystem'); }} className="lp-mobile-nav-link">Ecosystem</button>
-        <button type="button" onClick={() => { setMobileMenuOpen(false); scrollToSection('scenarios'); }} className="lp-mobile-nav-link">Scenarios</button>
+        <a href="/" aria-current={currentPath === '/' ? 'page' : undefined} className={`lp-mobile-nav-link${currentPath === '/' ? ' text-rose-500 font-semibold' : ''}`}>Home</a>
+        <a href="/features" aria-current={currentPath === '/features' ? 'page' : undefined} className={`lp-mobile-nav-link${currentPath === '/features' ? ' text-rose-500 font-semibold' : ''}`}>Features</a>
+        <a href="/demo" aria-current={currentPath === '/demo' ? 'page' : undefined} className={`lp-mobile-nav-link${currentPath === '/demo' ? ' text-rose-500 font-semibold' : ''}`}>Demo</a>
         <button type="button" onClick={() => { setMobileMenuOpen(false); scrollToSection('pricing'); }} className="lp-mobile-nav-link">Pricing</button>
         <button type="button" onClick={() => { setMobileMenuOpen(false); scrollToSection('download'); }} className="lp-mobile-nav-link">Download</button>
         <div className="lp-mobile-divider" />
@@ -1446,6 +1333,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       <main id="main-content">
 
       {/* ── Hero Section — Asymmetric Signal ── */}
+      {variant === 'home' && (
       <section
         className="relative flex items-center min-h-screen overflow-hidden"
         style={{ background: isDarkMode ? '#0f172a' : '#fafaf9' }}
@@ -1527,21 +1415,101 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         </div>
       </section>
 
-      {/* ── Index strip ── one decisive sentence in place of the seven-cell
-          hero-metric template flagged by impeccable's slop test.
-          Same five facts, no grid scaffolding. */}
-      <div className={`border-y py-6 ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800/60' : 'bg-stone-100/60 border-stone-200/60'}`}>
-        <p className={`max-w-5xl mx-auto px-6 text-center text-base sm:text-lg leading-relaxed ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>
-          5 Relay peers + Triage stream &middot; Glimpse video &middot; War Room with 8 slash commands &middot; 4 native CRMs &middot; Maps and ETA share. <span className="text-rose-500 font-semibold">One surface.</span>
-        </p>
+      )}{/* end hero (home only) */}
+
+      {/* ── Capability strip (home) — breadth grid; deep-links into /features clusters ── */}
+      {variant === 'home' && (
+      <div className={`border-y ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800/60' : 'bg-stone-100/60 border-stone-200/60'}`}>
+        <div className="max-w-6xl mx-auto px-6 pt-4 pb-1 text-center">
+          <p className={`text-sm ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>One surface. <span className="text-rose-500 font-semibold">Every signal.</span></p>
+        </div>
+        <div className="max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+          {CAPABILITY_CELLS.map((c) => (
+            <a
+              key={c.name}
+              href={`/features#${c.anchor}`}
+              className={`group flex flex-col gap-1 px-5 py-5 border-t transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/50 ${isDarkMode ? 'border-zinc-800/60 hover:bg-zinc-900/60' : 'border-stone-200/70 hover:bg-white'}`}
+            >
+              <span className="flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 transition-colors ${isDarkMode ? 'bg-zinc-600 group-hover:bg-rose-500' : 'bg-stone-300 group-hover:bg-rose-500'}`} aria-hidden="true" />
+                <span className={`text-sm font-bold tracking-tight ${isDarkMode ? 'text-zinc-100' : 'text-zinc-900'}`}>{c.name}</span>
+              </span>
+              <span className={`text-[11px] leading-snug ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>{c.blurb}</span>
+              <span className={`text-[10px] font-semibold uppercase tracking-wide transition-colors ${isDarkMode ? 'text-zinc-500 group-hover:text-rose-400' : 'text-zinc-500 group-hover:text-rose-600'}`}>{c.stat}</span>
+            </a>
+          ))}
+        </div>
+        <div className="max-w-6xl mx-auto px-6 pt-3 pb-4 text-center">
+          <a href="/features" className={`inline-flex items-center gap-1 text-xs font-semibold transition-colors ${isDarkMode ? 'text-zinc-400 hover:text-rose-400' : 'text-zinc-500 hover:text-rose-600'}`}>Explore every feature <span aria-hidden="true">→</span></a>
+        </div>
       </div>
+      )}
 
-      {/* ── I: Platform Badge Ticker ── hidden for now */}
+      {/* ── Features-route hero + sticky cluster sub-nav (features only) ── */}
+      {variant === 'features' && (
+      <div>
+        <section className="relative px-6 pt-32 pb-14 overflow-hidden" style={{ background: isDarkMode ? '#0f172a' : '#fafaf9' }}>
+          <div className="hero-asymm-grid" aria-hidden="true" />
+          <div className="max-w-6xl mx-auto relative z-10">
+            <div className="hero-asymm-badge mb-5">
+              <span className="relative flex h-2 w-2 flex-shrink-0" aria-hidden="true">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+              </span>
+              Everything Pulse does
+            </div>
+            <h1 className={`text-4xl sm:text-6xl font-bold tracking-tight mb-4 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`} style={{ letterSpacing: '-0.03em' }}>Four moves, one surface.</h1>
+            <p className={`text-lg max-w-2xl ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>Communicate, decide, relate, operate. Every Pulse capability, grouped by the job it does.</p>
+          </div>
+        </section>
+        <nav className={`sticky top-0 z-30 border-y backdrop-blur ${isDarkMode ? 'bg-zinc-950/80 border-zinc-800/60' : 'bg-stone-50/80 border-stone-200/70'}`} aria-label="Feature clusters">
+          <div className="max-w-6xl mx-auto px-6 flex items-center gap-1 overflow-x-auto">
+            {FEATURE_CLUSTERS.map((cl) => (
+              <button key={cl.key} type="button" onClick={() => scrollToSection('cluster-' + cl.key)} className={`shrink-0 px-4 py-3 text-sm font-semibold border-b-2 border-transparent transition-colors ${isDarkMode ? 'text-zinc-400 hover:text-rose-400 hover:border-rose-500/50' : 'text-zinc-500 hover:text-rose-600 hover:border-rose-500/50'}`}>{cl.label}</button>
+            ))}
+          </div>
+        </nav>
+      </div>
+      )}
 
-      {/* ── Feature Showcase ── */}
+      {/* ── Demo route placeholder (demo only) ── */}
+      {variant === 'demo' && (
+      <section className="relative flex items-center min-h-screen overflow-hidden px-6" style={{ background: isDarkMode ? '#0f172a' : '#fafaf9' }}>
+        <div className="hero-asymm-grid" aria-hidden="true" />
+        <div className="hero-grain-overlay" style={{ opacity: isDarkMode ? 0.22 : 0.05 }} aria-hidden="true" />
+        <div className="max-w-3xl mx-auto text-center relative z-10 pt-24 pb-16">
+          <div className="hero-asymm-badge mx-auto mb-6" style={{ width: 'fit-content' }}>
+            <span className="relative flex h-2 w-2 flex-shrink-0" aria-hidden="true">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+            </span>
+            Live demo
+          </div>
+          <h1 className={`text-5xl sm:text-7xl font-bold tracking-tight mb-6 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`} style={{ letterSpacing: '-0.03em' }}>See Pulse in motion.</h1>
+          <p className={`text-lg sm:text-xl mb-10 max-w-xl mx-auto leading-relaxed ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>An interactive, click-through demo of the full Pulse workspace is on the way. Until then, take the feature tour or jump straight into the app.</p>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <button type="button" onClick={onGetStarted} className="hero-asymm-cta">Launch Pulse <Rocket size={16} /></button>
+            <a href="/features" className={`inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold border transition-colors ${isDarkMode ? 'border-zinc-700 text-zinc-200 hover:border-rose-500/60 hover:text-white' : 'border-stone-300 text-stone-700 hover:border-rose-500/60 hover:text-stone-900'}`}>Explore features <span aria-hidden="true">→</span></a>
+          </div>
+        </div>
+      </section>
+      )}
+
+      {/* ── Feature Showcase (features route only) ── */}
+      {variant === 'features' && (<>
       <div id="features">
 
-        {/* Section A — Voice-First Communication */}
+      {/* ── Cluster: Communicate ── */}
+      <div id="cluster-communicate" className="scroll-mt-16">
+        <div className="max-w-7xl mx-auto px-6 pt-24 pb-2">
+          <div className={`flex items-baseline gap-3 border-b pb-4 ${isDarkMode ? 'border-zinc-800/60' : 'border-stone-200/70'}`}>
+            <span className="font-mono text-sm font-bold text-rose-500">01</span>
+            <h2 className={`text-3xl sm:text-4xl font-bold tracking-tight ${isDarkMode ? 'text-zinc-50' : 'text-zinc-900'}`}>Communicate</h2>
+            <span className={`hidden sm:block text-sm ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>Every conversation — voice, video, and text — on one surface.</span>
+          </div>
+        </div>
+      </div>
+{/* Section A — Voice-First Communication */}
         <section id="section-relay" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
           {/* Relay "Sonic Pulse" themed bg — indigo + pink, fades in with scroll */}
           <div
@@ -1708,7 +1676,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                         }}
                       >{mode.key}</span>
                       <div className="w-9 h-9 rounded-xl bg-rose-500/10 flex items-center justify-center mb-3 group-hover:bg-rose-500/20 transition-colors">
-                        <span className="text-rose-500">{voxSvg(i)}</span>
+                        <span className="text-rose-500">{relayPeerIcon(i)}</span>
                       </div>
                       <h3 className="text-sm font-bold text-white mb-1.5 leading-tight">{mode.name}</h3>
                       <p className="text-zinc-400 text-[11px] leading-relaxed">{mode.desc}</p>
@@ -1762,7 +1730,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                       style={{ padding: '2px 6px', borderRadius: '4px', background: 'rgba(244,63,94,0.12)', color: '#fda4af', fontSize: '10px', letterSpacing: '0.1em', fontWeight: 500, border: '1px solid rgba(244,63,94,0.25)', fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
                     >{mode.key}</span>
                     <div className="w-9 h-9 rounded-xl bg-rose-500/10 flex items-center justify-center mb-3">
-                      <span className="text-rose-500">{voxSvg(i)}</span>
+                      <span className="text-rose-500">{relayPeerIcon(i)}</span>
                     </div>
                     <h3 className="text-sm font-bold text-white mb-1.5 leading-tight">{mode.name}</h3>
                     <p className="text-zinc-400 text-[12px] leading-relaxed pr-10">{mode.desc}</p>
@@ -1934,8 +1902,330 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
         <SectionDivider />
 
-        {/* Section B — War Room (terminal-mock layout, Wave 4.1) */}
+        {/* Section B3 — Messaging (channel-mock layout, Wave 4.1) */}
+        <section id="section-messaging" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
+          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
+            <div className="absolute inset-0" style={{
+              background: 'radial-gradient(ellipse at 50% 40%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 80% 70%, rgba(236,72,153,0.05) 0%, transparent 50%)',
+            }} />
+          </div>
+          <div className="max-w-7xl mx-auto relative z-10">
+            <div className="mb-12 animate-fade-in max-w-3xl">
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-5${isDarkMode ? ' bg-indigo-500/10 border border-indigo-500/25 text-indigo-400' : ' bg-indigo-50 border border-indigo-200 text-indigo-600'}`}>
+                <i className="fa-solid fa-comments text-xs" aria-hidden="true"></i> Messaging
+              </div>
+              <h2 className={`text-4xl sm:text-6xl font-bold mb-4 tracking-tight${isDarkMode ? ' text-zinc-50' : ' text-zinc-900'}`}>
+                Conversations that convert.
+              </h2>
+              <p className={`text-lg leading-relaxed${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
+                Pulse channels, threads, and DMs in one surface, with Slack as an opt-in connector. Walk away for an hour. Pulse summarizes the thread before you reopen it.
+              </p>
+            </div>
+
+            {/* Channel mock — side rail + thread view with AI Summary pinned */}
+            <div
+              data-reveal
+              className={`lp-channel rounded-2xl border overflow-hidden lp-card-hover${isDarkMode ? ' bg-zinc-950 border-zinc-800' : ' bg-white border-stone-200 shadow-sm'}`}
+            >
+              {/* Top bar: channel + focus + member presence */}
+              <div className={`flex items-center justify-between px-5 py-3 border-b gap-3 flex-wrap${isDarkMode ? ' border-zinc-800/80 bg-zinc-950' : ' border-stone-200 bg-stone-50/60'}`}>
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className={`text-[14px] font-semibold truncate${isDarkMode ? ' text-zinc-100' : ' text-zinc-900'}`}>
+                    <span className={isDarkMode ? 'text-zinc-500 mr-1' : 'text-zinc-400 mr-1'}>#</span>strategy
+                  </span>
+                  <span className={`text-[10px] uppercase tracking-widest${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>4 members</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] uppercase font-semibold${isDarkMode ? ' bg-rose-500/10 text-rose-400' : ' bg-rose-50 text-rose-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.1em' }}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" /> Focus · 18:42
+                  </span>
+                  <div className="hidden sm:flex items-center -space-x-1.5">
+                    {['#f43f5e', '#f59e0b', '#3b82f6', '#10b981'].map((c, i) => (
+                      <span key={i} className={`inline-block w-5 h-5 rounded-full ring-2${isDarkMode ? ' ring-zinc-950' : ' ring-white'}`} style={{ background: c }} aria-hidden="true" />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Inline channel strip — replaces the side rail. Robust at every viewport. */}
+              <div className={`flex items-center gap-x-4 gap-y-2 flex-wrap px-5 py-2.5 border-b text-[10px] uppercase tracking-widest font-semibold${isDarkMode ? ' border-zinc-800/80 bg-zinc-900/40 text-zinc-500' : ' border-stone-200 bg-stone-50/40 text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>Unified</span>
+                  <i className="fa-brands fa-slack text-[11px]" aria-hidden="true" />
+                </span>
+                <span className={isDarkMode ? 'text-zinc-700' : 'text-zinc-300'}>·</span>
+                <span className="inline-flex items-center gap-2 flex-wrap">
+                  <span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>Channels</span>
+                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded${isDarkMode ? ' bg-rose-500/10 text-rose-400' : ' bg-rose-50 text-rose-600'}`}><span className={isDarkMode ? 'text-rose-400/60' : 'text-rose-500/60'}>#</span>strategy</span>
+                  <span className="hidden sm:inline-flex items-center gap-1"><span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>#</span>launches <span className={`px-1 rounded tabular-nums normal-case${isDarkMode ? ' bg-zinc-800 text-zinc-300' : ' bg-zinc-200 text-zinc-700'}`}>3</span></span>
+                  <span className="hidden md:inline-flex items-center gap-1"><span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>#</span>design</span>
+                  <span className="hidden md:inline-flex items-center gap-1"><span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>#</span>engineering <span className={`px-1 rounded tabular-nums normal-case${isDarkMode ? ' bg-zinc-800 text-zinc-300' : ' bg-zinc-200 text-zinc-700'}`}>12</span></span>
+                </span>
+                <span className={`hidden sm:inline ${isDarkMode ? 'text-zinc-700' : 'text-zinc-300'}`}>·</span>
+                <span className="hidden sm:inline-flex items-center gap-2 flex-wrap">
+                  <span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>DMs</span>
+                  <span className="inline-flex items-center gap-1"><span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />Anya</span>
+                  <span className={isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}>Marcus · Sarah</span>
+                </span>
+              </div>
+
+              {/* Thread pane — always full width */}
+              <div className="p-5 sm:p-6">
+                  {/* Pinned AI Summary */}
+                  <div className={`relative rounded-xl border p-4 mb-5${isDarkMode ? ' border-rose-500/25 bg-rose-500/[0.05]' : ' border-rose-200 bg-rose-50/50'}`}>
+                    <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[9px] uppercase font-semibold${isDarkMode ? ' bg-rose-500/15 text-rose-300' : ' bg-rose-100 text-rose-700'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.1em' }}>
+                        <i className="fa-solid fa-thumbtack text-[9px]" aria-hidden="true" /> Pinned · Pulse AI Summary
+                      </span>
+                      <span className={`text-[10px] uppercase tracking-widest${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>32 msgs · 1h</span>
+                    </div>
+                    <p className={`text-[13px] leading-relaxed mb-2${isDarkMode ? ' text-zinc-200' : ' text-zinc-800'}`}>
+                      Team aligned on shipping the EMEA pause. Two open questions: tooling budget and contractor coverage. Marcus wants the hiring plan revisit before Friday.
+                    </p>
+                    <div className="flex items-center gap-3 flex-wrap text-[10px] uppercase tracking-widest" style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
+                      <span className={isDarkMode ? 'text-rose-400' : 'text-rose-600'}>3 decisions</span>
+                      <span className={isDarkMode ? 'text-zinc-700' : 'text-zinc-300'}>·</span>
+                      <span className={isDarkMode ? 'text-rose-400' : 'text-rose-600'}>5 actions</span>
+                      <span className={isDarkMode ? 'text-zinc-700' : 'text-zinc-300'}>·</span>
+                      <span className={isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}>2 owners flagged</span>
+                    </div>
+                  </div>
+
+                  {/* Messages */}
+                  <div className="space-y-4">
+                    {[
+                      { name: 'Anya Patel',  color: '#f43f5e', time: '10:42', body: 'Re: hiring revisit, let me know which roles you want me to pull from EMEA pipeline so I can repoint Marcus.', reactions: [['👀', 2], ['🙏', 1]] as Array<[string, number]>, mentions: false, highlight: false },
+                      { name: 'Sarah Lin',   color: '#3b82f6', time: '10:44', body: 'Pulled together a `compare-segments.md` for the campaign rebuild. Anyone want to pair on it before EOD?', reactions: [['✅', 3]] as Array<[string, number]>, mentions: false, highlight: false, code: true },
+                      { name: 'Marcus Webb', color: '#10b981', time: '10:46', body: '@you, I can take the contractor coverage answer if you handle the tooling line. Saves a round-trip.', reactions: [] as Array<[string, number]>, mentions: true, highlight: true },
+                    ].map((m, i) => (
+                      <div key={i} className={`flex gap-3 ${m.highlight ? '-mx-2 px-2 py-2 rounded-lg ' + (isDarkMode ? 'bg-amber-500/[0.05]' : 'bg-amber-50/50') : ''}`}>
+                        <span className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-[11px] font-semibold text-white" style={{ background: m.color }} aria-hidden="true">{m.name.split(' ').map(n => n[0]).join('')}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-baseline gap-2 mb-1">
+                            <span className={`text-[13px] font-semibold${isDarkMode ? ' text-zinc-100' : ' text-zinc-900'}`}>{m.name}</span>
+                            <span className={`text-[10px] tabular-nums${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>{m.time}</span>
+                            {m.mentions && (
+                              <span className={`text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded${isDarkMode ? ' bg-amber-500/15 text-amber-400' : ' bg-amber-100 text-amber-700'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>Mention</span>
+                            )}
+                          </div>
+                          <p className={`text-[13px] leading-relaxed mb-1.5${isDarkMode ? ' text-zinc-300' : ' text-zinc-700'}`}>
+                            {m.code ? (
+                              <>Pulled together a <code className={`px-1.5 py-0.5 rounded text-[12px]${isDarkMode ? ' bg-zinc-800 text-rose-300' : ' bg-stone-100 text-rose-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>compare-segments.md</code> for the campaign rebuild. Anyone want to pair on it before EOD?</>
+                            ) : (
+                              m.body
+                            )}
+                          </p>
+                          {m.reactions.length > 0 && (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {m.reactions.map(([emoji, count], j) => (
+                                <span key={j} className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[11px] border${isDarkMode ? ' border-zinc-800 bg-zinc-900/60 text-zinc-300' : ' border-stone-200 bg-stone-50 text-zinc-700'}`}>
+                                  <span>{emoji}</span><span className="tabular-nums text-[10px]">{count}</span>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {m.highlight && (
+                            <div className={`mt-2 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-semibold${isDarkMode ? ' text-rose-400' : ' text-rose-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
+                              <Wand2 size={10} /> Pulse AI · Quick Reply ready
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Compose area */}
+                  <div className={`mt-6 rounded-xl border p-3 flex items-center gap-2 flex-wrap${isDarkMode ? ' border-zinc-800 bg-zinc-900/40' : ' border-stone-200 bg-stone-50/60'}`}>
+                    <span className={`text-[11px] flex-1 min-w-0${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>Message #strategy …</span>
+                    <div className={`flex items-center gap-2 text-[11px]${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>
+                      <span style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }} className="text-[10px] uppercase tracking-widest">B  I  &lt;/&gt;  @</span>
+                    </div>
+                  </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <SectionDivider />
+
+        {/* Section B2 — Email (inbox-mock layout, Wave 4.1) — hidden for v1 via SHOW_EMAIL_ON_LANDING */}
+        {SHOW_EMAIL_ON_LANDING && (<>
         <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
+          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
+            <div className="absolute inset-0" style={{
+              background: 'radial-gradient(ellipse at 70% 30%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 30% 70%, rgba(236,72,153,0.05) 0%, transparent 50%)',
+            }} />
+          </div>
+          <div className="max-w-7xl mx-auto relative z-10">
+            <div className="mb-12 animate-fade-in max-w-3xl">
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-5${isDarkMode ? ' bg-blue-500/10 border border-blue-500/25 text-blue-400' : ' bg-blue-50 border border-blue-200 text-blue-600'}`}>
+                <i className="fa-solid fa-envelope text-xs" aria-hidden="true"></i> Email
+              </div>
+              <h2 className={`text-4xl sm:text-6xl font-bold mb-4 tracking-tight${isDarkMode ? ' text-zinc-50' : ' text-zinc-900'}`}>
+                Email, reimagined.
+              </h2>
+              <p className={`text-lg leading-relaxed${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
+                Gmail in one pane, AI in the other. The threads that need you, surfaced. The ones going cold, flagged. The reply, drafted.
+              </p>
+            </div>
+
+            {/* Inbox split-pane mock */}
+            <div
+              data-reveal
+              className={`lp-inbox rounded-2xl border overflow-hidden lp-card-hover${isDarkMode ? ' bg-zinc-950 border-zinc-800' : ' bg-white border-stone-200 shadow-sm'}`}
+            >
+              {/* Top bar */}
+              <div className={`flex items-center justify-between px-5 py-3 border-b${isDarkMode ? ' border-zinc-800/80 bg-zinc-950' : ' border-stone-200 bg-stone-50/60'}`}>
+                <div className={`flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-semibold${isDarkMode ? ' text-blue-400' : ' text-blue-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
+                  <i className="fa-brands fa-google text-[11px]" aria-hidden="true" /> Gmail · Synced 2s ago
+                </div>
+                <div className={`hidden sm:flex items-center gap-3 text-[10px] uppercase tracking-widest${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
+                  <span>Inbox · 47</span>
+                  <span className={isDarkMode ? 'text-zinc-700' : 'text-zinc-300'}>·</span>
+                  <span className={isDarkMode ? 'text-rose-400' : 'text-rose-600'}>3 need you</span>
+                </div>
+              </div>
+
+              {/* Body: thread list + expanded thread */}
+              <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr]">
+                {/* Thread list */}
+                <div className={`border-b lg:border-b-0 lg:border-r${isDarkMode ? ' border-zinc-800/80 bg-zinc-900/40' : ' border-stone-200 bg-stone-50/40'}`}>
+                  {[
+                    { from: 'Anya Patel',  subject: 'Re: Q2 Strategy + budget questions',   snippet: 'On board with the EMEA pause. Two follow-ups before we …', time: '11m', chip: 'AI Brief',     chipTone: 'rose',      selected: true,  unread: false },
+                    { from: 'Sarah Lin',   subject: 'Beta launch sequence ready',            snippet: '5-touch sequence loaded. Sign-off on segment 2 before …', time: '23m', chip: 'Campaign',     chipTone: 'blue',      selected: false, unread: true  },
+                    { from: 'Marcus Webb', subject: 'When can we sync on the hiring plan?',  snippet: 'Hey, circling back on the convo from two weeks ago …',   time: '3d',  chip: 'Going cold',   chipTone: 'rose-warn', selected: false, unread: false },
+                    { from: 'PostHog',     subject: 'Your weekly product report',            snippet: 'Activation is up 12%. Three experiments wrapped …',       time: '1h',  chip: 'Digest',       chipTone: 'zinc',      selected: false, unread: false },
+                    { from: 'Stripe',      subject: 'Action required · invoice #4428',       snippet: 'Card on file failed for $1,240. Auto-retry in 3 days …', time: '2h',  chip: 'Urgent',       chipTone: 'amber',     selected: false, unread: true  },
+                  ].map((t, i) => {
+                    const chipCls =
+                      t.chipTone === 'rose'      ? (isDarkMode ? 'bg-rose-500/10 text-rose-400'   : 'bg-rose-50 text-rose-600') :
+                      t.chipTone === 'rose-warn' ? (isDarkMode ? 'bg-rose-500/10 text-rose-300 border border-rose-500/25' : 'bg-rose-50 text-rose-600 border border-rose-200') :
+                      t.chipTone === 'blue'      ? (isDarkMode ? 'bg-blue-500/10 text-blue-400'   : 'bg-blue-50 text-blue-600') :
+                      t.chipTone === 'amber'     ? (isDarkMode ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600') :
+                                                   (isDarkMode ? 'bg-zinc-800 text-zinc-400'      : 'bg-stone-100 text-zinc-600');
+                    return (
+                      <div
+                        key={i}
+                        className={`relative px-4 py-3 border-b transition-colors${
+                          isDarkMode ? ' border-zinc-800/60' : ' border-stone-200/80'
+                        }${
+                          t.selected
+                            ? (isDarkMode ? ' bg-rose-500/[0.04]' : ' bg-rose-50/40')
+                            : (isDarkMode ? ' hover:bg-zinc-900/60' : ' hover:bg-stone-100/60')
+                        }`}
+                      >
+                        {t.selected && <span className="absolute left-0 top-0 bottom-0 w-px bg-rose-500" aria-hidden="true" />}
+                        <div className="flex items-baseline justify-between gap-2 mb-1">
+                          <span className={`text-[12px] truncate${t.unread ? ' font-semibold' : ' font-medium'}${isDarkMode ? ' text-zinc-100' : ' text-zinc-900'}`}>{t.from}</span>
+                          <span className={`text-[10px] tabular-nums shrink-0${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>{t.time}</span>
+                        </div>
+                        <div className={`text-[12px] truncate mb-1${t.unread ? ' font-medium' : ''}${isDarkMode ? ' text-zinc-300' : ' text-zinc-700'}`}>{t.subject}</div>
+                        <div className={`text-[11px] truncate mb-2${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>{t.snippet}</div>
+                        <span className={`inline-block px-2 py-0.5 rounded text-[9px] uppercase font-semibold ${chipCls}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.1em' }}>{t.chip}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Expanded thread */}
+                <div className="p-5 sm:p-7">
+                  <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
+                    <div className="min-w-0">
+                      <div className={`text-base sm:text-lg font-semibold mb-1 leading-snug${isDarkMode ? ' text-zinc-100' : ' text-zinc-900'}`}>
+                        Re: Q2 Strategy + budget questions
+                      </div>
+                      <div className={`text-[12px]${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>
+                        Anya Patel <span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>&lt;anya@quantumecos.com&gt;</span> · 11 min ago
+                      </div>
+                    </div>
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[9px] uppercase font-semibold${isDarkMode ? ' bg-rose-500/10 text-rose-400' : ' bg-rose-50 text-rose-600'}`}
+                      style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.1em' }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Pulse AI · Brief
+                    </span>
+                  </div>
+
+                  {/* AI briefing block */}
+                  <div className={`rounded-xl border p-4 mb-5${isDarkMode ? ' border-rose-500/20 bg-rose-500/[0.04]' : ' border-rose-200 bg-rose-50/40'}`}>
+                    <div className={`text-[10px] uppercase tracking-widest font-semibold mb-2${isDarkMode ? ' text-rose-400' : ' text-rose-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
+                      What you need to know
+                    </div>
+                    <ul className={`text-[13px] space-y-1.5 leading-relaxed${isDarkMode ? ' text-zinc-300' : ' text-zinc-700'}`}>
+                      <li className="flex gap-2"><span className={isDarkMode ? 'text-rose-400' : 'text-rose-500'}>·</span> Anya agrees with the EMEA pause, asks for net-hire revisit by Friday.</li>
+                      <li className="flex gap-2"><span className={isDarkMode ? 'text-rose-400' : 'text-rose-500'}>·</span> Two budget line items still unresolved: tooling ($18k) and contractor coverage.</li>
+                      <li className="flex gap-2"><span className={isDarkMode ? 'text-rose-400' : 'text-rose-500'}>·</span> Decision needed before her board update Tuesday 10am.</li>
+                    </ul>
+                  </div>
+
+                  {/* Action items */}
+                  <div className="mb-5">
+                    <div className={`text-[10px] uppercase tracking-widest font-semibold mb-2${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
+                      Action items · auto-extracted
+                    </div>
+                    <ul className="space-y-1.5">
+                      {[
+                        { txt: 'Send revised net-hire plan',            due: 'Fri' },
+                        { txt: 'Approve $18k tooling line',              due: 'Mon' },
+                        { txt: 'Reply with contractor coverage answer',  due: 'Today' },
+                      ].map((a, i) => (
+                        <li key={i} className={`flex items-center justify-between gap-3 text-[12px] px-3 py-2 rounded-lg${isDarkMode ? ' bg-zinc-900/60' : ' bg-stone-50'}`}>
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className={`w-3.5 h-3.5 rounded border shrink-0${isDarkMode ? ' border-zinc-700' : ' border-zinc-300'}`} />
+                            <span className={`truncate${isDarkMode ? ' text-zinc-300' : ' text-zinc-700'}`}>{a.txt}</span>
+                          </div>
+                          <span className={`text-[10px] uppercase tracking-widest shrink-0${a.due === 'Today' ? (isDarkMode ? ' text-rose-400' : ' text-rose-600') : (isDarkMode ? ' text-zinc-500' : ' text-zinc-500')}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>{a.due}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* AI draft reply */}
+                  <div className={`rounded-xl border p-4${isDarkMode ? ' border-zinc-800 bg-zinc-900/40' : ' border-stone-200 bg-stone-50/60'}`}>
+                    <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[9px] uppercase font-semibold${isDarkMode ? ' bg-rose-500/10 text-rose-400' : ' bg-rose-50 text-rose-600'}`}
+                        style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.1em' }}
+                      >
+                        <Wand2 size={10} /> Pulse AI · Draft
+                      </span>
+                      <span className={`text-[10px] uppercase tracking-widest${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
+                        Tone · Direct
+                      </span>
+                    </div>
+                    <p className={`text-[13px] leading-relaxed mb-3${isDarkMode ? ' text-zinc-300' : ' text-zinc-700'}`}>
+                      Anya, agreed on the pause. Sending revised hire plan Friday and the contractor answer today. I'll greenlight the $18k tooling line by Monday so we're clean for the board update.
+                    </p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button type="button" className="px-3 py-1.5 rounded-lg text-[11px] font-semibold inline-flex items-center gap-1.5 bg-rose-500 text-white hover:bg-rose-600">
+                        Send <i className="fa-solid fa-paper-plane text-[10px]" aria-hidden="true" />
+                      </button>
+                      <button type="button" className={`px-3 py-1.5 rounded-lg text-[11px] font-medium border${isDarkMode ? ' border-zinc-700 text-zinc-300 hover:bg-zinc-800' : ' border-stone-200 text-zinc-700 hover:bg-stone-100'}`}>Edit</button>
+                      <button type="button" className={`px-3 py-1.5 rounded-lg text-[11px] font-medium${isDarkMode ? ' text-zinc-500 hover:text-zinc-300' : ' text-zinc-500 hover:text-zinc-700'}`}>Regenerate</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <SectionDivider />
+        </>)}
+
+        
+      {/* ── Cluster: Decide ── */}
+      <div id="cluster-decide" className="scroll-mt-16">
+        <div className="max-w-7xl mx-auto px-6 pt-24 pb-2">
+          <div className={`flex items-baseline gap-3 border-b pb-4 ${isDarkMode ? 'border-zinc-800/60' : 'border-stone-200/70'}`}>
+            <span className="font-mono text-sm font-bold text-rose-500">02</span>
+            <h2 className={`text-3xl sm:text-4xl font-bold tracking-tight ${isDarkMode ? 'text-zinc-50' : 'text-zinc-900'}`}>Decide</h2>
+            <span className={`hidden sm:block text-sm ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>Turn signal into decisions with AI research, tasks, and analytics.</span>
+          </div>
+        </div>
+      </div>
+{/* Section B — War Room (terminal-mock layout, Wave 4.1) */}
+        <section id="section-warroom" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
           <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
             <div className="absolute inset-0" style={{
               background: 'radial-gradient(ellipse at 30% 40%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 70% 60%, rgba(236,72,153,0.05) 0%, transparent 50%)',
@@ -2117,457 +2407,162 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
         <SectionDivider />
 
-        {/* Section B2 — Email (inbox-mock layout, Wave 4.1) — hidden for v1 via SHOW_EMAIL_ON_LANDING */}
-        {SHOW_EMAIL_ON_LANDING && (<>
-        <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
-          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
+        {/* Section C — Decisions and Execution */}
+        <section id="section-decisions" className={`py-24 px-6 relative${isDarkMode ? '' : ' bg-stone-50'}`}>
+          {/* Decision hub themed bg — rose radial glow + pure dark, from DecisionTaskHub.css */}
+          <div
+            className="absolute inset-0 pointer-events-none transition-opacity duration-700"
+            style={{ opacity: Math.min(sectionVis['section-decisions'] ?? 0, 1) * (isDarkMode ? 1 : 0.55) }}
+          >
             <div className="absolute inset-0" style={{
-              background: 'radial-gradient(ellipse at 70% 30%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 30% 70%, rgba(236,72,153,0.05) 0%, transparent 50%)',
-            }} />
+              background: 'radial-gradient(ellipse at 50% 40%, rgba(244,63,94,0.13) 0%, transparent 55%), radial-gradient(ellipse at 20% 80%, rgba(236,72,153,0.08) 0%, transparent 45%), radial-gradient(ellipse at 80% 70%, rgba(244,63,94,0.06) 0%, transparent 40%)',
+            }}></div>
+            {/* Rose pulse ring — central glow radiating from center like the decision health score */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full border border-rose-500/8" style={{ boxShadow: '0 0 120px rgba(244,63,94,0.06) inset' }}></div>
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full border border-rose-500/6"></div>
           </div>
           <div className="max-w-7xl mx-auto relative z-10">
             <div className="mb-12 animate-fade-in max-w-3xl">
-              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-5${isDarkMode ? ' bg-blue-500/10 border border-blue-500/25 text-blue-400' : ' bg-blue-50 border border-blue-200 text-blue-600'}`}>
-                <i className="fa-solid fa-envelope text-xs" aria-hidden="true"></i> Email
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-500/10 border border-teal-500/25 text-teal-400 text-xs font-bold uppercase tracking-widest mb-5">
+                <Gavel /> Decisions and Tasks
               </div>
               <h2 className={`text-4xl sm:text-6xl font-bold mb-4 tracking-tight${isDarkMode ? ' text-zinc-50' : ' text-zinc-900'}`}>
-                Email, reimagined.
+                From signal to action.
               </h2>
               <p className={`text-lg leading-relaxed${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
-                Gmail in one pane, AI in the other. The threads that need you, surfaced. The ones going cold, flagged. The reply, drafted.
+                Discussions become decisions, decisions become tasks, tasks track themselves back to the meeting they came from. Health score watches the load.
               </p>
             </div>
 
-            {/* Inbox split-pane mock */}
+            {/* Kanban mock — 4 columns, sample decision cards */}
             <div
               data-reveal
-              className={`lp-inbox rounded-2xl border overflow-hidden lp-card-hover${isDarkMode ? ' bg-zinc-950 border-zinc-800' : ' bg-white border-stone-200 shadow-sm'}`}
+              className={`lp-kanban rounded-2xl border overflow-hidden lp-card-hover${isDarkMode ? ' bg-zinc-950 border-zinc-800' : ' bg-white border-stone-200 shadow-sm'}`}
             >
-              {/* Top bar */}
-              <div className={`flex items-center justify-between px-5 py-3 border-b${isDarkMode ? ' border-zinc-800/80 bg-zinc-950' : ' border-stone-200 bg-stone-50/60'}`}>
-                <div className={`flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-semibold${isDarkMode ? ' text-blue-400' : ' text-blue-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
-                  <i className="fa-brands fa-google text-[11px]" aria-hidden="true" /> Gmail · Synced 2s ago
+              {/* Top bar with team health */}
+              <div className={`flex items-center justify-between px-5 py-3 border-b gap-3 flex-wrap${isDarkMode ? ' border-zinc-800/80 bg-zinc-950' : ' border-stone-200 bg-stone-50/60'}`}>
+                <div className={`text-[10px] uppercase tracking-widest font-semibold${isDarkMode ? ' text-teal-400' : ' text-teal-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
+                  Q2 · 7 active decisions
                 </div>
-                <div className={`hidden sm:flex items-center gap-3 text-[10px] uppercase tracking-widest${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
-                  <span>Inbox · 47</span>
-                  <span className={isDarkMode ? 'text-zinc-700' : 'text-zinc-300'}>·</span>
-                  <span className={isDarkMode ? 'text-rose-400' : 'text-rose-600'}>3 need you</span>
-                </div>
-              </div>
-
-              {/* Body: thread list + expanded thread */}
-              <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr]">
-                {/* Thread list */}
-                <div className={`border-b lg:border-b-0 lg:border-r${isDarkMode ? ' border-zinc-800/80 bg-zinc-900/40' : ' border-stone-200 bg-stone-50/40'}`}>
-                  {[
-                    { from: 'Anya Patel',  subject: 'Re: Q2 Strategy + budget questions',   snippet: 'On board with the EMEA pause. Two follow-ups before we …', time: '11m', chip: 'AI Brief',     chipTone: 'rose',      selected: true,  unread: false },
-                    { from: 'Sarah Lin',   subject: 'Beta launch sequence ready',            snippet: '5-touch sequence loaded. Sign-off on segment 2 before …', time: '23m', chip: 'Campaign',     chipTone: 'blue',      selected: false, unread: true  },
-                    { from: 'Marcus Webb', subject: 'When can we sync on the hiring plan?',  snippet: 'Hey, circling back on the convo from two weeks ago …',   time: '3d',  chip: 'Going cold',   chipTone: 'rose-warn', selected: false, unread: false },
-                    { from: 'PostHog',     subject: 'Your weekly product report',            snippet: 'Activation is up 12%. Three experiments wrapped …',       time: '1h',  chip: 'Digest',       chipTone: 'zinc',      selected: false, unread: false },
-                    { from: 'Stripe',      subject: 'Action required · invoice #4428',       snippet: 'Card on file failed for $1,240. Auto-retry in 3 days …', time: '2h',  chip: 'Urgent',       chipTone: 'amber',     selected: false, unread: true  },
-                  ].map((t, i) => {
-                    const chipCls =
-                      t.chipTone === 'rose'      ? (isDarkMode ? 'bg-rose-500/10 text-rose-400'   : 'bg-rose-50 text-rose-600') :
-                      t.chipTone === 'rose-warn' ? (isDarkMode ? 'bg-rose-500/10 text-rose-300 border border-rose-500/25' : 'bg-rose-50 text-rose-600 border border-rose-200') :
-                      t.chipTone === 'blue'      ? (isDarkMode ? 'bg-blue-500/10 text-blue-400'   : 'bg-blue-50 text-blue-600') :
-                      t.chipTone === 'amber'     ? (isDarkMode ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600') :
-                                                   (isDarkMode ? 'bg-zinc-800 text-zinc-400'      : 'bg-stone-100 text-zinc-600');
-                    return (
-                      <div
-                        key={i}
-                        className={`relative px-4 py-3 border-b transition-colors${
-                          isDarkMode ? ' border-zinc-800/60' : ' border-stone-200/80'
-                        }${
-                          t.selected
-                            ? (isDarkMode ? ' bg-rose-500/[0.04]' : ' bg-rose-50/40')
-                            : (isDarkMode ? ' hover:bg-zinc-900/60' : ' hover:bg-stone-100/60')
-                        }`}
-                      >
-                        {t.selected && <span className="absolute left-0 top-0 bottom-0 w-px bg-rose-500" aria-hidden="true" />}
-                        <div className="flex items-baseline justify-between gap-2 mb-1">
-                          <span className={`text-[12px] truncate${t.unread ? ' font-semibold' : ' font-medium'}${isDarkMode ? ' text-zinc-100' : ' text-zinc-900'}`}>{t.from}</span>
-                          <span className={`text-[10px] tabular-nums shrink-0${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>{t.time}</span>
-                        </div>
-                        <div className={`text-[12px] truncate mb-1${t.unread ? ' font-medium' : ''}${isDarkMode ? ' text-zinc-300' : ' text-zinc-700'}`}>{t.subject}</div>
-                        <div className={`text-[11px] truncate mb-2${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>{t.snippet}</div>
-                        <span className={`inline-block px-2 py-0.5 rounded text-[9px] uppercase font-semibold ${chipCls}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.1em' }}>{t.chip}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Expanded thread */}
-                <div className="p-5 sm:p-7">
-                  <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
-                    <div className="min-w-0">
-                      <div className={`text-base sm:text-lg font-semibold mb-1 leading-snug${isDarkMode ? ' text-zinc-100' : ' text-zinc-900'}`}>
-                        Re: Q2 Strategy + budget questions
-                      </div>
-                      <div className={`text-[12px]${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>
-                        Anya Patel <span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>&lt;anya@quantumecos.com&gt;</span> · 11 min ago
-                      </div>
-                    </div>
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[9px] uppercase font-semibold${isDarkMode ? ' bg-rose-500/10 text-rose-400' : ' bg-rose-50 text-rose-600'}`}
-                      style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.1em' }}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Pulse AI · Brief
+                <div className="flex items-center gap-4 flex-wrap">
+                  {/* Team Health indicator (compact) */}
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[9px] uppercase tracking-widest${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>Team Health</span>
+                    <span className={`text-[13px] font-bold tabular-nums${isDarkMode ? ' text-emerald-400' : ' text-emerald-600'}`}>87</span>
+                    <span className={`w-16 h-1 rounded-full overflow-hidden${isDarkMode ? ' bg-zinc-800' : ' bg-stone-200'}`}>
+                      <span className="block h-full bg-gradient-to-r from-emerald-500 to-emerald-400" style={{ width: '87%' }} />
                     </span>
                   </div>
-
-                  {/* AI briefing block */}
-                  <div className={`rounded-xl border p-4 mb-5${isDarkMode ? ' border-rose-500/20 bg-rose-500/[0.04]' : ' border-rose-200 bg-rose-50/40'}`}>
-                    <div className={`text-[10px] uppercase tracking-widest font-semibold mb-2${isDarkMode ? ' text-rose-400' : ' text-rose-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
-                      What you need to know
-                    </div>
-                    <ul className={`text-[13px] space-y-1.5 leading-relaxed${isDarkMode ? ' text-zinc-300' : ' text-zinc-700'}`}>
-                      <li className="flex gap-2"><span className={isDarkMode ? 'text-rose-400' : 'text-rose-500'}>·</span> Anya agrees with the EMEA pause, asks for net-hire revisit by Friday.</li>
-                      <li className="flex gap-2"><span className={isDarkMode ? 'text-rose-400' : 'text-rose-500'}>·</span> Two budget line items still unresolved: tooling ($18k) and contractor coverage.</li>
-                      <li className="flex gap-2"><span className={isDarkMode ? 'text-rose-400' : 'text-rose-500'}>·</span> Decision needed before her board update Tuesday 10am.</li>
-                    </ul>
-                  </div>
-
-                  {/* Action items */}
-                  <div className="mb-5">
-                    <div className={`text-[10px] uppercase tracking-widest font-semibold mb-2${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
-                      Action items · auto-extracted
-                    </div>
-                    <ul className="space-y-1.5">
-                      {[
-                        { txt: 'Send revised net-hire plan',            due: 'Fri' },
-                        { txt: 'Approve $18k tooling line',              due: 'Mon' },
-                        { txt: 'Reply with contractor coverage answer',  due: 'Today' },
-                      ].map((a, i) => (
-                        <li key={i} className={`flex items-center justify-between gap-3 text-[12px] px-3 py-2 rounded-lg${isDarkMode ? ' bg-zinc-900/60' : ' bg-stone-50'}`}>
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <span className={`w-3.5 h-3.5 rounded border shrink-0${isDarkMode ? ' border-zinc-700' : ' border-zinc-300'}`} />
-                            <span className={`truncate${isDarkMode ? ' text-zinc-300' : ' text-zinc-700'}`}>{a.txt}</span>
-                          </div>
-                          <span className={`text-[10px] uppercase tracking-widest shrink-0${a.due === 'Today' ? (isDarkMode ? ' text-rose-400' : ' text-rose-600') : (isDarkMode ? ' text-zinc-500' : ' text-zinc-500')}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>{a.due}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* AI draft reply */}
-                  <div className={`rounded-xl border p-4${isDarkMode ? ' border-zinc-800 bg-zinc-900/40' : ' border-stone-200 bg-stone-50/60'}`}>
-                    <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[9px] uppercase font-semibold${isDarkMode ? ' bg-rose-500/10 text-rose-400' : ' bg-rose-50 text-rose-600'}`}
-                        style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.1em' }}
-                      >
-                        <Wand2 size={10} /> Pulse AI · Draft
-                      </span>
-                      <span className={`text-[10px] uppercase tracking-widest${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
-                        Tone · Direct
-                      </span>
-                    </div>
-                    <p className={`text-[13px] leading-relaxed mb-3${isDarkMode ? ' text-zinc-300' : ' text-zinc-700'}`}>
-                      Anya, agreed on the pause. Sending revised hire plan Friday and the contractor answer today. I'll greenlight the $18k tooling line by Monday so we're clean for the board update.
-                    </p>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <button type="button" className="px-3 py-1.5 rounded-lg text-[11px] font-semibold inline-flex items-center gap-1.5 bg-rose-500 text-white hover:bg-rose-600">
-                        Send <i className="fa-solid fa-paper-plane text-[10px]" aria-hidden="true" />
-                      </button>
-                      <button type="button" className={`px-3 py-1.5 rounded-lg text-[11px] font-medium border${isDarkMode ? ' border-zinc-700 text-zinc-300 hover:bg-zinc-800' : ' border-stone-200 text-zinc-700 hover:bg-stone-100'}`}>Edit</button>
-                      <button type="button" className={`px-3 py-1.5 rounded-lg text-[11px] font-medium${isDarkMode ? ' text-zinc-500 hover:text-zinc-300' : ' text-zinc-500 hover:text-zinc-700'}`}>Regenerate</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <SectionDivider />
-        </>)}
-
-        {/* Section B3 — Messaging (channel-mock layout, Wave 4.1) */}
-        <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
-          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
-            <div className="absolute inset-0" style={{
-              background: 'radial-gradient(ellipse at 50% 40%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 80% 70%, rgba(236,72,153,0.05) 0%, transparent 50%)',
-            }} />
-          </div>
-          <div className="max-w-7xl mx-auto relative z-10">
-            <div className="mb-12 animate-fade-in max-w-3xl">
-              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-5${isDarkMode ? ' bg-indigo-500/10 border border-indigo-500/25 text-indigo-400' : ' bg-indigo-50 border border-indigo-200 text-indigo-600'}`}>
-                <i className="fa-solid fa-comments text-xs" aria-hidden="true"></i> Messaging
-              </div>
-              <h2 className={`text-4xl sm:text-6xl font-bold mb-4 tracking-tight${isDarkMode ? ' text-zinc-50' : ' text-zinc-900'}`}>
-                Conversations that convert.
-              </h2>
-              <p className={`text-lg leading-relaxed${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
-                Pulse channels, threads, and DMs in one surface, with Slack as an opt-in connector. Walk away for an hour. Pulse summarizes the thread before you reopen it.
-              </p>
-            </div>
-
-            {/* Channel mock — side rail + thread view with AI Summary pinned */}
-            <div
-              data-reveal
-              className={`lp-channel rounded-2xl border overflow-hidden lp-card-hover${isDarkMode ? ' bg-zinc-950 border-zinc-800' : ' bg-white border-stone-200 shadow-sm'}`}
-            >
-              {/* Top bar: channel + focus + member presence */}
-              <div className={`flex items-center justify-between px-5 py-3 border-b gap-3 flex-wrap${isDarkMode ? ' border-zinc-800/80 bg-zinc-950' : ' border-stone-200 bg-stone-50/60'}`}>
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className={`text-[14px] font-semibold truncate${isDarkMode ? ' text-zinc-100' : ' text-zinc-900'}`}>
-                    <span className={isDarkMode ? 'text-zinc-500 mr-1' : 'text-zinc-400 mr-1'}>#</span>strategy
+                  <span className={`hidden sm:inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
+                    <i className="fa-solid fa-file-audio text-[10px]" aria-hidden="true" /> 4 meetings mined
                   </span>
-                  <span className={`text-[10px] uppercase tracking-widest${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>4 members</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] uppercase font-semibold${isDarkMode ? ' bg-rose-500/10 text-rose-400' : ' bg-rose-50 text-rose-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.1em' }}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" /> Focus · 18:42
-                  </span>
-                  <div className="hidden sm:flex items-center -space-x-1.5">
-                    {['#f43f5e', '#f59e0b', '#3b82f6', '#10b981'].map((c, i) => (
-                      <span key={i} className={`inline-block w-5 h-5 rounded-full ring-2${isDarkMode ? ' ring-zinc-950' : ' ring-white'}`} style={{ background: c }} aria-hidden="true" />
-                    ))}
-                  </div>
                 </div>
               </div>
 
-              {/* Inline channel strip — replaces the side rail. Robust at every viewport. */}
-              <div className={`flex items-center gap-x-4 gap-y-2 flex-wrap px-5 py-2.5 border-b text-[10px] uppercase tracking-widest font-semibold${isDarkMode ? ' border-zinc-800/80 bg-zinc-900/40 text-zinc-500' : ' border-stone-200 bg-stone-50/40 text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>Unified</span>
-                  <i className="fa-brands fa-slack text-[11px]" aria-hidden="true" />
-                </span>
-                <span className={isDarkMode ? 'text-zinc-700' : 'text-zinc-300'}>·</span>
-                <span className="inline-flex items-center gap-2 flex-wrap">
-                  <span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>Channels</span>
-                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded${isDarkMode ? ' bg-rose-500/10 text-rose-400' : ' bg-rose-50 text-rose-600'}`}><span className={isDarkMode ? 'text-rose-400/60' : 'text-rose-500/60'}>#</span>strategy</span>
-                  <span className="hidden sm:inline-flex items-center gap-1"><span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>#</span>launches <span className={`px-1 rounded tabular-nums normal-case${isDarkMode ? ' bg-zinc-800 text-zinc-300' : ' bg-zinc-200 text-zinc-700'}`}>3</span></span>
-                  <span className="hidden md:inline-flex items-center gap-1"><span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>#</span>design</span>
-                  <span className="hidden md:inline-flex items-center gap-1"><span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>#</span>engineering <span className={`px-1 rounded tabular-nums normal-case${isDarkMode ? ' bg-zinc-800 text-zinc-300' : ' bg-zinc-200 text-zinc-700'}`}>12</span></span>
-                </span>
-                <span className={`hidden sm:inline ${isDarkMode ? 'text-zinc-700' : 'text-zinc-300'}`}>·</span>
-                <span className="hidden sm:inline-flex items-center gap-2 flex-wrap">
-                  <span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>DMs</span>
-                  <span className="inline-flex items-center gap-1"><span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />Anya</span>
-                  <span className={isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}>Marcus · Sarah</span>
-                </span>
-              </div>
-
-              {/* Thread pane — always full width */}
-              <div className="p-5 sm:p-6">
-                  {/* Pinned AI Summary */}
-                  <div className={`relative rounded-xl border p-4 mb-5${isDarkMode ? ' border-rose-500/25 bg-rose-500/[0.05]' : ' border-rose-200 bg-rose-50/50'}`}>
-                    <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[9px] uppercase font-semibold${isDarkMode ? ' bg-rose-500/15 text-rose-300' : ' bg-rose-100 text-rose-700'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.1em' }}>
-                        <i className="fa-solid fa-thumbtack text-[9px]" aria-hidden="true" /> Pinned · Pulse AI Summary
-                      </span>
-                      <span className={`text-[10px] uppercase tracking-widest${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>32 msgs · 1h</span>
-                    </div>
-                    <p className={`text-[13px] leading-relaxed mb-2${isDarkMode ? ' text-zinc-200' : ' text-zinc-800'}`}>
-                      Team aligned on shipping the EMEA pause. Two open questions: tooling budget and contractor coverage. Marcus wants the hiring plan revisit before Friday.
-                    </p>
-                    <div className="flex items-center gap-3 flex-wrap text-[10px] uppercase tracking-widest" style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
-                      <span className={isDarkMode ? 'text-rose-400' : 'text-rose-600'}>3 decisions</span>
-                      <span className={isDarkMode ? 'text-zinc-700' : 'text-zinc-300'}>·</span>
-                      <span className={isDarkMode ? 'text-rose-400' : 'text-rose-600'}>5 actions</span>
-                      <span className={isDarkMode ? 'text-zinc-700' : 'text-zinc-300'}>·</span>
-                      <span className={isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}>2 owners flagged</span>
-                    </div>
-                  </div>
-
-                  {/* Messages */}
-                  <div className="space-y-4">
-                    {[
-                      { name: 'Anya Patel',  color: '#f43f5e', time: '10:42', body: 'Re: hiring revisit, let me know which roles you want me to pull from EMEA pipeline so I can repoint Marcus.', reactions: [['👀', 2], ['🙏', 1]] as Array<[string, number]>, mentions: false, highlight: false },
-                      { name: 'Sarah Lin',   color: '#3b82f6', time: '10:44', body: 'Pulled together a `compare-segments.md` for the campaign rebuild. Anyone want to pair on it before EOD?', reactions: [['✅', 3]] as Array<[string, number]>, mentions: false, highlight: false, code: true },
-                      { name: 'Marcus Webb', color: '#10b981', time: '10:46', body: '@you, I can take the contractor coverage answer if you handle the tooling line. Saves a round-trip.', reactions: [] as Array<[string, number]>, mentions: true, highlight: true },
-                    ].map((m, i) => (
-                      <div key={i} className={`flex gap-3 ${m.highlight ? '-mx-2 px-2 py-2 rounded-lg ' + (isDarkMode ? 'bg-amber-500/[0.05]' : 'bg-amber-50/50') : ''}`}>
-                        <span className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-[11px] font-semibold text-white" style={{ background: m.color }} aria-hidden="true">{m.name.split(' ').map(n => n[0]).join('')}</span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-baseline gap-2 mb-1">
-                            <span className={`text-[13px] font-semibold${isDarkMode ? ' text-zinc-100' : ' text-zinc-900'}`}>{m.name}</span>
-                            <span className={`text-[10px] tabular-nums${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>{m.time}</span>
-                            {m.mentions && (
-                              <span className={`text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded${isDarkMode ? ' bg-amber-500/15 text-amber-400' : ' bg-amber-100 text-amber-700'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>Mention</span>
-                            )}
-                          </div>
-                          <p className={`text-[13px] leading-relaxed mb-1.5${isDarkMode ? ' text-zinc-300' : ' text-zinc-700'}`}>
-                            {m.code ? (
-                              <>Pulled together a <code className={`px-1.5 py-0.5 rounded text-[12px]${isDarkMode ? ' bg-zinc-800 text-rose-300' : ' bg-stone-100 text-rose-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>compare-segments.md</code> for the campaign rebuild. Anyone want to pair on it before EOD?</>
-                            ) : (
-                              m.body
-                            )}
-                          </p>
-                          {m.reactions.length > 0 && (
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              {m.reactions.map(([emoji, count], j) => (
-                                <span key={j} className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[11px] border${isDarkMode ? ' border-zinc-800 bg-zinc-900/60 text-zinc-300' : ' border-stone-200 bg-stone-50 text-zinc-700'}`}>
-                                  <span>{emoji}</span><span className="tabular-nums text-[10px]">{count}</span>
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                          {m.highlight && (
-                            <div className={`mt-2 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-semibold${isDarkMode ? ' text-rose-400' : ' text-rose-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
-                              <Wand2 size={10} /> Pulse AI · Quick Reply ready
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Compose area */}
-                  <div className={`mt-6 rounded-xl border p-3 flex items-center gap-2 flex-wrap${isDarkMode ? ' border-zinc-800 bg-zinc-900/40' : ' border-stone-200 bg-stone-50/60'}`}>
-                    <span className={`text-[11px] flex-1 min-w-0${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>Message #strategy …</span>
-                    <div className={`flex items-center gap-2 text-[11px]${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>
-                      <span style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }} className="text-[10px] uppercase tracking-widest">B  I  &lt;/&gt;  @</span>
-                    </div>
-                  </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <SectionDivider />
-
-        {/* Section B4 — Calendar (agenda-strip layout, Wave 4.1) */}
-        <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
-          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
-            <div className="absolute inset-0" style={{
-              background: 'radial-gradient(ellipse at 40% 30%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 60% 70%, rgba(236,72,153,0.05) 0%, transparent 50%)',
-            }} />
-          </div>
-          <div className="max-w-7xl mx-auto relative z-10">
-            <div className="mb-12 animate-fade-in max-w-3xl">
-              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-5${isDarkMode ? ' bg-emerald-500/10 border border-emerald-500/25 text-emerald-400' : ' bg-emerald-50 border border-emerald-200 text-emerald-600'}`}>
-                <i className="fa-solid fa-calendar text-xs" aria-hidden="true"></i> Calendar
-              </div>
-              <h2 className={`text-4xl sm:text-6xl font-bold mb-4 tracking-tight${isDarkMode ? ' text-zinc-50' : ' text-zinc-900'}`}>
-                Time, orchestrated.
-              </h2>
-              <p className={`text-lg leading-relaxed${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
-                Google and Outlook side by side. Conflicts flagged before they happen. Meeting briefs ready before you walk in.
-              </p>
-            </div>
-
-            {/* Flat agenda strip — no internal cards, hairline rows */}
-            <div
-              data-reveal
-              className={`lp-agenda rounded-2xl border overflow-hidden lp-card-hover max-w-5xl${isDarkMode ? ' bg-zinc-950 border-zinc-800' : ' bg-white border-stone-200 shadow-sm'}`}
-            >
-              {/* Top bar */}
-              <div className={`flex items-center justify-between px-5 py-3 border-b gap-3 flex-wrap${isDarkMode ? ' border-zinc-800/80 bg-zinc-950' : ' border-stone-200 bg-stone-50/60'}`}>
-                <div className="min-w-0">
-                  <div className={`text-[10px] uppercase tracking-widest mb-0.5${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>Thursday</div>
-                  <div className={`text-base font-semibold${isDarkMode ? ' text-zinc-100' : ' text-zinc-900'}`}>May 16 · Today</div>
-                </div>
-                <div className={`flex items-center gap-3 text-[10px] uppercase tracking-widest${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
-                  <span className="inline-flex items-center gap-1.5"><i className="fa-brands fa-google text-[10px]" aria-hidden="true" /> Google</span>
-                  <span className="inline-flex items-center gap-1.5"><i className="fa-brands fa-microsoft text-[10px]" aria-hidden="true" /> Outlook</span>
-                  <span className={isDarkMode ? 'text-zinc-700' : 'text-zinc-300'}>·</span>
-                  <span className={isDarkMode ? 'text-rose-400' : 'text-rose-600'}>1 conflict</span>
-                  <span className={isDarkMode ? 'text-zinc-700' : 'text-zinc-300'}>·</span>
-                  <span className={isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}>1 open slot</span>
-                </div>
-              </div>
-
-              {/* Agenda rows */}
-              <ul>
+              {/* Columns */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0" style={{
+                borderColor: isDarkMode ? 'rgba(63,63,70,0.5)' : 'rgba(231,229,228,0.8)',
+              }}>
                 {[
-                  { time: '09:00', dur: '60m', title: 'Q2 Strategy Review',           source: 'google',  attendees: '6 attendees · Google Meet',           status: 'past',     flag: null,        prep: null },
-                  { time: '10:30', dur: '60m', title: '1:1 · Anya Patel',              source: 'pulse',   attendees: 'Pulse Meet · prep ready',             status: 'now',      flag: 'Now',       prep: 'Send-ahead brief drafted · 3 talking points' },
-                  { time: '12:00', dur: '90m', title: 'Focus Block',                   source: 'pulse',   attendees: 'Notifications off · DND on',          status: 'upcoming', flag: null,        prep: null },
-                  { time: '13:30', dur: '60m', title: 'Design Sync',                   source: 'google',  attendees: 'Sarah, Marcus + 2',                   status: 'upcoming', flag: 'Conflict',  prep: 'Overlaps 14:00 Customer Call · resolve?' },
-                  { time: '14:00', dur: '60m', title: 'Customer Call · Acme Corp',     source: 'outlook', attendees: 'Acme team · agenda attached',         status: 'upcoming', flag: 'Conflict',  prep: null },
-                  { time: '16:00', dur: '60m', title: 'Open · Bookable slot',          source: 'pulse',   attendees: 'Share booking link',                  status: 'open',     flag: 'Open',      prep: null },
-                ].map((e, i) => {
-                  const isNow      = e.status === 'now';
-                  const isConflict = e.flag    === 'Conflict';
-                  const isOpen     = e.status  === 'open';
-                  const isPast     = e.status  === 'past';
-
-                  const sourceDot =
-                    e.source === 'google'  ? 'bg-blue-500'   :
-                    e.source === 'outlook' ? 'bg-sky-500'    :
-                                             'bg-rose-500';
-
-                  return (
-                    <li
-                      key={i}
-                      className={`relative px-5 py-4 border-b last:border-b-0 grid grid-cols-[68px_1fr_auto] sm:grid-cols-[80px_1fr_auto] gap-x-4 items-start transition-colors${
-                        isDarkMode ? ' border-zinc-800/60' : ' border-stone-200/80'
-                      }${
-                        isNow      ? (isDarkMode ? ' bg-rose-500/[0.04]'   : ' bg-rose-50/40')   :
-                        isConflict ? (isDarkMode ? ' bg-amber-500/[0.04]'  : ' bg-amber-50/40')  :
-                        isOpen     ? (isDarkMode ? ' bg-emerald-500/[0.04]': ' bg-emerald-50/30'): ''
-                      }`}
-                    >
-                      {isNow      && <span className="absolute left-0 top-0 bottom-0 w-px bg-rose-500" aria-hidden="true" />}
-                      {isConflict && <span className="absolute left-0 top-0 bottom-0 w-px bg-amber-500" aria-hidden="true" />}
-                      {isOpen     && <span className="absolute left-0 top-0 bottom-0 w-px bg-emerald-500" aria-hidden="true" />}
-
-                      {/* Time column */}
-                      <div className="text-right">
-                        <div className={`text-[13px] tabular-nums font-semibold${isPast ? (isDarkMode ? ' text-zinc-600' : ' text-zinc-400') : (isDarkMode ? ' text-zinc-200' : ' text-zinc-800')}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>{e.time}</div>
-                        <div className={`text-[10px] uppercase tracking-widest mt-0.5${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>{e.dur}</div>
+                  {
+                    label: 'Proposed',
+                    color: '#8b5cf6',
+                    bg:    isDarkMode ? 'rgba(139,92,246,0.04)' : 'rgba(139,92,246,0.03)',
+                    cards: [
+                      { title: 'Move standup to async-only',          priority: 65, source: 'mtg',   meta: 'From Mon strategy',   avatar: '#3b82f6' },
+                      { title: 'Sunset legacy auth middleware',        priority: 71, source: 'task',  meta: 'Legal-flagged',       avatar: '#a855f7' },
+                      { title: 'Approve $18k tooling budget',          priority: 84, source: 'email', meta: 'Anya · due Mon',      avatar: '#f43f5e' },
+                    ],
+                  },
+                  {
+                    label: 'Voting',
+                    color: '#f59e0b',
+                    bg:    isDarkMode ? 'rgba(245,158,11,0.05)' : 'rgba(245,158,11,0.04)',
+                    cards: [
+                      { title: 'Switch Mixpanel → PostHog',            priority: 92, source: 'mtg',   meta: '3 / 4 voted',          avatar: '#10b981', voting: true },
+                      { title: 'Hire Senior IC vs Manager',            priority: 78, source: 'task',  meta: '2 / 4 voted',          avatar: '#f43f5e', voting: true },
+                    ],
+                  },
+                  {
+                    label: 'Decided',
+                    color: '#10b981',
+                    bg:    isDarkMode ? 'rgba(16,185,129,0.05)' : 'rgba(16,185,129,0.04)',
+                    cards: [
+                      { title: 'EMEA hiring pause through Q2',         priority: 87, source: 'mtg',   meta: 'Logged · audit trail', avatar: '#f43f5e', decided: true },
+                    ],
+                  },
+                  {
+                    label: 'Done',
+                    color: '#22c55e',
+                    bg:    isDarkMode ? 'rgba(34,197,94,0.04)' : 'rgba(34,197,94,0.03)',
+                    cards: [
+                      { title: 'Q1 OKR retrospective',                 priority: null, source: 'mtg', meta: 'Archived',             avatar: '#3b82f6', done: true },
+                    ],
+                    archived: 12,
+                  },
+                ].map((col, ci) => (
+                  <div key={col.label} className="p-4" style={{ backgroundColor: col.bg }}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: col.color }} aria-hidden="true" />
+                        <span
+                          className={`text-[10px] uppercase font-semibold${isDarkMode ? ' text-zinc-300' : ' text-zinc-700'}`}
+                          style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.15em' }}
+                        >
+                          {col.label}
+                        </span>
                       </div>
-
-                      {/* Event details */}
-                      <div className="min-w-0">
-                        <div className="flex items-baseline gap-2 flex-wrap mb-0.5">
-                          <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${sourceDot}`} aria-hidden="true" />
-                          <span className={`text-[14px] font-semibold truncate${isPast ? (isDarkMode ? ' text-zinc-500 line-through' : ' text-zinc-400 line-through') : (isDarkMode ? ' text-zinc-100' : ' text-zinc-900')}`}>{e.title}</span>
-                          {e.flag && (
-                            <span
-                              className={`text-[9px] uppercase font-semibold px-1.5 py-0.5 rounded${
-                                e.flag === 'Now'      ? (isDarkMode ? ' bg-rose-500/15 text-rose-300'    : ' bg-rose-100 text-rose-700')  :
-                                e.flag === 'Conflict' ? (isDarkMode ? ' bg-amber-500/15 text-amber-300'  : ' bg-amber-100 text-amber-700'):
-                                                        (isDarkMode ? ' bg-emerald-500/15 text-emerald-300' : ' bg-emerald-100 text-emerald-700')
-                              }`}
-                              style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.1em' }}
-                            >
-                              {e.flag === 'Now' && <span className="inline-block w-1 h-1 rounded-full bg-rose-500 mr-1 align-middle animate-pulse" aria-hidden="true" />}
-                              {e.flag}
-                            </span>
-                          )}
-                        </div>
-                        <div className={`text-[12px] truncate${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>{e.attendees}</div>
-                        {e.prep && (
-                          <div className={`mt-1.5 inline-flex items-center gap-1.5 text-[11px]${
-                            e.flag === 'Conflict' ? (isDarkMode ? ' text-amber-400' : ' text-amber-600') :
-                                                    (isDarkMode ? ' text-rose-400'  : ' text-rose-600')
-                          }`}>
-                            <Wand2 size={10} />
-                            <span style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }} className="uppercase tracking-widest text-[9px] font-semibold mr-0.5">Pulse AI</span>
-                            <span className={`${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>{e.prep}</span>
+                      <span
+                        className={`text-[10px] tabular-nums px-1.5 py-0.5 rounded${isDarkMode ? ' bg-zinc-800 text-zinc-400' : ' bg-stone-200 text-zinc-600'}`}
+                        style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
+                      >
+                        {col.cards.length}{col.archived ? ` · +${col.archived}` : ''}
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {col.cards.map((c: any, i) => (
+                        <div
+                          key={i}
+                          className={`rounded-lg border p-3 text-[12px] leading-snug transition-colors${
+                            isDarkMode ? ' bg-zinc-900/70 border-zinc-800 hover:border-zinc-700' : ' bg-white border-stone-200 hover:border-stone-300'
+                          }${c.done ? (isDarkMode ? ' opacity-60' : ' opacity-70') : ''}`}
+                        >
+                          <div className={`font-semibold mb-2${isDarkMode ? ' text-zinc-100' : ' text-zinc-900'}${c.done ? ' line-through' : ''}`}>{c.title}</div>
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              {c.priority != null && (
+                                <span
+                                  className={`text-[9px] uppercase font-semibold px-1.5 py-0.5 rounded${
+                                    c.priority >= 85 ? (isDarkMode ? ' bg-rose-500/15 text-rose-400'   : ' bg-rose-100 text-rose-700')   :
+                                    c.priority >= 70 ? (isDarkMode ? ' bg-amber-500/15 text-amber-400' : ' bg-amber-100 text-amber-700') :
+                                                       (isDarkMode ? ' bg-zinc-800 text-zinc-400'      : ' bg-stone-100 text-zinc-600')
+                                  }`}
+                                  style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.05em' }}
+                                >
+                                  P {c.priority}
+                                </span>
+                              )}
+                              <span
+                                className={`inline-flex items-center gap-1 text-[9px] uppercase tracking-widest${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}
+                                style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
+                              >
+                                {c.source === 'mtg'   && <i className="fa-solid fa-microphone text-[9px]" aria-hidden="true" />}
+                                {c.source === 'email' && <i className="fa-solid fa-envelope text-[9px]" aria-hidden="true" />}
+                                {c.source === 'task'  && <i className="fa-solid fa-list-check text-[9px]" aria-hidden="true" />}
+                              </span>
+                            </div>
+                            <span className={`inline-block w-4 h-4 rounded-full shrink-0`} style={{ background: c.avatar }} aria-hidden="true" />
                           </div>
-                        )}
-                      </div>
-
-                      {/* Trailing affordance */}
-                      <div className={`text-[10px] uppercase tracking-widest hidden sm:flex items-center gap-1.5${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
-                        {isOpen ? (
-                          <>
-                            <i className="fa-solid fa-link text-[10px]" aria-hidden="true" />
-                            <span className={isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}>Share</span>
-                          </>
-                        ) : isConflict ? (
-                          <span className={isDarkMode ? 'text-amber-400' : 'text-amber-600'}>Resolve →</span>
-                        ) : isNow ? (
-                          <span className={isDarkMode ? 'text-rose-400' : 'text-rose-600'}>Join →</span>
-                        ) : null}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-
-              {/* Footer NLP input */}
-              <div className={`flex items-center gap-3 px-5 py-3 border-t${isDarkMode ? ' border-zinc-800/80 bg-zinc-950' : ' border-stone-200 bg-stone-50/60'}`}>
-                <Wand2 size={12} className={isDarkMode ? 'text-rose-400' : 'text-rose-500'} />
-                <span className={`text-[12px] flex-1 truncate${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
-                  <span className={`uppercase text-[9px] tracking-widest font-semibold mr-2${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>Ask Pulse</span>
-                  &ldquo;Find 30 min with Anya before Friday&rdquo;
-                </span>
-                <span className={`text-[10px] uppercase tracking-widest hidden sm:inline${isDarkMode ? ' text-zinc-600' : ' text-zinc-400'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>↵</span>
+                          <div className={`mt-1.5 text-[10px] uppercase tracking-widest truncate${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
+                            {c.voting && <span className={isDarkMode ? 'text-amber-400 mr-1' : 'text-amber-600 mr-1'}>●</span>}
+                            {c.decided && <span className={isDarkMode ? 'text-emerald-400 mr-1' : 'text-emerald-600 mr-1'}>✓</span>}
+                            {c.meta}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -2576,7 +2571,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         <SectionDivider />
 
         {/* Section B5 — Analytics (hero-chart layout, Wave 4.1) */}
-        <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
+        <section id="section-analytics" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
           <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
             <div className="absolute inset-0" style={{
               background: 'radial-gradient(ellipse at 50% 50%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 80% 30%, rgba(236,72,153,0.05) 0%, transparent 50%)',
@@ -2784,170 +2779,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
         <SectionDivider />
 
-        {/* Section C — Decisions and Execution */}
-        <section id="section-decisions" className={`py-24 px-6 relative${isDarkMode ? '' : ' bg-stone-50'}`}>
-          {/* Decision hub themed bg — rose radial glow + pure dark, from DecisionTaskHub.css */}
-          <div
-            className="absolute inset-0 pointer-events-none transition-opacity duration-700"
-            style={{ opacity: Math.min(sectionVis['section-decisions'] ?? 0, 1) * (isDarkMode ? 1 : 0.55) }}
-          >
-            <div className="absolute inset-0" style={{
-              background: 'radial-gradient(ellipse at 50% 40%, rgba(244,63,94,0.13) 0%, transparent 55%), radial-gradient(ellipse at 20% 80%, rgba(236,72,153,0.08) 0%, transparent 45%), radial-gradient(ellipse at 80% 70%, rgba(244,63,94,0.06) 0%, transparent 40%)',
-            }}></div>
-            {/* Rose pulse ring — central glow radiating from center like the decision health score */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full border border-rose-500/8" style={{ boxShadow: '0 0 120px rgba(244,63,94,0.06) inset' }}></div>
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full border border-rose-500/6"></div>
+        
+      {/* ── Cluster: Relate ── */}
+      <div id="cluster-relate" className="scroll-mt-16">
+        <div className="max-w-7xl mx-auto px-6 pt-24 pb-2">
+          <div className={`flex items-baseline gap-3 border-b pb-4 ${isDarkMode ? 'border-zinc-800/60' : 'border-stone-200/70'}`}>
+            <span className="font-mono text-sm font-bold text-rose-500">03</span>
+            <h2 className={`text-3xl sm:text-4xl font-bold tracking-tight ${isDarkMode ? 'text-zinc-50' : 'text-zinc-900'}`}>Relate</h2>
+            <span className={`hidden sm:block text-sm ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>Keep every relationship warm with intelligence built in.</span>
           </div>
-          <div className="max-w-7xl mx-auto relative z-10">
-            <div className="mb-12 animate-fade-in max-w-3xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-500/10 border border-teal-500/25 text-teal-400 text-xs font-bold uppercase tracking-widest mb-5">
-                <Gavel /> Decisions and Tasks
-              </div>
-              <h2 className={`text-4xl sm:text-6xl font-bold mb-4 tracking-tight${isDarkMode ? ' text-zinc-50' : ' text-zinc-900'}`}>
-                From signal to action.
-              </h2>
-              <p className={`text-lg leading-relaxed${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
-                Discussions become decisions, decisions become tasks, tasks track themselves back to the meeting they came from. Health score watches the load.
-              </p>
-            </div>
-
-            {/* Kanban mock — 4 columns, sample decision cards */}
-            <div
-              data-reveal
-              className={`lp-kanban rounded-2xl border overflow-hidden lp-card-hover${isDarkMode ? ' bg-zinc-950 border-zinc-800' : ' bg-white border-stone-200 shadow-sm'}`}
-            >
-              {/* Top bar with team health */}
-              <div className={`flex items-center justify-between px-5 py-3 border-b gap-3 flex-wrap${isDarkMode ? ' border-zinc-800/80 bg-zinc-950' : ' border-stone-200 bg-stone-50/60'}`}>
-                <div className={`text-[10px] uppercase tracking-widest font-semibold${isDarkMode ? ' text-teal-400' : ' text-teal-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
-                  Q2 · 7 active decisions
-                </div>
-                <div className="flex items-center gap-4 flex-wrap">
-                  {/* Team Health indicator (compact) */}
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[9px] uppercase tracking-widest${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>Team Health</span>
-                    <span className={`text-[13px] font-bold tabular-nums${isDarkMode ? ' text-emerald-400' : ' text-emerald-600'}`}>87</span>
-                    <span className={`w-16 h-1 rounded-full overflow-hidden${isDarkMode ? ' bg-zinc-800' : ' bg-stone-200'}`}>
-                      <span className="block h-full bg-gradient-to-r from-emerald-500 to-emerald-400" style={{ width: '87%' }} />
-                    </span>
-                  </div>
-                  <span className={`hidden sm:inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
-                    <i className="fa-solid fa-file-audio text-[10px]" aria-hidden="true" /> 4 meetings mined
-                  </span>
-                </div>
-              </div>
-
-              {/* Columns */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0" style={{
-                borderColor: isDarkMode ? 'rgba(63,63,70,0.5)' : 'rgba(231,229,228,0.8)',
-              }}>
-                {[
-                  {
-                    label: 'Proposed',
-                    color: '#8b5cf6',
-                    bg:    isDarkMode ? 'rgba(139,92,246,0.04)' : 'rgba(139,92,246,0.03)',
-                    cards: [
-                      { title: 'Move standup to async-only',          priority: 65, source: 'mtg',   meta: 'From Mon strategy',   avatar: '#3b82f6' },
-                      { title: 'Sunset legacy auth middleware',        priority: 71, source: 'task',  meta: 'Legal-flagged',       avatar: '#a855f7' },
-                      { title: 'Approve $18k tooling budget',          priority: 84, source: 'email', meta: 'Anya · due Mon',      avatar: '#f43f5e' },
-                    ],
-                  },
-                  {
-                    label: 'Voting',
-                    color: '#f59e0b',
-                    bg:    isDarkMode ? 'rgba(245,158,11,0.05)' : 'rgba(245,158,11,0.04)',
-                    cards: [
-                      { title: 'Switch Mixpanel → PostHog',            priority: 92, source: 'mtg',   meta: '3 / 4 voted',          avatar: '#10b981', voting: true },
-                      { title: 'Hire Senior IC vs Manager',            priority: 78, source: 'task',  meta: '2 / 4 voted',          avatar: '#f43f5e', voting: true },
-                    ],
-                  },
-                  {
-                    label: 'Decided',
-                    color: '#10b981',
-                    bg:    isDarkMode ? 'rgba(16,185,129,0.05)' : 'rgba(16,185,129,0.04)',
-                    cards: [
-                      { title: 'EMEA hiring pause through Q2',         priority: 87, source: 'mtg',   meta: 'Logged · audit trail', avatar: '#f43f5e', decided: true },
-                    ],
-                  },
-                  {
-                    label: 'Done',
-                    color: '#22c55e',
-                    bg:    isDarkMode ? 'rgba(34,197,94,0.04)' : 'rgba(34,197,94,0.03)',
-                    cards: [
-                      { title: 'Q1 OKR retrospective',                 priority: null, source: 'mtg', meta: 'Archived',             avatar: '#3b82f6', done: true },
-                    ],
-                    archived: 12,
-                  },
-                ].map((col, ci) => (
-                  <div key={col.label} className="p-4" style={{ backgroundColor: col.bg }}>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: col.color }} aria-hidden="true" />
-                        <span
-                          className={`text-[10px] uppercase font-semibold${isDarkMode ? ' text-zinc-300' : ' text-zinc-700'}`}
-                          style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.15em' }}
-                        >
-                          {col.label}
-                        </span>
-                      </div>
-                      <span
-                        className={`text-[10px] tabular-nums px-1.5 py-0.5 rounded${isDarkMode ? ' bg-zinc-800 text-zinc-400' : ' bg-stone-200 text-zinc-600'}`}
-                        style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
-                      >
-                        {col.cards.length}{col.archived ? ` · +${col.archived}` : ''}
-                      </span>
-                    </div>
-                    <div className="space-y-2">
-                      {col.cards.map((c: any, i) => (
-                        <div
-                          key={i}
-                          className={`rounded-lg border p-3 text-[12px] leading-snug transition-colors${
-                            isDarkMode ? ' bg-zinc-900/70 border-zinc-800 hover:border-zinc-700' : ' bg-white border-stone-200 hover:border-stone-300'
-                          }${c.done ? (isDarkMode ? ' opacity-60' : ' opacity-70') : ''}`}
-                        >
-                          <div className={`font-semibold mb-2${isDarkMode ? ' text-zinc-100' : ' text-zinc-900'}${c.done ? ' line-through' : ''}`}>{c.title}</div>
-                          <div className="flex items-center justify-between gap-2 flex-wrap">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              {c.priority != null && (
-                                <span
-                                  className={`text-[9px] uppercase font-semibold px-1.5 py-0.5 rounded${
-                                    c.priority >= 85 ? (isDarkMode ? ' bg-rose-500/15 text-rose-400'   : ' bg-rose-100 text-rose-700')   :
-                                    c.priority >= 70 ? (isDarkMode ? ' bg-amber-500/15 text-amber-400' : ' bg-amber-100 text-amber-700') :
-                                                       (isDarkMode ? ' bg-zinc-800 text-zinc-400'      : ' bg-stone-100 text-zinc-600')
-                                  }`}
-                                  style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.05em' }}
-                                >
-                                  P {c.priority}
-                                </span>
-                              )}
-                              <span
-                                className={`inline-flex items-center gap-1 text-[9px] uppercase tracking-widest${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}
-                                style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
-                              >
-                                {c.source === 'mtg'   && <i className="fa-solid fa-microphone text-[9px]" aria-hidden="true" />}
-                                {c.source === 'email' && <i className="fa-solid fa-envelope text-[9px]" aria-hidden="true" />}
-                                {c.source === 'task'  && <i className="fa-solid fa-list-check text-[9px]" aria-hidden="true" />}
-                              </span>
-                            </div>
-                            <span className={`inline-block w-4 h-4 rounded-full shrink-0`} style={{ background: c.avatar }} aria-hidden="true" />
-                          </div>
-                          <div className={`mt-1.5 text-[10px] uppercase tracking-widest truncate${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
-                            {c.voting && <span className={isDarkMode ? 'text-amber-400 mr-1' : 'text-amber-600 mr-1'}>●</span>}
-                            {c.decided && <span className={isDarkMode ? 'text-emerald-400 mr-1' : 'text-emerald-600 mr-1'}>✓</span>}
-                            {c.meta}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <SectionDivider />
-
-        {/* Section D — Relationship Intelligence */}
+        </div>
+      </div>
+{/* Section D — Relationship Intelligence */}
         <section id="section-crm" className={`py-24 px-6 border-y relative overflow-hidden${isDarkMode ? ' bg-zinc-950/60 border-zinc-800/40' : ' bg-stone-50 border-stone-200/60'}`}>
           {/* Indigo space background */}
           <div
@@ -3180,9 +3023,165 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
           </div>
         </section>
-      </div>
 
-      {/* ── Section E — Maps & Field Operations (map-mock layout, Wave 4.1) ── */}
+      {/* ── Cluster: Operate ── */}
+      <div id="cluster-operate" className="scroll-mt-16">
+        <div className="max-w-7xl mx-auto px-6 pt-24 pb-2">
+          <div className={`flex items-baseline gap-3 border-b pb-4 ${isDarkMode ? 'border-zinc-800/60' : 'border-stone-200/70'}`}>
+            <span className="font-mono text-sm font-bold text-rose-500">04</span>
+            <h2 className={`text-3xl sm:text-4xl font-bold tracking-tight ${isDarkMode ? 'text-zinc-50' : 'text-zinc-900'}`}>Operate</h2>
+            <span className={`hidden sm:block text-sm ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>Run the day — calendar, field ops, and workspaces.</span>
+          </div>
+        </div>
+      </div>
+{/* Section B4 — Calendar (agenda-strip layout, Wave 4.1) */}
+        <section id="section-calendar" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
+          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
+            <div className="absolute inset-0" style={{
+              background: 'radial-gradient(ellipse at 40% 30%, rgba(244,63,94,0.08) 0%, transparent 55%), radial-gradient(ellipse at 60% 70%, rgba(236,72,153,0.05) 0%, transparent 50%)',
+            }} />
+          </div>
+          <div className="max-w-7xl mx-auto relative z-10">
+            <div className="mb-12 animate-fade-in max-w-3xl">
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-5${isDarkMode ? ' bg-emerald-500/10 border border-emerald-500/25 text-emerald-400' : ' bg-emerald-50 border border-emerald-200 text-emerald-600'}`}>
+                <i className="fa-solid fa-calendar text-xs" aria-hidden="true"></i> Calendar
+              </div>
+              <h2 className={`text-4xl sm:text-6xl font-bold mb-4 tracking-tight${isDarkMode ? ' text-zinc-50' : ' text-zinc-900'}`}>
+                Time, orchestrated.
+              </h2>
+              <p className={`text-lg leading-relaxed${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
+                Google and Outlook side by side. Conflicts flagged before they happen. Meeting briefs ready before you walk in.
+              </p>
+            </div>
+
+            {/* Flat agenda strip — no internal cards, hairline rows */}
+            <div
+              data-reveal
+              className={`lp-agenda rounded-2xl border overflow-hidden lp-card-hover max-w-5xl${isDarkMode ? ' bg-zinc-950 border-zinc-800' : ' bg-white border-stone-200 shadow-sm'}`}
+            >
+              {/* Top bar */}
+              <div className={`flex items-center justify-between px-5 py-3 border-b gap-3 flex-wrap${isDarkMode ? ' border-zinc-800/80 bg-zinc-950' : ' border-stone-200 bg-stone-50/60'}`}>
+                <div className="min-w-0">
+                  <div className={`text-[10px] uppercase tracking-widest mb-0.5${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>Thursday</div>
+                  <div className={`text-base font-semibold${isDarkMode ? ' text-zinc-100' : ' text-zinc-900'}`}>May 16 · Today</div>
+                </div>
+                <div className={`flex items-center gap-3 text-[10px] uppercase tracking-widest${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
+                  <span className="inline-flex items-center gap-1.5"><i className="fa-brands fa-google text-[10px]" aria-hidden="true" /> Google</span>
+                  <span className="inline-flex items-center gap-1.5"><i className="fa-brands fa-microsoft text-[10px]" aria-hidden="true" /> Outlook</span>
+                  <span className={isDarkMode ? 'text-zinc-700' : 'text-zinc-300'}>·</span>
+                  <span className={isDarkMode ? 'text-rose-400' : 'text-rose-600'}>1 conflict</span>
+                  <span className={isDarkMode ? 'text-zinc-700' : 'text-zinc-300'}>·</span>
+                  <span className={isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}>1 open slot</span>
+                </div>
+              </div>
+
+              {/* Agenda rows */}
+              <ul>
+                {[
+                  { time: '09:00', dur: '60m', title: 'Q2 Strategy Review',           source: 'google',  attendees: '6 attendees · Google Meet',           status: 'past',     flag: null,        prep: null },
+                  { time: '10:30', dur: '60m', title: '1:1 · Anya Patel',              source: 'pulse',   attendees: 'Pulse Meet · prep ready',             status: 'now',      flag: 'Now',       prep: 'Send-ahead brief drafted · 3 talking points' },
+                  { time: '12:00', dur: '90m', title: 'Focus Block',                   source: 'pulse',   attendees: 'Notifications off · DND on',          status: 'upcoming', flag: null,        prep: null },
+                  { time: '13:30', dur: '60m', title: 'Design Sync',                   source: 'google',  attendees: 'Sarah, Marcus + 2',                   status: 'upcoming', flag: 'Conflict',  prep: 'Overlaps 14:00 Customer Call · resolve?' },
+                  { time: '14:00', dur: '60m', title: 'Customer Call · Acme Corp',     source: 'outlook', attendees: 'Acme team · agenda attached',         status: 'upcoming', flag: 'Conflict',  prep: null },
+                  { time: '16:00', dur: '60m', title: 'Open · Bookable slot',          source: 'pulse',   attendees: 'Share booking link',                  status: 'open',     flag: 'Open',      prep: null },
+                ].map((e, i) => {
+                  const isNow      = e.status === 'now';
+                  const isConflict = e.flag    === 'Conflict';
+                  const isOpen     = e.status  === 'open';
+                  const isPast     = e.status  === 'past';
+
+                  const sourceDot =
+                    e.source === 'google'  ? 'bg-blue-500'   :
+                    e.source === 'outlook' ? 'bg-sky-500'    :
+                                             'bg-rose-500';
+
+                  return (
+                    <li
+                      key={i}
+                      className={`relative px-5 py-4 border-b last:border-b-0 grid grid-cols-[68px_1fr_auto] sm:grid-cols-[80px_1fr_auto] gap-x-4 items-start transition-colors${
+                        isDarkMode ? ' border-zinc-800/60' : ' border-stone-200/80'
+                      }${
+                        isNow      ? (isDarkMode ? ' bg-rose-500/[0.04]'   : ' bg-rose-50/40')   :
+                        isConflict ? (isDarkMode ? ' bg-amber-500/[0.04]'  : ' bg-amber-50/40')  :
+                        isOpen     ? (isDarkMode ? ' bg-emerald-500/[0.04]': ' bg-emerald-50/30'): ''
+                      }`}
+                    >
+                      {isNow      && <span className="absolute left-0 top-0 bottom-0 w-px bg-rose-500" aria-hidden="true" />}
+                      {isConflict && <span className="absolute left-0 top-0 bottom-0 w-px bg-amber-500" aria-hidden="true" />}
+                      {isOpen     && <span className="absolute left-0 top-0 bottom-0 w-px bg-emerald-500" aria-hidden="true" />}
+
+                      {/* Time column */}
+                      <div className="text-right">
+                        <div className={`text-[13px] tabular-nums font-semibold${isPast ? (isDarkMode ? ' text-zinc-600' : ' text-zinc-400') : (isDarkMode ? ' text-zinc-200' : ' text-zinc-800')}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>{e.time}</div>
+                        <div className={`text-[10px] uppercase tracking-widest mt-0.5${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>{e.dur}</div>
+                      </div>
+
+                      {/* Event details */}
+                      <div className="min-w-0">
+                        <div className="flex items-baseline gap-2 flex-wrap mb-0.5">
+                          <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${sourceDot}`} aria-hidden="true" />
+                          <span className={`text-[14px] font-semibold truncate${isPast ? (isDarkMode ? ' text-zinc-500 line-through' : ' text-zinc-400 line-through') : (isDarkMode ? ' text-zinc-100' : ' text-zinc-900')}`}>{e.title}</span>
+                          {e.flag && (
+                            <span
+                              className={`text-[9px] uppercase font-semibold px-1.5 py-0.5 rounded${
+                                e.flag === 'Now'      ? (isDarkMode ? ' bg-rose-500/15 text-rose-300'    : ' bg-rose-100 text-rose-700')  :
+                                e.flag === 'Conflict' ? (isDarkMode ? ' bg-amber-500/15 text-amber-300'  : ' bg-amber-100 text-amber-700'):
+                                                        (isDarkMode ? ' bg-emerald-500/15 text-emerald-300' : ' bg-emerald-100 text-emerald-700')
+                              }`}
+                              style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.1em' }}
+                            >
+                              {e.flag === 'Now' && <span className="inline-block w-1 h-1 rounded-full bg-rose-500 mr-1 align-middle animate-pulse" aria-hidden="true" />}
+                              {e.flag}
+                            </span>
+                          )}
+                        </div>
+                        <div className={`text-[12px] truncate${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>{e.attendees}</div>
+                        {e.prep && (
+                          <div className={`mt-1.5 inline-flex items-center gap-1.5 text-[11px]${
+                            e.flag === 'Conflict' ? (isDarkMode ? ' text-amber-400' : ' text-amber-600') :
+                                                    (isDarkMode ? ' text-rose-400'  : ' text-rose-600')
+                          }`}>
+                            <Wand2 size={10} />
+                            <span style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }} className="uppercase tracking-widest text-[9px] font-semibold mr-0.5">Pulse AI</span>
+                            <span className={`${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>{e.prep}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Trailing affordance */}
+                      <div className={`text-[10px] uppercase tracking-widest hidden sm:flex items-center gap-1.5${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
+                        {isOpen ? (
+                          <>
+                            <i className="fa-solid fa-link text-[10px]" aria-hidden="true" />
+                            <span className={isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}>Share</span>
+                          </>
+                        ) : isConflict ? (
+                          <span className={isDarkMode ? 'text-amber-400' : 'text-amber-600'}>Resolve →</span>
+                        ) : isNow ? (
+                          <span className={isDarkMode ? 'text-rose-400' : 'text-rose-600'}>Join →</span>
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {/* Footer NLP input */}
+              <div className={`flex items-center gap-3 px-5 py-3 border-t${isDarkMode ? ' border-zinc-800/80 bg-zinc-950' : ' border-stone-200 bg-stone-50/60'}`}>
+                <Wand2 size={12} className={isDarkMode ? 'text-rose-400' : 'text-rose-500'} />
+                <span className={`text-[12px] flex-1 truncate${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
+                  <span className={`uppercase text-[9px] tracking-widest font-semibold mr-2${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>Ask Pulse</span>
+                  &ldquo;Find 30 min with Anya before Friday&rdquo;
+                </span>
+                <span className={`text-[10px] uppercase tracking-widest hidden sm:inline${isDarkMode ? ' text-zinc-600' : ' text-zinc-400'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>↵</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <SectionDivider />
+
+        {/* ── Section E — Maps & Field Operations (map-mock layout, Wave 4.1) ── */}
       <section id="section-maps" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? ' bg-zinc-950/40' : ' bg-stone-50'}`}>
         <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
           <div className="absolute inset-0" style={{
@@ -3439,7 +3438,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         ...
       </section> */}
 
-      {/* ── G + F: Mobile Preview + Keyboard Shortcuts ── */}
+      
+      </div>
+
+{/* ── G + F: Mobile Preview + Keyboard Shortcuts ── */}
       <section className="py-24 px-6 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 80% 50%, rgba(244,63,94,0.06) 0%, transparent 55%)' }} />
         <div className="max-w-7xl mx-auto relative z-10">
@@ -3500,7 +3502,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   {/* Message list */}
                   <div className="px-3 mt-3 space-y-2">
                     {[
-                      { name: 'Sarah K.', msg: 'Vox Drop from 2 min ago', time: '2m', dot: '#f43f5e', icon: 'fa-solid fa-microphone' },
+                      { name: 'Sarah K.', msg: 'Direct voice · 2 min ago', time: '2m', dot: '#f43f5e', icon: 'fa-solid fa-microphone' },
                       { name: 'Dev Team', msg: 'Sprint planning at 3 PM confirmed', time: '18m', dot: '#6366f1', icon: 'fa-brands fa-slack' },
                       { name: 'Calendar', msg: 'Team standup in 15 min', time: '15m', dot: '#6366f1', icon: 'fa-solid fa-calendar' },
                     ].map((m, i) => (
@@ -3711,6 +3713,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         </div>
       </section>
 
+      </>)}{/* end feature showcase (features only) */}
+
+      {/* ── Home conversion tail (home only): scenarios · download · pricing · FAQ ── */}
+      {variant === 'home' && (<>
       {/* ── Use-Case Scenarios ── */}
       <section id="scenarios" className="py-24 px-6 bg-gradient-to-b from-zinc-900/20 to-zinc-950 border-b border-zinc-800/30">
         <div className="max-w-7xl mx-auto">
@@ -3759,145 +3765,28 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               </div>
             </div>
           ) : (
-            <div className="relative">
-              <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-rose-500/50 to-transparent -translate-y-1/2 z-0"></div>
-              <div className="grid lg:grid-cols-3 gap-6 relative z-10">
+            <div className="relative max-w-5xl mx-auto">
+              {/* Coral spine — connects the step nodes (desktop only) */}
+              <div className="hidden lg:block absolute top-8 left-[12%] right-[12%] h-px bg-gradient-to-r from-rose-500/0 via-rose-500/45 to-rose-500/0" aria-hidden="true"></div>
+              <ol className="grid lg:grid-cols-3 gap-x-8 gap-y-12">
                 {[
-                  { num: '1', system: 'RELAY DIRECT', badgeClass: 'from-rose-500 to-pink-500', labelClass: 'text-rose-400', borderClass: 'hover:border-rose-500/40', title: 'Drop and Go', body: "You're driving. One tap and you're recording a Relay Direct, scheduled to deliver when your recipient is most active." },
-                  { num: '2', system: 'AI TRANSCRIPTION', badgeClass: 'from-cyan-500 to-cyan-600', labelClass: 'text-cyan-400', borderClass: 'hover:border-cyan-500/40', title: 'Instant Intelligence', body: 'On delivery, Pulse transcribes the message, generates a summary, extracts action items, and scores sentiment, all before the recipient presses play.' },
-                  { num: '3', system: 'SMART REPLY', badgeClass: 'from-emerald-500 to-emerald-600', labelClass: 'text-emerald-400', borderClass: 'hover:border-emerald-500/40', title: 'One-tap response', body: 'The recipient sees the transcript and summary, picks a smart reply suggestion, and responds with their own 10-second voice note. Full async conversation, zero context lost.' },
-                ].map((step) => (
-                  <div key={step.num} className={`bg-zinc-900/90 backdrop-blur-sm border border-zinc-800 p-8 rounded-2xl relative hover:-translate-y-0.5 transition-all duration-300 card-elevated ${step.borderClass} group animate-fade-in`}>
-                    <div className={`absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br ${step.badgeClass} rounded-full flex items-center justify-center text-white font-bold shadow-lg text-sm`}>{step.num}</div>
-                    <div className={`font-bold mb-2 text-xs tracking-wider ${step.labelClass}`}>{step.system}</div>
-                    <h4 className="text-xl font-bold text-white mb-3">{step.title}</h4>
-                    <p className="text-zinc-400 text-sm leading-relaxed">{step.body}</p>
-                  </div>
+                  { kicker: 'Relay Direct', title: 'Drop and go', body: "You're driving. One tap records a Relay Direct, scheduled to deliver when your recipient is most active." },
+                  { kicker: 'AI Transcription', title: 'Instant intelligence', body: 'On delivery, Pulse transcribes, summarizes, extracts action items, and scores sentiment, all before the recipient presses play.' },
+                  { kicker: 'Smart Reply', title: 'One-tap response', body: 'They see the transcript and summary, pick a smart reply, and answer with a 10-second note. Full async conversation, zero context lost.' },
+                ].map((step, i) => (
+                  <li key={step.kicker} className="relative flex flex-col items-center text-center animate-fade-in">
+                    <div className="relative z-10 mb-5 w-16 h-16 rounded-full flex items-center justify-center border-2 border-rose-500/40 bg-zinc-950">
+                      <span className="text-2xl font-bold text-rose-400" style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>{i + 1}</span>
+                    </div>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500 mb-2" style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>{step.kicker}</span>
+                    <h4 className="text-xl font-bold text-white mb-2.5">{step.title}</h4>
+                    <p className="text-zinc-400 text-sm leading-relaxed max-w-xs">{step.body}</p>
+                    {i < 2 && <div className="lg:hidden mt-9 text-lg text-rose-500/40" aria-hidden="true">↓</div>}
+                  </li>
                 ))}
-              </div>
+              </ol>
             </div>
           )}
-        </div>
-      </section>
-
-      {/* ── Download Section ── */}
-      <section id="download" className="py-24 px-6 bg-zinc-900/30">
-        <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-5xl font-bold mb-8 animate-fade-in text-zinc-50">Available everywhere.</h2>
-          <p className="text-zinc-400 text-lg mb-12 animate-fade-in animation-delay-200">
-            Seamlessly sync your team across all devices. Download the app for your preferred platform.
-          </p>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-            <DownloadButton icon="fa-brands fa-windows" platform="Windows PC" subtext="Desktop Installer · x64" active={true} href="https://github.com/FatherSonOne/Pulse-1/releases/download/v25.1.3/Pulse.Setup.25.1.3.exe" />
-            <DownloadButton icon="fa-brands fa-apple" platform="macOS / iOS" subtext="Universal" active={false} />
-
-            {/* Android Card */}
-            <div className="group p-6 rounded-2xl border bg-zinc-800 border-zinc-700 hover:border-rose-500/50 transition duration-300 flex flex-col items-center justify-center gap-4 w-full">
-              <Smartphone className="text-4xl text-zinc-300 group-hover:text-white transition" />
-              <div className="text-center">
-                <div className="font-bold text-white group-hover:text-rose-400 transition">Android</div>
-                <div className="text-xs text-zinc-500">Early access and APK</div>
-              </div>
-              <div className="flex gap-2 w-full mt-2">
-                <a
-                  href="https://play.google.com/apps/internaltest/4701381285127016770"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 px-3 py-2 bg-zinc-900 rounded-lg border border-zinc-600 hover:bg-zinc-700 hover:border-green-500/50 text-xs font-medium text-center text-zinc-300 hover:text-white transition flex items-center justify-center gap-2"
-                  title="Download from Play Store"
-                >
-                  <Play /> Store
-                </a>
-                <a
-                  href="/downloads/pulse-android.apk"
-                  download
-                  onClick={() => { const el = document.getElementById('android-instructions'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }}
-                  className="flex-1 px-3 py-2 bg-zinc-900 rounded-lg border border-zinc-600 hover:bg-zinc-700 hover:border-rose-500/50 text-xs font-medium text-center text-zinc-300 hover:text-white transition flex items-center justify-center gap-2"
-                  title="Download APK Package"
-                >
-                  <Download /> APK
-                </a>
-              </div>
-            </div>
-          </div>
-
-          {/* Android Instructions */}
-          <div id="android-instructions" className="mt-16 max-w-2xl mx-auto bg-zinc-900/50 border border-zinc-800 rounded-2xl p-8 text-left">
-            <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
-              <Smartphone className="text-rose-500" />
-              How to Install on Android
-            </h3>
-            <div className="mb-8 p-4 bg-zinc-900 rounded-xl border border-zinc-800">
-              <h4 className="font-bold text-white mb-2 flex items-center gap-2">
-                <Play className="text-green-500" /> Play Store (Early Access)
-              </h4>
-              <p className="text-sm text-zinc-400 mb-3">Pulse is in closed testing on Google Play. Opt into the test program first, then updates arrive in-place. Not a public listing yet.</p>
-              <a href="https://play.google.com/apps/internaltest/4701381285127016770" target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm text-green-400 hover:text-green-300 font-medium">
-                Join the test program <ExternalLink className="text-xs" />
-              </a>
-            </div>
-            <h4 className="font-bold text-white mb-4">Manual APK Installation</h4>
-            <ol className="space-y-4 text-zinc-400 relative border-l border-zinc-800 ml-3 pl-8">
-              <li className="relative">
-                <span className="absolute -left-[41px] w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white">1</span>
-                <strong className="text-white block mb-1">Download the APK</strong>
-                Click the "APK" button above to download the{' '}
-                <code className="bg-zinc-800 px-1.5 py-0.5 rounded text-rose-400 text-xs">pulse-android.apk</code> file.
-              </li>
-              <li className="relative">
-                <span className="absolute -left-[41px] w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white">2</span>
-                <strong className="text-white block mb-1">Allow Installation</strong>
-                Open the file. You may see a security warning. Go to Settings and allow installing apps from this source.
-              </li>
-              <li className="relative">
-                <span className="absolute -left-[41px] w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white">3</span>
-                <strong className="text-white block mb-1">Install and Launch</strong>
-                Tap "Install" and wait. Once finished, open the Pulse app and log in!
-              </li>
-            </ol>
-            <div className="mt-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-lg text-sm text-rose-200">
-              <Info className="mr-2" />
-              This is a preview release. You may need to disable "Play Protect" if it flags the app as unrecognized.
-            </div>
-          </div>
-          {/* Windows Instructions */}
-          <div className="mt-8 max-w-2xl mx-auto bg-zinc-900/50 border border-zinc-800 rounded-2xl p-8 text-left">
-            <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
-              <LayoutGrid className="text-blue-400" />
-              How to Install on Windows PC
-            </h3>
-            <ol className="space-y-4 text-zinc-400 relative border-l border-zinc-800 ml-3 pl-8">
-              <li className="relative">
-                <span className="absolute -left-[41px] w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white">1</span>
-                <strong className="text-white block mb-1">Download the installer</strong>
-                Click <strong className="text-blue-400">Download for PC</strong> above, or grab it directly from{' '}
-                <a href="https://github.com/FatherSonOne/Pulse-1/releases/tag/v25.1.3" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">GitHub Releases</a>.
-                Choose <code className="bg-zinc-800 px-1.5 py-0.5 rounded text-blue-400 text-xs">Pulse.Setup.25.1.3.exe</code> (installer) or <code className="bg-zinc-800 px-1.5 py-0.5 rounded text-blue-400 text-xs">Pulse.25.1.3.exe</code> (portable, no install needed).
-              </li>
-              <li className="relative">
-                <span className="absolute -left-[41px] w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white">2</span>
-                <strong className="text-white block mb-1">Run the installer</strong>
-                Double-click the downloaded file. If Windows SmartScreen appears, click <em>More info → Run anyway</em>. The app is safe. It's just unsigned during early access.
-              </li>
-              <li className="relative">
-                <span className="absolute -left-[41px] w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white">3</span>
-                <strong className="text-white block mb-1">Choose install location & finish</strong>
-                Pick your preferred folder, click Install, then Launch. Pulse adds a shortcut to your Start Menu and Desktop automatically.
-              </li>
-              <li className="relative">
-                <span className="absolute -left-[41px] w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white">4</span>
-                <strong className="text-white block mb-1">Log in with your Pulse account</strong>
-                Sign in with the same credentials you use on web or mobile. Everything syncs automatically.
-              </li>
-            </ol>
-            <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm text-blue-200">
-              <Info className="mr-2" />
-              Requires Windows 10 or later (64-bit). Pulse runs in the system tray. Closing the window keeps it running in the background.
-            </div>
-          </div>
-          <p className="mt-8 text-sm text-zinc-500">* macOS and Linux builds coming soon.</p>
         </div>
       </section>
 
@@ -4189,8 +4078,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
       <SectionDivider />
 
+      </>)}{/* end home conversion tail */}
+
       {/* ── Mobile preview — last content block, before footer ── */}
-      <section className={`py-24 sm:py-28 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
+      <section id="download" className={`py-24 sm:py-28 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
         <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0.55 }}>
           <div className="absolute inset-0" style={{
             background: 'radial-gradient(ellipse at 25% 50%, rgba(244,63,94,0.10) 0%, transparent 55%), radial-gradient(ellipse at 80% 70%, rgba(251,113,133,0.06) 0%, transparent 55%)',
@@ -4209,13 +4100,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <p className={`text-lg leading-relaxed max-w-xl mb-8${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
                 Every conversation, decision, and signal. Synced to the device already in your hand. The full Pulse surface in your pocket. Same Memory, same Relay, same Decisions.
               </p>
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[11px]" style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.2em' }}>
-                <span className={`uppercase font-semibold${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>Android</span>
+              {/* Download actions — folded in from the former standalone Download section */}
+              <div className="flex flex-wrap items-center gap-3 mb-5">
+                <a href="https://github.com/FatherSonOne/Pulse-1/releases/download/v25.1.3/Pulse.Setup.25.1.3.exe" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-sm font-semibold transition-colors">
+                  <i className="fa-brands fa-windows text-[13px]" aria-hidden="true" /> Download for Windows
+                </a>
+                <a href="https://play.google.com/apps/internaltest/4701381285127016770" target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border text-sm font-semibold transition-colors ${isDarkMode ? 'border-zinc-700 text-zinc-200 hover:border-rose-500/50 hover:text-white' : 'border-stone-300 text-stone-700 hover:border-rose-500/50 hover:text-stone-900'}`}>
+                  <Smartphone className="w-4 h-4" /> Android
+                </a>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px]" style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.2em' }}>
                 <span className={`uppercase font-semibold${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>PWA</span>
+                <span className={`uppercase font-semibold${isDarkMode ? ' text-zinc-600' : ' text-zinc-400'}`}>macOS · soon</span>
                 <span className={`inline-flex items-center gap-2 uppercase font-semibold${isDarkMode ? ' text-rose-400' : ' text-rose-600'}`}>
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" />
                   Live now
                 </span>
+                <button type="button" onClick={() => setIsGuideOpen(true)} className={`uppercase font-semibold tracking-[0.2em] transition-colors ${isDarkMode ? 'text-zinc-500 hover:text-rose-400' : 'text-zinc-500 hover:text-rose-600'}`}>Install help →</button>
               </div>
             </div>
             {/* Right: phone screenshot */}

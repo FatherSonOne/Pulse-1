@@ -663,6 +663,16 @@ const App: React.FC = () => {
     return <TermsOfService onBack={() => window.location.href = '/'} />;
   }
 
+  // Public marketing — Features overview (quiet home lives at /, deep showcases here)
+  if (path === '/features') {
+    return <LandingPage variant="features" onGetStarted={() => window.location.href = '/?signin'} />;
+  }
+
+  // Public marketing — interactive demo (placeholder page for now)
+  if (path === '/demo') {
+    return <LandingPage variant="demo" onGetStarted={() => window.location.href = '/?signin'} />;
+  }
+
   // Browser Extension Auth Routes
   if (path === '/auth/extension-login') {
     return <ExtensionLogin />;
