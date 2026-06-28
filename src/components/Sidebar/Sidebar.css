@@ -77,22 +77,22 @@
 .sidebar-logo-icon {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
-  background: var(--pulse-rose-soft);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  filter: drop-shadow(0 3px 8px rgba(244, 63, 94, 0.22));
 }
 
-/* Pulse wordmark — JetBrains Mono signature, not bold-Inter SaaS reflex. */
+/* Pulse wordmark — Syne 800 lockup; themes to ink (white in dark). */
 .sidebar-brand-text {
-  font-family: var(--pulse-font-mono);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
+  font-family: 'Syne', 'Inter', system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--pulse-rose);
+  color: var(--pulse-ink);
 }
 
 .sidebar-brand-controls {

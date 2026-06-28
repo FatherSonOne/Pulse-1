@@ -5,6 +5,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useLoading } from '../contexts/LoadingContext';
+import { PulseMark, PULSE_HEARTBEAT_PATH, PULSE_DISC_R } from './brand/PulseMark';
 
 interface EnhancedLoadingScreenProps {
   currentStage?: string;
@@ -162,79 +163,114 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
             />
           </svg>
 
-          {/* Logo Container */}
-          <motion.div
-            className={`relative w-[140px] h-[140px] ${palette.logoPlateBg} rounded-3xl flex items-center justify-center shadow-2xl`}
-            style={{
-              boxShadow: palette.logoShadow
-            }}
-          >
-            {/* Pulsing Waveform Logo */}
-            <motion.svg
-              viewBox="0 0 64 64"
-              className="w-20 h-20"
-              animate={{
-                scale: [1, 1.05, 1],
-                opacity: [0.9, 1, 0.9]
-              }}
-              transition={{
-                duration: 2,
-                ease: "easeInOut",
-                repeat: Infinity
-              }}
-              aria-label="Pulse logo"
-            >
-              <defs>
-                <linearGradient id="pulse-grad-enhanced" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#f43f5e">
-                    <animate
-                      attributeName="stop-color"
-                      values="#f43f5e; #fb7185; #f43f5e"
-                      dur="2s"
-                      repeatCount="indefinite"
-                    />
-                  </stop>
-                  <stop offset="100%" stopColor="#ec4899">
-                    <animate
-                      attributeName="stop-color"
-                      values="#ec4899; #f472b6; #ec4899"
-                      dur="2s"
-                      repeatCount="indefinite"
-                    />
-                  </stop>
-                </linearGradient>
-
-                {/* Glow filter for the waveform */}
-                <filter id="glow">
-                  <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                  <feMerge>
-                    <feMergeNode in="coloredBlur"/>
-                    <feMergeNode in="SourceGraphic"/>
-                  </feMerge>
-                </filter>
-              </defs>
-
-              {/* Waveform path with glow */}
-              <motion.path
-                d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32"
-                stroke="url(#pulse-grad-enhanced)"
-                strokeWidth="5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-                filter="url(#glow)"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{
-                  pathLength: 1,
-                  opacity: 1
-                }}
-                transition={{
-                  pathLength: { duration: 1, ease: "easeInOut" },
-                  opacity: { duration: 0.5 }
-                }}
-              />
-            </motion.svg>
-          </motion.div>
+          {/* Logo — Globe·Solid heartbeat mark with a live ECG sweep.
+              The looping motion is pure CSS (runs off the main thread) so it stays
+              buttery even while the app is busy booting. prefers-reduced-motion
+              users get the static mark + faint trace, no movement. */}
+          <style>{`
+            .pulse-glow-halo {
+              position: absolute;
+              inset: 0;
+              margin: auto;
+              width: 116px;
+              height: 116px;
+              border-radius: 50%;
+              background: radial-gradient(circle, rgba(244,63,94,0.40) 0%, rgba(236,72,153,0.14) 55%, transparent 72%);
+              filter: blur(6px);
+              opacity: 0.7;
+            }
+            .pulse-mark-beat {
+              position: relative;
+              width: 104px;
+              height: 104px;
+              filter: drop-shadow(0 8px 22px rgba(244,63,94,0.32));
+              animation: pulse-enter 0.45s cubic-bezier(0.23,1,0.32,1) both;
+            }
+            .pulse-signal-sweep {
+              filter: drop-shadow(0 0 4px rgba(251,113,133,0.9));
+            }
+            @keyframes pulse-enter {
+              from { transform: scale(0.92); opacity: 0; }
+              to   { transform: scale(1); opacity: 1; }
+            }
+            /* A real heartbeat is a double beat — lub (strong) then dub (softer). */
+            @keyframes pulse-lubdub {
+              0%   { transform: scale(1); }
+              14%  { transform: scale(1.045); }
+              34%  { transform: scale(1); }
+              50%  { transform: scale(1.03); }
+              100% { transform: scale(1); }
+            }
+            @keyframes pulse-lubdub-glow {
+              0%   { transform: scale(1);    opacity: 0.55; }
+              14%  { transform: scale(1.07); opacity: 0.90; }
+              34%  { transform: scale(1);    opacity: 0.60; }
+              50%  { transform: scale(1.05); opacity: 0.80; }
+              100% { transform: scale(1);    opacity: 0.55; }
+            }
+            @keyframes pulse-sweep {
+              from { stroke-dashoffset: 265; }
+              to   { stroke-dashoffset: 0; }
+            }
+            @media (prefers-reduced-motion: no-preference) {
+              .pulse-mark-beat {
+                animation: pulse-enter 0.45s cubic-bezier(0.23,1,0.32,1) both,
+                           pulse-lubdub 1.8s ease-in-out 0.45s infinite;
+              }
+              .pulse-glow-halo { animation: pulse-lubdub-glow 1.8s ease-in-out infinite; }
+              .pulse-signal-sweep { animation: pulse-sweep 1.8s linear infinite; }
+            }
+            @media (prefers-reduced-motion: reduce) {
+              .pulse-signal-sweep { display: none; }
+            }
+          `}</style>
+          <div className="relative w-[140px] h-[140px] flex items-center justify-center">
+            <div className="pulse-glow-halo" aria-hidden="true" />
+            <div className="pulse-mark-beat">
+              <PulseMark size={104} title="Pulse" />
+              {/* ECG signal travelling through the heartbeat slit */}
+              <svg
+                viewBox="0 0 100 100"
+                width={104}
+                height={104}
+                className="absolute inset-0"
+                aria-hidden="true"
+              >
+                <defs>
+                  <linearGradient id="pulse-signal" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#fb7185" />
+                    <stop offset="100%" stopColor="#f472b6" />
+                  </linearGradient>
+                  <clipPath id="pulse-disc-clip">
+                    <circle cx="50" cy="50" r={PULSE_DISC_R} />
+                  </clipPath>
+                </defs>
+                <g clipPath="url(#pulse-disc-clip)">
+                  {/* faint base trace so the slit reads as a live line */}
+                  <path
+                    d={PULSE_HEARTBEAT_PATH}
+                    fill="none"
+                    stroke="url(#pulse-signal)"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    opacity="0.22"
+                  />
+                  {/* bright pulse sweeping left → right, once per heartbeat */}
+                  <path
+                    className="pulse-signal-sweep"
+                    d={PULSE_HEARTBEAT_PATH}
+                    fill="none"
+                    stroke="url(#pulse-signal)"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeDasharray="15 250"
+                  />
+                </g>
+              </svg>
+            </div>
+          </div>
         </div>
 
         {/* Progress Percentage */}

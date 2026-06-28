@@ -1,0 +1,17 @@
+/* PulseAIMark — white light riding the cardiogram.
+   One short white dash sweeps along the heartbeat slit. dasharray sum (139)
+   ≈ path length, so dashoffset 0 → -139 loops seamlessly. Pure CSS → runs
+   off the main thread, stays smooth while the app is busy. */
+.pai-sweep {
+  stroke-dasharray: 10 129;
+  animation: paiSweep 1.8s linear infinite;
+}
+
+@keyframes paiSweep {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: -139; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pai-sweep { animation: none; opacity: 0; }
+}

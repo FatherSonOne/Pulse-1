@@ -248,10 +248,9 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: var(--pulse-rose-soft, rgba(244, 63, 94, 0.10));
-  border-radius: 12px;
+  background: transparent;
   margin-bottom: 0.875rem;
-  color: var(--pulse-rose, #f43f5e);
+  filter: drop-shadow(0 3px 10px rgba(244, 63, 94, 0.30));
 }
 
 .pa-welcome h4 {

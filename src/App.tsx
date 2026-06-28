@@ -59,6 +59,7 @@ import { MicrosoftCalendarCallback } from './components/MicrosoftCalendarCallbac
 import { ApiDocumentation } from './components/ApiKeys';
 import EtaSharePage from './components/EtaSharePage';
 import PulseVoiceLogo from './components/PulseVoiceLogo';
+import { PulseMark } from './components/brand/PulseMark';
 import { voiceCommandService } from './services/voiceCommandService';
 import { subscribeRealtimeIngest } from './services/memoryIngestService';
 import PermissionRequestModal from './components/PermissionRequestModal';
@@ -1622,18 +1623,8 @@ const App: React.FC = () => {
         {/* Mobile Header - Larger touch targets and better spacing */}
         <div className="md:hidden h-14 sm:h-16 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-3 sm:px-4 z-30 shrink-0 safe-area-top">
           <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-h-[44px]" onClick={() => setView(AppView.DASHBOARD)}>
-             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#0f172a] flex items-center justify-center shadow-lg">
-                <svg viewBox="0 0 64 64" className="w-6 h-6 sm:w-7 sm:h-7">
-                  <defs>
-                    <linearGradient id="pulse-grad-mobile" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#f43f5e"/>
-                      <stop offset="100%" stopColor="#ec4899"/>
-                    </linearGradient>
-                  </defs>
-                  <path d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32" stroke="url(#pulse-grad-mobile)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                </svg>
-             </div>
-             <span className="text-lg sm:text-xl font-bold tracking-tight bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">Pulse</span>
+             <PulseMark size={38} className="w-9 h-9 sm:w-10 sm:h-10 drop-shadow-[0_3px_10px_rgba(244,63,94,0.3)]" />
+             <span className="text-xl sm:text-2xl text-zinc-900 dark:text-white" style={{ fontFamily: "'Syne','Inter',system-ui,sans-serif", fontWeight: 800, letterSpacing: '0.06em' }}>PULSE</span>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
             {/* Command palette — mobile entry point. Dispatches the same

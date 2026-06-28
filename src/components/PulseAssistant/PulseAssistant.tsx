@@ -23,6 +23,7 @@ import { useWorkspace } from '../../contexts/WorkspaceContext';
 import { usePulseAI } from '../../contexts/PulseAIContext';
 import { useAssistantContext } from './useAssistantContext';
 import { useAIErrorHandler } from '../../hooks/useAIErrorHandler';
+import { PulseAIMark } from '../brand/PulseAIMark';
 import './PulseAssistant.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -378,16 +379,7 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
       <div className="pa-header">
         <div className="pa-header-left">
           <div className="pa-icon" aria-hidden="true">
-            <svg viewBox="0 0 64 64" width="22" height="22">
-              <path
-                d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32"
-                stroke="currentColor"
-                strokeWidth="5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
-            </svg>
+            <PulseAIMark size={26} animated={false} />
           </div>
           <div className="pa-title-group">
             <h3>Pulse AI</h3>
@@ -463,16 +455,7 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
         {messages.length === 0 && (
           <div className="pa-welcome">
             <div className="pa-welcome-icon" aria-hidden="true">
-              <svg viewBox="0 0 64 64" width="22" height="22">
-                <path
-                  d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32"
-                  stroke="currentColor"
-                  strokeWidth="5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  fill="none"
-                />
-              </svg>
+              <PulseAIMark size={36} />
             </div>
             <h4>{timeGreeting.greeting}</h4>
             <p>

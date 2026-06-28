@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AppView, User } from '../../types';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { PulseAssistantButton } from '../PulseAssistant/PulseAssistantButton';
+import { PulseMark } from '../brand/PulseMark';
 import './Sidebar.css';
 
 import {
@@ -318,18 +319,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ) : (
             <div className="sidebar-brand-logo" onClick={onLogoClick}>
               <div className="sidebar-logo-icon">
-                <svg viewBox="0 0 64 64" className="w-5 h-5" aria-hidden>
-                  <path
-                    d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32"
-                    stroke="var(--pulse-rose)"
-                    strokeWidth="5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    fill="none"
-                  />
-                </svg>
+                <PulseMark size={32} />
               </div>
-              {!isCollapsed && <span className="sidebar-brand-text">Pulse</span>}
+              {!isCollapsed && <span className="sidebar-brand-text">PULSE</span>}
             </div>
           )}
 

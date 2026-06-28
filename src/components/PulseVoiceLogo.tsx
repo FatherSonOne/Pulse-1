@@ -11,6 +11,7 @@ import { VoiceCommandModal } from './VoiceCommands/VoiceCommandModal';
 import { VoiceCommandPanel } from './VoiceCommands/VoiceCommandPanel';
 
 import { Mic } from 'lucide-react';
+import { PulseMark } from './brand/PulseMark';
 
 interface PulseVoiceLogoProps {
   onNavigate?: (view: string) => void;
@@ -202,33 +203,9 @@ export const PulseVoiceLogo: React.FC<PulseVoiceLogoProps> = ({
             <div className="pulse-ring pulse-ring-3"></div>
           </div>
 
-          {/* Logo SVG */}
+          {/* Logo mark — Globe·Solid heartbeat disc */}
           <div className="pulse-logo-inner">
-            <svg viewBox="0 0 64 64" className="pulse-logo-svg">
-              <defs>
-                <linearGradient id="pulse-grad-voice" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#f43f5e" />
-                  <stop offset="100%" stopColor="#ec4899" />
-                </linearGradient>
-                <filter id="glow">
-                  <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-                  <feMerge>
-                    <feMergeNode in="coloredBlur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
-              <path
-                d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32"
-                stroke="url(#pulse-grad-voice)"
-                strokeWidth="5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-                filter="url(#glow)"
-                className="pulse-path"
-              />
-            </svg>
+            <PulseMark size="100%" className="pulse-logo-svg" />
           </div>
 
           {/* Microphone indicator */}
@@ -240,7 +217,7 @@ export const PulseVoiceLogo: React.FC<PulseVoiceLogoProps> = ({
         {/* Brand text */}
         {!collapsed && (
           <div className="pulse-brand-text">
-            <span className="pulse-brand-name">Pulse</span>
+            <span className="pulse-brand-name">PULSE</span>
             <span className="pulse-voice-hint">
               {wakeWordListening ? (
                 <span className="wake-word-status">
@@ -313,29 +290,30 @@ export const PulseVoiceLogo: React.FC<PulseVoiceLogoProps> = ({
           height: 44px;
           min-width: 44px;
           min-height: 44px;
-          border-radius: 14px;
-          background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-          border: 2px solid rgba(244, 63, 94, 0.3);
+          border-radius: 50%;
+          background: transparent;
+          border: none;
           cursor: pointer;
           display: flex !important;
           visibility: visible !important;
           opacity: 1 !important;
           align-items: center;
           justify-content: center;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow:
-            0 4px 15px rgba(244, 63, 94, 0.3),
-            0 0 15px rgba(244, 63, 94, 0.2);
+          transition: transform 0.2s cubic-bezier(0.23, 1, 0.32, 1),
+                      filter 0.2s ease;
+          filter: drop-shadow(0 4px 12px rgba(244, 63, 94, 0.25));
           animation: none;
           flex-shrink: 0;
           z-index: 10;
         }
 
         .pulse-voice-logo:hover {
-          transform: scale(1.02);
-          box-shadow:
-            0 6px 25px rgba(244, 63, 94, 0.35),
-            0 0 20px rgba(244, 63, 94, 0.2);
+          transform: scale(1.04);
+          filter: drop-shadow(0 6px 18px rgba(244, 63, 94, 0.4));
+        }
+
+        .pulse-voice-logo:active {
+          transform: scale(0.97);
         }
 
         .pulse-voice-logo.hovered {
@@ -382,8 +360,8 @@ export const PulseVoiceLogo: React.FC<PulseVoiceLogoProps> = ({
 
         /* Logo inner */
         .pulse-logo-inner {
-          width: 32px;
-          height: 32px;
+          width: 44px;
+          height: 44px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -436,13 +414,11 @@ export const PulseVoiceLogo: React.FC<PulseVoiceLogoProps> = ({
         }
 
         .pulse-brand-name {
-          font-size: 20px;
-          font-weight: 700;
-          letter-spacing: -0.02em;
-          background: linear-gradient(135deg, #f43f5e, #ec4899);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          font-family: 'Syne', 'Inter', system-ui, sans-serif;
+          font-size: 21px;
+          font-weight: 800;
+          letter-spacing: 0.06em;
+          color: var(--pulse-ink, #0f0f0f);
           transition: opacity 0.2s ease;
         }
 
@@ -553,11 +529,7 @@ export const PulseVoiceLogo: React.FC<PulseVoiceLogoProps> = ({
           50% { opacity: 0.5; transform: scale(0.8); }
         }
 
-        /* Dark mode adjustments */
-        .dark .pulse-voice-logo {
-          background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        }
-
+        /* Dark mode adjustments — disc themes itself; wordmark goes white via --pulse-ink */
         .dark .pulse-voice-hint {
           color: #52525b;
         }
@@ -566,12 +538,12 @@ export const PulseVoiceLogo: React.FC<PulseVoiceLogoProps> = ({
         .pulse-voice-logo-container.collapsed .pulse-voice-logo {
           width: 40px;
           height: 40px;
-          border-radius: 12px;
+          border-radius: 50%;
         }
 
         .pulse-voice-logo-container.collapsed .pulse-logo-inner {
-          width: 28px;
-          height: 28px;
+          width: 40px;
+          height: 40px;
         }
 
         .pulse-voice-logo-container.collapsed .pulse-mic-indicator {
