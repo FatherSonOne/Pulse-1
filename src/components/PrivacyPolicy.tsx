@@ -10,7 +10,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
   // Pinned at each policy revision. Do NOT derive from new Date() — that made the
   // policy always read as "updated today" even when untouched. Bump on real edits,
   // and keep in sync with the footer "Updated" badge in LandingPage.tsx.
-  const currentDate = 'June 28, 2026';
+  const currentDate = 'June 29, 2026';
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -211,7 +211,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
                 We do not sell, trade, or rent your personal information to third parties. We may share your information only in the following circumstances:
               </p>
               <ul className="list-disc pl-6 text-zinc-600 dark:text-zinc-400 space-y-2">
-                <li><strong>Service Providers:</strong> With trusted third-party services that help us operate our platform (e.g., Supabase for database, Google for authentication)</li>
+                <li><strong>Service Providers (Subprocessors):</strong> With trusted third parties that help us operate the platform &mdash; Supabase (database, file storage, and authentication infrastructure), Google (OAuth sign-in and the Calendar, Gmail, Contacts, and Drive APIs you choose to connect), Stripe (subscription billing and payment processing), Resend (transactional email such as invites and notifications), and Daily.co (video meeting infrastructure). Each subprocessor receives only the data necessary for its function, and we do not authorize them to use your content for their own purposes.</li>
                 <li><strong>AI Processing:</strong> To provide AI features, your content &mdash; including message text, email bodies, meeting transcripts, and contact data &mdash; is transmitted server-side to our AI subprocessors (Google Gemini, Anthropic Claude, and OpenAI) for inference at the time of your request, through Pulse's server-side AI router. No AI provider keys are held in the client application; all AI calls are brokered server-side. This content is sent transiently for inference and is not used to train the providers' models</li>
                 <li><strong>Legal Requirements:</strong> When required by law or to protect our rights and safety</li>
                 <li><strong>Business Transfers:</strong> In connection with a merger, acquisition, or sale of assets</li>
@@ -342,6 +342,8 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
         <div className="mt-8 text-center">
           <div className="flex items-center justify-center gap-4 text-sm text-zinc-500">
             <a href="/" className="hover:text-rose-500 transition">Home</a>
+            <span>|</span>
+            <a href="/about" className="hover:text-rose-500 transition">About</a>
             <span>|</span>
             <a href="/terms" className="hover:text-rose-500 transition">Terms of Service</a>
             <span>|</span>

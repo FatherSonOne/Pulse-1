@@ -9,7 +9,7 @@ interface TermsOfServiceProps {
 const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
   // Pinned at each revision. Do NOT derive from new Date() — that made the terms
   // always read as "updated today" even when untouched. Bump on real edits.
-  const currentDate = 'June 28, 2026';
+  const currentDate = 'June 29, 2026';
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -170,7 +170,24 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-xl font-semibold text-zinc-900 dark:text-white mb-4">11. Termination</h2>
+              <h2 className="text-xl font-semibold text-zinc-900 dark:text-white mb-4">11. Subscriptions and Billing</h2>
+              <p className="text-zinc-600 dark:text-zinc-400 mb-4">
+                Pulse offers paid subscription plans (Solo, Team, and Growth). The following terms apply to paid plans:
+              </p>
+              <ul className="list-disc pl-6 text-zinc-600 dark:text-zinc-400 space-y-2">
+                <li><strong>Free trial:</strong> New accounts may start a 30-day free trial. No credit card is required to begin the trial. If you do not subscribe, paid features become unavailable when the trial ends.</li>
+                <li><strong>Billing:</strong> Subscriptions are billed in advance through our payment processor, Stripe, on a monthly or annual cycle, depending on the plan you select. The Team plan is billed per seat with a minimum of two seats.</li>
+                <li><strong>Auto-renewal:</strong> Paid subscriptions renew automatically at the end of each billing cycle at the then-current price until you cancel.</li>
+                <li><strong>Cancellation:</strong> You may cancel at any time from Settings &rarr; Billing. Cancellation stops future charges; your plan remains active through the end of the period you have already paid for.</li>
+                <li><strong>Refunds:</strong> Except where required by law, payments are non-refundable. Cancelling does not entitle you to a refund for the current billing period.</li>
+                <li><strong>Price changes:</strong> We may change subscription prices. We will give you reasonable advance notice, and any change takes effect on your next billing cycle.</li>
+                <li><strong>Usage limits:</strong> Each plan includes published limits (for example, AI messages, storage, and voice minutes). Sustained use beyond your plan's limits may require an upgrade.</li>
+                <li><strong>Taxes:</strong> Fees are exclusive of applicable taxes, which may be added where required.</li>
+              </ul>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold text-zinc-900 dark:text-white mb-4">12. Termination</h2>
               <p className="text-zinc-600 dark:text-zinc-400">
                 We may terminate or suspend your account at any time for violation of these terms.
                 You may terminate your account at any time by contacting us. Upon termination,
@@ -179,7 +196,7 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-xl font-semibold text-zinc-900 dark:text-white mb-4">12. Changes to Terms</h2>
+              <h2 className="text-xl font-semibold text-zinc-900 dark:text-white mb-4">13. Changes to Terms</h2>
               <p className="text-zinc-600 dark:text-zinc-400">
                 We reserve the right to modify these terms at any time. We will notify users of
                 significant changes. Continued use of the Service after changes constitutes
@@ -188,7 +205,7 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-xl font-semibold text-zinc-900 dark:text-white mb-4">13. Governing Law</h2>
+              <h2 className="text-xl font-semibold text-zinc-900 dark:text-white mb-4">14. Governing Law</h2>
               <p className="text-zinc-600 dark:text-zinc-400">
                 These terms shall be governed by and construed in accordance with the laws of the
                 State of South Carolina, United States, without regard to its conflict of law principles.
@@ -199,7 +216,7 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-xl font-semibold text-zinc-900 dark:text-white mb-4">14. Contact</h2>
+              <h2 className="text-xl font-semibold text-zinc-900 dark:text-white mb-4">15. Contact</h2>
               <p className="text-zinc-600 dark:text-zinc-400 mb-4">
                 For questions about these Terms of Service, please contact us:
               </p>
@@ -216,6 +233,8 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
         <div className="mt-8 text-center">
           <div className="flex items-center justify-center gap-4 text-sm text-zinc-500">
             <a href="/" className="hover:text-rose-500 transition">Home</a>
+            <span>|</span>
+            <a href="/about" className="hover:text-rose-500 transition">About</a>
             <span>|</span>
             <a href="/privacy" className="hover:text-rose-500 transition">Privacy Policy</a>
             <span>|</span>

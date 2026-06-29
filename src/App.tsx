@@ -7,6 +7,7 @@ import MessageContainer from './components/MessageContainer';
 import Login from './components/Login';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
+import About from './components/About';
 import LandingPage from './components/LandingPage';
 import { WorkspaceInviteAccept } from './components/WorkspaceInviteAccept';
 import BookingPage from './components/BookingPage';
@@ -662,6 +663,11 @@ const App: React.FC = () => {
 
   if (path === '/terms') {
     return <TermsOfService onBack={() => window.location.href = '/'} />;
+  }
+
+  // Public marketing — minimal "About Pulse" page
+  if (path === '/about') {
+    return <About onBack={() => window.location.href = '/'} />;
   }
 
   // Public marketing — Features overview (quiet home lives at /, deep showcases here)

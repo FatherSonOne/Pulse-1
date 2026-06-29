@@ -4342,6 +4342,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                   <a href="https://play.google.com/apps/internaltest/4701381285127016770" target="_blank" rel="noopener noreferrer" className="hover:text-rose-500 transition">Android App <span className="text-zinc-600">· early access</span></a>
                 </li>
                 <li>
+                  <a href="/about" className="hover:text-rose-500 transition">About Pulse</a>
+                </li>
+                <li>
                   <a href="https://qntmecos.com" target="_blank" rel="noopener noreferrer" className="hover:text-rose-500 transition flex items-center gap-1">
                     About QntmEcos <ExternalLink className="text-[10px]" />
                   </a>
