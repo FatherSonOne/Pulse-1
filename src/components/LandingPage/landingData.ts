@@ -94,9 +94,9 @@ export const SHORTCUT_GROUPS = [
 // section consume these as the single source of truth.
 export const PULSE_SOLO_FEATURES = [
   'Just you, 1 seat',
-  'Cross-surface AI: summaries, drafts, triage',
-  'Relay voice + Glimpse video',
-  'Decisions & tasks, contacts, calendar',
+  'AI across every tool: summaries, drafts, triage',
+  'Voice messages (Relay) + async video (Glimpse)',
+  'Decisions, tasks, contacts, and calendar',
   '1,500 AI messages / 25 GB / mo',
 ];
 
@@ -112,13 +112,13 @@ export const PULSE_SOLO_PRICING = {
 // per-seat annual price. TrialExpiredBlock.tsx imports this list directly —
 // single source of truth.
 export const PULSE_TEAM_FEATURES = [
-  'Per-seat: $15/user/mo, min 2 seats',
-  'All 5 Relay peers + Triage stream',
-  'Glimpse async video + Studio RAG',
-  'Calendar, messaging, meetings',
-  'Maps with geofence alerts and ETA sharing',
-  'Advanced analytics + full ecosystem bridge',
-  '2,000 AI messages / 50 GB storage / mo',
+  'Everything in Solo, plus:',
+  'All 5 voice channels (Relay) + priority inbox (Triage)',
+  'Async video (Glimpse) + AI document search (Studio)',
+  'Shared calendar, messaging, and meetings',
+  'Field maps with location alerts and live ETA sharing',
+  'Advanced analytics + cross-app sync',
+  '2,000 AI messages / 50 GB / mo, shared across seats',
 ];
 
 export const PULSE_TEAM_PRICING = {
@@ -136,12 +136,33 @@ export const PULSE_TEAM_PRICING = {
 // yearly). Keep in sync with the plans table.
 export const PULSE_GROWTH_FEATURES = [
   'Everything in Team, plus:',
-  '10,000 AI messages / 500 GB / 2,500 Relay min / mo',
-  'SSO / SAML, coming soon',
+  '10,000 AI messages / 500 GB / 2,500 voice minutes / mo, shared',
   'API access with rate-limited keys',
   'Audit log retention: 365 days',
-  'Priority support, 1 business day SLA',
+  'Priority support, 2 business day SLA',
+  // Roadmap, not shipped — rendered as a muted "Soon" row, never a checkmark.
+  'SSO / SAML, coming soon',
 ];
+
+// ── Plan comparison matrix ───────────────────────────────────────────────────
+// Every row is backed by an enforced limit in the tier migrations (pulse_solo /
+// pulse_team / pulse_growth). No invented specs: values map 1:1 to plans.*.
+// `true` → check, `false` → not included, string → literal value.
+export const PULSE_PLAN_MATRIX: {
+  tiers: readonly string[];
+  rows: { label: string; values: (string | boolean)[] }[];
+} = {
+  tiers: ['Solo', 'Team', 'Growth'],
+  rows: [
+    { label: 'AI messages / mo',     values: ['1,500', '2,000', '10,000'] },
+    { label: 'Storage',              values: ['25 GB', '50 GB', '500 GB'] },
+    { label: 'Voice minutes / mo',   values: ['300', '500', '2,500'] },
+    { label: 'API access',           values: [false, false, true] },
+    { label: 'Audit log retention',  values: [false, false, '365 days'] },
+    { label: 'Priority support SLA', values: [false, false, '2 business days'] },
+    { label: 'SSO / SAML',           values: [false, false, 'Soon'] },
+  ],
+};
 
 export const PULSE_GROWTH_PRICING = {
   monthly: 300,      // $/mo billed monthly (Stripe price_1TYGWNGb3AGXe9w8PjNHmR8L)

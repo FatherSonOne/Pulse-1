@@ -666,12 +666,17 @@ const App: React.FC = () => {
 
   // Public marketing — Features overview (quiet home lives at /, deep showcases here)
   if (path === '/features') {
-    return <LandingPage variant="features" onGetStarted={() => window.location.href = '/?signin'} />;
+    return <LandingPage variant="features" onGetStarted={() => window.location.href = '/?signin&mode=signup'} onSignIn={() => window.location.href = '/?signin'} />;
   }
 
-  // Public marketing — interactive demo (placeholder page for now)
+  // Public marketing — /demo. The interactive product tour isn't built yet, so
+  // rather than serve a "coming soon" placeholder behind a nav link (a broken
+  // promise that reads as an unfinished product), redirect to the live feature
+  // showcase. The nav "Demo" item is removed (see LandingPage.tsx); restore both
+  // when a real tour ships. This runs before any hook, so the early return is safe.
   if (path === '/demo') {
-    return <LandingPage variant="demo" onGetStarted={() => window.location.href = '/?signin'} />;
+    window.location.replace('/features');
+    return null;
   }
 
   // Browser Extension Auth Routes
@@ -1588,7 +1593,7 @@ const App: React.FC = () => {
     }
 
     // Show public landing page by default (web only)
-    return <LandingPage onGetStarted={() => window.location.href = '/?signin'} />;
+    return <LandingPage onGetStarted={() => window.location.href = '/?signin&mode=signup'} onSignIn={() => window.location.href = '/?signin'} />;
   }
 
   return (

@@ -14,7 +14,12 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginMethod, setLoginMethod] = useState<'google' | 'microsoft' | 'email' | null>(null);
   const [showEmailForm, setShowEmailForm] = useState(false);
-  const [isSignupMode, setIsSignupMode] = useState(false);
+  // Sign-up vs sign-in mode is seeded from the URL: the landing page sends new users
+  // here with ?mode=signup (Get Started) and returning users without it (Log In).
+  const [isSignupMode, setIsSignupMode] = useState(() => {
+    try { return new URLSearchParams(window.location.search).get('mode') === 'signup'; }
+    catch { return false; }
+  });
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');

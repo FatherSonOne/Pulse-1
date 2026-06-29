@@ -7,11 +7,10 @@ interface PrivacyPolicyProps {
 }
 
 const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
-  const currentDate = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  // Pinned at each policy revision. Do NOT derive from new Date() — that made the
+  // policy always read as "updated today" even when untouched. Bump on real edits,
+  // and keep in sync with the footer "Updated" badge in LandingPage.tsx.
+  const currentDate = 'June 28, 2026';
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -57,7 +56,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
           <h1 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white mb-2">
             Privacy Policy
           </h1>
-          <p className="text-zinc-500 mb-8">Last updated: {currentDate} (Pulse Version 26.0.0)</p>
+          <p className="text-zinc-500 mb-8">Last updated: {currentDate} (Pulse Version 25.1.3)</p>
 
           <div className="prose prose-zinc dark:prose-invert max-w-none">
             <section className="mb-8">
@@ -244,7 +243,16 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
                 <li>We use secure authentication through OAuth 2.0</li>
                 <li>Regular security audits and vulnerability assessments</li>
                 <li>Access controls and authentication for all internal systems</li>
+                <li>Every workspace is isolated with row-level security so your data is not visible across accounts</li>
               </ul>
+              <p className="text-zinc-600 dark:text-zinc-400 mt-4">
+                <strong>Pulse does not offer end-to-end encryption.</strong> To power AI features such as summaries,
+                smart replies, transcription, and decision extraction, your content must be processed server-side at
+                the time of your request (see Section 5). We treat your content as confidential and restrict internal
+                access through access controls and policy, but &mdash; unlike an end-to-end-encrypted messenger &mdash;
+                there is no cryptographic barrier that makes your content unreadable to us. We never use your content
+                to train AI models.
+              </p>
             </section>
 
             <section className="mb-8">
@@ -324,7 +332,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
               <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-6">
                 <p className="text-zinc-700 dark:text-zinc-300 font-medium">Quantum Ecosystems LLC</p>
                 <p className="text-zinc-600 dark:text-zinc-400">Email: fm1@qntmecos.com</p>
-                <p className="text-zinc-600 dark:text-zinc-400">Website: https://logosvision.org</p>
+                <p className="text-zinc-600 dark:text-zinc-400">Website: https://qntmecos.com</p>
               </div>
             </section>
           </div>

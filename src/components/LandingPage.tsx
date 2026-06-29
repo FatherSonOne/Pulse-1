@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useId, lazy, Suspense } from 'react
 import './LandingPage.css';
 
 import { Apple, ArrowDown, Battery, Bell, Book, BookOpen, Check, ChevronUp, Download, ExternalLink, Eye, Gavel, Heart, HeartPulse, HelpCircle, Info, Keyboard, Layers, LayoutGrid, MapPin, Mic, Network, Play, Radar, Rocket, Search, Signal, Smartphone, Users, Video, Wand2, Wifi, X } from 'lucide-react';
-import { RELAY_PEERS, FAQ_DATA, SHORTCUT_GROUPS, PULSE_SOLO_FEATURES, PULSE_SOLO_PRICING, PULSE_TEAM_FEATURES, PULSE_TEAM_PRICING, PULSE_GROWTH_FEATURES, PULSE_GROWTH_PRICING, CAPABILITY_CELLS, FEATURE_CLUSTERS } from './LandingPage/landingData';
+import { RELAY_PEERS, FAQ_DATA, SHORTCUT_GROUPS, PULSE_SOLO_FEATURES, PULSE_SOLO_PRICING, PULSE_TEAM_FEATURES, PULSE_TEAM_PRICING, PULSE_GROWTH_FEATURES, PULSE_GROWTH_PRICING, PULSE_PLAN_MATRIX, CAPABILITY_CELLS, FEATURE_CLUSTERS } from './LandingPage/landingData';
 
 // Lazy-load the guide — guideData.ts is 26k lines and must NOT land in the main bundle
 const UsersGuide = lazy(() => import('./UsersGuide/UsersGuide'));
@@ -10,7 +10,10 @@ const UsersGuide = lazy(() => import('./UsersGuide/UsersGuide'));
 interface LandingPageProps {
   /** 'home' = quiet landing; 'features' = deep showcase route (/features). */
   variant?: 'home' | 'features' | 'demo';
+  /** New users: routes to the auth screen in sign-up mode. */
   onGetStarted: () => void;
+  /** Returning users: routes to the auth screen in sign-in mode. Falls back to onGetStarted. */
+  onSignIn?: () => void;
 }
 
 // Pulse Globe — the sole brand mark. A rose→pink disc with the heartbeat knocked out
@@ -35,6 +38,30 @@ const QntmEcosIcon = ({ size = 28 }: { size?: number }) => {
   );
 };
 
+// Quantum Ecosystems brand mark — the studio behind Pulse. The abstract "Q":
+// a rose→pink gradient ring with a tail, a soft inner glow, and a quantum dot.
+// Mirrors the canonical mark on qntmecos.com (src/components/Logo.tsx).
+const QuantumEcosMark = ({ size = 28 }: { size?: number }) => {
+  const uid = useId();
+  const g = `qe-${uid}`;
+  return (
+    <svg width={size} height={size} viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id={g} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#f43f5e" />
+          <stop offset="1" stopColor="#ec4899" />
+        </linearGradient>
+      </defs>
+      {/* Abstract Q — ring + tail */}
+      <path d="M 40 15 A 25 25 0 1 1 40 65 L 55 75 Z" fill="none" stroke={`url(#${g})`} strokeWidth="4" strokeLinecap="round" />
+      {/* Soft inner glow */}
+      <circle cx="40" cy="40" r="15" fill={`url(#${g})`} opacity="0.2" />
+      {/* Quantum dot */}
+      <circle cx="40" cy="40" r="4" fill="#ec4899" />
+    </svg>
+  );
+};
+
 // Data arrays imported from ./LandingPage/landingData.ts
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -55,7 +82,10 @@ const SectionDivider = () => (
   </div>
 );
 
-const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home' }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, variant = 'home' }) => {
+  // Returning users get a distinct sign-in destination; older callers that don't
+  // pass onSignIn fall back to the new-user flow so nothing breaks.
+  const goSignIn = onSignIn ?? onGetStarted;
   const [activeScenario, setActiveScenario] = useState<'enterprise' | 'voice'>('enterprise');
   const [sectionVis, setSectionVis] = useState<Record<string, number>>({});
   const [isGuideOpen, setIsGuideOpen] = useState(false);
@@ -67,6 +97,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
   const [orbitPaused, setOrbitPaused] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pricingCycle, setPricingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [teamSeats, setTeamSeats] = useState(2); // Pulse Team is per-seat, min 2
+  const [showCompare, setShowCompare] = useState(false); // feature matrix disclosure
   // Email landing section is built (emailAIService / smartCompose / Gmail sync) but Gmail is
   // currently an owner-scoped grant and emailEnabled defaults off, so it is not yet generally
   // available to public signups. Hidden from the marketing page for v1; flip to re-show.
@@ -1024,7 +1056,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
       <nav aria-label="Main navigation" className={`lp-dark fixed top-0 left-0 right-0 z-[100] backdrop-blur-xl border-b ${heroDark ? 'bg-zinc-950/85 border-zinc-800/50' : 'bg-white/85 border-stone-200/60'}`}>
         <div className="max-w-7xl mx-auto px-4 py-3 md:px-6 md:py-4 flex items-center justify-between">
 
-          {/* Left: Pulse logo + QntmEcos badge */}
+          {/* Left: Pulse logo + page nav (QntmEcos credit lives in the studio band + footer, not crowding the mark) */}
           <div className="flex items-center gap-4">
             <button
               type="button"
@@ -1033,7 +1065,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
               aria-label="Pulse, return home"
             >
               {/* Brand Globe mark — same mark as hero, footer, favicon & asset library */}
-              <span className="inline-flex group-hover:scale-110 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
+              <span className="inline-flex group-hover:scale-[1.04] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
                 <QntmEcosIcon size={36} />
               </span>
               <span
@@ -1049,25 +1081,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
               >Pulse</span>
             </button>
 
-            {/* QntmEcos badge */}
-            <a
-              href="https://qntmecos.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-zinc-700/60 bg-zinc-900/60 hover:border-rose-500/40 hover:bg-zinc-800/60 transition-all duration-200 group"
-              title="Quantum Ecosystems, the studio behind Pulse"
-              aria-label="QntmEcos: Quantum Ecosystems, the studio behind Pulse (opens in new tab)"
-            >
-              <QntmEcosIcon size={16} />
-              <span className="text-[11px] font-medium text-zinc-400 group-hover:text-rose-400 transition-colors">QntmEcos</span>
-            </a>
-
             {/* Page nav — always visible (cross-page navigation) */}
             <nav aria-label="Pages" className="flex items-center gap-0.5 sm:gap-1 ml-1 sm:ml-2">
               {([
                 { label: 'Home', href: '/' },
                 { label: 'Features', href: '/features' },
-                { label: 'Demo', href: '/demo' },
+                // 'Demo' removed 2026-06-28: it linked to a "coming soon" placeholder,
+                // which broke the implicit promise of the nav item. /demo now redirects
+                // to /features (see App.tsx). Restore this entry when a real interactive
+                // tour ships (the demo-variant scaffold below remains for that purpose).
               ] as const).map((item) => {
                 const active = currentPath === item.href;
                 return (
@@ -1077,12 +1099,20 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
                   </a>
                 );
               })}
+              {/* Pricing — a marketing concern, so it peers with the Pages nav rather than
+                  hiding in the right-side utility cluster. scrollToSection handles cross-route. */}
+              <button
+                type="button"
+                onClick={() => scrollToSection('pricing')}
+                className={`px-2 sm:px-2.5 py-1.5 text-[13px] sm:text-sm font-medium rounded-md transition-colors ${heroDark ? 'text-zinc-400 hover:text-white' : 'text-stone-500 hover:text-stone-900'}`}
+              >
+                Pricing
+              </button>
             </nav>
           </div>
 
           <div className={`hidden md:flex items-center gap-6 text-sm font-medium ${heroDark ? 'text-zinc-400' : 'text-stone-500'}`}>
-            {/* Primary nav */}
-            <button type="button" onClick={() => scrollToSection('pricing')} className={`transition ${heroDark ? 'hover:text-white' : 'hover:text-stone-900'}`}>Pricing</button>
+            {/* Pricing moved into the left Pages nav; this cluster is now Download / Docs / auth. */}
 
             {/* ── Downloads dropdown ── */}
             <div
@@ -1092,22 +1122,28 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
             >
               <button
                 type="button"
-                onClick={() => scrollToSection('download')}
-                className={`flex items-center gap-1.5 transition ${downloadsOpen ? 'text-white' : 'hover:text-white'}`}
+                onClick={() => setDownloadsOpen((o) => !o)}
+                className={`flex items-center gap-1.5 transition-colors duration-150 ${downloadsOpen ? 'text-white' : 'hover:text-white'}`}
                 aria-haspopup="true"
                 aria-expanded={downloadsOpen}
+                aria-controls="lp-download-menu"
               >
                 <Download className="text-[11px]" />
                 Download
                 <i className={`fa-solid fa-chevron-down text-[9px] transition-transform duration-200 ${downloadsOpen ? 'rotate-180' : ''}`} aria-hidden="true"></i>
               </button>
 
-              {/* Dropdown panel */}
+              {/* Dropdown panel. The outer wrapper carries a transparent pt-3 so the 12px
+                  visual gap stays inside the hover region (the menu no longer drops while
+                  the cursor crosses to it). `invisible` when closed keeps the links out of
+                  the tab order until the menu is open. */}
               <div
-                className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-64 bg-zinc-900 border border-zinc-700/80 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden transition-all duration-200 z-[200] ${
-                  downloadsOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'
+                id="lp-download-menu"
+                className={`absolute top-full left-1/2 -translate-x-1/2 pt-3 w-64 z-[200] transition-[opacity,transform] duration-200 ${
+                  downloadsOpen ? 'opacity-100 translate-y-0 pointer-events-auto visible' : 'opacity-0 -translate-y-2 pointer-events-none invisible'
                 }`}
               >
+                <div className="relative bg-zinc-900 border border-zinc-700/80 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
                 {/* Arrow */}
                 <div className="absolute -top-[6px] left-1/2 -translate-x-1/2 w-3 h-3 bg-zinc-900 border-l border-t border-zinc-700/80 rotate-45" />
 
@@ -1141,7 +1177,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
                     </span>
                     <div className="text-left">
                       <div className="text-sm font-semibold text-white group-hover:text-green-400 transition">Android</div>
-                      <div className="text-[11px] text-zinc-500">Google Play Store</div>
+                      <div className="text-[11px] text-zinc-500">Google Play · early access</div>
                     </div>
                     <ExternalLink className="text-zinc-600 text-[10px] ml-auto group-hover:text-green-400 transition" />
                   </a>
@@ -1157,7 +1193,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
                     </span>
                     <div className="text-left">
                       <div className="text-sm font-semibold text-white group-hover:text-rose-400 transition">Android APK</div>
-                      <div className="text-[11px] text-zinc-500">Sideload · direct download</div>
+                      <div className="text-[11px] text-zinc-500">Direct download · all devices</div>
                     </div>
                     <ArrowDown className="text-zinc-600 text-[10px] ml-auto group-hover:text-rose-400 transition" />
                   </a>
@@ -1187,6 +1223,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
                     View all downloads
                   </button>
                 </div>
+                </div>
               </div>
             </div>
 
@@ -1207,7 +1244,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
               aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
               aria-expanded={mobileMenuOpen}
               aria-controls="lp-mobile-menu"
-              className={`md:hidden w-11 h-11 flex items-center justify-center rounded-lg border transition-all duration-200 hover:scale-105 active:scale-95 ${
+              className={`md:hidden w-11 h-11 flex items-center justify-center rounded-lg border transition-[color,border-color,background-color,transform] duration-200 active:scale-95 ${
                 heroDark
                   ? 'border-zinc-700/70 bg-zinc-900/60 hover:border-zinc-500/50 text-zinc-400 hover:text-white'
                   : 'border-stone-300 bg-white hover:border-stone-400 text-stone-500 hover:text-stone-900'
@@ -1248,9 +1285,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
             {/* Secondary action — returning users. Hidden at the narrowest width so the
                 primary CTA always wins; on mobile, sign-in lives in the menu sheet. */}
             <button
-              onClick={onGetStarted}
+              onClick={goSignIn}
               type="button"
-              className="hidden sm:block px-3 py-2 md:px-5 md:py-2.5 bg-zinc-800/90 backdrop-blur-sm border border-zinc-700/80 hover:border-rose-500/50 text-zinc-100 hover:text-white rounded-lg text-xs md:text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95 hover:bg-zinc-700/90 hover:shadow-lg hover:shadow-rose-500/10"
+              className={`hidden sm:block px-3 py-2 md:px-4 md:py-2.5 rounded-lg text-xs md:text-sm font-medium transition-colors duration-150 active:scale-[0.98] ${
+                heroDark
+                  ? 'text-zinc-300 hover:text-white'
+                  : 'text-stone-600 hover:text-stone-900'
+              }`}
             >
               Log In
             </button>
@@ -1277,7 +1318,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
         {/* Stacked nav links */}
         <a href="/" aria-current={currentPath === '/' ? 'page' : undefined} className={`lp-mobile-nav-link${currentPath === '/' ? ' text-rose-500 font-semibold' : ''}`}>Home</a>
         <a href="/features" aria-current={currentPath === '/features' ? 'page' : undefined} className={`lp-mobile-nav-link${currentPath === '/features' ? ' text-rose-500 font-semibold' : ''}`}>Features</a>
-        <a href="/demo" aria-current={currentPath === '/demo' ? 'page' : undefined} className={`lp-mobile-nav-link${currentPath === '/demo' ? ' text-rose-500 font-semibold' : ''}`}>Demo</a>
+        {/* 'Demo' removed 2026-06-28 — /demo was a "coming soon" placeholder; it now redirects to /features. */}
         <button type="button" onClick={() => { setMobileMenuOpen(false); scrollToSection('pricing'); }} className="lp-mobile-nav-link">Pricing</button>
         <button type="button" onClick={() => { setMobileMenuOpen(false); scrollToSection('download'); }} className="lp-mobile-nav-link">Download</button>
         <div className="lp-mobile-divider" />
@@ -1287,7 +1328,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
         <div className="lp-mobile-divider" />
         {/* CTAs */}
         <button onClick={onGetStarted} type="button" className="lp-mobile-cta-primary">Get Started</button>
-        <button onClick={onGetStarted} type="button" className="lp-mobile-cta-ghost">Log In</button>
+        <button onClick={goSignIn} type="button" className="lp-mobile-cta-ghost">Log In</button>
       </div>
 
       {/* ── Main content landmark (ADA) ── */}
@@ -3770,7 +3811,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">Pricing that starts with you.</h2>
             <p className="text-zinc-400 text-base max-w-xl mx-auto">
-              Start solo. Add your team when you're ready. $15 per seat, nothing wasted.
+              Start solo at $20/mo. Add teammates at $15 a seat when you're ready. Nothing wasted.
             </p>
           </div>
 
@@ -3836,7 +3877,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
           <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
 
             {/* ─── Pulse Solo — Lane-A entry tier, highlighted ─── */}
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-rose-500/10 flex flex-col">
+            {/* md:order-2 centers the highlighted/recommended tier on desktop so
+                visual emphasis matches position; mobile keeps it first (entry). */}
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-rose-500/10 flex flex-col md:order-2">
               <div className="h-1 bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-500" aria-hidden="true" />
               <div className="lp-pricing-featured bg-gradient-to-br from-zinc-950 to-zinc-900 border-x border-b border-zinc-700/60 rounded-b-2xl p-8 sm:p-10 space-y-6 flex-1 flex flex-col">
                 <div className="flex items-center justify-between gap-4">
@@ -3883,7 +3926,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
             </div>
 
             {/* ─── Pulse Team — per-seat scale-up tier ─── */}
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/40 flex flex-col">
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/40 flex flex-col md:order-1">
               <div className="h-1 bg-rose-700" aria-hidden="true" />
               <div className="bg-zinc-950 border-x border-b border-zinc-800 rounded-b-2xl p-8 sm:p-10 space-y-6 flex-1 flex flex-col">
                 <div className="flex items-center justify-between gap-4">
@@ -3909,19 +3952,60 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
                   </div>
                 </div>
 
+                {/* Seat stepper — makes the real Team cost unmissable so the
+                    "$15/seat" headline can't be misread as the $30 floor. */}
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xs font-medium text-zinc-400">Seats</span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        aria-label="Remove a seat"
+                        onClick={() => setTeamSeats((s) => Math.max(2, s - 1))}
+                        disabled={teamSeats <= 2}
+                        className="w-7 h-7 rounded-lg border border-zinc-700 text-zinc-300 flex items-center justify-center text-base leading-none transition-transform duration-150 ease-out hover:border-rose-500/50 hover:text-white active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+                      >
+                        &#8722;
+                      </button>
+                      <span className="w-8 text-center text-sm font-semibold text-zinc-50 tabular-nums" aria-live="polite">{teamSeats}</span>
+                      <button
+                        type="button"
+                        aria-label="Add a seat"
+                        onClick={() => setTeamSeats((s) => Math.min(50, s + 1))}
+                        disabled={teamSeats >= 50}
+                        className="w-7 h-7 rounded-lg border border-zinc-700 text-zinc-300 flex items-center justify-center text-base leading-none transition-transform duration-150 ease-out hover:border-rose-500/50 hover:text-white active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm font-bold text-zinc-50 tabular-nums">
+                      ${((pricingCycle === 'monthly' ? PULSE_TEAM_PRICING.monthly : PULSE_TEAM_PRICING.yearlyMonthlyEquiv) * teamSeats).toLocaleString()}
+                    </span>
+                    <span className="text-xs text-zinc-500">/mo total</span>
+                  </div>
+                </div>
+
                 <ul className="space-y-3 pt-2 flex-1">
                   {PULSE_TEAM_FEATURES.map((feat) => (
-                    <li key={feat} className="flex items-start gap-3 text-sm text-zinc-200">
-                      <Check size={18} className="text-emerald-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
-                      <span>{feat}</span>
-                    </li>
+                    feat.endsWith('plus:') ? (
+                      <li key={feat} className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 pb-1">
+                        {feat}
+                      </li>
+                    ) : (
+                      <li key={feat} className="flex items-start gap-3 text-sm text-zinc-200">
+                        <Check size={18} className="text-emerald-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                        <span>{feat}</span>
+                      </li>
+                    )
                   ))}
                 </ul>
 
                 <button
                   type="button"
                   onClick={onGetStarted}
-                  className="w-full py-3.5 rounded-xl bg-transparent border border-rose-500/40 hover:border-rose-500 hover:bg-rose-500/10 text-rose-300 hover:text-rose-200 font-semibold text-sm transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+                  className="w-full py-3.5 rounded-xl bg-transparent border border-rose-500/40 hover:border-rose-500 hover:bg-rose-500/10 text-rose-300 hover:text-rose-200 font-semibold text-sm transition-[color,background-color,border-color,transform] duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] flex items-center justify-center gap-2"
                 >
                   <Rocket size={16} aria-hidden="true" />
                   Start with Team
@@ -3934,7 +4018,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
                 chrome (deeper surface, mono-label tag), not a competing palette.
                 Replaces the previous violet/purple/indigo gradient stack that
                 detector flagged as the AI-startup anti-reference. */}
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/40 flex flex-col">
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/40 flex flex-col md:order-3">
               <div className="h-1 bg-rose-700" aria-hidden="true" />
               <div className="bg-zinc-950 border-x border-b border-zinc-800 rounded-b-2xl p-8 sm:p-10 space-y-6 flex-1 flex flex-col">
                 <div className="flex items-center justify-between gap-4">
@@ -3961,18 +4045,39 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
                 </div>
 
                 <ul className="space-y-3 pt-2 flex-1">
-                  {PULSE_GROWTH_FEATURES.map((feat) => (
-                    <li key={feat} className="flex items-start gap-3 text-sm text-zinc-200">
-                      <Check size={18} className="text-emerald-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
-                      <span>{feat}</span>
-                    </li>
-                  ))}
+                  {PULSE_GROWTH_FEATURES.map((feat) => {
+                    if (feat.endsWith('plus:')) {
+                      return (
+                        <li key={feat} className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 pb-1">
+                          {feat}
+                        </li>
+                      );
+                    }
+                    if (feat.includes('coming soon')) {
+                      const label = feat.replace(/,?\s*coming soon/i, '');
+                      return (
+                        <li key={feat} className="flex items-start gap-3 text-sm text-zinc-500">
+                          <span className="mt-1 w-3.5 h-3.5 rounded-full border border-dashed border-zinc-600 flex-shrink-0" aria-hidden="true" />
+                          <span>
+                            {label}
+                            <span className="ml-2 align-middle text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">Soon</span>
+                          </span>
+                        </li>
+                      );
+                    }
+                    return (
+                      <li key={feat} className="flex items-start gap-3 text-sm text-zinc-200">
+                        <Check size={18} className="text-emerald-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                        <span>{feat}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
 
                 <button
                   type="button"
                   onClick={onGetStarted}
-                  className="w-full py-3.5 rounded-xl bg-transparent border border-rose-500/40 hover:border-rose-500 hover:bg-rose-500/10 text-rose-300 hover:text-rose-200 font-semibold text-sm transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+                  className="w-full py-3.5 rounded-xl bg-transparent border border-rose-500/40 hover:border-rose-500 hover:bg-rose-500/10 text-rose-300 hover:text-rose-200 font-semibold text-sm transition-[color,background-color,border-color,transform] duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] flex items-center justify-center gap-2"
                 >
                   <Rocket size={16} aria-hidden="true" />
                   Start with Growth
@@ -3980,6 +4085,56 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
               </div>
             </div>
           </div>
+
+          {/* Compare-all matrix — progressive disclosure. One place to scan
+              every tier's limits side by side, so higher tiers don't force the
+              buyer to recall a different card. Every value is verified against
+              the enforced plan migrations (see PULSE_PLAN_MATRIX). */}
+          <div className="mt-8 text-center">
+            <button
+              type="button"
+              onClick={() => setShowCompare((v) => !v)}
+              aria-expanded={showCompare}
+              aria-controls="plan-compare"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-zinc-400 hover:text-white transition-colors duration-200"
+            >
+              {showCompare ? 'Hide comparison' : 'Compare all plans'}
+              <i className={`fa-solid fa-chevron-down text-xs transition-transform duration-300 ${showCompare ? 'rotate-180' : ''}`} aria-hidden="true" />
+            </button>
+          </div>
+
+          {showCompare && (
+            <div id="plan-compare" className="mt-4 overflow-x-auto animate-fade-in">
+              <table className="w-full max-w-3xl mx-auto border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-800">
+                    <th className="text-left font-medium text-zinc-500 py-3 pr-4"></th>
+                    {PULSE_PLAN_MATRIX.tiers.map((t, i) => (
+                      <th key={t} className={`text-center font-bold py-3 px-3 ${i === 0 ? 'text-rose-300' : 'text-zinc-200'}`}>{t}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {PULSE_PLAN_MATRIX.rows.map((row) => (
+                    <tr key={row.label} className="border-b border-zinc-800/60">
+                      <td className="text-left text-zinc-400 py-3 pr-4">{row.label}</td>
+                      {row.values.map((v, i) => (
+                        <td key={i} className="text-center py-3 px-3">
+                          {v === true ? (
+                            <Check size={16} className="text-emerald-400 inline" aria-label="Included" />
+                          ) : v === false ? (
+                            <span className="text-zinc-600" aria-label="Not included">&#8212;</span>
+                          ) : (
+                            <span className="text-zinc-200 tabular-nums">{v}</span>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           <p className="text-center text-xs text-zinc-500 mt-6 px-4 max-w-5xl mx-auto">
             No credit card required to start. Cancel anytime. Secure checkout via Stripe.
@@ -4069,12 +4224,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
                 <a href="https://github.com/FatherSonOne/Pulse-1/releases/download/v25.1.3/Pulse.Setup.25.1.3.exe" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-sm font-semibold transition-colors">
                   <i className="fa-brands fa-windows text-[13px]" aria-hidden="true" /> Download for Windows
                 </a>
-                <a href="https://play.google.com/apps/internaltest/4701381285127016770" target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border text-sm font-semibold transition-colors ${isDarkMode ? 'border-zinc-700 text-zinc-200 hover:border-rose-500/50 hover:text-white' : 'border-stone-300 text-stone-700 hover:border-rose-500/50 hover:text-stone-900'}`}>
-                  <Smartphone className="w-4 h-4" /> Android
+                <a href="/downloads/pulse-android.apk" download className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border text-sm font-semibold transition-colors ${isDarkMode ? 'border-zinc-700 text-zinc-200 hover:border-rose-500/50 hover:text-white' : 'border-stone-300 text-stone-700 hover:border-rose-500/50 hover:text-stone-900'}`}>
+                  <Smartphone className="w-4 h-4" /> Android APK
                 </a>
               </div>
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px]" style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.2em' }}>
                 <span className={`uppercase font-semibold${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>PWA</span>
+                <a href="https://play.google.com/apps/internaltest/4701381285127016770" target="_blank" rel="noopener noreferrer" className={`uppercase font-semibold tracking-[0.2em] transition-colors ${isDarkMode ? 'text-zinc-500 hover:text-rose-400' : 'text-zinc-500 hover:text-rose-600'}`}>Google Play · early access →</a>
                 <span className={`uppercase font-semibold${isDarkMode ? ' text-zinc-600' : ' text-zinc-400'}`}>macOS · soon</span>
                 <span className={`inline-flex items-center gap-2 uppercase font-semibold${isDarkMode ? ' text-rose-400' : ' text-rose-600'}`}>
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" />
@@ -4111,6 +4267,29 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
       </div>{/* /lp-light body zone */}
       </main>{/* /#main-content */}
 
+      {/* ── Studio band — Quantum Ecosystems, the studio behind Pulse ── */}
+      <section aria-label="The studio behind Pulse" className="lp-dark bg-zinc-950 border-t border-zinc-800/60 py-12 px-6">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-x-6 gap-y-4 text-center sm:text-left">
+          <span className="inline-flex flex-shrink-0">
+            <QuantumEcosMark size={52} />
+          </span>
+          <div className="flex-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-rose-400/80 mb-1.5">A Quantum Ecosystems product</p>
+            <p className="text-zinc-300 text-sm sm:text-[15px] leading-relaxed max-w-xl">
+              Pulse is built and maintained by <span className="text-white font-semibold">Quantum Ecosystems</span> — a studio crafting intelligent software that helps mission-driven teams streamline operations and amplify their impact.
+            </p>
+          </div>
+          <a
+            href="https://qntmecos.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-zinc-700/60 bg-zinc-900/60 text-sm font-medium text-zinc-300 hover:text-white hover:border-rose-500/40 hover:bg-zinc-800/60 transition-all duration-200 flex-shrink-0"
+          >
+            Visit QntmEcos <ExternalLink className="text-[11px]" />
+          </a>
+        </div>
+      </section>
+
       {/* ── Footer ── */}
       <footer className="bg-zinc-950 border-t border-zinc-800 pt-16 pb-8 px-6">
         <div className="max-w-7xl mx-auto">
@@ -4138,7 +4317,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-zinc-900/80 border border-zinc-800 hover:border-rose-500/30 hover:bg-zinc-800/80 transition-all duration-200 group"
               >
-                <QntmEcosIcon size={24} />
+                <QuantumEcosMark size={24} />
                 <div>
                   <div className="text-xs font-bold text-white group-hover:text-rose-300 transition-colors">Developed by QntmEcos</div>
                   <div className="text-[10px] text-zinc-500">Quantum Ecosystems · qntmecos.com</div>
@@ -4160,7 +4339,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, variant = 'home
                   <button type="button" onClick={() => scrollToSection('pricing')} className="hover:text-rose-500 transition text-left">Pricing</button>
                 </li>
                 <li>
-                  <a href="https://play.google.com/apps/internaltest/4701381285127016770" target="_blank" rel="noopener noreferrer" className="hover:text-rose-500 transition">Android App</a>
+                  <a href="https://play.google.com/apps/internaltest/4701381285127016770" target="_blank" rel="noopener noreferrer" className="hover:text-rose-500 transition">Android App <span className="text-zinc-600">· early access</span></a>
                 </li>
                 <li>
                   <a href="https://qntmecos.com" target="_blank" rel="noopener noreferrer" className="hover:text-rose-500 transition flex items-center gap-1">

@@ -7,11 +7,9 @@ interface TermsOfServiceProps {
 }
 
 const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
-  const currentDate = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  // Pinned at each revision. Do NOT derive from new Date() — that made the terms
+  // always read as "updated today" even when untouched. Bump on real edits.
+  const currentDate = 'June 28, 2026';
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -208,7 +206,7 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
               <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-6">
                 <p className="text-zinc-700 dark:text-zinc-300 font-medium">Quantum Ecosystems LLC</p>
                 <p className="text-zinc-600 dark:text-zinc-400">Email: fm1@qntmecos.com</p>
-                <p className="text-zinc-600 dark:text-zinc-400">Website: https://logosvision.org</p>
+                <p className="text-zinc-600 dark:text-zinc-400">Website: https://qntmecos.com</p>
               </div>
             </section>
           </div>
