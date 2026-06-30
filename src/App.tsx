@@ -677,12 +677,16 @@ const App: React.FC = () => {
 
   // Public marketing — /demo. The interactive product tour isn't built yet, so
   // rather than serve a "coming soon" placeholder behind a nav link (a broken
-  // promise that reads as an unfinished product), redirect to the live feature
-  // showcase. The nav "Demo" item is removed (see LandingPage.tsx); restore both
-  // when a real tour ships. This runs before any hook, so the early return is safe.
+  // promise that reads as an unfinished product), /demo resolves to the live
+  // feature showcase. We rewrite the URL to the canonical /features via the
+  // History API (no second full document load — a `location.replace` here would
+  // re-download the whole SPA) and render the features variant in place; the
+  // hash is preserved for deep links. The nav "Demo" item is removed (see
+  // LandingPage.tsx); restore both when a real tour ships. Runs before any
+  // hook, so the early return is safe.
   if (path === '/demo') {
-    window.location.replace('/features');
-    return null;
+    window.history.replaceState(null, '', '/features' + window.location.hash);
+    return <LandingPage variant="features" onGetStarted={() => window.location.href = '/?signin&mode=signup'} onSignIn={() => window.location.href = '/?signin'} />;
   }
 
   // Browser Extension Auth Routes

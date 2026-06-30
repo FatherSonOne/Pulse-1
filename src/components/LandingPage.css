@@ -17,6 +17,8 @@
   --lp-primary-soft:   rgba(244, 63, 94, 0.10);
   --lp-primary-softer: rgba(244, 63, 94, 0.05);
   --lp-primary-glow:   rgba(244, 63, 94, 0.25);
+  --lp-hero-navy:      #0f172a;        /* constant deep-navy hero bg — intentionally NOT theme-scoped (avoids .lp-dark leak) */
+  --lp-paper:          #fafaf9;        /* constant light paper (stone-50) — intentionally NOT theme-scoped */
   --lp-text-main:      #1c1917;        /* stone-900 */
   --lp-text-secondary: #57534e;        /* stone-600 */
   --lp-text-muted:     #78716c;        /* stone-500 */

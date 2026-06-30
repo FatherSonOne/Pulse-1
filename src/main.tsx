@@ -41,6 +41,14 @@ const VERSION_KEY = 'pulse_app_version';
 async function clearOldCache() {
   const storedVersion = localStorage.getItem(VERSION_KEY);
 
+  // First-ever visit (no stored version) has nothing cached to bust — record
+  // the version and skip the reload. Only a *returning* visitor on an older
+  // version triggers the clear+reload (mirrors the index.html upgrade gate).
+  if (!storedVersion) {
+    localStorage.setItem(VERSION_KEY, APP_VERSION);
+    return;
+  }
+
   if (storedVersion !== APP_VERSION) {
     console.log(`[Cache] Version mismatch: ${storedVersion} -> ${APP_VERSION}. Clearing cache...`);
 

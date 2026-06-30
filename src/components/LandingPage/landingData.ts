@@ -1,6 +1,8 @@
 // ── Landing Page Static Data ──────────────────────────────────────────────────
 // Extracted from the god component to keep LandingPage.tsx focused on rendering.
 
+import { Globe, Compass, Mic, MessageSquare, Calendar } from 'lucide-react';
+
 // Hero stats strip was retired 2026-05-14 (impeccable hero-metric template ban).
 // The numbers live in the prose index strip directly below the hero now —
 // see "Index strip" comment in LandingPage.tsx. Counts retained here as a
@@ -50,21 +52,21 @@ export const FAQ_DATA = [
 ];
 
 export const SHORTCUT_GROUPS = [
-  { label: 'Global', icon: 'fa-solid fa-globe', shortcuts: [
+  { label: 'Global', icon: Globe, shortcuts: [
     { keys: ['Ctrl', 'K'], desc: 'Unified search' },
     { keys: ['Ctrl', '/'], desc: 'Pulse AI Assistant' },
     { keys: ['Ctrl', 'Shift', 'P'], desc: 'Command palette' },
     { keys: ['Esc'], desc: 'Close modal / panel' },
     { keys: ['?'], desc: 'Contextual help' },
   ]},
-  { label: 'Navigate', icon: 'fa-solid fa-compass', shortcuts: [
+  { label: 'Navigate', icon: Compass, shortcuts: [
     { keys: ['G', 'D'], desc: 'Dashboard' },
     { keys: ['G', 'M'], desc: 'Messages' },
     { keys: ['G', 'V'], desc: 'Relay' },
     { keys: ['G', 'C'], desc: 'Calendar' },
     { keys: ['G', 'T'], desc: 'Contacts' },
   ]},
-  { label: 'Relay', icon: 'fa-solid fa-microphone', shortcuts: [
+  { label: 'Relay', icon: Mic, shortcuts: [
     { keys: ['Space'], desc: 'Toggle recording' },
     { keys: ['T'], desc: 'Triage stream' },
     { keys: ['D', 'C', 'B'], desc: 'Direct / Channel / Broadcast' },
@@ -72,14 +74,14 @@ export const SHORTCUT_GROUPS = [
     { keys: ['Ctrl', 'S'], desc: 'AI summarise' },
     { keys: ['Esc'], desc: 'Cancel recording' },
   ]},
-  { label: 'Messaging', icon: 'fa-solid fa-comment', shortcuts: [
+  { label: 'Messaging', icon: MessageSquare, shortcuts: [
     { keys: ['Enter'], desc: 'Send message' },
     { keys: ['Shift', 'Enter'], desc: 'New line' },
     { keys: ['@'], desc: '@mention picker' },
     { keys: ['#'], desc: 'Topic picker' },
     { keys: ['Ctrl', 'B'], desc: 'Bold' },
   ]},
-  { label: 'Calendar', icon: 'fa-solid fa-calendar', shortcuts: [
+  { label: 'Calendar', icon: Calendar, shortcuts: [
     { keys: ['T'], desc: 'Jump to today' },
     { keys: ['N'], desc: 'New event' },
     { keys: ['D'], desc: 'Day view' },
@@ -192,3 +194,117 @@ export const FEATURE_CLUSTERS = [
   { key: 'relate',      label: 'Relate',      blurb: 'Keep every relationship warm with intelligence built in.',           sections: ['section-crm'] },
   { key: 'operate',     label: 'Operate',     blurb: 'Run the day — calendar, field ops, and workspaces.',                 sections: ['section-calendar', 'section-maps', 'section-workspaces'] },
 ] as const;
+
+// ── /features "Journey" gallery — flat ordered source of truth ──────────────
+// Added 2026-06-29 for the /features sliding-gallery redesign (see
+// _design-playground/HANDOFF-features-gallery.md + features-gallery-lab-v2.html).
+// The downward-scrolling stack of feature sections is replaced by a horizontal
+// "scroll journey": one feature per viewport, advanced by a sticky-pin scroll on
+// desktop / a native swipe carousel on mobile, with a breadcrumb spine grouped by
+// cluster. Order here IS the journey order; `cluster` drives the spine grouping
+// and per-cluster accent.
+//
+// `id` MUST stay identical to the legacy `section-<id>` anchors so existing deep
+// links (/features#section-crm), the footer, home-nav, and the scrollToSection
+// allow-list all keep resolving to the right feature.
+
+// Per-cluster accent pair (--accent / --accent-2). Matches the themed sections that
+// already shipped: Relay=rose, War Room=purple, CRM=indigo. Operate gains emerald
+// (NEW) so the breadcrumb is legible cluster-to-cluster.
+export const CLUSTER_ACCENTS: Record<
+  (typeof FEATURE_CLUSTERS)[number]['key'],
+  { num: string; accent: string; accent2: string }
+> = {
+  communicate: { num: '01', accent: '#f43f5e', accent2: '#ec4899' }, // rose
+  decide:      { num: '02', accent: '#a855f7', accent2: '#c084fc' }, // purple
+  relate:      { num: '03', accent: '#6366f1', accent2: '#818cf8' }, // indigo
+  operate:     { num: '04', accent: '#10b981', accent2: '#34d399' }, // emerald (new)
+};
+
+export type JourneyVisual =
+  | 'wave' | 'play' | 'chat' | 'research' | 'list' | 'chart' | 'cards' | 'cal' | 'map' | 'grid';
+
+export interface JourneyFeature {
+  /** Matches the existing section-<id> anchor — deep-link contract. */
+  id: string;
+  cluster: (typeof FEATURE_CLUSTERS)[number]['key'];
+  eyebrow: string;
+  title: string;
+  blurb: string;
+  stat: string;
+  bullets: string[];
+  visual: JourneyVisual;
+}
+
+export const FEATURE_JOURNEY: JourneyFeature[] = [
+  {
+    id: 'section-relay', cluster: 'communicate', eyebrow: 'Relay', visual: 'wave',
+    title: 'Five peers, one stream.',
+    blurb: 'Voice messaging, reimagined as triage. Direct, Channel, Broadcast, Notes, Live — every message lands in one Triage stream with AI transcript, summary, and next action attached.',
+    stat: '5 peers + Triage stream',
+    bullets: ['Real-time transcription', 'AI summary + next action', 'Direct · Channel · Broadcast'],
+  },
+  {
+    id: 'section-glimpse', cluster: 'communicate', eyebrow: 'Glimpse', visual: 'play',
+    title: '30-second video replaces a 30-minute call.',
+    blurb: 'Async video with face-cam and screen. Record, send, move on — every clip ships with an AI transcript so nobody has to watch at 1×.',
+    stat: 'AI transcript on every clip',
+    bullets: ['Face-cam + screen', 'Auto transcript', 'Threaded replies'],
+  },
+  {
+    id: 'section-messaging', cluster: 'communicate', eyebrow: 'Messaging', visual: 'chat',
+    title: 'Conversations that convert.',
+    blurb: 'Channels, DMs, and @mentions on one surface — with an opt-in Slack mirror so the rest of the org never loses the thread.',
+    stat: 'Slack mirror, opt-in',
+    bullets: ['Channels + DMs', '@mentions', 'Slack mirror'],
+  },
+  {
+    id: 'section-warroom', cluster: 'decide', eyebrow: 'War Room', visual: 'research',
+    title: 'Your AI War Room.',
+    blurb: 'An AI research and strategy desk. Eight slash commands turn raw signal into briefs, comparisons, and decisions — without leaving the conversation.',
+    stat: '8 slash commands',
+    bullets: ['/research · /compare · /brief', 'Cited sources', 'Decision-ready output'],
+  },
+  {
+    id: 'section-decisions', cluster: 'decide', eyebrow: 'Decisions & Tasks', visual: 'list',
+    title: 'From signal to action.',
+    blurb: 'Every decision becomes a tracked task with an owner and a due date — captured the moment it’s made, never lost in scrollback.',
+    stat: 'Owner + due on every call',
+    bullets: ['Decision log', 'Auto-tasked', 'Owner + due date'],
+  },
+  {
+    id: 'section-analytics', cluster: 'decide', eyebrow: 'Analytics', visual: 'chart',
+    title: 'See the whole pulse.',
+    blurb: 'Communication and decision analytics in one view — response times, decision velocity, and exactly where the team is getting stuck.',
+    stat: 'Response + decision velocity',
+    bullets: ['Response times', 'Decision velocity', 'Bottleneck spotting'],
+  },
+  {
+    id: 'section-crm', cluster: 'relate', eyebrow: 'Relationships & CRM', visual: 'cards',
+    title: 'Relationship intelligence, built in.',
+    blurb: 'Four native CRMs with health scores that surface the relationships going cold — before they actually do.',
+    stat: '4 native CRMs + health scores',
+    bullets: ['4 native CRMs', 'Health scores', 'Warm-up nudges'],
+  },
+  {
+    id: 'section-calendar', cluster: 'operate', eyebrow: 'Calendar', visual: 'cal',
+    title: 'Time, orchestrated.',
+    blurb: 'A calendar that schedules around the way you actually work — with AI that protects focus and clears the busywork.',
+    stat: 'AI scheduling assist',
+    bullets: ['Focus protection', 'AI scheduling', 'One shared view'],
+  },
+  {
+    id: 'section-maps', cluster: 'operate', eyebrow: 'Maps', visual: 'map',
+    title: 'Pulse, in the real world.',
+    blurb: 'Field ops with live ETA sharing and geofence alerts — know who’s where, and exactly when they’ll arrive.',
+    stat: 'Geofence alerts',
+    bullets: ['Live ETA sharing', 'Geofence alerts', 'Team locations'],
+  },
+  {
+    id: 'section-workspaces', cluster: 'operate', eyebrow: 'Workspaces', visual: 'grid',
+    title: 'One surface, every context.',
+    blurb: 'Switch between teams, clients, and projects without losing your place — each workspace keeps its own channels, tasks, and people.',
+    stat: 'Unlimited contexts',
+    bullets: ['Per-context channels', 'Isolated data', 'Instant switch'],
+  },
+];

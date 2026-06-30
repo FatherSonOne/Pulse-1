@@ -48,12 +48,16 @@
       (function() {
         const APP_VERSION = '28.2.0';
         const VERSION_KEY = 'pulse_app_version';
-        const CACHE_CLEAR_KEY = 'pulse_cache_cleared_' + APP_VERSION;
         const stored = localStorage.getItem(VERSION_KEY);
-        const cacheCleared = localStorage.getItem(CACHE_CLEAR_KEY);
 
-        // Force aggressive cache clearing if version changed OR cache hasn't been cleared for this version
-        if (stored !== APP_VERSION || !cacheCleared) {
+        // Only force an aggressive cache-clear + hard reload for an ACTUAL
+        // upgrade: a *returning* visitor whose stored version differs from the
+        // current one (they may be holding a corrupted old service worker /
+        // cache — this is the Comet hotfix). A brand-new visitor (no stored
+        // version) has nothing cached to bust, so we skip the clear+reload
+        // entirely — it was costing every first impression a ~2s clear +
+        // full double-load (via ?nocache=) for zero benefit.
+        if (stored && stored !== APP_VERSION) {
           console.log('[PreCache] Version: ' + stored + ' -> ' + APP_VERSION + '. Forcing cache clear...');
 
           // Clear service workers
@@ -80,16 +84,20 @@
           localStorage.clear();
           sessionStorage.clear();
 
-          // Set version markers
+          // Set version marker
           localStorage.setItem(VERSION_KEY, APP_VERSION);
-          localStorage.setItem(CACHE_CLEAR_KEY, 'true');
 
           console.log('[PreCache] Cache cleared! Reloading with cache-busting...');
 
-          // Force hard reload with cache busting
+          // Force hard reload with cache busting. Preserve the hash so deep
+          // links (e.g. /features#section-crm) survive the one-time upgrade reload.
           if (!window.location.search.includes('nocache=')) {
-            window.location.href = window.location.pathname + '?nocache=' + Date.now();
+            window.location.href = window.location.pathname + '?nocache=' + Date.now() + window.location.hash;
           }
+        } else if (stored !== APP_VERSION) {
+          // First-ever visit: nothing to clear, no reload — just record the
+          // version so subsequent upgrades are detected.
+          localStorage.setItem(VERSION_KEY, APP_VERSION);
         }
       })();
     </script>
