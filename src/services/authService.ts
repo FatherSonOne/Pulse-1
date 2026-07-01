@@ -54,6 +54,45 @@ declare global {
 const USER_KEY = 'pulse_user_session';
 const GOOGLE_CONTACTS_READONLY_SCOPE = 'https://www.googleapis.com/auth/contacts.readonly';
 
+// ── Last-used sign-in method ────────────────────────────────────
+// Remembered so the Login chooser can badge/reorder the method a returning user
+// last succeeded with (Nielsen H7 — recognition over recall). The method intent
+// is stashed in sessionStorage at the START of an attempt (survives the OAuth
+// redirect) and promoted to the durable localStorage record only once a genuine
+// SIGNED_IN fires — so a cancelled or failed attempt never becomes "Last used".
+export type AuthMethod = 'google' | 'microsoft' | 'email';
+const LAST_METHOD_KEY = 'pulse_last_auth_method';
+const PENDING_METHOD_KEY = 'pulse_pending_auth_method';
+
+const isAuthMethod = (v: unknown): v is AuthMethod =>
+  v === 'google' || v === 'microsoft' || v === 'email';
+
+// Called at the start of a login attempt. sessionStorage (not localStorage) so
+// the marker is scoped to this browser session and survives the OAuth redirect.
+const markPendingAuthMethod = (method: AuthMethod): void => {
+  try { sessionStorage.setItem(PENDING_METHOD_KEY, method); } catch { /* storage unavailable */ }
+};
+
+// Called on a real SIGNED_IN: promote any pending intent to the durable record.
+// No pending marker (e.g. a session restored on reload) → leave the record as-is.
+const commitPendingAuthMethod = (): void => {
+  try {
+    const pending = sessionStorage.getItem(PENDING_METHOD_KEY);
+    if (isAuthMethod(pending)) localStorage.setItem(LAST_METHOD_KEY, pending);
+    sessionStorage.removeItem(PENDING_METHOD_KEY);
+  } catch { /* storage unavailable */ }
+};
+
+// The method the user last successfully signed in with, or null if unknown.
+export const getLastAuthMethod = (): AuthMethod | null => {
+  try {
+    const m = localStorage.getItem(LAST_METHOD_KEY);
+    return isAuthMethod(m) ? m : null;
+  } catch {
+    return null;
+  }
+};
+
 // "Keep me logged in" sentinel: if the user has opted out of persistent sessions,
 // auto-logout when the browser is restarted (sessionStorage is cleared on close).
 // We set a sessionStorage sentinel on every page load. If it's missing on load AND
@@ -209,6 +248,7 @@ const dispatchContactsScopeMissingIfNeeded = (session: Session | null): void => 
 // Real Google OAuth Login via Supabase
 // Using 'offline' access_type ensures we get a refresh token for long-lived sessions
 export const loginWithGoogle = async (): Promise<User> => {
+  markPendingAuthMethod('google');
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
@@ -280,6 +320,7 @@ const MICROSOFT_SCOPES = [
 // Supabase handles the PKCE flow; tokens are stored in the Supabase session.
 // The provider access_token in the session can be used for Graph API calls.
 export const loginWithMicrosoft = async (): Promise<User> => {
+  markPendingAuthMethod('microsoft');
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'azure',
     options: {
@@ -314,6 +355,7 @@ export const loginWithMicrosoft = async (): Promise<User> => {
 
 // Email/Password Login
 export const loginWithEmail = async (email: string, password: string): Promise<User> => {
+  markPendingAuthMethod('email');
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password
@@ -350,6 +392,7 @@ export class EmailConfirmationRequiredError extends Error {
 
 // Email/Password Signup
 export const signUpWithEmail = async (email: string, password: string, name: string): Promise<User> => {
+  markPendingAuthMethod('email');
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -680,6 +723,10 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
     // Fresh sign-in (including the redirect back from a Google OAuth flow)
     // can produce a brand-new provider_token — clear the negative cache.
     if (event === 'SIGNED_IN') {
+      // Promote the attempt's method intent to the durable "last used" record.
+      // Only a genuine SIGNED_IN reaches here (session restores fire
+      // INITIAL_SESSION), and a no-op if nothing was pending.
+      commitPendingAuthMethod();
       import('./googleCalendarService')
         .then(m => m.resetGoogleCalendarTokenCache?.())
         .catch(() => {});

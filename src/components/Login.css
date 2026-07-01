@@ -339,6 +339,32 @@
   transform: none;
 }
 
+/* "Last used" affordance — floats a small mono pill on the top edge of the
+   method the returning user last signed in with (recognition over recall).
+   Carbon-filled so it reads as a notch label on both the dark social buttons
+   and the rose Email CTA. */
+.login-btn--last {
+  position: relative;
+}
+
+.login-last-used-badge {
+  position: absolute;
+  top: -8px;
+  right: 14px;
+  padding: 2px 8px;
+  font-family: var(--login-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--login-primary);
+  background: var(--login-bg);
+  border: 1px solid var(--login-primary);
+  border-radius: 999px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 /* OR divider — mono label (the system signature) */
 .login-divider {
   position: relative;

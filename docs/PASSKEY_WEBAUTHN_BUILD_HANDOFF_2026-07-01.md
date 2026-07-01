@@ -125,14 +125,14 @@ Given the matrix, **first ship = web only**, with the button feature-detected so
 
 ---
 
-## 7. Interim win (much cheaper, ship first)
+## 7. Interim win (much cheaper, ship first) — ✅ SHIPPED 2026-07-01
 
 The critique also flagged: no "remember me", no last-used-method hint. This needs **no backend**:
-- Persist the last successful method (`'google' | 'microsoft' | 'email'`) to `localStorage` after login.
-- On the chooser, badge that button ("Last used") and/or reorder it to the top.
-- Optional "Keep me signed in" toggle mapped to Supabase session persistence.
+- ✅ Persist the last successful method (`'google' | 'microsoft' | 'email'`) — `authService.ts` stashes the attempt's intent in `sessionStorage` (`markPendingAuthMethod`, survives the OAuth redirect) and promotes it to a durable `localStorage` record (`pulse_last_auth_method`) only on a genuine `SIGNED_IN` (`commitPendingAuthMethod` in the global `onAuthStateChange`), so a cancelled/failed attempt never sticks. Read via `getLastAuthMethod()`.
+- ✅ On the chooser, `Login.tsx` badges the matching button ("Last used" pill, `.login-last-used-badge`) **and** floats the last-used social method to the top. Suppressed in signup mode.
+- ✅ "Keep me signed in" toggle already existed in `AccountSettings.tsx` (`pulse_keep_logged_in`) with the fresh-launch session-clear sentinel in `authService.ts` — no new work needed.
 
-~1 component change to `Login.tsx` + a tiny `authService` helper. Recommend shipping this **before** the passkey build to bank an immediate H7 improvement while passkeys are scoped.
+Touchpoints: `src/services/authService.ts` (tracking helpers + commit-on-SIGNED_IN), `src/components/Login.tsx` (badge + reorder), `src/components/Login.css` (`.login-last-used-badge` / `.login-btn--last`). Banks an immediate H7 improvement while the passkey build below is scoped.
 
 ---
 
