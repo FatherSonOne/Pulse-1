@@ -29,7 +29,11 @@ Two viable architectures:
 ### Option A — Self-hosted WebAuthn via Edge Functions (recommended)
 Run the registration/authentication ceremonies in Supabase Edge Functions using [`@simplewebauthn/server`](https://simplewebauthn.dev/), store credential public keys in a Postgres table, and on successful assertion mint a session for the matching user.
 
-- **Session minting** is the hard part. On the server, after verifying the assertion, use the Supabase **service-role** key with the Admin API to issue a session for that user. Cleanest path today: `supabase.auth.admin.generateLink({ type: 'magiclink', email })` and exchange server-side, or the admin `createSession`-style flow via the GoTrue admin endpoints. **Confirm the exact supported call against the deployed GoTrue version before committing** — this API surface has changed across releases. (Use the Supabase MCP `search_docs` + `get_project` to pin the version.)
+- **Session minting** is the hard part. **✅ SPIKED & PROVEN 2026-07-01** against the live project (`ucaeuszgoihoyrvhewxk`, supabase-js 2.93.3). The working bridge:
+  1. Server (service-role) calls `admin.generateLink({ type: 'magiclink', email })` → returns `data.properties.hashed_token` (56-char, single-use). **No email is sent** — `generateLink` only generates; it does not deliver.
+  2. Hand `hashed_token` to the client; the anon client calls `auth.verifyOtp({ token_hash, type: 'magiclink' })` → returns a **full session** (`access_token` ~838 chars, **`refresh_token` present**, `expires_in` 3600).
+  3. `supabase.auth.setSession({ access_token, refresh_token })` — same handoff the existing OAuth path uses.
+  Verified: the minted session authenticates (`getUser()` returns the correct user, `aud/role=authenticated`) **and refreshes** (durable, not a one-shot token). So `passkey-auth-finish` returns `{ access_token, refresh_token }` and the client sets the session — no password, no OAuth round-trip. Note `verifyOtp` `type` must be **`'magiclink'`** for a magiclink-generated hash (not `'email'`).
 - Pros: full control, no vendor lock, works on web + Capacitor + Electron.
 - Cons: we own the security-critical ceremony code and the session-minting bridge.
 
@@ -175,7 +179,7 @@ Touchpoints: `src/services/authService.ts` (tracking helpers + commit-on-SIGNED_
 ## 11. Open questions (resolve before coding)
 
 1. **rpID / canonical origin** — `pulse.logosvision.org` (served) vs `qntmecos.com` (brand)? Passkeys bind to origin; this decision is load-bearing.
-2. **Session minting API** — which GoTrue admin call reliably issues a session for a verified user on the deployed Supabase version? Spike this first; it's the make-or-break of Option A.
+2. ~~**Session minting API** — which GoTrue admin call reliably issues a session for a verified user on the deployed Supabase version? Spike this first; it's the make-or-break of Option A.~~ **✅ RESOLVED 2026-07-01.** `admin.generateLink('magiclink')` → `properties.hashed_token` → anon `verifyOtp({ token_hash, type: 'magiclink' })` yields a full, refreshable session. Proven end-to-end against the live project. See §2 Option A for the exact call sequence. **Passkey-finish caveat:** don't reuse `generateLink`'s throwaway user path — for a real assertion you already know the enrolled `user_id`; look up its email and mint from there. **Cleanup caveat discovered during the spike:** `admin.deleteUser` fails ("Database error deleting user") for any user who solely owns a workspace — a `BEFORE DELETE` guard trigger blocks removing the last workspace owner. Not a passkey problem, but confirms the real `delete-account` edge function must transfer/delete owned workspaces *before* deleting the user.
 3. **First-ship platforms** — web-only initially (recommended), or block on Capacitor Android parity?
 4. **Passkey as top method vs. behind a toggle** — how prominent on the chooser?
 5. **Managed provider fallback** — if session minting is painful, is a provider (Hanko/Corbado) acceptable, and what's the cost ceiling?
@@ -185,9 +189,11 @@ Touchpoints: `src/services/authService.ts` (tracking helpers + commit-on-SIGNED_
 ## 12. Suggested sequence
 
 1. Ship the **interim remember-me / last-used** win (no backend). ~half day.
-2. **Spike** the Supabase session-minting bridge (Q2) in isolation — prove a verified server-side identity can produce a client session. Gate the whole build on this.
-3. Build data model + 4 edge functions (web only).
-4. Enrollment UI in Settings.
-5. Passkey button + capability gate in `Login.tsx` / `App.tsx` / `authService.ts`.
+2. ~~**Spike** the Supabase session-minting bridge (Q2) in isolation~~ **✅ DONE 2026-07-01 — PASS.** `generateLink('magiclink')` → `verifyOtp(token_hash)` mints a full, refreshable session. The build is un-gated; proceed.
+3. ~~Build data model + 4 edge functions (web only).~~ **✅ BUILT 2026-07-01 (on disk, NOT yet deployed).** Migration `supabase/migrations/20260701000000_user_passkeys.sql` (`user_passkeys` + `passkey_challenges`, RLS: users read/delete own, service-role writes). Four functions under `supabase/functions/passkey-{register,auth}-{begin,finish}/` using `@simplewebauthn/server@13`; `passkey-auth-finish` mints via the proven bridge. **Deviations from the sketch:** `public_key`/`credential_id` stored as base64url **text** (not `bytea`) for clean PostgREST round-tripping; single-use challenges tracked in `passkey_challenges` with a `challengeId` returned from begin → sent back to finish; rpID/origins are **env-driven** (`PASSKEY_RP_ID`, `PASSKEY_RP_NAME`, `PASSKEY_ORIGINS`) defaulting to `pulse.logosvision.org` + localhost.
+4. ~~Enrollment UI in Settings.~~ **✅ BUILT 2026-07-01.** `src/services/passkeyService.ts` (register/list/remove/loginWithPasskey + `passkeySupported()` gate) and `src/components/settings/account/PasskeysCard.tsx` wired into `AccountSettings.tsx` above the 2FA card. `@simplewebauthn/browser@13` added to package.json. Frontend type-clean.
+
+   **⚠️ NOT DONE — deploy + wire sign-in:** (a) apply the migration to the live project; (b) `supabase functions deploy passkey-*` (or MCP `deploy_edge_function`); (c) set the `PASSKEY_RP_ID`/`PASSKEY_RP_NAME`/`PASSKEY_ORIGINS` function secrets; (d) **step 5** — the passkey button in `Login.tsx` (`onPasskeyLogin` → `loginWithPasskey()`) is still unbuilt, so sign-in isn't reachable from the UI yet (enrollment is, once deployed).
+5. ~~Passkey button + capability gate in `Login.tsx` / `App.tsx` / `authService.ts`.~~ **✅ BUILT 2026-07-01.** `Login.tsx`: rose-accented "Sign in with a passkey" as the **top** chooser option, gated on `passkeySupported()` + hidden in signup mode, `NotAllowedError`→"cancelled" copy. `onPasskeyLogin` prop added; `App.tsx` `handlePasskeyLogin` calls `loginWithPasskey()` and **deliberately re-throws** (passkey is in-page, unlike the OAuth redirect handlers, so Login can show errors / reset the spinner). `AuthMethod` extended with `'passkey'` (+ `markPendingAuthMethod` exported) so a passkey sign-in also earns the "Last used" badge. `.login-passkey-btn` styles + a11y lists in `Login.css`. Frontend type-clean; `vite build` green.
 6. Web QA matrix, then tackle Capacitor Android (Credential Manager + assetlinks).
 7. Re-run `/impeccable critique` — H7 should move from 2 toward 4.

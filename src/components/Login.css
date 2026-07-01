@@ -339,6 +339,43 @@
   transform: none;
 }
 
+/* Passkey — the modern default, so it carries a rose accent to sit a notch above
+   the neutral OAuth buttons without shouting like the primary submit CTA. */
+.login-passkey-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 13px 20px;
+  background: var(--login-primary-soft);
+  border: 1px solid var(--login-primary);
+  border-radius: 12px;
+  color: var(--login-text-main);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: background 150ms var(--login-ease),
+              border-color 150ms var(--login-ease),
+              transform 150ms var(--login-ease);
+  cursor: pointer;
+}
+
+.login-passkey-btn:hover {
+  background: var(--login-primary-glow);
+  transform: translateY(-1px);
+}
+
+.login-passkey-btn:active {
+  transform: translateY(0);
+}
+
+.login-passkey-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* "Last used" affordance — floats a small mono pill on the top edge of the
    method the returning user last signed in with (recognition over recall).
    Carbon-filled so it reads as a notch label on both the dark social buttons
@@ -658,6 +695,7 @@
    ============================================================ */
 
 .login-social-btn:focus-visible,
+.login-passkey-btn:focus-visible,
 .login-email-cta:focus-visible,
 .login-submit-btn:focus-visible,
 .login-back-nav:focus-visible,
@@ -696,6 +734,7 @@
 @media (prefers-reduced-motion: reduce) {
   .login-card,
   .login-social-btn,
+  .login-passkey-btn,
   .login-email-cta,
   .login-submit-btn,
   .login-input,

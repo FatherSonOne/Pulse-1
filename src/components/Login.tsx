@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import './Login.css';
 
-import { ArrowLeft, Eye, EyeOff, Loader2, Lock, ShieldHalf } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Fingerprint, Loader2, Lock, ShieldHalf } from 'lucide-react';
 import { PulseMark, PulseWordmark } from './brand/PulseMark';
 import { friendlyAuthError } from '../utils/authErrors';
 import { getLastAuthMethod } from '../services/authService';
+import { passkeySupported } from '../services/passkeyService';
 
 // Help escape hatch: reuse the product status URL if configured, else the
 // public contact page (both real destinations — no invented route).
@@ -16,11 +17,12 @@ interface LoginProps {
   onSignup: (email: string, password: string, name: string) => Promise<void>;
   onMicrosoftLogin: () => void;
   onPasswordReset: (email: string) => Promise<void>;
+  onPasskeyLogin: () => Promise<void>;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicrosoftLogin, onPasswordReset }) => {
+const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicrosoftLogin, onPasswordReset, onPasskeyLogin }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [loginMethod, setLoginMethod] = useState<'google' | 'microsoft' | 'email' | null>(null);
+  const [loginMethod, setLoginMethod] = useState<'google' | 'microsoft' | 'email' | 'passkey' | null>(null);
   const [showEmailForm, setShowEmailForm] = useState(false);
   // Password-reset request sub-view (enter email → we email a recovery link).
   const [showResetForm, setShowResetForm] = useState(false);
@@ -44,6 +46,31 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
   // account has no "last used" method to speak of). Null when unknown.
   const lastMethodRaw = useMemo(() => getLastAuthMethod(), []);
   const lastMethod = isSignupMode ? null : lastMethodRaw;
+
+  // Progressive disclosure: only offer the passkey button when this device can
+  // actually do a platform passkey. Async capability check, resolved on mount.
+  const [pkSupported, setPkSupported] = useState(false);
+  useEffect(() => { passkeySupported().then(setPkSupported); }, []);
+
+  const handlePasskeyLogin = async () => {
+    setIsLoggingIn(true);
+    setLoginMethod('passkey');
+    setError(null);
+    try {
+      await onPasskeyLogin();
+      // setSession inside the flow fires SIGNED_IN → App swaps the Login screen out.
+    } catch (e: any) {
+      const msg = e?.message || '';
+      // NotAllowedError = the user dismissed or timed out the biometric prompt.
+      if (/NotAllowed|cancel|timed out|abort/i.test(msg)) {
+        setError('Passkey sign-in was cancelled.');
+      } else {
+        setError('Passkey sign-in failed. Try another method, or add a passkey from Settings first.');
+      }
+      setIsLoggingIn(false);
+      setLoginMethod(null);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     setIsLoggingIn(true);
@@ -142,6 +169,31 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
 
   // Small "Last used" pill floated on a chooser button's top edge.
   const lastUsedBadge = <span className="login-last-used-badge">Last used</span>;
+
+  // Passkey — the modern default, offered above the OAuth/email methods. Shown
+  // only when the device supports it and we're signing in (not enrolling a new
+  // account, which has no passkey yet — those are added from Settings).
+  const passkeyButton = (
+    <button
+      key="passkey"
+      onClick={handlePasskeyLogin}
+      disabled={isLoggingIn}
+      className={`login-passkey-btn${lastMethod === 'passkey' ? ' login-btn--last' : ''}`}
+    >
+      {lastMethod === 'passkey' && lastUsedBadge}
+      {isLoggingIn && loginMethod === 'passkey' ? (
+        <>
+          <Loader2 size={18} className="animate-spin" />
+          <span>Waiting for passkey…</span>
+        </>
+      ) : (
+        <>
+          <Fingerprint size={18} />
+          <span>Sign in with a passkey</span>
+        </>
+      )}
+    </button>
+  );
 
   const googleButton = (
     <button
@@ -307,6 +359,13 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
             </form>
           ) : !showEmailForm ? (
             <div className="login-btn-group">
+              {pkSupported && !isSignupMode && (
+                <>
+                  {passkeyButton}
+                  <div className="login-divider"><span>or</span></div>
+                </>
+              )}
+
               {socialButtons}
 
               <div className="login-divider"><span>or</span></div>

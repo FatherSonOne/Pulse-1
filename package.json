@@ -138,6 +138,7 @@
     "@react-google-maps/api": "^2.20.7",
     "@sentry/react": "^10.35.0",
     "@sentry/tracing": "^7.120.4",
+    "@simplewebauthn/browser": "^13.3.0",
     "@slack/oauth": "^3.0.4",
     "@slack/web-api": "^7.13.0",
     "@supabase/supabase-js": "^2.87.1",

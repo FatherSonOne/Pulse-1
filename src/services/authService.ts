@@ -60,16 +60,18 @@ const GOOGLE_CONTACTS_READONLY_SCOPE = 'https://www.googleapis.com/auth/contacts
 // is stashed in sessionStorage at the START of an attempt (survives the OAuth
 // redirect) and promoted to the durable localStorage record only once a genuine
 // SIGNED_IN fires — so a cancelled or failed attempt never becomes "Last used".
-export type AuthMethod = 'google' | 'microsoft' | 'email';
+export type AuthMethod = 'google' | 'microsoft' | 'email' | 'passkey';
 const LAST_METHOD_KEY = 'pulse_last_auth_method';
 const PENDING_METHOD_KEY = 'pulse_pending_auth_method';
 
 const isAuthMethod = (v: unknown): v is AuthMethod =>
-  v === 'google' || v === 'microsoft' || v === 'email';
+  v === 'google' || v === 'microsoft' || v === 'email' || v === 'passkey';
 
 // Called at the start of a login attempt. sessionStorage (not localStorage) so
 // the marker is scoped to this browser session and survives the OAuth redirect.
-const markPendingAuthMethod = (method: AuthMethod): void => {
+// Exported so the passkey flow (which lives in its own service) can mark itself
+// the same way the OAuth/email flows do here.
+export const markPendingAuthMethod = (method: AuthMethod): void => {
   try { sessionStorage.setItem(PENDING_METHOD_KEY, method); } catch { /* storage unavailable */ }
 };
 

@@ -49,6 +49,7 @@ import { NotificationCenter } from './components/NotificationCenter';
 import { LoadingProvider, useLoading } from './contexts/LoadingContext';
 import EnhancedLoadingScreen from './components/EnhancedLoadingScreen';
 import { loginWithGoogle, loginWithEmail, signUpWithEmail, loginWithMicrosoft, sendPasswordReset, updatePassword, onPasswordRecovery, logoutUser } from './services/authService';
+import { loginWithPasskey } from './services/passkeyService';
 import { dataService } from './services/dataService';
 import { useNotificationStore } from './store/notificationStore';
 import { Contact, AppView } from './types';
@@ -1365,6 +1366,13 @@ const App: React.FC = () => {
     }
   };
 
+  const handlePasskeyLogin = async () => {
+    // Unlike the OAuth handlers, do NOT swallow: passkey completes in-page, so
+    // errors must reach Login.tsx to show a message and reset the spinner. On
+    // success loginWithPasskey() calls setSession → SIGNED_IN swaps the screen.
+    await loginWithPasskey();
+  };
+
   const handleEmailLogin = async (email: string, password: string) => {
     try {
       // AuthContext will handle setting user state
@@ -1637,7 +1645,7 @@ const App: React.FC = () => {
         // Use replaceState to avoid adding to history
         window.history.replaceState({}, '', currentUrl.toString());
       }
-      return <Login onLogin={handleLogin} onEmailLogin={handleEmailLogin} onSignup={handleSignup} onMicrosoftLogin={handleMicrosoftLogin} onPasswordReset={handlePasswordReset} />;
+      return <Login onLogin={handleLogin} onEmailLogin={handleEmailLogin} onSignup={handleSignup} onMicrosoftLogin={handleMicrosoftLogin} onPasswordReset={handlePasswordReset} onPasskeyLogin={handlePasskeyLogin} />;
     }
 
     // Show public landing page by default (web only)

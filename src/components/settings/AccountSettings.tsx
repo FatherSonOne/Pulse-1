@@ -7,6 +7,7 @@ import { Camera, Check, Loader2, LogOut, Monitor, Moon, Sun, User as UserIcon } 
 import { ToggleItem } from './shared/ToggleItem';
 import { SettingsCard } from './shared/SettingsCard';
 import { MonoLabel } from './shared/MonoLabel';
+import { PasskeysCard } from './account/PasskeysCard';
 import { TwoFactorAuthCard } from './account/TwoFactorAuthCard';
 import { DevicesSessionsCard } from './account/DevicesSessionsCard';
 import { LocaleSettingsCard } from './account/LocaleSettingsCard';
@@ -384,6 +385,9 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
         initialProfile={pulseProfile}
         onProfileUpdated={(p) => setPulseProfile(p)}
       />
+
+      {/* Passkeys */}
+      <PasskeysCard />
 
       {/* Two-factor authentication */}
       <TwoFactorAuthCard />
