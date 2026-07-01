@@ -382,6 +382,42 @@ export const signUpWithEmail = async (email: string, password: string, name: str
   return user;
 };
 
+// ── Password reset ──────────────────────────────────────────────
+// Send a reset link. Supabase emails the user a recovery link that returns
+// them to `redirectTo` with a recovery token in the URL; on load Supabase
+// parses it and fires the PASSWORD_RECOVERY auth event (see onPasswordRecovery).
+// We deliberately do NOT surface whether the email exists — resetPasswordForEmail
+// resolves the same either way, so the UI shows a neutral "check your inbox".
+export const sendPasswordReset = async (email: string): Promise<void> => {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: getRedirectUrl('/?signin'),
+  });
+  if (error) {
+    console.error('Password reset request error:', error);
+    throw new Error(error.message);
+  }
+};
+
+// Set a new password for the user in an active (recovery) session.
+export const updatePassword = async (newPassword: string): Promise<void> => {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) {
+    console.error('Password update error:', error);
+    throw new Error(error.message);
+  }
+};
+
+// Fires when the user arrives via a password-recovery link. The generic
+// onAuthStateChange wrapper treats the recovery session as a normal sign-in,
+// so the app must listen for this event explicitly to divert into the
+// "set a new password" screen instead of the authenticated workspace.
+export const onPasswordRecovery = (callback: () => void) => {
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') callback();
+  });
+  return () => subscription.unsubscribe();
+};
+
 // Session refresh threshold - refresh if less than 30 minutes remaining
 // This gives plenty of buffer before expiry
 const SESSION_REFRESH_THRESHOLD = 30 * 60 * 1000; // 30 minutes

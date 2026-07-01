@@ -1,10 +1,10 @@
 /* ============================================================
    LOGIN SCREEN — DESIGN TOKENS
-   Pulse Premium Dark · Rose Accent System
+   Pulse · The Coral Cockpit · Carbon dark + Rose-as-signal
    ============================================================ */
 
 :root {
-  --login-bg:               #000000;
+  --login-bg:               #0d0d0f;   /* Carbon canvas (matches --pulse-canvas) */
   --login-surface:          rgba(255, 255, 255, 0.03);
   --login-surface-raised:   rgba(255, 255, 255, 0.055);
   --login-border:           rgba(255, 255, 255, 0.08);
@@ -13,11 +13,14 @@
   --login-primary-soft:     rgba(244, 63, 94, 0.12);
   --login-primary-softer:   rgba(244, 63, 94, 0.06);
   --login-primary-glow:     rgba(244, 63, 94, 0.30);
+  --login-focus-ring:       0 0 0 3px rgba(244, 63, 94, 0.45);
   --login-text-main:        #fafafa;
   --login-text-secondary:   #b4b4b8;
-  --login-text-muted:       #6b7280;
+  --login-text-muted:       #8b8b93;   /* lifted for WCAG AA on Carbon (≈5.5:1) */
   --login-shadow-md:        0 4px 16px rgba(0, 0, 0, 0.60);
   --login-shadow-rose:      0 4px 24px var(--login-primary-glow);
+  --login-mono:             'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  --login-ease:             cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ============================================================
@@ -34,7 +37,7 @@
 }
 
 /* ============================================================
-   LEFT BRAND PANEL
+   LEFT BRAND PANEL — stripped to the brand statement
    ============================================================ */
 
 .login-left {
@@ -53,42 +56,16 @@
   }
 }
 
-/* Ambient rose bloom — bottom-left */
-.login-left::before {
-  content: '';
-  position: absolute;
-  bottom: -80px;
-  left: -80px;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(244, 63, 94, 0.12) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-/* Top logo row */
+/* Top logo lockup */
 .login-logo-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
-.login-logo-icon {
-  width: 36px;
-  height: 36px;
-  background: #0f172a;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 16px rgba(244, 63, 94, 0.20);
-  flex-shrink: 0;
-}
-
-.login-logo-name {
-  font-size: 15px;
-  font-weight: 600;
+.login-wordmark {
+  font-size: 20px;
   color: var(--login-text-main);
-  letter-spacing: -0.01em;
 }
 
 /* Center copy block */
@@ -97,31 +74,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 24px;
-}
-
-.login-brand-badge {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 100px;
-  width: fit-content;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  color: var(--login-text-muted);
-}
-
-.login-badge-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--login-primary);
-  flex-shrink: 0;
+  gap: 20px;
 }
 
 .login-headline {
@@ -142,71 +95,15 @@
   font-size: 15px;
   line-height: 1.6;
   color: var(--login-text-secondary);
-  max-width: 420px;
+  max-width: 60ch;
   margin: 0;
 }
 
-/* Feature bullets */
-.login-bullets {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.login-bullet {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 15px;
-  color: var(--login-text-secondary);
-}
-
-.login-bullet::before {
-  content: '';
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--login-primary-soft);
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 8l3.5 3.5L13 5' stroke='%23f43f5e' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-size: 14px;
-  background-repeat: no-repeat;
-  background-position: center;
-  border: 1px solid rgba(244, 63, 94, 0.30);
-  flex-shrink: 0;
-}
-
-/* Social proof */
+/* Bottom byline */
 .login-social-proof {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.login-avatars {
-  display: flex;
-}
-
-.login-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #f43f5e, #ec4899);
-  border: 2px solid var(--login-bg);
-  margin-left: -8px;
-  font-size: 11px;
-  font-weight: 700;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.login-avatars .login-avatar:first-child {
-  margin-left: 0;
 }
 
 .login-social-proof-text {
@@ -215,16 +112,11 @@
   gap: 2px;
 }
 
-.login-stars {
-  display: flex;
-  gap: 1px;
-  color: #fbbf24;
-  font-size: 12px;
-  line-height: 1;
-}
-
 .login-proof-label {
-  font-size: 12px;
+  font-family: var(--login-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--login-text-muted);
   margin: 0;
 }
@@ -251,6 +143,29 @@
   }
 }
 
+/* Solo layout (password recovery) — centered card, no brand panel */
+.login-screen--solo {
+  justify-content: center;
+}
+
+.login-right--solo {
+  width: 100%;
+  max-width: 100%;
+  border-left: none;
+}
+
+.login-reset-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.login-wordmark--dark {
+  font-size: 20px;
+}
+
 /* Back nav */
 .login-back-nav {
   position: absolute;
@@ -262,11 +177,13 @@
   font-size: 13px;
   color: var(--login-text-muted);
   text-decoration: none;
-  transition: color 150ms ease;
+  transition: color 150ms var(--login-ease);
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  border-radius: 8px;
   font-family: inherit;
 }
 
@@ -275,20 +192,18 @@
 }
 
 /* ============================================================
-   AUTH CARD
+   AUTH CARD — solid tinted surface (no glass-by-default)
    ============================================================ */
 
 .login-card {
   width: 100%;
   max-width: 400px;
-  background: var(--login-surface);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-          backdrop-filter: blur(24px) saturate(180%);
+  background: var(--login-surface-raised);
   border: 1px solid var(--login-border);
   border-radius: 20px;
   padding: 36px 32px;
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.60);
-  animation: loginCardEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: loginCardEnter 0.35s var(--login-ease) both;
 }
 
 .login-card-header {
@@ -320,6 +235,28 @@
   color: #f87171;
   font-size: 14px;
   text-align: center;
+}
+
+/* Recovery action inside the error block (e.g. "request a new link" on an
+   expired reset token) — a real button, so the error copy never promises an
+   action the user can't take. */
+.login-error-action {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 8px 14px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  border-radius: 10px;
+  color: #f87171;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 150ms var(--login-ease);
+}
+
+.login-error-action:hover {
+  background: rgba(239, 68, 68, 0.20);
 }
 
 /* Informational notice (e.g. "check your email to confirm") — distinct from
@@ -359,7 +296,9 @@
   font-size: 14px;
   font-weight: 500;
   font-family: inherit;
-  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background 150ms var(--login-ease),
+              border-color 150ms var(--login-ease),
+              transform 150ms var(--login-ease);
   cursor: pointer;
 }
 
@@ -370,7 +309,7 @@
 }
 
 .login-social-btn:active {
-  transform: scale(0.97);
+  transform: translateY(0);
 }
 
 .login-social-btn:disabled {
@@ -379,7 +318,7 @@
   transform: none;
 }
 
-/* OR divider */
+/* OR divider — mono label (the system signature) */
 .login-divider {
   position: relative;
   padding: 12px 0;
@@ -399,48 +338,17 @@
 .login-divider span {
   position: relative;
   padding: 0 12px;
-  background: var(--login-surface);
+  background: var(--login-surface-raised);
+  font-family: var(--login-mono);
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.10em;
+  font-weight: 500;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--login-text-muted);
 }
 
-/* Primary Email CTA — rose gradient */
-.login-email-cta {
-  width: 100%;
-  padding: 14px 20px;
-  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
-  border: none;
-  border-radius: 12px;
-  color: white;
-  font-size: 15px;
-  font-weight: 600;
-  font-family: inherit;
-  letter-spacing: -0.01em;
-  box-shadow: 0 4px 16px rgba(244, 63, 94, 0.35);
-  transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1);
-  cursor: pointer;
-}
-
-.login-email-cta:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(244, 63, 94, 0.50);
-}
-
-.login-email-cta:active {
-  transform: scale(0.97);
-}
-
-.login-email-cta:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-/* Email form submit button (same rose style) */
+/* Primary Email CTA — rose gradient (the one warm signal on the right) */
+.login-email-cta,
 .login-submit-btn {
   width: 100%;
   padding: 14px 20px;
@@ -453,23 +361,31 @@
   font-family: inherit;
   letter-spacing: -0.01em;
   box-shadow: 0 4px 16px rgba(244, 63, 94, 0.35);
-  transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 150ms var(--login-ease),
+              box-shadow 150ms var(--login-ease);
   cursor: pointer;
+}
+
+/* submit variant also lays out its inline spinner */
+.login-submit-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
 }
 
+.login-email-cta:hover,
 .login-submit-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 24px rgba(244, 63, 94, 0.50);
 }
 
+.login-email-cta:active,
 .login-submit-btn:active {
-  transform: scale(0.97);
+  transform: translateY(0);
 }
 
+.login-email-cta:disabled,
 .login-submit-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -490,16 +406,41 @@
   color: var(--login-text-secondary);
 }
 
+/* Label row with a trailing "Forgot password?" link */
+.login-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.login-forgot {
+  font-size: 12px;
+  color: var(--login-text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 6px 8px;
+  margin: -6px -8px;
+  border-radius: 8px;
+  transition: color 150ms var(--login-ease);
+}
+
+.login-forgot:hover {
+  color: var(--login-primary);
+}
+
 .login-input {
   width: 100%;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 10px;
+  border-radius: 16px;
   padding: 12px 16px;
   color: var(--login-text-main);
   font-size: 15px;
   font-family: 'Inter', system-ui, sans-serif;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition: border-color 150ms var(--login-ease),
+              box-shadow 150ms var(--login-ease);
   box-sizing: border-box;
 }
 
@@ -511,6 +452,38 @@
 
 .login-input::placeholder {
   color: var(--login-text-muted);
+}
+
+/* Password field wrapper + reveal toggle */
+.login-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.login-input-wrap .login-input {
+  padding-right: 48px;
+}
+
+.login-input-toggle {
+  position: absolute;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: none;
+  color: var(--login-text-muted);
+  cursor: pointer;
+  border-radius: 10px;
+  transition: color 150ms var(--login-ease), background 150ms var(--login-ease);
+}
+
+.login-input-toggle:hover {
+  color: var(--login-text-main);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 /* Form navigation row */
@@ -531,8 +504,10 @@
   cursor: pointer;
   font-size: 14px;
   font-family: inherit;
-  padding: 0;
-  transition: color 150ms ease;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  border-radius: 8px;
+  transition: color 150ms var(--login-ease);
 }
 
 .login-back-btn:hover {
@@ -546,8 +521,10 @@
   cursor: pointer;
   font-size: 14px;
   font-family: inherit;
-  padding: 0;
-  transition: color 150ms ease;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  border-radius: 8px;
+  transition: color 150ms var(--login-ease);
 }
 
 .login-toggle-btn:hover {
@@ -567,13 +544,13 @@
 }
 
 .login-terms a {
-  color: var(--login-text-muted);
+  color: var(--login-text-secondary);
   text-decoration: underline;
-  transition: color 150ms ease;
+  transition: color 150ms var(--login-ease);
 }
 
 .login-terms a:hover {
-  color: var(--login-text-secondary);
+  color: var(--login-text-main);
 }
 
 /* Security badges below card */
@@ -591,11 +568,33 @@
   font-size: 11px;
   color: var(--login-text-muted);
   text-decoration: none;
-  transition: color 150ms ease;
+  border-radius: 8px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  transition: color 150ms var(--login-ease);
 }
 
 .login-security-badge:hover {
   color: var(--login-text-secondary);
+}
+
+/* ============================================================
+   FOCUS — branded rose ring on every interactive element
+   ============================================================ */
+
+.login-social-btn:focus-visible,
+.login-email-cta:focus-visible,
+.login-submit-btn:focus-visible,
+.login-back-nav:focus-visible,
+.login-back-btn:focus-visible,
+.login-toggle-btn:focus-visible,
+.login-input-toggle:focus-visible,
+.login-forgot:focus-visible,
+.login-error-action:focus-visible,
+.login-security-badge:focus-visible,
+.login-terms a:focus-visible {
+  outline: none;
+  box-shadow: var(--login-focus-ring);
 }
 
 /* ============================================================
@@ -613,39 +612,22 @@
   }
 }
 
-@keyframes loginBulletEnter {
-  from {
-    opacity: 0;
-    transform: translateX(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.login-bullets .login-bullet:nth-child(1) {
-  animation: loginBulletEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
-}
-
-.login-bullets .login-bullet:nth-child(2) {
-  animation: loginBulletEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) 0.48s both;
-}
-
-.login-bullets .login-bullet:nth-child(3) {
-  animation: loginBulletEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) 0.56s both;
-}
-
 /* ============================================================
    REDUCED MOTION
    ============================================================ */
 
 @media (prefers-reduced-motion: reduce) {
   .login-card,
-  .login-bullet,
   .login-social-btn,
   .login-email-cta,
-  .login-submit-btn {
+  .login-submit-btn,
+  .login-input,
+  .login-input-toggle,
+  .login-back-nav,
+  .login-back-btn,
+  .login-toggle-btn,
+  .login-security-badge,
+  .login-terms a {
     animation: none !important;
     transition-duration: 0.01ms !important;
   }

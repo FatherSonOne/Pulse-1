@@ -1,19 +1,24 @@
 import React, { useState } from 'react';
 import './Login.css';
 
-import { ArrowLeft, Loader2, Lock, ShieldHalf } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Loader2, Lock, ShieldHalf } from 'lucide-react';
+import { PulseMark, PulseWordmark } from './brand/PulseMark';
 
 interface LoginProps {
   onLogin: () => void;
   onEmailLogin: (email: string, password: string) => Promise<void>;
   onSignup: (email: string, password: string, name: string) => Promise<void>;
   onMicrosoftLogin: () => void;
+  onPasswordReset: (email: string) => Promise<void>;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicrosoftLogin }) => {
+const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicrosoftLogin, onPasswordReset }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginMethod, setLoginMethod] = useState<'google' | 'microsoft' | 'email' | null>(null);
   const [showEmailForm, setShowEmailForm] = useState(false);
+  // Password-reset request sub-view (enter email → we email a recovery link).
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [isSendingReset, setIsSendingReset] = useState(false);
   // Sign-up vs sign-in mode is seeded from the URL: the landing page sends new users
   // here with ?mode=signup (Get Started) and returning users without it (Log In).
   const [isSignupMode, setIsSignupMode] = useState(() => {
@@ -22,6 +27,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
   });
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -49,6 +55,26 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
       setError(e.message || 'Microsoft login failed');
       setIsLoggingIn(false);
       setLoginMethod(null);
+    }
+  };
+
+  const handleResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setNotice(null);
+    setIsSendingReset(true);
+    try {
+      await onPasswordReset(email);
+      // Neutral confirmation (we never reveal whether the email is registered).
+      // Land back on the method chooser, not the password form — the "check your
+      // inbox" copy would contradict a sign-in field sitting right below it.
+      setNotice(`If ${email} has an account, a reset link is on its way. Check your inbox.`);
+      setShowResetForm(false);
+      setShowEmailForm(false);
+    } catch (err: any) {
+      setError(err?.message || 'Could not send the reset link. Try again.');
+    } finally {
+      setIsSendingReset(false);
     }
   };
 
@@ -96,29 +122,14 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
       {/* LEFT BRAND PANEL */}
       <div className="login-left">
 
-        {/* Top: Logo + brand name */}
+        {/* Top: Globe·Solid mark + PULSE wordmark (canonical lockup) */}
         <div className="login-logo-row">
-          <div className="login-logo-icon">
-            <svg viewBox="0 0 64 64" width="22" height="22">
-              <defs>
-                <linearGradient id="pulse-grad-left" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#f43f5e"/>
-                  <stop offset="100%" stopColor="#ec4899"/>
-                </linearGradient>
-              </defs>
-              <path d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32" stroke="url(#pulse-grad-left)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-            </svg>
-          </div>
-          <span className="login-logo-name">Pulse</span>
+          <PulseMark size={34} title="Pulse" />
+          <PulseWordmark className="login-wordmark" />
         </div>
 
-        {/* Center: Copy block */}
+        {/* Center: Copy block — stripped to the brand statement */}
         <div className="login-copy-block">
-          <div className="login-brand-badge">
-            <span className="login-badge-dot"></span>
-            Communication and Intelligence
-          </div>
-
           <h1 className="login-headline">
             Your comms,<br/>
             <span className="login-headline-accent">fully unified.</span>
@@ -127,13 +138,6 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
           <p className="login-subtext">
             Every signal in one inbox. Pulse drafts the replies. You ship them.
           </p>
-
-          <ul className="login-bullets">
-            <li className="login-bullet">Triage stream + 5 Relay peers + Glimpse async video</li>
-            <li className="login-bullet">Email, messaging, calendar, decisions, and maps in one place</li>
-            <li className="login-bullet">War Room with 8 slash commands and 4 AI personas</li>
-            <li className="login-bullet">Gmail, Slack, Teams, Outlook, and 4 native CRMs</li>
-          </ul>
         </div>
 
         {/* Bottom: Product info */}
@@ -152,19 +156,65 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
 
         <div className="login-card">
           <div className="login-card-header">
-            <h2 className="login-card-title">Sign in</h2>
-            <p className="login-card-subtitle">Pick how you want to continue.</p>
+            <h2 className="login-card-title">
+              {showResetForm ? 'Reset password' : 'Sign in'}
+            </h2>
+            <p className="login-card-subtitle">
+              {showResetForm ? 'We will email you a link to set a new one.' : 'Pick how you want to continue.'}
+            </p>
           </div>
 
           {error && (
-            <div className="login-error">{error}</div>
+            <div className="login-error" role="alert">{error}</div>
           )}
 
           {notice && (
-            <div className="login-notice">{notice}</div>
+            <div className="login-notice" role="status" aria-live="polite">{notice}</div>
           )}
 
-          {!showEmailForm ? (
+          {showResetForm ? (
+            <form onSubmit={handleResetSubmit} className="login-btn-group">
+              <div className="login-field">
+                <label className="login-label">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="login-input"
+                  required
+                  autoFocus
+                  autoComplete="email"
+                />
+              </div>
+
+              <button type="submit" disabled={isSendingReset} className="login-submit-btn">
+                {isSendingReset ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Sending link…
+                  </>
+                ) : (
+                  'Send reset link'
+                )}
+              </button>
+
+              <div className="login-form-nav">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowResetForm(false);
+                    setShowEmailForm(true);
+                    setError(null);
+                    setNotice(null);
+                  }}
+                  className="login-back-btn"
+                >
+                  <ArrowLeft size={14} /> Back to sign in
+                </button>
+              </div>
+            </form>
+          ) : !showEmailForm ? (
             <div className="login-btn-group">
               {/* Google Login */}
               <button
@@ -175,7 +225,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
                 {isLoggingIn && loginMethod === 'google' ? (
                   <>
                     <Loader2 size={18} className="animate-spin" />
-                    <span>Connecting to Google...</span>
+                    <span>Connecting to Google…</span>
                   </>
                 ) : (
                   <>
@@ -199,7 +249,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
                 {isLoggingIn && loginMethod === 'microsoft' ? (
                   <>
                     <Loader2 size={18} className="animate-spin" />
-                    <span>Connecting to Microsoft...</span>
+                    <span>Connecting to Microsoft…</span>
                   </>
                 ) : (
                   <>
@@ -233,9 +283,10 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="John Doe"
+                    placeholder="Your name"
                     className="login-input"
                     required={isSignupMode}
+                    autoComplete="name"
                   />
                 </div>
               )}
@@ -249,20 +300,49 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
                   placeholder="you@example.com"
                   className="login-input"
                   required
+                  autoFocus
+                  autoComplete="email"
                 />
               </div>
 
               <div className="login-field">
-                <label className="login-label">Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="login-input"
-                  required
-                  minLength={6}
-                />
+                <div className="login-label-row">
+                  <label className="login-label">Password</label>
+                  {!isSignupMode && (
+                    <button
+                      type="button"
+                      className="login-forgot"
+                      onClick={() => {
+                        setShowEmailForm(false);
+                        setShowResetForm(true);
+                        setError(null);
+                        setNotice(null);
+                      }}
+                    >
+                      Forgot password?
+                    </button>
+                  )}
+                </div>
+                <div className="login-input-wrap">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="login-input"
+                    required
+                    minLength={6}
+                    autoComplete={isSignupMode ? 'new-password' : 'current-password'}
+                  />
+                  <button
+                    type="button"
+                    className="login-input-toggle"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
 
               <button
@@ -273,10 +353,10 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
                 {isLoggingIn && loginMethod === 'email' ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    {isSignupMode ? 'Creating account...' : 'Signing in...'}
+                    {isSignupMode ? 'Creating account…' : 'Signing in…'}
                   </>
                 ) : (
-                  isSignupMode ? 'Create Account' : 'Sign In'
+                  isSignupMode ? 'Create account' : 'Sign in'
                 )}
               </button>
 

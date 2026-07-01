@@ -5,6 +5,7 @@ import LiveSession from './components/LiveSession';
 import { Summit } from './components/Summit';
 import MessageContainer from './components/MessageContainer';
 import Login from './components/Login';
+import ResetPassword from './components/ResetPassword';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import About from './components/About';
@@ -47,7 +48,7 @@ import { ContextHandoff } from './components/health/ContextHandoff';
 import { NotificationCenter } from './components/NotificationCenter';
 import { LoadingProvider, useLoading } from './contexts/LoadingContext';
 import EnhancedLoadingScreen from './components/EnhancedLoadingScreen';
-import { loginWithGoogle, loginWithEmail, signUpWithEmail, loginWithMicrosoft } from './services/authService';
+import { loginWithGoogle, loginWithEmail, signUpWithEmail, loginWithMicrosoft, sendPasswordReset, updatePassword, onPasswordRecovery, logoutUser } from './services/authService';
 import { dataService } from './services/dataService';
 import { useNotificationStore } from './store/notificationStore';
 import { Contact, AppView } from './types';
@@ -737,6 +738,16 @@ const App: React.FC = () => {
   // Use authentication context
   const { user, isLoading: isAuthLoading, logout, refreshSession } = useAuth();
 
+  // Password-recovery mode: a reset link lands the user here with a recovery
+  // token. Supabase parses it and fires PASSWORD_RECOVERY; we divert to the
+  // "set a new password" screen instead of the authenticated app. Also seed
+  // from the URL hash in case the event fired before this listener attached.
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(() => {
+    try { return window.location.hash.includes('type=recovery'); }
+    catch { return false; }
+  });
+  useEffect(() => onPasswordRecovery(() => setIsPasswordRecovery(true)), []);
+
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);
 
@@ -1376,6 +1387,11 @@ const App: React.FC = () => {
     }
   };
 
+  const handlePasswordReset = async (email: string) => {
+    // Throws on failure so the Login reset form can surface the error.
+    await sendPasswordReset(email);
+  };
+
   const handleSyncContacts = useCallback(async (newContacts: Contact[]) => {
     // Add new contacts to database
     const emailSet = new Set(contacts.map(c => c.email));
@@ -1576,6 +1592,28 @@ const App: React.FC = () => {
     );
   };
 
+  // Password recovery takes precedence over every other state: a valid recovery
+  // link creates a session, so without this gate the app would drop the user
+  // straight into the workspace instead of letting them set a new password.
+  if (isPasswordRecovery) {
+    return (
+      <ResetPassword
+        onUpdatePassword={updatePassword}
+        onComplete={() => {
+          // Session is now valid → clear recovery, strip the token from the URL,
+          // and fall through to the authenticated app on the next render.
+          try { window.history.replaceState({}, '', window.location.pathname); } catch { /* noop */ }
+          setIsPasswordRecovery(false);
+        }}
+        onCancel={async () => {
+          await logoutUser().catch(() => {});
+          try { window.history.replaceState({}, '', '/?signin'); } catch { /* noop */ }
+          setIsPasswordRecovery(false);
+        }}
+      />
+    );
+  }
+
   // Show enhanced loading screen while checking auth
   if (isAuthLoading) {
     return <EnhancedLoadingScreen />;
@@ -1599,7 +1637,7 @@ const App: React.FC = () => {
         // Use replaceState to avoid adding to history
         window.history.replaceState({}, '', currentUrl.toString());
       }
-      return <Login onLogin={handleLogin} onEmailLogin={handleEmailLogin} onSignup={handleSignup} onMicrosoftLogin={handleMicrosoftLogin} />;
+      return <Login onLogin={handleLogin} onEmailLogin={handleEmailLogin} onSignup={handleSignup} onMicrosoftLogin={handleMicrosoftLogin} onPasswordReset={handlePasswordReset} />;
     }
 
     // Show public landing page by default (web only)
