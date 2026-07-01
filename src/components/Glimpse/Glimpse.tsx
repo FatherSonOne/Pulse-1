@@ -49,6 +49,7 @@ import {
   useGlimpseSearch,
 } from '../../hooks/useGlimpse';
 import { glimpseService } from '../../services/glimpse/glimpseService';
+import { useSignedUrl } from '../../hooks/useSignedUrl';
 import { voxModeService } from '../../services/relay/voxModeService';
 import { type GlimpseMessage, type GlimpseConversation } from '../../services/glimpse/glimpseTypes';
 import { useFeatureFlag } from '../../lib/featureFlags';
@@ -596,6 +597,11 @@ const MessageBubble: React.FC<{
   const [showPlayer, setShowPlayer] = useState(false);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
 
+  // Signed, private-bucket-ready media URLs. The thumbnail is always on screen
+  // so it signs eagerly; the video only signs once the player is opened.
+  const posterSrc = useSignedUrl(message.thumbnailUrl);
+  const videoSrc = useSignedUrl(message.videoUrl, showPlayer);
+
   const totalReactions = Object.values(message.reactions || {}).reduce(
     (sum, users) => sum + users.length,
     0
@@ -774,8 +780,8 @@ const MessageBubble: React.FC<{
         <div className="gl-player">
           <video
             ref={videoRef}
-            src={message.videoUrl}
-            poster={message.thumbnailUrl}
+            src={videoSrc}
+            poster={posterSrc}
             className="vvb-message-video"
             controls
             autoPlay
@@ -792,7 +798,7 @@ const MessageBubble: React.FC<{
           onClick={() => setShowPlayer((v) => !v)}
           aria-label={showPlayer ? 'Hide video' : 'Watch video'}
         >
-          {message.thumbnailUrl && <img src={message.thumbnailUrl} alt="" />}
+          {message.thumbnailUrl && posterSrc && <img src={posterSrc} alt="" />}
           <span className="gl-thumb-overlay">
             {showPlayer ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
           </span>
