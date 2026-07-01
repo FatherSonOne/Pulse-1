@@ -4,12 +4,61 @@ import { Capacitor } from '@capacitor/core'
 import { App as CapacitorApp } from '@capacitor/app'
 import { supabase } from './services/supabase'
 import './i18n';
-import App from './App.tsx'
-import { AuthProvider } from './contexts/AuthContext'
-import { LoadingProvider } from './contexts/LoadingContext'
+import PublicApp from './PublicApp'
 import { initializeMonitoring } from './lib/monitoring'
 import './index.css'
 import './components/shared/PulseTypography.css'
+
+// The authenticated app shell is the heavy half of the bundle — messaging, AI
+// providers, office processors, and the AuthProvider -> authService ->
+// dataService service graph. Lazy-load it (providers included, via AppRoot) so a
+// cold marketing visitor — routed to the thin PublicApp below — downloads none
+// of it. A returning authenticated user pays one Suspense tick for the chunk.
+const AppRoot = React.lazy(() => import('./AppRoot'))
+
+// Pure-marketing routes that a logged-out visitor can be served WITHOUT the app
+// graph. Keep in sync with the marketing branch of App's public-route cascade.
+const PUBLIC_MARKETING_PATHS = new Set(['/', '/features', '/demo', '/privacy', '/terms', '/about'])
+
+// Synchronously detect a persisted Supabase session (key shape: sb-<ref>-auth-
+// token). Lets us decide the marketing-vs-app split before React mounts, with no
+// async getSession() round-trip. Errors (localStorage blocked) → treat as logged
+// out, which only ever routes to the lighter PublicApp — the safe direction.
+function hasSupabaseSession(): boolean {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (k && k.startsWith('sb-') && k.endsWith('-auth-token')) {
+        const v = localStorage.getItem(k)
+        if (v && v !== 'null' && v.length > 2) return true
+      }
+    }
+  } catch { /* storage unavailable — fall through to logged-out */ }
+  return false
+}
+
+// Minimal, dependency-free boot fallback for the lazy App chunk. Inline so it
+// never pulls EnhancedLoadingScreen (and its deps) onto the entry critical path.
+const AppBootFallback = () => (
+  <div
+    aria-busy="true"
+    aria-label="Loading"
+    style={{
+      position: 'fixed', inset: 0, display: 'grid', placeItems: 'center',
+      background: 'oklch(0.18 0.02 265)',
+    }}
+  >
+    <div
+      style={{
+        width: 28, height: 28, borderRadius: '50%',
+        border: '3px solid oklch(0.5 0.02 265)',
+        borderTopColor: 'oklch(0.72 0.17 12)',
+        animation: 'pulse-boot-spin 0.8s linear infinite',
+      }}
+    />
+    <style>{'@keyframes pulse-boot-spin{to{transform:rotate(360deg)}}'}</style>
+  </div>
+)
 
 // DEV-ONLY E2E test harness flag — short-circuits the App render at the bottom
 // of this file so component-level a11y / keyboard journeys can be exercised in
@@ -329,14 +378,25 @@ if (E2E_MAP_HARNESS) {
       </React.StrictMode>
     );
   });
+} else if (
+  PUBLIC_MARKETING_PATHS.has(window.location.pathname) &&
+  !window.location.search.includes('signin') &&
+  !hasSupabaseSession()
+) {
+  // Cold marketing visitor: serve the thin public shell only. The heavy App
+  // chunk is never requested. The ?signin handoff (CTA click) re-enters this
+  // file with the signin flag set and falls through to the App branch below.
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <PublicApp />
+    </React.StrictMode>
+  )
 } else {
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
-      <LoadingProvider>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </LoadingProvider>
+      <React.Suspense fallback={<AppBootFallback />}>
+        <AppRoot />
+      </React.Suspense>
     </React.StrictMode>
   )
 }
