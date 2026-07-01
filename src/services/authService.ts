@@ -254,7 +254,12 @@ export const loginWithGoogle = async (): Promise<User> => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: getRedirectUrl('/'),
+      // Return into the auth context (?signin), NOT bare '/'. On the post-OAuth
+      // load the PKCE exchange is still resolving, so user is briefly null; with
+      // '/' that renders the marketing landing page until the session lands
+      // (reads as "bounced back to the landing page"). '?signin' keeps the auth
+      // UI up so onAuthStateChange can forward straight into the app.
+      redirectTo: getRedirectUrl('/?signin'),
       queryParams: {
         // 'offline' access type asks Google for a refresh token.
         access_type: 'offline',
@@ -326,7 +331,9 @@ export const loginWithMicrosoft = async (): Promise<User> => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'azure',
     options: {
-      redirectTo: getRedirectUrl('/'),
+      // See loginWithGoogle: return into the auth context so the post-OAuth
+      // exchange doesn't flash the marketing landing page.
+      redirectTo: getRedirectUrl('/?signin'),
       scopes: MICROSOFT_SCOPES,
     }
   });

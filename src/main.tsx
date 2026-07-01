@@ -39,24 +39,50 @@ function hasSupabaseSession(): boolean {
 
 // Minimal, dependency-free boot fallback for the lazy App chunk. Inline so it
 // never pulls EnhancedLoadingScreen (and its deps) onto the entry critical path.
+// Branded boot loader — shown while the lazy AppRoot chunk downloads. Kept
+// dependency-free (no framer-motion / no brand imports) so it stays in the entry
+// bundle without bloating first paint: the Pulse heartbeat mark is inlined SVG
+// and the lub-dub beat is pure CSS. Mirrors EnhancedLoadingScreen's look so the
+// boot → auth-loading transition is seamless. Carbon bg matches index.html.
 const AppBootFallback = () => (
   <div
     aria-busy="true"
-    aria-label="Loading"
+    aria-label="Loading Pulse"
+    role="status"
     style={{
       position: 'fixed', inset: 0, display: 'grid', placeItems: 'center',
-      background: 'oklch(0.18 0.02 265)',
+      background: '#0d0d0f',
     }}
   >
-    <div
-      style={{
-        width: 28, height: 28, borderRadius: '50%',
-        border: '3px solid oklch(0.5 0.02 265)',
-        borderTopColor: 'oklch(0.72 0.17 12)',
-        animation: 'pulse-boot-spin 0.8s linear infinite',
-      }}
-    />
-    <style>{'@keyframes pulse-boot-spin{to{transform:rotate(360deg)}}'}</style>
+    <div style={{ position: 'relative', width: 104, height: 104, display: 'grid', placeItems: 'center' }}>
+      <div className="pulse-boot-halo" aria-hidden="true" />
+      <svg className="pulse-boot-mark" viewBox="0 0 100 100" width={92} height={92} role="img" aria-label="Pulse">
+        <defs>
+          <linearGradient id="pmg-boot" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#f43f5e" />
+            <stop offset="1" stopColor="#ec4899" />
+          </linearGradient>
+          <mask id="pmm-boot">
+            <rect x="-2" y="-2" width="104" height="104" fill="#fff" />
+            <path
+              d="M-1.13 50 H38.73 L45.54 36.57 L53.34 63.43 L60.01 50 H101.13"
+              fill="none" stroke="#000" strokeWidth="3.12" strokeLinecap="round" strokeLinejoin="round"
+            />
+          </mask>
+        </defs>
+        <circle cx="50" cy="50" r="43.33" fill="url(#pmg-boot)" mask="url(#pmm-boot)" />
+      </svg>
+    </div>
+    <style>{`
+      .pulse-boot-halo{position:absolute;inset:0;margin:auto;width:104px;height:104px;border-radius:50%;background:radial-gradient(circle,rgba(244,63,94,0.40) 0%,rgba(236,72,153,0.14) 55%,transparent 72%);filter:blur(6px);opacity:.6}
+      .pulse-boot-mark{filter:drop-shadow(0 8px 22px rgba(244,63,94,0.32))}
+      @keyframes pulse-boot-beat{0%{transform:scale(1)}14%{transform:scale(1.05)}34%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
+      @keyframes pulse-boot-glow{0%{transform:scale(1);opacity:.55}14%{transform:scale(1.07);opacity:.9}34%{transform:scale(1);opacity:.6}50%{transform:scale(1.05);opacity:.8}100%{transform:scale(1);opacity:.55}}
+      @media (prefers-reduced-motion: no-preference){
+        .pulse-boot-mark{animation:pulse-boot-beat 1.8s ease-in-out infinite}
+        .pulse-boot-halo{animation:pulse-boot-glow 1.8s ease-in-out infinite}
+      }
+    `}</style>
   </div>
 )
 
