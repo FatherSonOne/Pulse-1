@@ -50,6 +50,7 @@ import { userContactService } from '../../services/userContactService';
 import { whisperService } from '../../services/relay/whisperService';
 import { audioEnhancementService } from '../../services/relay/audioEnhancementService';
 import { voxModeService } from '../../services/relay/voxModeService';
+import { getPlayableUrl } from '../../services/relay/resolveAudioUrl';
 import { getCurrentWorkspaceId } from '../../services/ai/getWorkspaceId';
 import { supabase } from '../../services/supabase';
 import type { EnrichedUserProfile, PulseUserProfile } from '../../types/userContact';
@@ -398,8 +399,11 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                 // Stale in-memory URL from a prior session — not resolvable.
                 url = '';
               } else {
-                // Supabase storage URL — fetch + wrap for local playback/download.
-                const response = await fetch(url);
+                // Supabase storage URL — sign it (private-bucket ready), then
+                // fetch + wrap for local playback/download. Signing works while
+                // the bucket is still public, so this is a no-regression change.
+                const signed = await getPlayableUrl(url);
+                const response = await fetch(signed);
                 blob = await response.blob();
                 url = URL.createObjectURL(blob);
                 blobUrlsRef.current.add(url);
