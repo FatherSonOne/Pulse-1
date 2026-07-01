@@ -114,6 +114,21 @@ export default defineConfig(({ mode }) => {
                 return 'vendor';
               }
 
+              // Monitoring (Sentry + PostHog + web-vitals) is a cross-cutting utility
+              // imported by BOTH the entry (initializeMonitoring, at cold boot) and
+              // ~14 services. Left unassigned it returns undefined here, so rollup
+              // absorbs it into whichever service chunk imports it most — sentry.ts
+              // landed in svc-core, analytics.ts in svc-messaging. That forced the
+              // cold marketing entry to import those whole service chunks (and their
+              // init-order tail: svc-ai, ai-providers) just to get captureError /
+              // trackEvent. Pin it to its own leaf chunk (deps resolve to vendor +
+              // react-core only, no service back-edge) so the entry gets monitoring
+              // without dragging the services layer. Being a leaf, it cannot form a
+              // TDZ init cycle.
+              if (id.includes('/src/lib/monitoring/')) {
+                return 'monitoring';
+              }
+
               // Split application bundles by feature
               if (id.includes('/src/components/')) {
                 // Heavy feature components
@@ -125,6 +140,18 @@ export default defineConfig(({ mode }) => {
                 if (id.includes('/Calendar')) return 'feature-calendar';
                 if (id.includes('/Decisions') || id.includes('/DecisionTask')) return 'feature-decisions';
                 if (id.includes('/AILab') || id.includes('/AiLab')) return 'feature-ailab';
+              }
+
+              // Supabase client is a pure leaf (imports only @supabase + @capacitor,
+              // no other service). Pin it to its OWN chunk so a cold marketing entry
+              // that does `import { supabase }` doesn't drag in the entire svc-core
+              // catchall (supabase.ts otherwise falls through to svc-core below) plus
+              // its init-order tail: svc-messaging, svc-ai, ai-providers (~235 kB gz).
+              // Must be a DISTINCT name — merging into the '@supabase' vendor chunk
+              // (return 'supabase') regressed: it pulled office-processors and did not
+              // detach svc-core. Being a leaf, its own chunk cannot form a TDZ cycle.
+              if (id.includes('/src/services/supabase.ts')) {
+                return 'supabase-client';
               }
 
               // Services layer — split into domain groups to avoid one 768 kB blob.
