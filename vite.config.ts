@@ -88,10 +88,20 @@ export default defineConfig(({ mode }) => {
                   return 'charts';
                 }
 
-                // Office document processors - large, rarely used
-                if (id.includes('exceljs') ||
-                    id.includes('docx') ||
-                    id.includes('pdfjs')) {
+                // Office / document processors — large, app-only (reached only via
+                // services/documentProcessors, behind the lazy app graph). Match on
+                // real PACKAGE boundaries. The old `id.includes('docx')` also caught
+                // mammoth's internal lib/docx/* files, splitting the mammoth package
+                // across this chunk AND vendor; the two halves imported each other and
+                // formed a vendor<->office-processors CIRCULAR chunk that forced the
+                // cold marketing entry to bare-import office-processors (407 gz) plus
+                // its init-order collateral svc-core (121 gz). Keeping mammoth whole
+                // here leaves only a one-directional office->vendor edge, so office is
+                // no longer entry-reachable. (npm `docx` isn't installed and `exceljs`
+                // is never imported in src — those substrings only ever mis-matched.)
+                if (id.includes('/node_modules/pdfjs-dist/') ||
+                    id.includes('/node_modules/mammoth/') ||
+                    id.includes('/node_modules/exceljs/')) {
                   return 'office-processors';
                 }
 
