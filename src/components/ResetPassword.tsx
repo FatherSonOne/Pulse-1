@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './Login.css';
 
 import { ArrowLeft, Eye, EyeOff, Loader2, Lock } from 'lucide-react';
 import { PulseMark, PulseWordmark } from './brand/PulseMark';
+import { friendlyAuthError } from '../utils/authErrors';
 
 interface ResetPasswordProps {
   /** Called after the password is successfully set (session is now valid). */
@@ -23,6 +24,22 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ onComplete, onCancel, onU
   // reused, invalid) — that's the case where "request a new link" is the fix.
   const [linkExpired, setLinkExpired] = useState(false);
   const [done, setDone] = useState(false);
+  const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Single completion path: fires once whether via the auto-redirect timer or
+  // the manual "Continue to Pulse" button, so onComplete never runs twice.
+  const finish = () => {
+    if (redirectTimer.current) {
+      clearTimeout(redirectTimer.current);
+      redirectTimer.current = null;
+    }
+    onComplete();
+  };
+
+  // Don't leave a pending redirect firing after unmount.
+  useEffect(() => () => {
+    if (redirectTimer.current) clearTimeout(redirectTimer.current);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,9 +60,9 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ onComplete, onCancel, onU
       await onUpdatePassword(password);
       setDone(true);
       // Brief confirmation, then hand back to the app (session is valid).
-      setTimeout(onComplete, 1200);
+      redirectTimer.current = setTimeout(finish, 1200);
     } catch (err: any) {
-      setError(err?.message || 'Could not update your password. Your reset link may have expired.');
+      setError(err?.message ? friendlyAuthError(err.message) : 'Could not update your password. Your reset link may have expired.');
       setLinkExpired(true);
       setIsSaving(false);
     }
@@ -83,7 +100,12 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ onComplete, onCancel, onU
           )}
 
           {done ? (
-            <div className="login-notice" role="status" aria-live="polite">You are all set. Redirecting to Pulse.</div>
+            <div className="login-notice" role="status" aria-live="polite">
+              You are all set. Redirecting to Pulse.
+              <button type="button" onClick={finish} className="login-notice-action">
+                Continue to Pulse
+              </button>
+            </div>
           ) : (
             <form onSubmit={handleSubmit} className="login-btn-group">
               <div className="login-field">
@@ -109,6 +131,7 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ onComplete, onCancel, onU
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
+                <p className="login-hint">At least 6 characters.</p>
               </div>
 
               <div className="login-field">

@@ -15,6 +15,15 @@
     <meta name="description" content="Pulse — AI-powered messaging, email, 8 voice modes, calendar, CRM intelligence, research studio, and predictive analytics. The central nervous system for high-performance teams." />
     <meta name="theme-color" content="#09090b" />
 
+    <!-- First-paint canvas: paint the Carbon dark background before the JS/CSS
+         bundle mounts. Without this, a full-page navigation (e.g. Log In →
+         /?signin) briefly shows the browser's default white, reading as a
+         bright sweep before the dark app paints. Every route's top-of-viewport
+         is dark, so a dark initial paint matches all of them. -->
+    <style>
+      html, body { background-color: #0d0d0f; }
+    </style>
+
     <!-- Open Graph / Social -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Pulse — The Central Nervous System for High-Performance Teams" />

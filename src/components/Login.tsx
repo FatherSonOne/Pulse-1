@@ -3,6 +3,11 @@ import './Login.css';
 
 import { ArrowLeft, Eye, EyeOff, Loader2, Lock, ShieldHalf } from 'lucide-react';
 import { PulseMark, PulseWordmark } from './brand/PulseMark';
+import { friendlyAuthError } from '../utils/authErrors';
+
+// Help escape hatch: reuse the product status URL if configured, else the
+// public contact page (both real destinations — no invented route).
+const HELP_URL = import.meta.env.VITE_STATUS_URL || 'https://qntmecos.com/contact';
 
 interface LoginProps {
   onLogin: () => void;
@@ -27,6 +32,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
   });
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +45,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
     try {
       await onLogin();
     } catch (e: any) {
-      setError(e.message || 'Google login failed');
+      setError(e?.message ? friendlyAuthError(e.message) : 'Could not connect to Google. Please try again.');
       setIsLoggingIn(false);
       setLoginMethod(null);
     }
@@ -52,7 +58,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
     try {
       await onMicrosoftLogin();
     } catch (e: any) {
-      setError(e.message || 'Microsoft login failed');
+      setError(e?.message ? friendlyAuthError(e.message) : 'Could not connect to Microsoft. Please try again.');
       setIsLoggingIn(false);
       setLoginMethod(null);
     }
@@ -72,7 +78,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
       setShowResetForm(false);
       setShowEmailForm(false);
     } catch (err: any) {
-      setError(err?.message || 'Could not send the reset link. Try again.');
+      setError(err?.message ? friendlyAuthError(err.message) : 'Could not send the reset link. Try again.');
     } finally {
       setIsSendingReset(false);
     }
@@ -80,16 +86,27 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoggingIn(true);
-    setLoginMethod('email');
     setError(null);
     setNotice(null);
 
+    // Client-side guards run before the spinner so a caught typo doesn't read
+    // as a server round-trip. Confirm-password only exists in signup mode.
+    if (isSignupMode) {
+      if (!name.trim()) {
+        setError('Please enter your name.');
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError('Passwords do not match.');
+        return;
+      }
+    }
+
+    setIsLoggingIn(true);
+    setLoginMethod('email');
+
     try {
       if (isSignupMode) {
-        if (!name.trim()) {
-          throw new Error('Please enter your name');
-        }
         await onSignup(email, password, name);
         // Session returned → AuthContext will swap us out of the Login screen.
       } else {
@@ -110,7 +127,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
         setLoginMethod(null);
         return;
       }
-      setError(err.message || 'Authentication failed');
+      setError(friendlyAuthError(err?.message));
       setIsLoggingIn(false);
       setLoginMethod(null);
     }
@@ -157,10 +174,14 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
         <div className="login-card">
           <div className="login-card-header">
             <h2 className="login-card-title">
-              {showResetForm ? 'Reset password' : 'Sign in'}
+              {showResetForm ? 'Reset password' : isSignupMode ? 'Create your account' : 'Sign in'}
             </h2>
             <p className="login-card-subtitle">
-              {showResetForm ? 'We will email you a link to set a new one.' : 'Pick how you want to continue.'}
+              {showResetForm
+                ? 'We will email you a link to set a new one.'
+                : isSignupMode
+                ? 'A few details and you are in.'
+                : 'Pick how you want to continue.'}
             </p>
           </div>
 
@@ -343,7 +364,26 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
+                {isSignupMode && (
+                  <p className="login-hint">At least 6 characters.</p>
+                )}
               </div>
+
+              {isSignupMode && (
+                <div className="login-field">
+                  <label className="login-label">Confirm password</label>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="login-input"
+                    required={isSignupMode}
+                    minLength={6}
+                    autoComplete="new-password"
+                  />
+                </div>
+              )}
 
               <button
                 type="submit"
@@ -386,6 +426,12 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
               </div>
             </form>
           )}
+
+          <div className="login-help">
+            <a href={HELP_URL} target="_blank" rel="noopener noreferrer" className="login-help-link">
+              Trouble signing in?
+            </a>
+          </div>
 
           <div className="login-terms">
             <p>
