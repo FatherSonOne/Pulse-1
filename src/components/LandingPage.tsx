@@ -1734,8 +1734,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
               <div className="absolute inset-0 bg-gradient-to-br from-rose-500/30 to-pink-500/25 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"></div>
               <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl hover:border-rose-500/60 transition-all duration-150 flex flex-col hover:-translate-y-0.5 card-elevated-rose overflow-hidden">
                 <div className="flex items-center justify-center h-24 bg-gradient-to-br from-rose-500/10 via-rose-500/5 to-transparent border-b border-rose-500/15 group-hover:from-rose-500/15 transition-colors duration-150">
-                  <svg viewBox="0 0 64 64" width="52" height="52" fill="none">
-                    <path d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32" stroke="#f43f5e" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+                  {/* Pulse — Globe·Solid mark (rose→pink disc with knockout heartbeat). Canonical brand asset. */}
+                  <svg viewBox="0 0 240 240" width="54" height="54" fill="none" aria-hidden="true" style={{ filter: 'drop-shadow(0 0 10px rgba(244,63,94,0.35))' }}>
+                    <defs>
+                      <linearGradient id="pulseGlobeGrad" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stopColor="#f43f5e"/><stop offset="1" stopColor="#ec4899"/>
+                      </linearGradient>
+                      <mask id="pulseGlobeCut">
+                        <rect x="0" y="0" width="240" height="240" fill="#fff"/>
+                        <path d="M-2.71 120 H92.96 L109.29 87.76 L128.01 152.24 L144.02 120 H242.71" fill="none" stroke="#000" strokeWidth="7.49" strokeLinecap="round" strokeLinejoin="round"/>
+                      </mask>
+                    </defs>
+                    <circle cx="120" cy="120" r="103.99" fill="url(#pulseGlobeGrad)" mask="url(#pulseGlobeCut)"/>
                   </svg>
                 </div>
                 <div className="p-8 flex flex-col flex-grow">
@@ -1758,13 +1768,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
               <div className="absolute inset-0 bg-gradient-to-br from-teal-400/25 to-teal-500/20 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"></div>
               <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl hover:border-teal-400/60 transition-all duration-150 flex flex-col hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(34,166,164,0.25)] card-elevated overflow-hidden">
                 <div className="flex items-center justify-center h-24 bg-gradient-to-br from-teal-400/10 via-teal-400/5 to-transparent border-b border-teal-400/15 group-hover:from-teal-400/15 transition-colors duration-150">
-                  <svg viewBox="0 0 80 80" width="52" height="52" fill="none">
-                    <circle cx="40" cy="40" r="38" fill="none" stroke="#b2f5ea" strokeWidth="1.2" opacity="0.35"/>
-                    <circle cx="40" cy="40" r="30" fill="none" stroke="#6ee7d4" strokeWidth="1.6" opacity="0.55"/>
-                    <circle cx="40" cy="40" r="22" fill="none" stroke="#22d3b8" strokeWidth="2"   opacity="0.75"/>
-                    <circle cx="40" cy="40" r="14" fill="none" stroke="#0d9488" strokeWidth="2.5" opacity="0.90"/>
-                    <circle cx="40" cy="40" r="9"  fill="rgba(0,200,255,0.25)"/>
-                    <circle cx="40" cy="40" r="5"  fill="#00c8ff"/>
+                  {/* Logos Vision — Orbital Core mark (patina→terracotta ring + terracotta core). Canonical brand asset (Terracotta + Patina). */}
+                  <svg viewBox="0 0 80 80" width="52" height="52" fill="none" aria-hidden="true" style={{ filter: 'drop-shadow(0 0 10px rgba(82,181,166,0.35))' }}>
+                    <defs>
+                      <linearGradient id="lvOrbitGrad" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stopColor="#52B5A6"/><stop offset="1" stopColor="#D4765A"/>
+                      </linearGradient>
+                    </defs>
+                    <circle cx="40" cy="40" r="24" fill="none" stroke="url(#lvOrbitGrad)" strokeWidth="9"/>
+                    <circle cx="40" cy="40" r="11" fill="#D4765A"/>
                   </svg>
                 </div>
                 <div className="p-8 flex flex-col flex-grow">
@@ -1804,26 +1816,31 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                   <div className="absolute top-2 right-3 inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300" aria-hidden="true">
                     <span className="w-1 h-1 rounded-full" style={{ background: '#A0FF32', boxShadow: '0 0 6px rgba(160,255,50,0.7)' }} />
                   </div>
-                  {/* Stylized circuit-E mark — inline SVG so the Entomate tile is vector
-                      like its Pulse (ECG) and Logos Vision (rings) siblings, not a 700KB
-                      raster. Crimson spine + brand-accent endpoint nodes (amber/mint/
-                      phosphor) echo the card's corner washes and the Void×Crimson v2.0
-                      palette. */}
+                  {/* Entomate — canonical circuit-E mark (crimson→pink bars + circuit traces
+                      and nodes). Vector inline so the tile stays light, matching its Pulse
+                      (Globe) and Logos Vision (Orbital Core) siblings. Void × Crimson v2.0. */}
                   <svg
-                    viewBox="0 0 64 64" width="52" height="52" fill="none"
+                    viewBox="0 0 160 160" width="54" height="54" fill="none"
                     className="relative z-10"
                     style={{ filter: 'drop-shadow(0 0 10px rgba(255,45,107,0.35))' }}
                     aria-hidden="true"
                   >
-                    <path d="M21 12 V52" stroke="#FF2D6B" strokeWidth="4" strokeLinecap="round" />
-                    <path d="M21 14 H45" stroke="#FF2D6B" strokeWidth="4" strokeLinecap="round" />
-                    <path d="M21 32 H39" stroke="#FF2D6B" strokeWidth="4" strokeLinecap="round" />
-                    <path d="M21 50 H45" stroke="#FF2D6B" strokeWidth="4" strokeLinecap="round" />
-                    <circle cx="47" cy="14" r="3.5" fill="#FFB800" />
-                    <circle cx="41" cy="32" r="3.5" fill="#00F5D4" />
-                    <circle cx="47" cy="50" r="3.5" fill="#A0FF32" />
-                    <circle cx="21" cy="12" r="3" fill="#FF2D6B" />
-                    <circle cx="21" cy="52" r="3" fill="#FF2D6B" />
+                    <defs>
+                      <linearGradient id="entEGrad" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stopColor="#FF2D6B"/><stop offset="1" stopColor="#FF6699"/>
+                      </linearGradient>
+                    </defs>
+                    <rect x="67.20" y="40.00" width="67.20" height="17.60" rx="4.00" fill="url(#entEGrad)"/>
+                    <rect x="67.20" y="71.20" width="48.00" height="17.60" rx="4.00" fill="url(#entEGrad)"/>
+                    <rect x="67.20" y="102.40" width="60.80" height="17.60" rx="4.00" fill="url(#entEGrad)"/>
+                    <path d="M28.80 80.00 H67.20" fill="none" stroke="#FF2D6B" strokeWidth="3.84" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M16.00 35.20 H48.00 V48.80 H67.20" fill="none" stroke="#FF2D6B" strokeWidth="3.84" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M16.00 124.80 H48.00 V111.20 H67.20" fill="none" stroke="#FF2D6B" strokeWidth="3.84" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx="16.00" cy="35.20" r="5.44" fill="none" stroke="#FF2D6B" strokeWidth="3.84"/>
+                    <circle cx="28.80" cy="80.00" r="5.44" fill="none" stroke="#FF2D6B" strokeWidth="3.84"/>
+                    <circle cx="16.00" cy="124.80" r="5.44" fill="none" stroke="#FF2D6B" strokeWidth="3.84"/>
+                    <circle cx="48.00" cy="48.80" r="3.52" fill="#FF2D6B"/>
+                    <circle cx="48.00" cy="111.20" r="3.52" fill="#FF2D6B"/>
                   </svg>
                 </div>
                 <div className="p-8 flex flex-col flex-grow">
