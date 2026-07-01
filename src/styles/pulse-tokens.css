@@ -130,9 +130,13 @@
   --pulse-tone-neutral-soft: rgba(107, 114, 128, 0.14);
   --pulse-tone-neutral-glow: rgba(107, 114, 128, 0.30);
 
-  /* ─── Surfaces — dark (true black + translucent) ─── */
-  --pulse-canvas: #000000;
-  --pulse-canvas-soft: #080808;
+  /* ─── Surfaces — dark (Carbon near-black + translucent) ───
+     Canvas is Carbon #0d0d0f — a hair lifted off pure black so the
+     translucent white surfaces read as real cards (not floating gaps)
+     and long sessions don't scorch the eyes. Softer companion is one
+     rung up for the side rail / raised base. */
+  --pulse-canvas: #0d0d0f;
+  --pulse-canvas-soft: #151517;
   --pulse-surface: rgba(255, 255, 255, 0.03);
   --pulse-surface-raised: rgba(255, 255, 255, 0.055);
   /* Solid, lifted modal surface (opaque so floating panels don't show the

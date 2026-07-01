@@ -141,9 +141,11 @@
    DARK MODE THEME - ENHANCED CONTRAST
    ============================================ */
 .dark {
-  --bg-primary: #000000;
-  --bg-secondary: #0a0a0a;
-  --bg-tertiary: #171717;
+  /* Carbon near-black canvas (matches --pulse-canvas in pulse-tokens.css) —
+     lifted off pure black so surfaces read as cards and the eye can rest. */
+  --bg-primary: #0d0d0f;
+  --bg-secondary: #151517;
+  --bg-tertiary: #1c1c1f;
   --bg-elevated: #262626;
   --bg-muted: #404040;
 

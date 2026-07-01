@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pulse · Dark-Mode Black Token Lab</title>
+<style>
+  /* ══════════════════════════════════════════════════════════════
+     PULSE DARK-BLACK TOKEN LAB
+     Canonical palette mirrored from src/styles/pulse-tokens.css.
+     Only the canvas / canvas-soft blacks are variable here — every
+     other token (rose, status tones, translucent surfaces, ink) is
+     the real shipped value, so you judge the black against the true
+     UI, not a mock palette.
+     ══════════════════════════════════════════════════════════════ */
+
+  :root {
+    /* Brand — dark variant (real tokens) */
+    --pulse-rose: #fb7185;
+    --pulse-rose-deep: #e11d48;
+    --pulse-rose-bright: #fda4af;
+    --pulse-rose-soft: rgba(244, 63, 94, 0.12);
+    --pulse-rose-glow: rgba(244, 63, 94, 0.30);
+    --pulse-rose-text: #fb7185;
+    --pulse-pink: #f472b6;
+
+    /* Status vocabulary — dark */
+    --pulse-tone-positive: #4ade80;
+    --pulse-tone-warning: #fb923c;
+    --pulse-tone-overdue: #f87171;
+    --pulse-tone-info: #60a5fa;
+    --pulse-tone-neutral: #a1a1aa;
+
+    /* Ink — dark */
+    --pulse-ink: #fafafa;
+    --pulse-ink-2: #b4b4b8;
+    --pulse-ink-3: #a1a1aa;
+
+    /* Translucent surfaces — derive from white, so they auto-adapt
+       to whatever black we set on the canvas. THIS is why the black
+       shade matters so much: every card is just a faint white veil. */
+    --pulse-surface: rgba(255, 255, 255, 0.03);
+    --pulse-surface-raised: rgba(255, 255, 255, 0.055);
+    --pulse-surface-modal: #18181b;
+    --pulse-border: rgba(255, 255, 255, 0.06);
+    --pulse-border-strong: rgba(255, 255, 255, 0.10);
+
+    /* ▼▼▼ THE VARIABLE TOKENS — driven live by JS ▼▼▼ */
+    --pulse-canvas: #000000;
+    --pulse-canvas-soft: #080808;
+
+    --pulse-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --pulse-font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    --pulse-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--pulse-font);
+    background: #060606;
+    color: var(--pulse-ink);
+    -webkit-font-smoothing: antialiased;
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ─────────────── CONTROL RAIL ─────────────── */
+  .rail {
+    background: #0c0c0e;
+    border-right: 1px solid rgba(255,255,255,0.07);
+    padding: 22px 20px 40px;
+    overflow-y: auto;
+  }
+  .rail-title {
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--pulse-ink-3); font-weight: 700;
+  }
+  .rail h1 {
+    font-size: 19px; font-weight: 800; margin: 6px 0 4px;
+    background: linear-gradient(90deg, var(--pulse-rose), var(--pulse-pink));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .rail p.sub { font-size: 12.5px; color: var(--pulse-ink-2); line-height: 1.5; margin-bottom: 20px; }
+
+  .section-label {
+    font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--pulse-ink-3); font-weight: 700; margin: 22px 0 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-label::after { content:''; flex:1; height:1px; background: rgba(255,255,255,0.07); }
+
+  /* candidate swatch rows */
+  .swatch {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 12px; cursor: pointer;
+    border: 1px solid transparent; margin-bottom: 6px;
+    transition: background .18s var(--pulse-ease), border-color .18s var(--pulse-ease);
+  }
+  .swatch:hover { background: rgba(255,255,255,0.03); }
+  .swatch.active { border-color: var(--pulse-rose); background: var(--pulse-rose-soft); }
+  .chip {
+    width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+  .swatch .meta { flex: 1; min-width: 0; }
+  .swatch .name { font-size: 13px; font-weight: 650; }
+  .swatch .hex { font-family: var(--pulse-font-mono); font-size: 11px; color: var(--pulse-ink-3); }
+  .swatch .note { font-size: 10.5px; color: var(--pulse-ink-3); margin-top: 2px; line-height: 1.3; }
+  .swatch .radio {
+    width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
+    border: 2px solid rgba(255,255,255,0.2); position: relative;
+  }
+  .swatch.active .radio { border-color: var(--pulse-rose); }
+  .swatch.active .radio::after {
+    content:''; position:absolute; inset:2px; border-radius:50%; background: var(--pulse-rose);
+  }
+
+  /* custom mixer */
+  .mixer { padding: 4px 2px 0; }
+  .slider-row { margin-bottom: 14px; }
+  .slider-row label {
+    display: flex; justify-content: space-between; font-size: 11.5px;
+    color: var(--pulse-ink-2); margin-bottom: 6px; font-weight: 600;
+  }
+  .slider-row label .val { font-family: var(--pulse-font-mono); color: var(--pulse-rose); }
+  input[type=range] {
+    -webkit-appearance: none; width: 100%; height: 4px; border-radius: 4px;
+    background: rgba(255,255,255,0.12); outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--pulse-rose); cursor: pointer; border: 2px solid #0c0c0e;
+    box-shadow: 0 0 0 1px var(--pulse-rose);
+  }
+
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12.5px; color: var(--pulse-ink-2); padding: 7px 0;
+  }
+  .tgl { width: 38px; height: 22px; border-radius: 999px; background: rgba(255,255,255,0.14);
+    position: relative; cursor: pointer; transition: background .2s; flex-shrink:0; }
+  .tgl::after { content:''; position:absolute; top:2px; left:2px; width:18px; height:18px;
+    border-radius:50%; background:#fff; transition: transform .2s var(--pulse-ease); }
+  .tgl.on { background: var(--pulse-rose); }
+  .tgl.on::after { transform: translateX(16px); }
+
+  .cssout {
+    margin-top: 8px; background: #070708; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; padding: 12px 14px; font-family: var(--pulse-font-mono);
+    font-size: 11px; line-height: 1.7; color: var(--pulse-ink-2); white-space: pre; overflow-x:auto;
+  }
+  .cssout .prop { color: var(--pulse-rose-bright); }
+  .cssout .valv { color: #7dd3fc; }
+  .copy-btn {
+    margin-top: 8px; width: 100%; padding: 9px; border-radius: 9px; cursor: pointer;
+    background: var(--pulse-rose); color: #fff; border: none; font-weight: 700; font-size: 12.5px;
+    font-family: var(--pulse-font); transition: background .18s;
+  }
+  .copy-btn:hover { background: var(--pulse-rose-deep); }
+
+  /* ─────────────── PREVIEW STAGE ─────────────── */
+  .stage { position: relative; overflow: hidden; background: var(--pulse-canvas); }
+  .stage-top {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 5;
+    display: flex; align-items: center; gap: 14px; padding: 12px 22px;
+    background: color-mix(in oklab, var(--pulse-canvas) 80%, transparent);
+    backdrop-filter: blur(10px); border-bottom: 1px solid var(--pulse-border);
+  }
+  .stage-top .live-hex {
+    font-family: var(--pulse-font-mono); font-size: 12px;
+    color: var(--pulse-ink); background: var(--pulse-surface-raised);
+    padding: 5px 12px; border-radius: 8px; border: 1px solid var(--pulse-border);
+  }
+  .stage-top .live-hex b { color: var(--pulse-rose); }
+  .stage-top .contrast { font-size: 11.5px; color: var(--pulse-ink-3); }
+  .stage-top .contrast b { color: var(--pulse-ink); }
+  .seg { display:flex; gap:4px; margin-left:auto; background: var(--pulse-surface); border:1px solid var(--pulse-border); border-radius:9px; padding:3px; }
+  .seg button { border:none; background:transparent; color: var(--pulse-ink-3); font-family:var(--pulse-font);
+    font-size:12px; font-weight:600; padding:5px 12px; border-radius:6px; cursor:pointer; }
+  .seg button.on { background: var(--pulse-surface-raised); color: var(--pulse-ink); }
+
+  /* the mock app */
+  .app { position:absolute; inset:0; top:57px; display:grid; grid-template-columns: 210px 1fr; }
+  .side {
+    background: var(--pulse-canvas-soft); border-right: 1px solid var(--pulse-border);
+    padding: 18px 12px; overflow-y:auto;
+  }
+  .brand { display:flex; align-items:center; gap:9px; padding: 0 8px 18px; }
+  .brand .glob { width:26px; height:26px; border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, var(--pulse-rose-bright), var(--pulse-rose-deep)); }
+  .brand span { font-weight:800; letter-spacing:0.14em; font-size:14px; }
+  .navlbl { font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--pulse-ink-3);
+    font-weight:700; padding: 14px 8px 6px; display:flex; align-items:center; gap:6px; }
+  .navlbl .dot { width:5px;height:5px;border-radius:50%;background:var(--pulse-rose); }
+  .nav {
+    display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:9px;
+    font-size:13px; color:var(--pulse-ink-2); cursor:pointer; margin-bottom:2px;
+  }
+  .nav:hover { background: var(--pulse-surface); }
+  .nav.active { background: var(--pulse-rose-soft); color: var(--pulse-rose); font-weight:650; }
+  .nav .ic { width:16px; height:16px; border-radius:4px; background: currentColor; opacity:.7; flex-shrink:0; }
+
+  .content { padding: 26px 30px; overflow-y:auto; }
+  .h-row { display:flex; align-items:center; justify-content:space-between; margin-bottom: 20px; }
+  .h-row h2 { font-size:22px; font-weight:800; }
+  .h-row .btn-primary {
+    background: var(--pulse-rose); color:#fff; border:none; padding:9px 18px; border-radius:9px;
+    font-weight:700; font-size:13px; cursor:pointer; font-family:var(--pulse-font);
+  }
+
+  .cards { display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; margin-bottom:18px; }
+  .card {
+    background: var(--pulse-surface); border:1px solid var(--pulse-border);
+    border-radius:14px; padding:16px;
+  }
+  .card.raised { background: var(--pulse-surface-raised); }
+  .card .k { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--pulse-ink-3); font-weight:700; }
+  .card .v { font-size:26px; font-weight:800; margin-top:6px; }
+  .card .v small { font-size:13px; font-weight:600; }
+
+  .pill { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:650;
+    padding:4px 10px; border-radius:999px; margin: 0 6px 6px 0; }
+  .pill .d { width:6px; height:6px; border-radius:50%; }
+  .pos { color:var(--pulse-tone-positive); background:rgba(74,222,128,.12); }
+  .pos .d { background:var(--pulse-tone-positive); }
+  .warn { color:var(--pulse-tone-warning); background:rgba(251,146,60,.12); }
+  .warn .d { background:var(--pulse-tone-warning); }
+  .over { color:var(--pulse-tone-overdue); background:rgba(248,113,113,.12); }
+  .over .d { background:var(--pulse-tone-overdue); }
+  .info { color:var(--pulse-tone-info); background:rgba(96,165,250,.12); }
+  .info .d { background:var(--pulse-tone-info); }
+
+  .panel { background: var(--pulse-surface); border:1px solid var(--pulse-border); border-radius:14px;
+    padding:18px; margin-top:16px; }
+  .panel h3 { font-size:14px; font-weight:750; margin-bottom:14px; }
+  .msg { display:flex; margin-bottom:10px; }
+  .msg.sent { justify-content:flex-end; }
+  .bubble { max-width:70%; padding:9px 13px; border-radius:14px; font-size:13px; line-height:1.45; }
+  .bubble.recv { background: var(--pulse-surface-raised); border:1px solid var(--pulse-border); border-bottom-left-radius:5px; }
+  .bubble.sent { background: color-mix(in oklab, var(--pulse-ink) 12%, transparent);
+    border:1px solid var(--pulse-border-strong); border-bottom-right-radius:5px; }
+  .composer { display:flex; gap:8px; margin-top:12px; }
+  .composer input { flex:1; background: var(--pulse-surface-raised); border:1px solid var(--pulse-border);
+    border-radius:10px; padding:10px 14px; color:var(--pulse-ink); font-family:var(--pulse-font); font-size:13px; outline:none; }
+  .composer input:focus { border-color: var(--pulse-rose); }
+  .composer .send { background: var(--pulse-rose); border:none; border-radius:10px; width:42px; cursor:pointer; color:#fff; font-weight:800; }
+
+  .swatchbar { display:flex; gap:0; margin-top:16px; border-radius:12px; overflow:hidden; border:1px solid var(--pulse-border); }
+  .swatchbar > div { flex:1; height:54px; display:flex; align-items:flex-end; padding:5px 7px;
+    font-family:var(--pulse-font-mono); font-size:9px; color:rgba(255,255,255,.85); }
+
+  .hint { font-size:11.5px; color:var(--pulse-ink-3); margin-top:18px; line-height:1.6; }
+  .hint b { color: var(--pulse-ink-2); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ CONTROL RAIL ══════════════ -->
+<aside class="rail">
+  <div class="rail-title">Pulse · Design Tokens</div>
+  <h1>Dark-Mode Black Lab</h1>
+  <p class="sub">Pure <code>#000000</code> is harsh on the eyes and makes every translucent surface float on a void. Pick a softer near-black canvas — the whole UI on the right re-renders live off the token.</p>
+
+  <div class="section-label">Candidate Blacks</div>
+  <div id="candidates"></div>
+
+  <div class="section-label">Fine-tune / Custom</div>
+  <div class="mixer">
+    <div class="slider-row">
+      <label>Lightness <span class="val" id="lVal">0%</span></label>
+      <input type="range" id="lightness" min="0" max="14" step="0.5" value="0" />
+    </div>
+    <div class="slider-row">
+      <label>Warmth → rose tint <span class="val" id="tVal">0</span></label>
+      <input type="range" id="tint" min="0" max="20" step="1" value="0" />
+    </div>
+    <div class="toggle-row">
+      <span>Side rail one step lighter</span>
+      <div class="tgl on" id="softStep"></div>
+    </div>
+  </div>
+
+  <div class="section-label">Export Token</div>
+  <div class="cssout" id="cssout"></div>
+  <button class="copy-btn" id="copyBtn">Copy .dark { … } block</button>
+
+  <p class="hint"><b>Tip:</b> the sweet spot for OLED-safe dark UI is usually <code>L 3–6%</code>. A hair of rose warmth (tint 4–8) ties the black to the Pulse heartbeat without reading as “colored”.</p>
+</aside>
+
+<!-- ══════════════ PREVIEW STAGE ══════════════ -->
+<main class="stage">
+  <div class="stage-top">
+    <div class="live-hex">canvas <b id="hexCanvas">#000000</b></div>
+    <div class="live-hex">soft <b id="hexSoft">#080808</b></div>
+    <div class="contrast">ink contrast <b id="contrast">21.0:1</b></div>
+    <div class="seg">
+      <button class="on" data-view="app">App</button>
+      <button data-view="chat">Chat</button>
+    </div>
+  </div>
+
+  <div class="app">
+    <!-- side rail (mimics real Pulse sidebar) -->
+    <div class="side">
+      <div class="brand"><div class="glob"></div><span>PULSE</span></div>
+      <div class="navlbl"><span class="dot"></span>Overview</div>
+      <div class="nav"><span class="ic"></span>Dashboard</div>
+      <div class="navlbl"><span class="dot"></span>Communication</div>
+      <div class="nav"><span class="ic"></span>Messages</div>
+      <div class="nav active"><span class="ic"></span>Email</div>
+      <div class="nav"><span class="ic"></span>Relay</div>
+      <div class="nav"><span class="ic"></span>Glimpse</div>
+      <div class="navlbl"><span class="dot"></span>Work &amp; People</div>
+      <div class="nav"><span class="ic"></span>Calendar</div>
+      <div class="nav"><span class="ic"></span>Contacts</div>
+      <div class="nav"><span class="ic"></span>Decisions</div>
+    </div>
+
+    <!-- content -->
+    <div class="content" id="contentApp">
+      <div class="h-row">
+        <h2>Dashboard</h2>
+        <button class="btn-primary">Compose</button>
+      </div>
+      <div class="cards">
+        <div class="card"><div class="k">Unread</div><div class="v">24<small> msgs</small></div></div>
+        <div class="card raised"><div class="k">Signals today</div><div class="v" style="color:var(--pulse-rose)">7</div></div>
+        <div class="card"><div class="k">Focus time</div><div class="v">3.4<small> hrs</small></div></div>
+      </div>
+      <div>
+        <span class="pill pos"><span class="d"></span>Synced</span>
+        <span class="pill warn"><span class="d"></span>2 pending</span>
+        <span class="pill over"><span class="d"></span>1 overdue</span>
+        <span class="pill info"><span class="d"></span>3 scheduled</span>
+      </div>
+      <div class="panel">
+        <h3>Recent activity</h3>
+        <div class="msg"><div class="bubble recv">The whole signal, one screen. How does the black feel now?</div></div>
+        <div class="msg sent"><div class="bubble sent">Much easier — pure black was scorching my retinas.</div></div>
+        <div class="msg"><div class="bubble recv">Nudge lightness till the cards stop floating on a void.</div></div>
+      </div>
+      <!-- full derived scale for reference -->
+      <div class="swatchbar" id="scaleBar"></div>
+    </div>
+
+    <!-- chat view -->
+    <div class="content" id="contentChat" style="display:none;">
+      <div class="h-row"><h2>Relay · Team</h2><button class="btn-primary">New thread</button></div>
+      <div class="panel">
+        <h3>#product-signal</h3>
+        <div class="msg"><div class="bubble recv">Pushed the new canvas token to staging.</div></div>
+        <div class="msg"><div class="bubble recv">The surface cards read as real cards now, not gaps.</div></div>
+        <div class="msg sent"><div class="bubble sent">Ship it. This is the one.</div></div>
+        <div class="msg"><div class="bubble recv">On OLED it's basically off-pixels but the eye strain is gone 👌</div></div>
+        <div class="composer">
+          <input placeholder="Message #product-signal…" />
+          <button class="send">↑</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ─────────────────────────────────────────────
+   Candidate palette of near-blacks. Each defines a
+   canvas + a matched "soft" companion (one rung up).
+   ───────────────────────────────────────────── */
+const CANDIDATES = [
+  { name: 'True Black (current)', canvas:'#000000', soft:'#080808', note:'Shipped today — max OLED contrast, hardest on eyes.' },
+  { name: 'Ink Black',            canvas:'#0a0a0b', soft:'#111113', note:'Pulse already uses this for bg-deep. Cool, neutral.' },
+  { name: 'Zinc 950',            canvas:'#09090b', soft:'#111113', note:'Tailwind zinc-950. Safe, familiar, faint cool cast.' },
+  { name: 'Carbon',              canvas:'#0d0d0f', soft:'#151517', note:'A touch lifted — cards start reading as cards.' },
+  { name: 'Graphite',            canvas:'#121214', soft:'#1a1a1d', note:'Comfortable long-session dark. Clearly not black.' },
+  { name: 'Material',            canvas:'#121212', soft:'#1c1c1c', note:'Google Material dark baseline. Pure-neutral.' },
+  { name: 'Rose Ash',            canvas:'#0d0b0c', soft:'#151113', note:'On-brand: whisper of rose warmth in the black.' },
+  { name: 'Warm Ink',            canvas:'#100c0d', soft:'#181315', note:'Warmer near-black; pairs with the rose heartbeat.' },
+  { name: 'Soft Charcoal',       canvas:'#18181b', soft:'#202024', note:'zinc-900. Softest option — reads as dark grey.' },
+];
+
+/* ── helpers ── */
+const clamp = (n,a,b)=>Math.max(a,Math.min(b,n));
+const toHex = n => clamp(Math.round(n),0,255).toString(16).padStart(2,'0');
+const hexToRgb = h => { h=h.replace('#',''); return [0,2,4].map(i=>parseInt(h.substr(i,2),16)); };
+const rgbToHex = (r,g,b) => '#'+toHex(r)+toHex(g)+toHex(b);
+// relative luminance for WCAG contrast
+function lum(hex){ const [r,g,b]=hexToRgb(hex).map(v=>{v/=255; return v<=0.03928? v/12.92 : Math.pow((v+0.055)/1.055,2.4);}); return 0.2126*r+0.7152*g+0.0722*b; }
+function contrast(a,b){ const L1=lum(a),L2=lum(b); const hi=Math.max(L1,L2),lo=Math.min(L1,L2); return ((hi+0.05)/(lo+0.05)); }
+
+const root = document.documentElement;
+const state = { canvas:'#000000', soft:'#080808', softStep:true };
+
+function apply(canvas, soft){
+  state.canvas = canvas; state.soft = soft;
+  root.style.setProperty('--pulse-canvas', canvas);
+  root.style.setProperty('--pulse-canvas-soft', state.softStep ? soft : canvas);
+  document.getElementById('hexCanvas').textContent = canvas;
+  document.getElementById('hexSoft').textContent = state.softStep ? soft : canvas;
+  const c = contrast('#fafafa', canvas);
+  document.getElementById('contrast').textContent = c.toFixed(1)+':1';
+  renderCss(); renderScale();
+}
+
+/* build candidate list */
+const candWrap = document.getElementById('candidates');
+CANDIDATES.forEach((c,i)=>{
+  const el = document.createElement('div');
+  el.className = 'swatch' + (i===0?' active':'');
+  el.innerHTML = `
+    <div class="chip" style="background:${c.canvas}"></div>
+    <div class="meta">
+      <div class="name">${c.name}</div>
+      <div class="hex">${c.canvas} · soft ${c.soft}</div>
+      <div class="note">${c.note}</div>
+    </div>
+    <div class="radio"></div>`;
+  el.onclick = ()=>{
+    document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('lightness').value = 0;
+    document.getElementById('tint').value = 0;
+    document.getElementById('lVal').textContent='0%';
+    document.getElementById('tVal').textContent='0';
+    apply(c.canvas, c.soft);
+  };
+  candWrap.appendChild(el);
+});
+
+/* custom mixer — builds a black from lightness + rose tint */
+function mix(){
+  document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active'));
+  const L = parseFloat(document.getElementById('lightness').value); // 0..14 (%)
+  const t = parseFloat(document.getElementById('tint').value);      // 0..20
+  document.getElementById('lVal').textContent = L+'%';
+  document.getElementById('tVal').textContent = t;
+  // base grey level
+  const base = Math.round(L/100*255);
+  // rose tint = push R up, G/B down a hair (rose #fb7185 direction)
+  const r = base + Math.round(t*0.9);
+  const g = base - Math.round(t*0.25);
+  const b = base - Math.round(t*0.05);
+  const canvas = rgbToHex(r,g,b);
+  const soft = rgbToHex(r+8, g+8, b+8);
+  apply(canvas, soft);
+}
+document.getElementById('lightness').oninput = mix;
+document.getElementById('tint').oninput = mix;
+
+/* soft-step toggle */
+document.getElementById('softStep').onclick = function(){
+  state.softStep = !state.softStep;
+  this.classList.toggle('on', state.softStep);
+  apply(state.canvas, state.soft);
+};
+
+/* view switch */
+document.querySelectorAll('.seg button').forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll('.seg button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    const app = b.dataset.view==='app';
+    document.getElementById('contentApp').style.display = app?'block':'none';
+    document.getElementById('contentChat').style.display = app?'none':'block';
+  };
+});
+
+/* css export */
+function renderCss(){
+  const soft = state.softStep ? state.soft : state.canvas;
+  document.getElementById('cssout').innerHTML =
+    `<span class="prop">--pulse-canvas</span>: <span class="valv">${state.canvas}</span>;\n`+
+    `<span class="prop">--pulse-canvas-soft</span>: <span class="valv">${soft}</span>;`;
+}
+document.getElementById('copyBtn').onclick = ()=>{
+  const soft = state.softStep ? state.soft : state.canvas;
+  const txt = `.dark {\n  --pulse-canvas: ${state.canvas};\n  --pulse-canvas-soft: ${soft};\n}`;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const b=document.getElementById('copyBtn'); const o=b.textContent;
+    b.textContent='✓ Copied!'; setTimeout(()=>b.textContent=o,1400);
+  });
+};
+
+/* derived reference scale — canvas → surface layers over it */
+function renderScale(){
+  const bar = document.getElementById('scaleBar');
+  const layers = [
+    ['canvas', state.canvas, state.canvas],
+    ['soft', state.softStep?state.soft:state.canvas, state.softStep?state.soft:state.canvas],
+    ['+3% wht', state.canvas, 'rgba(255,255,255,0.03)'],
+    ['+5.5% wht', state.canvas, 'rgba(255,255,255,0.055)'],
+    ['modal', '#18181b', '#18181b'],
+  ];
+  bar.innerHTML = layers.map(([lbl,base,over])=>
+    `<div style="background:${base}"><div style="width:100%;height:100%;display:flex;align-items:flex-end;background:${over}">${lbl}</div></div>`
+  ).join('');
+}
+
+apply('#000000','#080808');
+</script>
+</body>
+</html>
