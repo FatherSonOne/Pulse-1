@@ -18,7 +18,7 @@
 //   `voxer` bucket fallback live here so every mode inherits them.
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { resolveAudioUrl, legacyAudioUrl } from '../../../services/relay/resolveAudioUrl';
+import { getPlayableUrl } from '../../../services/relay/resolveAudioUrl';
 import { type PlaybackSpeed, PLAYBACK_SPEEDS } from '../../../hooks/usePlaybackSpeed';
 
 export type { PlaybackSpeed };
@@ -267,6 +267,11 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, paneWid
   const nowPlayingRef = useRef<NowPlayingVoice | null>(null);
   nowPlayingRef.current = nowPlaying;
 
+  // Monotonic token to cancel a superseded async URL-sign. play() bumps it and
+  // the in-flight signer bails if a newer play()/stop() has moved on — so a slow
+  // sign for voice A can't clobber the src of voice B the user just started.
+  const playTokenRef = useRef(0);
+
   // playbackRate in a ref so the []-dep play() reads the current rate, not a
   // stale capture.
   const playbackRateRef = useRef<PlaybackSpeed>(playbackRate);
@@ -302,24 +307,25 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, paneWid
     }
 
     audio.pause();
-    audio.src = resolveAudioUrl(v.audioUrl);
-    audio.currentTime = 0;
     audio.playbackRate = playbackRateRef.current;
 
-    // Dual-read fallback: if the canonical relay URL errors (legacy asset
-    // pre-cutover), retry once against the voxer bucket before giving up.
-    const onError = () => {
-      audio.removeEventListener('error', onError);
-      const fallback = legacyAudioUrl(v.audioUrl);
-      if (fallback && fallback !== audio.src) {
-        audio.src = fallback;
-        audio.play().catch(() => setIsPlaying(false));
-      } else {
-        setIsPlaying(false);
-      }
-    };
-    audio.addEventListener('error', onError, { once: true });
-    audio.play().catch(() => setIsPlaying(false));
+    // Sign the stored ref lazily so playback works from a private bucket.
+    // getPlayableUrl already tries the canonical relay bucket then the legacy
+    // voxer bucket (subsuming the old dual-read fallback) and passes blob:/data:
+    // through untouched. Signing is async, so stamp a token and bail if a newer
+    // play()/stop() supersedes this one before the URL resolves.
+    const token = ++playTokenRef.current;
+    void (async () => {
+      const src = await getPlayableUrl(v.audioUrl);
+      if (playTokenRef.current !== token) return; // superseded — drop it
+      // If even the signed URL fails to load (e.g. 403 on a private bucket),
+      // fall back to "paused, not crashed" rather than spinning.
+      const onError = () => setIsPlaying(false);
+      audio.addEventListener('error', onError, { once: true });
+      audio.src = src;
+      audio.currentTime = 0;
+      audio.play().catch(() => setIsPlaying(false));
+    })();
   }, []);
 
   const togglePlay = useCallback(() => {
@@ -333,6 +339,8 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, paneWid
   }, []);
 
   const stop = useCallback(() => {
+    // Cancel any in-flight sign so a late resolve can't restart playback.
+    playTokenRef.current++;
     const audio = audioRef.current;
     if (audio) {
       audio.pause();

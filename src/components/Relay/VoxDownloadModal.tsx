@@ -22,6 +22,7 @@ import {
 import JSZip from 'jszip';
 import { Mp3Encoder } from 'lamejs';
 import { VoxSelectionItem } from '../../hooks/useVoxSelection';
+import { getPlayableUrl } from '../../services/relay/resolveAudioUrl';
 
 interface VoxDownloadModalProps {
   isOpen: boolean;
@@ -133,7 +134,10 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
   // Download a single file
   const downloadFile = useCallback(async (url: string, filename: string): Promise<boolean> => {
     try {
-      const response = await fetch(url);
+      // Sign first so downloads work once the bucket is private (no-op on a
+      // public bucket / blob URL).
+      const signed = await getPlayableUrl(url);
+      const response = await fetch(signed);
       if (!response.ok) throw new Error('Failed to fetch file');
 
       const blob = await response.blob();
@@ -160,7 +164,8 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
     targetFormat: ExportFormat
   ): Promise<Blob | null> => {
     try {
-      const response = await fetch(url);
+      const signed = await getPlayableUrl(url);
+      const response = await fetch(signed);
       const arrayBuffer = await response.arrayBuffer();
 
       // For WebM, return original — video mode preserves the video track
@@ -321,8 +326,9 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
 
         try {
           if (selectedFormat === 'webm') {
-            // Add WebM directly
-            const response = await fetch(item.url);
+            // Add WebM directly (sign first for private-bucket reads).
+            const signed = await getPlayableUrl(item.url);
+            const response = await fetch(signed);
             const blob = await response.blob();
             zip.file(fileName, blob);
           } else {
