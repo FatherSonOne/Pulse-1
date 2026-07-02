@@ -114,11 +114,25 @@ const VoxAudioVisualizer: React.FC<VoxAudioVisualizerProps> = ({
     return peaks;
   }, []);
 
-  // Update peaks when audio buffer changes
+  // Update peaks when audio buffer changes.
+  //
+  // DISPLAY-ONLY normalization: the raw peaks of a clean, unboosted recording
+  // are tiny (e.g. ~0.05), so every bar floors to the 3px minimum and the
+  // waveform reads as a flat line — which is why the visualizer looked "dead"
+  // unless the (audio-destroying) enhancement/normalize was on. We scale the
+  // loudest bar to full height here so quiet-but-clean audio still shows lively
+  // waves. This touches ONLY the rendered pixels — never the audio blob. A
+  // silence floor keeps true silence from being amplified into noise; the mild
+  // pow() curve lifts mid-level content to match the live meter's aesthetic.
   useEffect(() => {
     if (audioBuffer) {
       const numBars = mode === 'circular' ? 64 : Math.floor(canvasWidth / 6);
-      peaksRef.current = extractPeaks(audioBuffer, numBars);
+      const rawPeaks = extractPeaks(audioBuffer, numBars);
+      const maxPeak = rawPeaks.reduce((m, p) => (p > m ? p : m), 0);
+      peaksRef.current =
+        maxPeak > 0.02
+          ? rawPeaks.map((p) => Math.min(1, Math.pow(p / maxPeak, 0.7)))
+          : rawPeaks;
     }
   }, [audioBuffer, canvasWidth, mode, extractPeaks]);
 
