@@ -17,9 +17,11 @@
 -- createSignedUrl enforces the SELECT policy below, so authenticated playback
 -- keeps working; anonymous/direct-URL fetches stop working. That is the point.
 --
--- ⚠️ DO NOT APPLY until a live smoke-test confirms playback still works — see the
--- checklist in docs/app-dev/relay-APP-PRODUCT.md (sweep 3b-iii). Headless
--- verification is not possible on the author's box.
+-- ✅ APPLIED 2026-07-02 to pulse-chat (ucaeuszgoihoyrvhewxk) via MCP apply_migration,
+-- after Frank ran the live smoke-test (5/5 read paths served signed URLs; race clean).
+-- Verified post-apply: bucket public=false, old public policy dropped, new authed
+-- policy live. Filename version renamed 20260701130000 -> 20260702054022 to match the
+-- version recorded in the remote migration history so `supabase db push` is a no-op.
 --
 -- ROLLBACK (instant, if playback breaks in prod):
 --   UPDATE storage.buckets SET public = true WHERE id = 'relay';
