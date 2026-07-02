@@ -273,9 +273,16 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     transcriptionEngine: 'whisper',
     playbackSpeed: 1,
     visualizerSensitivity: 0.7,
-    noiseReduction: true,
-    audioEnhancement: true,
-    enhanceVoiceClarity: true,
+    // Destructive post-processing defaults OFF. audioEnhancementService applies a
+    // hard-clip peak-normalizer (normalizeAudio clamps to ±1) + aggressive EQ/
+    // compression that thrashed/clipped recordings — baked permanently into the
+    // sent blob. There is no UI to disable it (the Audio I/O panel's toggles are
+    // a separate getUserMedia-constraints store this code never reads), so it ran
+    // on every recording. Keep raw clean Opus until the DSP is reworked into a
+    // safe soft-limiter AND a real toggle is wired. See relay-APP-PRODUCT sweep.
+    noiseReduction: false,
+    audioEnhancement: false,
+    enhanceVoiceClarity: false,
   });
 
   // Real-time audio visualization state
