@@ -49,34 +49,33 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
     return () => observer.disconnect();
   }, []);
 
-  // Animated progress value
-  const animatedProgress = useMotionValue(0);
-  const [displayProgress, setDisplayProgress] = useState(0);
-
-  useEffect(() => {
-    if (autoAnimate) {
-      // Auto-animate from 0 to 100 over 8 seconds with easing
-      // This gives the appearance of loading progress
-      const controls = animate(animatedProgress, 100, {
-        duration: 8,
-        ease: [0.25, 0.1, 0.25, 1], // Custom cubic bezier for realistic loading feel
-        onUpdate: (latest) => setDisplayProgress(latest)
-      });
-
-      return () => controls.stop();
-    } else {
-      // Use the context or prop progress directly
-      setDisplayProgress(contextProgress);
-    }
-  }, [autoAnimate, contextProgress, animatedProgress]);
-
-  const progress = autoAnimate ? displayProgress : contextProgress;
-
-  // Calculate stroke-dashoffset for progress ring
-  // Circle circumference: 2 * PI * radius (radius = 58)
+  // Progress is driven entirely by a framer-motion MotionValue so the ring and
+  // percentage update off the React render path — no per-frame setState. This
+  // matters most during app boot, when this full-viewport overlay is up and the
+  // main thread is busy resolving auth/workspace: the old 60fps setState here
+  // re-rendered the whole screen every frame and stole paint time (hurting LCP).
   const radius = 58;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+  const animatedProgress = useMotionValue(0);
+  const strokeDashoffset = useTransform(
+    animatedProgress,
+    (v) => circumference - (v / 100) * circumference
+  );
+  const progressLabel = useTransform(animatedProgress, (v) => `${Math.round(v)}%`);
+
+  useEffect(() => {
+    // autoAnimate: fake a 0→100 climb over 8s. Otherwise track the real progress
+    // from context/props. Either way the MotionValue animates without re-renders.
+    const controls = animate(
+      animatedProgress,
+      autoAnimate ? 100 : contextProgress,
+      autoAnimate
+        ? { duration: 8, ease: [0.25, 0.1, 0.25, 1] }
+        : { duration: 0.3, ease: 'easeOut' }
+    );
+    return () => controls.stop();
+  }, [autoAnimate, contextProgress, animatedProgress]);
 
   // Theme-aware palette — keeps the rose/pink accent identical across modes,
   // swaps only surface, ring, text, and pill colors.
@@ -113,7 +112,7 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
       className={`${inline ? 'h-full w-full' : contained ? 'absolute inset-0 z-50' : 'fixed inset-0 z-50'} flex items-center justify-center ${palette.screenBg}`}
       role="status"
       aria-live="polite"
-      aria-label={`Loading: ${currentStageLabel} - ${Math.round(progress)}% complete`}
+      aria-label={`Loading: ${currentStageLabel}`}
     >
       <div className="flex flex-col items-center gap-8 px-4">
         {/* Logo Container with Progress Ring */}
@@ -153,13 +152,7 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
               strokeWidth="4"
               strokeLinecap="round"
               strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              initial={{ strokeDashoffset: circumference }}
-              animate={{ strokeDashoffset }}
-              transition={{
-                duration: 0.5,
-                ease: "easeInOut"
-              }}
+              style={{ strokeDashoffset }}
             />
           </svg>
 
@@ -280,9 +273,9 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="text-4xl font-bold bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">
-            {Math.round(progress)}%
-          </div>
+          <motion.div className="text-4xl font-bold bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">
+            {progressLabel}
+          </motion.div>
         </motion.div>
 
         {/* Stage Message */}

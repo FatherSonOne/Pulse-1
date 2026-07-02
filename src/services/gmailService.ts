@@ -36,6 +36,11 @@ export interface GmailDraft {
   message: GmailMessage;
 }
 
+// Warn at most once per page load when the aux backend is unreachable, so a
+// down/not-running backend (expected in local dev) doesn't spam the console on
+// every briefing refresh.
+let backendUnreachableWarned = false;
+
 export interface EmailAttachment {
   filename: string;
   mimeType: string;
@@ -83,13 +88,30 @@ export class GmailService {
         return null;
       }
 
-      const response = await fetch(`${BACKEND_URL}/api/gmail/refresh-token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-      });
+      let response: Response;
+      try {
+        response = await fetch(`${BACKEND_URL}/api/gmail/refresh-token`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+      } catch {
+        // Aux backend (server.js) unreachable — dev: it's not running; prod: an
+        // outage. This is distinct from "Gmail not connected": throw a typed
+        // error so the UI doesn't misreport a down backend as a missing
+        // connection. Warn once per page load instead of erroring on every call.
+        if (!backendUnreachableWarned) {
+          backendUnreachableWarned = true;
+          console.warn(
+            `[GmailService] Pulse backend unreachable at ${BACKEND_URL} — Gmail features paused until it's up.`
+          );
+        }
+        const err = new Error('Pulse backend is unreachable — cannot refresh Gmail.');
+        (err as any).code = 'BACKEND_UNREACHABLE';
+        throw err;
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -122,7 +144,11 @@ export class GmailService {
 
       return null;
     } catch (error) {
-      if ((error as any).requiresReauth || (error as any).requiresConnect) {
+      if (
+        (error as any).requiresReauth ||
+        (error as any).requiresConnect ||
+        (error as any).code === 'BACKEND_UNREACHABLE'
+      ) {
         throw error;
       }
       console.error('[GmailService] Error refreshing Gmail token:', error);
@@ -463,10 +489,17 @@ export class GmailService {
 
       return messages;
     } catch (error) {
-      // GOOGLE_SESSION_EXPIRED is the expected "not connected" path — let the
-      // caller handle it (e.g. show a "Connect Gmail" button) without spamming
-      // the console on every parallel briefing call.
-      if ((error as any)?.code !== 'GOOGLE_SESSION_EXPIRED') {
+      // Expected, caller-handled states — don't spam the console on every
+      // parallel briefing call. The caller surfaces the right prompt from the
+      // error code (e.g. "Connect Gmail", or "backend down"):
+      //   GOOGLE_SESSION_EXPIRED / GMAIL_NOT_CONNECTED — Gmail not connected
+      //   BACKEND_UNREACHABLE — aux backend not running / outage
+      const code = (error as any)?.code;
+      if (
+        code !== 'GOOGLE_SESSION_EXPIRED' &&
+        code !== 'GMAIL_NOT_CONNECTED' &&
+        code !== 'BACKEND_UNREACHABLE'
+      ) {
         console.error('Error fetching Gmail messages:', error);
       }
       throw error;
