@@ -287,35 +287,47 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
       return;
     }
 
-    const note = await voxModeService.createVoxNote(
-      recordingData.blob,
-      recordingData.duration,
-      `Note ${new Date().toLocaleDateString()}`
-    );
-
-    if (note) {
-      setNotes(prev => [note, ...prev]);
-      setSelectedNote(note);
-
-      const userId = voxModeService.getUserId();
-      import('../../services/analyticsCollector').then(({ default: ac }) => {
-        ac.trackMessageEvent({
-          id: note.id,
-          channel: 'voxer',
-          contactIdentifier: userId || 'self',
-          contactName: 'Personal Note',
-          isSent: true,
-          timestamp: new Date(),
-          content: note.title || '[Vox Note]',
-          duration: recordingData.duration,
-          messageType: 'vox_note'
-        }).catch(err => console.error('Analytics tracking failed:', err));
-      }).catch(() => {});
-
-      // Reload notes to confirm persistence
-      setTimeout(() => loadNotes(), 500);
+    let note: VoxNote | null = null;
+    try {
+      note = await voxModeService.createVoxNote(
+        recordingData.blob,
+        recordingData.duration,
+        `Note ${new Date().toLocaleDateString()}`
+      );
+    } catch (err) {
+      console.error('Failed to save note:', err);
     }
 
+    // Save failed (upload / transcribe / insert). Do NOT reset the recorder —
+    // keeping the preview lets the user retry instead of silently losing the
+    // recording. (Mirrors the Channels CH5 send-failure fix.)
+    if (!note) {
+      toast.error("Couldn't save note — check your connection and try again");
+      return;
+    }
+
+    setNotes(prev => [note!, ...prev]);
+    setSelectedNote(note);
+
+    const userId = voxModeService.getUserId();
+    import('../../services/analyticsCollector').then(({ default: ac }) => {
+      ac.trackMessageEvent({
+        id: note!.id,
+        channel: 'voxer',
+        contactIdentifier: userId || 'self',
+        contactName: 'Personal Note',
+        isSent: true,
+        timestamp: new Date(),
+        content: note!.title || '[Vox Note]',
+        duration: recordingData.duration,
+        messageType: 'vox_note'
+      }).catch(err => console.error('Analytics tracking failed:', err));
+    }).catch(() => {});
+
+    // Reload notes to confirm persistence
+    setTimeout(() => loadNotes(), 500);
+
+    // Only reset the recorder once the note is safely persisted.
     sendRecording();
   };
 
