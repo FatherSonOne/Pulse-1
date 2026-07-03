@@ -310,26 +310,11 @@ const featureFlagsConfig: FeatureFlagConfig = {
     version: '0.1.0'
   },
 
-  // Relay ONE canonical recorder (app-dev Phase 2a — composer consolidation).
-  // Relay's capture layer is fragmented: ClassicMode has its own MediaRecorder,
-  // RelayComposer drives useVoxRecording, the Dashboard strip has a third. The
-  // consolidation converges every surface onto ONE recorder built on the proven,
-  // leak-safe useVoxRecording core, made settings-aware (honors the AudioIOSettings
-  // panel — device, quality preset, EC/NS/AGC) and constraint-hardened (no
-  // exact-channel / forced-sampleRate dead recordings). This flag gates the first
-  // slice: Direct/ClassicMode registers the canonical <StudioRecorder> (driven by
-  // the studio FloatingMic + SPACE + StudioFooter surface) INSTEAD of its bespoke
-  // inline recorder. OFF = ClassicMode's proven path is untouched (zero change).
-  // Nothing is retired until this is live-verified: record 5-6 in a row (last =
-  // first, no AudioContext error), send delivers, AudioIOSettings changes actually
-  // affect capture. Dev override: ?ff_relayStudioRecorder=on
-  relayStudioRecorder: {
-    enabled: true,
-    rolloutPercentage: 100,
-    targetUsers: ['all'],
-    description: 'ON by default (team testing, pre-launch) — one canonical settings-aware recorder (over useVoxRecording). The RelayComposer modal (primary surface) is now settings-aware unconditionally; this flag additionally routes the Direct/ClassicMode inline recorder to StudioRecorder. Kill-switch if capture misbehaves: ?ff_relayStudioRecorder=off',
-    version: '0.1.0'
-  },
+  // relayStudioRecorder flag RETIRED (app-dev Phase 2c, 2026-07-03) after live
+  // verification. The canonical <StudioRecorder> (over the settings-aware,
+  // constraint-hardened useVoxRecording core) is now the permanent, only inline
+  // recorder in Direct/ClassicMode — the bespoke MediaRecorder path it replaced
+  // was severed and removed. No flag needed; nothing left to fall back to.
 };
 
 // User group definitions

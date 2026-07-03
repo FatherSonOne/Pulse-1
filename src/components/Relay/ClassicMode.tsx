@@ -336,13 +336,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   // verify offline/refresh/reconnect: `?ff_relayDurableOutbox=on`.
   const durableOutboxEnabled = useFeatureFlag('relayDurableOutbox');
 
-  // Phase 2a (composer consolidation): when on, Direct delegates capture to the
-  // ONE canonical <StudioRecorder> instead of registering its own bespoke
-  // MediaRecorder below — proving the consolidated recorder before anything is
-  // retired. OFF = this component's proven inline recorder is untouched. Flip on
-  // in dev to verify: `?ff_relayStudioRecorder=on`.
-  const studioRecorderEnabled = useFeatureFlag('relayStudioRecorder');
-
   // Phase 5: AI Enhancement States
   const [showSummary, setShowSummary] = useState(false);
   const [conversationSummary, setConversationSummary] = useState<ConversationSummary | null>(null);
@@ -1217,20 +1210,10 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     startRecording();
   }, [startRecording, pendingRecording]);
 
-  // Tier 2 (unify trigger): the studio shell's FloatingMic + footer RECORDING
-  // surface drive Direct's own MediaRecorder; the in-pane record button is
-  // retired. Enabled only when a contact is selected (the send target). The
-  // RecordingPreview (audio enhancement + transcription) → send stays in-pane.
-  useRelayModeRecorder({
-    start: startRecording,
-    stop: stopRecording,
-    cancel: cancelRecording,
-    recording: isRecording,
-    // Stand down when the canonical StudioRecorder is driving (Phase 2a): only
-    // one recorder registers at a time, so the studio surface drives exactly the
-    // intended capture. OFF → this proven inline recorder owns capture as before.
-    enabled: !studioRecorderEnabled && !!activeContactId,
-  });
+  // Phase 2c: the bespoke inline recorder is retired. Capture is owned entirely
+  // by the canonical <StudioRecorder> (rendered below), which registers itself
+  // with the studio. The old useRelayModeRecorder registration for ClassicMode's
+  // own MediaRecorder is gone; its now-dead capture functions are removed too.
 
   // ============================================
   // PLAYBACK FUNCTIONS
@@ -2255,23 +2238,17 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
               </div>
             )}
 
-            {/* Phase 2a: the ONE canonical recorder. When the flag is on it
-                registers as Direct's recorder (the block above is inert — its
-                pendingRecording never sets) and owns capture → preview → send
-                through the service chokepoint. When off it renders nothing and
-                the proven path above runs unchanged. Recipient = the open
-                thread's contact. */}
+            {/* The ONE canonical recorder (Phase 2c: now the only inline
+                recorder). Registers itself with the studio, owns capture →
+                preview → durable send. Recipient = the open thread's contact;
+                the FloatingMic + SPACE + StudioFooter RECORDING surface drive it. */}
             <StudioRecorder
-              enabled={studioRecorderEnabled}
+              enabled
               recipientId={activeContactId}
               isDarkMode={isDarkMode}
               onSent={refreshRecordings}
               durable={durableOutboxEnabled}
             />
-
-            {/* The in-pane record button is retired (Tier 2: the FloatingMic
-                + StudioFooter RECORDING surface drive capture via the studio
-                recorder). The RecordingPreview above owns review → send. */}
           </>
         ) : (
           /* No-selection empty — routed through the shared VoxEmptyState so
