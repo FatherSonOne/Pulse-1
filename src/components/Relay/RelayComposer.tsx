@@ -476,7 +476,9 @@ export const RelayComposer: React.FC<RelayComposerProps> = ({
             <div className="flex-1 min-h-0 px-6 pt-10 pb-6 flex flex-col items-center justify-center">
               <RecordButton
                 state={
-                  recordingState === 'recording' ? 'recording' :
+                  // 'starting' shows the recording visual immediately so the tap
+                  // isn't dead during the ~3s mic warm-up.
+                  recordingState === 'recording' || recordingState === 'starting' ? 'recording' :
                   recordingState === 'analyzing' ? 'processing' :
                   'idle'
                 }

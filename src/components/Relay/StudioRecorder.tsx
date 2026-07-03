@@ -66,7 +66,9 @@ export const StudioRecorder: React.FC<StudioRecorderProps> = ({
     start: rec.startRecording,
     stop: rec.stopRecording,
     cancel: rec.cancelRecording,
-    recording: rec.state === 'recording',
+    // Treat 'starting' as recording for the shell so the footer RECORDING
+    // surface appears the instant you tap, not after the ~3s mic warm-up.
+    recording: rec.state === 'recording' || rec.state === 'starting',
     enabled: enabled && !!recipientId,
   });
 

@@ -1,7 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { voxModeService } from '../services/relay/voxModeService';
 
-export type RecordingState = 'idle' | 'recording' | 'preview' | 'analyzing';
+// 'starting' = the tap has registered and we're acquiring the mic (getUserMedia
+// + audio-effects init can take 1-3s on Windows), but capture hasn't begun yet.
+// Surfaces show an immediate "starting…" affordance so the tap never feels dead.
+export type RecordingState = 'idle' | 'starting' | 'recording' | 'preview' | 'analyzing';
 
 export interface RecordingData {
   blob: Blob;
@@ -151,6 +154,11 @@ export function useVoxRecording(options: UseVoxRecordingOptions = {}): UseVoxRec
   const startRecording = useCallback(async () => {
     try {
       cleanup(); // Ensure clean state
+
+      // Flip to 'starting' immediately so the UI acknowledges the tap while the
+      // mic warms up (getUserMedia below can take 1-3s cold). Without this the
+      // record surface looks frozen until capture actually begins.
+      setState('starting');
 
       // Request microphone access with high-quality audio constraints.
       // channelCount is `ideal`, NOT `exact`: mono is a preference, but a device
