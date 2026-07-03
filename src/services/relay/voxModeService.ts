@@ -575,6 +575,146 @@ class VoxModeService {
     return true;
   }
 
+  // ============================================
+  // DISCOVER & SUBSCRIBE (BR1) — the audience half
+  // ============================================
+
+  /**
+   * Public channels for the Discover surface. pulse_channels is world-readable
+   * (SELECT USING(true)); we exclude the caller's own channels so Discover shows
+   * only channels they could subscribe to, newest-liveliest first.
+   */
+  async getPublicChannels(limit: number = 50, offset: number = 0): Promise<PulseChannel[]> {
+    const userId = await this.ensureUserId();
+
+    let query = supabase
+      .from('pulse_channels')
+      .select('*')
+      .eq('is_public', true)
+      .order('subscriber_count', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (userId) query = query.neq('owner_id', userId);
+
+    const { data, error } = await query;
+    if (error || !data) return [];
+    return data.map(channel => this.mapDbToChannel(channel));
+  }
+
+  /**
+   * Channels the current user subscribes to (not owned). Two-step: read my
+   * subscription rows, then fetch those channels. Public read on broadcasts means
+   * getChannelBroadcasts serves these feeds to a non-owner unchanged.
+   */
+  async getMySubscribedChannels(): Promise<PulseChannel[]> {
+    const userId = await this.ensureUserId();
+    if (!userId) return [];
+
+    const { data: subs, error: subErr } = await supabase
+      .from('pulse_channel_subscriptions')
+      .select('channel_id')
+      .eq('subscriber_id', userId);
+
+    if (subErr || !subs || subs.length === 0) return [];
+    const ids = subs.map(s => s.channel_id).filter(Boolean);
+    if (ids.length === 0) return [];
+
+    const { data, error } = await supabase
+      .from('pulse_channels')
+      .select('*')
+      .in('id', ids)
+      .order('last_broadcast_at', { ascending: false, nullsFirst: false });
+
+    if (error || !data) return [];
+    return data.map(channel => this.mapDbToChannel(channel));
+  }
+
+  /** Channel ids the current user subscribes to — for Discover toggle state. */
+  async getSubscribedChannelIds(): Promise<Set<string>> {
+    const userId = await this.ensureUserId();
+    if (!userId) return new Set();
+    const { data, error } = await supabase
+      .from('pulse_channel_subscriptions')
+      .select('channel_id')
+      .eq('subscriber_id', userId);
+    if (error || !data) return new Set();
+    return new Set(data.map(s => s.channel_id).filter(Boolean) as string[]);
+  }
+
+  /**
+   * Subscribe the current user to a channel. Mirrors createChannel's
+   * ensurePulseUser() dance: subscriber_id FKs pulse_users(id) *and* RLS forces
+   * subscriber_id = auth.uid(), so a pulse_users row keyed by the auth uid must
+   * exist first. Idempotent (unique channel_id+subscriber_id → dup ignored).
+   * Returns the channel's new subscriber_count, or null on failure.
+   */
+  async subscribeToChannel(channelId: string): Promise<number | null> {
+    const pulseUser = await this.ensurePulseUser();
+    if (!pulseUser) {
+      console.error('Failed to ensure pulse user before subscribing');
+      return null;
+    }
+    const userId = pulseUser.id; // == auth uid on the ensured row
+
+    const { error } = await supabase
+      .from('pulse_channel_subscriptions')
+      .insert([{ channel_id: channelId, subscriber_id: userId, notifications_enabled: true }]);
+
+    // 23505 = already subscribed → treat as success (idempotent).
+    if (error && error.code !== '23505') {
+      console.error('Error subscribing to channel:', error);
+      return null;
+    }
+
+    const { data, error: rpcErr } = await supabase.rpc('sync_channel_subscriber_count', { p_channel_id: channelId });
+    if (rpcErr) {
+      console.error('Subscribed, but failed to sync subscriber_count:', rpcErr);
+      return null;
+    }
+    return typeof data === 'number' ? data : null;
+  }
+
+  /**
+   * Unsubscribe the current user from a channel. RLS lets a subscriber delete
+   * their own row. Returns the channel's new subscriber_count, or null.
+   */
+  async unsubscribeFromChannel(channelId: string): Promise<number | null> {
+    const userId = await this.ensureUserId();
+    if (!userId) return null;
+
+    const { error } = await supabase
+      .from('pulse_channel_subscriptions')
+      .delete()
+      .eq('channel_id', channelId)
+      .eq('subscriber_id', userId);
+
+    if (error) {
+      console.error('Error unsubscribing from channel:', error);
+      return null;
+    }
+
+    const { data, error: rpcErr } = await supabase.rpc('sync_channel_subscriber_count', { p_channel_id: channelId });
+    if (rpcErr) {
+      console.error('Unsubscribed, but failed to sync subscriber_count:', rpcErr);
+      return null;
+    }
+    return typeof data === 'number' ? data : null;
+  }
+
+  /**
+   * BR3 — record one listen against a broadcast (and roll up to its channel's
+   * total_listens). Fire-and-forget on first play; returns the new count or null.
+   */
+  async incrementBroadcastListen(broadcastId: string): Promise<number | null> {
+    const { data, error } = await supabase.rpc('increment_broadcast_listen', { p_broadcast_id: broadcastId });
+    if (error) {
+      console.error('Error incrementing broadcast listen:', error);
+      return null;
+    }
+    return typeof data === 'number' ? data : null;
+  }
+
   async createBroadcast(
     channelId: string,
     title: string,
@@ -663,8 +803,26 @@ class VoxModeService {
 
       const audioUrl = urlData.publicUrl;
 
+      // BR2 — transcribe on publish (mirrors Team Vox / Direct). Without this,
+      // new broadcasts had no transcript: empty transcript panel, no WHISPER
+      // provenance chip, and channel Summarize ran on titles only. Best-effort:
+      // a transcription failure must not block the publish (transcript stays null).
+      let transcript: string | undefined;
+      try {
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(audioBlob);
+        });
+        const result = await transcribeMedia(base64, 'audio/webm');
+        transcript = result || undefined;
+      } catch (transcriptError) {
+        console.error('Broadcast transcription failed (publishing without transcript):', transcriptError);
+      }
+
       // Create the broadcast (parentBroadcastId set => discussion response)
-      const broadcast = await this.createBroadcast(channelId, title, audioUrl, duration, undefined, undefined, parentBroadcastId);
+      const broadcast = await this.createBroadcast(channelId, title, audioUrl, duration, transcript, undefined, parentBroadcastId);
 
       // If specific users should be notified, send them notifications
       if (broadcast && notifyUserIds && notifyUserIds.length > 0) {

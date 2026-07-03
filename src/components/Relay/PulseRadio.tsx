@@ -29,6 +29,9 @@ import {
   CheckCheck,
   Tower,
   MoreVertical,
+  Compass,
+  UserPlus,
+  UserCheck,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
@@ -99,6 +102,18 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   // Decoupled from selectedChannel; inert when the pane is wide enough. Mirrors
   // Direct/Channel. 'detail' = the broadcast feed for the selected channel.
   const [mobileView, setMobileView] = useState<'list' | 'detail'>('list');
+  // BR1 — the audience half. `currentUserId` gates owner-only surfaces (compose,
+  // settings) so a subscriber viewing someone else's channel gets a read-only
+  // feed. Discover lists public channels to subscribe to; subscribed channels
+  // sit alongside owned ones in the sidebar.
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [sidebarTab, setSidebarTab] = useState<'channels' | 'discover'>('channels');
+  const [subscribedChannels, setSubscribedChannels] = useState<PulseChannel[]>([]);
+  const [publicChannels, setPublicChannels] = useState<PulseChannel[]>([]);
+  const [subscribedIds, setSubscribedIds] = useState<Set<string>>(new Set());
+  const [discoverLoaded, setDiscoverLoaded] = useState(false);
+  const [discoverLoading, setDiscoverLoading] = useState(false);
+  const [pendingSubscribe, setPendingSubscribe] = useState<Set<string>>(new Set());
   const [showNewChannel, setShowNewChannel] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
   const [newChannelDesc, setNewChannelDesc] = useState('');
@@ -107,6 +122,9 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   // Playback flows through the shared Voice Studio transport. Active-broadcast
   // state derives from studio.nowPlaying / studio.isPlaying / studio.progress.
   const studio = useRelayStudio();
+  // BR3 — broadcasts we've already counted a listen for this session (dedupe so
+  // one play == one listen, not one per pause/resume).
+  const listenedRef = useRef<Set<string>>(new Set());
   const [isCreatingChannel, setIsCreatingChannel] = useState(false);
   const [showChannelSettings, setShowChannelSettings] = useState(false);
   const [showNotifyUsers, setShowNotifyUsers] = useState(false);
@@ -197,12 +215,16 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   // Enabled when a channel is selected (compose a new broadcast) or a broadcast
   // room is open (discussion response). The title input + preview → send stay
   // in-pane and route to the right handler based on the active view.
+  // Only a channel's owner composes top-level broadcasts into it; a subscriber
+  // gets a read-only feed (but may still record a discussion response in a room).
+  const isOwner = !!selectedChannel && !!currentUserId && selectedChannel.ownerId === currentUserId;
+
   useRelayModeRecorder({
     start: startRecording,
     stop: stopRecording,
     cancel: cancelRecording,
     recording: recordingState === 'recording',
-    enabled: !!(selectedChannel || activeBroadcastRoom),
+    enabled: !!((isOwner && selectedChannel) || activeBroadcastRoom),
   });
 
   // Phase 6: Keyboard Shortcuts
@@ -371,9 +393,20 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   };
 
   useEffect(() => {
+    (async () => {
+      setCurrentUserId(await voxModeService.ensureUserId());
+    })();
     loadChannels();
+    loadSubscribedChannels();
     loadPulseUsers();
   }, []);
+
+  // Lazy-load the Discover list the first time the tab is opened.
+  useEffect(() => {
+    if (sidebarTab === 'discover' && !discoverLoaded && !discoverLoading) {
+      loadDiscover();
+    }
+  }, [sidebarTab, discoverLoaded, discoverLoading]);
 
   useEffect(() => {
     if (selectedChannel) {
@@ -420,6 +453,85 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
     if (data.length > 0 && !selectedChannel) {
       setSelectedChannel(data[0]);
     }
+  };
+
+  const loadSubscribedChannels = async () => {
+    const [subs, ids] = await Promise.all([
+      voxModeService.getMySubscribedChannels(),
+      voxModeService.getSubscribedChannelIds(),
+    ]);
+    setSubscribedChannels(subs);
+    setSubscribedIds(ids);
+  };
+
+  const loadDiscover = async () => {
+    setDiscoverLoading(true);
+    try {
+      const [pub, ids] = await Promise.all([
+        voxModeService.getPublicChannels(),
+        voxModeService.getSubscribedChannelIds(),
+      ]);
+      setPublicChannels(pub);
+      setSubscribedIds(ids);
+      setDiscoverLoaded(true);
+    } catch (err) {
+      console.error('Failed to load discover channels:', err);
+      toast.error('Failed to load channels');
+    } finally {
+      setDiscoverLoading(false);
+    }
+  };
+
+  // Subscribe / unsubscribe toggle for a Discover (or subscribed) channel.
+  const handleToggleSubscribe = async (channel: PulseChannel, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (pendingSubscribe.has(channel.id)) return;
+    const wasSubscribed = subscribedIds.has(channel.id);
+
+    setPendingSubscribe((prev) => new Set(prev).add(channel.id));
+    // Optimistic toggle of the id set + subscriber count.
+    setSubscribedIds((prev) => {
+      const next = new Set(prev);
+      if (wasSubscribed) next.delete(channel.id); else next.add(channel.id);
+      return next;
+    });
+
+    const newCount = wasSubscribed
+      ? await voxModeService.unsubscribeFromChannel(channel.id)
+      : await voxModeService.subscribeToChannel(channel.id);
+
+    if (newCount === null) {
+      // Roll back.
+      setSubscribedIds((prev) => {
+        const next = new Set(prev);
+        if (wasSubscribed) next.add(channel.id); else next.delete(channel.id);
+        return next;
+      });
+      toast.error(wasSubscribed ? "Couldn't unsubscribe" : "Couldn't subscribe");
+    } else {
+      // Reflect the authoritative count everywhere this channel is shown.
+      const applyCount = (c: PulseChannel): PulseChannel =>
+        c.id === channel.id ? { ...c, subscriberCount: newCount } : c;
+      setPublicChannels((prev) => prev.map(applyCount));
+      setChannels((prev) => prev.map(applyCount));
+      if (selectedChannel?.id === channel.id) {
+        setSelectedChannel((prev) => (prev ? { ...prev, subscriberCount: newCount } : prev));
+      }
+      // Keep the "Subscribed" sidebar list in sync.
+      if (wasSubscribed) {
+        setSubscribedChannels((prev) => prev.filter((c) => c.id !== channel.id));
+      } else {
+        setSubscribedChannels((prev) =>
+          prev.some((c) => c.id === channel.id) ? prev : [{ ...channel, subscriberCount: newCount }, ...prev]);
+      }
+      toast.success(wasSubscribed ? 'Unsubscribed' : `Subscribed to ${channel.name}`);
+    }
+
+    setPendingSubscribe((prev) => {
+      const next = new Set(prev);
+      next.delete(channel.id);
+      return next;
+    });
   };
 
   // Manage Subscribers (#104) — owner-only list + remove for the selected channel.
@@ -533,6 +645,25 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
       studio.togglePlay();
       return;
     }
+    // BR3 — count a real listen on the first play of this broadcast this session.
+    if (!listenedRef.current.has(broadcast.id)) {
+      listenedRef.current.add(broadcast.id);
+      // Optimistic bump wherever this broadcast is rendered.
+      const bump = (b: Broadcast): Broadcast =>
+        b.id === broadcast.id ? { ...b, listenCount: (b.listenCount ?? 0) + 1 } : b;
+      setBroadcasts((prev) => prev.map(bump));
+      setDiscussionResponses((prev) => prev.map(bump));
+      voxModeService.incrementBroadcastListen(broadcast.id).then((count) => {
+        if (count === null) {
+          // Reconcile: undo the optimistic bump and allow a retry.
+          listenedRef.current.delete(broadcast.id);
+          const unbump = (b: Broadcast): Broadcast =>
+            b.id === broadcast.id ? { ...b, listenCount: Math.max(0, (b.listenCount ?? 1) - 1) } : b;
+          setBroadcasts((prev) => prev.map(unbump));
+          setDiscussionResponses((prev) => prev.map(unbump));
+        }
+      });
+    }
     studio.play({
       id: broadcast.id,
       sender: broadcast.title || 'Broadcast',
@@ -605,6 +736,30 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   const featuredBroadcast = broadcasts.find((b) => isBroadcastActive(b.id)) ?? broadcasts[0];
   const relatedBroadcasts = broadcasts.filter((b) => b.id !== featuredBroadcast?.id);
 
+  // Plain sidebar row (owned + subscribed channels). Opens the channel feed.
+  const renderChannelButton = (channel: PulseChannel) => (
+    <button
+      key={channel.id}
+      type="button"
+      onClick={() => { setSelectedChannel(channel); setMobileView('detail'); }}
+      className={`pulse-radio-channel ${selectedChannel?.id === channel.id ? 'active' : ''}`}
+    >
+      <div className="pulse-radio-channel-icon">
+        <Radio className="w-5 h-5" />
+      </div>
+      <div className="pulse-radio-channel-info">
+        <div className="pulse-radio-channel-name">
+          <span>{channel.name}</span>
+          {channel.isPublic ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+        </div>
+        <div className="pulse-radio-channel-stats">
+          <Users className="w-3 h-3" />
+          {channel.subscriberCount}
+        </div>
+      </div>
+    </button>
+  );
+
   return (
     <div className={`pulse-radio ${isDarkMode ? 'dark' : 'light'} ${studio.singlePane ? 'pulse-radio--single-pane' : ''}`}>
       {/* Audio playback is owned by the shared RelayStudioProvider (single
@@ -618,48 +773,118 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
           studio.singlePane ? (selectedChannel && mobileView === 'detail' ? 'pane-hidden' : 'pane-visible') : ''
         }`}>
           <div className="pulse-radio-sidebar-header">
-            <h2>My Channels</h2>
-          </div>
-          <div className="pulse-radio-channels">
-            {channels.map((channel) => (
+            <div className="pulse-radio-sidebar-tabs">
               <button
-                key={channel.id}
                 type="button"
-                onClick={() => { setSelectedChannel(channel); setMobileView('detail'); }}
-                className={`pulse-radio-channel ${selectedChannel?.id === channel.id ? 'active' : ''}`}
+                className={`pulse-radio-tab ${sidebarTab === 'channels' ? 'active' : ''}`}
+                onClick={() => setSidebarTab('channels')}
               >
-                <div className="pulse-radio-channel-icon">
-                  <Radio className="w-5 h-5" />
-                </div>
-                <div className="pulse-radio-channel-info">
-                  <div className="pulse-radio-channel-name">
-                    <span>{channel.name}</span>
-                    {channel.isPublic ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
-                  </div>
-                  <div className="pulse-radio-channel-stats">
-                    <Users className="w-3 h-3" />
-                    {channel.subscriberCount}
-                  </div>
-                </div>
+                <Radio className="w-3.5 h-3.5" /> Channels
               </button>
-            ))}
-
-            {channels.length === 0 && (
-              <div className="pulse-radio-empty-channels">
-                <Radio className="w-12 h-12" />
-                <p>No channels yet</p>
-                <span>Create your first channel to start broadcasting.</span>
-                <button
-                  type="button"
-                  onClick={() => setShowNewChannel(true)}
-                  className="pulse-radio-empty-cta"
-                >
-                  <Plus className="w-4 h-4" />
-                  Create Channel
-                </button>
-              </div>
-            )}
+              <button
+                type="button"
+                className={`pulse-radio-tab ${sidebarTab === 'discover' ? 'active' : ''}`}
+                onClick={() => setSidebarTab('discover')}
+              >
+                <Compass className="w-3.5 h-3.5" /> Discover
+              </button>
+            </div>
           </div>
+
+          {sidebarTab === 'channels' ? (
+            <div className="pulse-radio-channels">
+              {channels.map((channel) => renderChannelButton(channel))}
+
+              {subscribedChannels.length > 0 && (
+                <>
+                  <div className="pulse-radio-channel-group-label">Subscribed</div>
+                  {subscribedChannels.map((channel) => renderChannelButton(channel))}
+                </>
+              )}
+
+              {channels.length === 0 && subscribedChannels.length === 0 && (
+                <div className="pulse-radio-empty-channels">
+                  <Radio className="w-12 h-12" />
+                  <p>No channels yet</p>
+                  <span>Create a channel to broadcast, or discover channels to subscribe to.</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewChannel(true)}
+                    className="pulse-radio-empty-cta"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create Channel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSidebarTab('discover')}
+                    className="pulse-radio-empty-cta pulse-radio-empty-cta--ghost"
+                  >
+                    <Compass className="w-4 h-4" />
+                    Discover Channels
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="pulse-radio-channels">
+              {discoverLoading ? (
+                <div className="pulse-radio-empty-channels">
+                  <Loader2 className="w-8 h-8 animate-spin" />
+                  <p>Finding channels…</p>
+                </div>
+              ) : publicChannels.length === 0 ? (
+                <div className="pulse-radio-empty-channels">
+                  <Compass className="w-12 h-12" />
+                  <p>No public channels yet</p>
+                  <span>When people create public channels, they'll appear here to subscribe to.</span>
+                </div>
+              ) : (
+                publicChannels.map((channel) => {
+                  const subscribed = subscribedIds.has(channel.id);
+                  const pending = pendingSubscribe.has(channel.id);
+                  return (
+                    <div key={channel.id} className="pulse-radio-discover-item">
+                      <button
+                        type="button"
+                        onClick={() => { setSelectedChannel(channel); setMobileView('detail'); }}
+                        className={`pulse-radio-channel ${selectedChannel?.id === channel.id ? 'active' : ''}`}
+                      >
+                        <div className="pulse-radio-channel-icon">
+                          <Radio className="w-5 h-5" />
+                        </div>
+                        <div className="pulse-radio-channel-info">
+                          <div className="pulse-radio-channel-name">
+                            <span>{channel.name}</span>
+                            <Globe className="w-3 h-3" />
+                          </div>
+                          <div className="pulse-radio-channel-stats">
+                            <Users className="w-3 h-3" />
+                            {channel.subscriberCount}
+                          </div>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => handleToggleSubscribe(channel, e)}
+                        disabled={pending}
+                        className={`pulse-radio-subscribe-btn ${subscribed ? 'subscribed' : ''}`}
+                        aria-label={subscribed ? `Unsubscribe from ${channel.name}` : `Subscribe to ${channel.name}`}
+                      >
+                        {pending ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : subscribed ? (
+                          <><UserCheck className="w-3.5 h-3.5" /> Subscribed</>
+                        ) : (
+                          <><UserPlus className="w-3.5 h-3.5" /> Subscribe</>
+                        )}
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
         </aside>
 
         {/* Main Content */}
@@ -720,20 +945,40 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                           </button>
                         </>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => setShowChannelSettings(true)}
-                        title="Channel settings"
-                        aria-label="Channel settings"
-                        className="p-2 rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition ease-pulse"
-                      >
-                        <Settings className="w-4 h-4" />
-                      </button>
+                      {isOwner ? (
+                        <button
+                          type="button"
+                          onClick={() => setShowChannelSettings(true)}
+                          title="Channel settings"
+                          aria-label="Channel settings"
+                          className="p-2 rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition ease-pulse"
+                        >
+                          <Settings className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => handleToggleSubscribe(selectedChannel, e)}
+                          disabled={pendingSubscribe.has(selectedChannel.id)}
+                          className={`pulse-radio-subscribe-btn ${subscribedIds.has(selectedChannel.id) ? 'subscribed' : ''}`}
+                          aria-label={subscribedIds.has(selectedChannel.id) ? `Unsubscribe from ${selectedChannel.name}` : `Subscribe to ${selectedChannel.name}`}
+                        >
+                          {pendingSubscribe.has(selectedChannel.id) ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : subscribedIds.has(selectedChannel.id) ? (
+                            <><UserCheck className="w-3.5 h-3.5" /> Subscribed</>
+                          ) : (
+                            <><UserPlus className="w-3.5 h-3.5" /> Subscribe</>
+                          )}
+                        </button>
+                      )}
                     </>
                   }
                 />
 
-                {/* Recording Section */}
+                {/* Recording Section — owner-only. A subscriber viewing this
+                    channel gets a read-only feed (no compose surface). */}
+                {isOwner && (
                 <div className="pulse-radio-record-section">
                   {recordingState === 'preview' && recordingData ? (
                     <div className="pulse-radio-preview">
@@ -777,6 +1022,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                     </div>
                   )}
                 </div>
+                )}
               </div>
 
               {/* Featured broadcast hero + related grid (PathCBroadcast). The
@@ -790,13 +1036,13 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                     {...emptyConfig}
                     eyebrow="Broadcast"
                     isDarkMode={isDarkMode}
-                    action={{
+                    action={isOwner ? {
                       label: 'Start Broadcasting',
                       onClick: () => {
                         if (recordingState === 'idle') startRecording();
                       },
-                    }}
-                    secondaryAction={inviteSecondaryAction}
+                    } : undefined}
+                    secondaryAction={isOwner ? inviteSecondaryAction : undefined}
                   />
                 </div>
               ) : (

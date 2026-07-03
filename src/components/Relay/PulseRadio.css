@@ -203,6 +203,100 @@
 .pulse-radio-empty-cta:hover { background: var(--pulse-rose-deep); }
 .pulse-radio-empty-cta:focus-visible { outline: 2px solid var(--pulse-rose); outline-offset: 2px; }
 
+/* Ghost variant — secondary CTA (e.g. "Discover Channels" under "Create"). */
+.pulse-radio-empty-cta--ghost {
+  margin-top: 8px;
+  background: transparent;
+  color: var(--pulse-ink-2);
+  border: 1px solid var(--pulse-border);
+}
+.pulse-radio-empty-cta--ghost:hover { background: var(--pulse-surface-raised); }
+
+/* ============================================
+   BR1 — Discover / subscribe sidebar surfaces
+   ============================================ */
+
+/* Sidebar tab bar (Channels | Discover). */
+.pulse-radio-sidebar-tabs {
+  display: flex;
+  gap: 4px;
+}
+.pulse-radio-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: var(--pulse-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--pulse-ink-3);
+  transition: background var(--pulse-duration) var(--pulse-ease), color var(--pulse-duration) var(--pulse-ease);
+}
+.pulse-radio-tab:hover { background: var(--pulse-surface-raised); color: var(--pulse-ink-2); }
+.pulse-radio-tab.active {
+  background: var(--pulse-rose-softer);
+  border-color: var(--pulse-rose);
+  color: var(--pulse-rose);
+}
+.pulse-radio-tab:focus-visible { outline: 2px solid var(--pulse-rose); outline-offset: 2px; }
+
+/* "Subscribed" divider label between owned and subscribed channels. */
+.pulse-radio-channel-group-label {
+  font-family: var(--pulse-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--pulse-ink-3);
+  padding: 12px 12px 4px;
+}
+
+/* Discover row: channel button (flex-1) + subscribe toggle sibling. */
+.pulse-radio-discover-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.pulse-radio-discover-item .pulse-radio-channel { flex: 1; min-width: 0; }
+
+.pulse-radio-subscribe-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--pulse-rose);
+  color: #ffffff;
+  border: 1px solid var(--pulse-rose);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background var(--pulse-duration) var(--pulse-ease), color var(--pulse-duration) var(--pulse-ease), border-color var(--pulse-duration) var(--pulse-ease);
+}
+.pulse-radio-subscribe-btn:hover { background: var(--pulse-rose-deep); border-color: var(--pulse-rose-deep); }
+.pulse-radio-subscribe-btn:focus-visible { outline: 2px solid var(--pulse-rose); outline-offset: 2px; }
+.pulse-radio-subscribe-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* Subscribed state — quiet outline, not a filled CTA. */
+.pulse-radio-subscribe-btn.subscribed {
+  background: transparent;
+  color: var(--pulse-ink-2);
+  border-color: var(--pulse-border);
+}
+.pulse-radio-subscribe-btn.subscribed:hover {
+  background: var(--pulse-surface-raised);
+  color: var(--pulse-ink);
+  border-color: var(--pulse-ink-3);
+}
+
 /* Mobile sidebar */
 .pulse-radio-mobile-sidebar-overlay { position: fixed; inset: 0; z-index: 100; display: flex; }
 .pulse-radio-mobile-backdrop {
