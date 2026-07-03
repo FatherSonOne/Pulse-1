@@ -1074,6 +1074,17 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     studio.togglePlay();
   }, [studio]);
 
+  // Inline row play button: if this row is the one loaded in the shared player,
+  // toggle it so the button can PAUSE (studio.play() only ever resumes the
+  // active voice, so the pause icon previously did nothing). Otherwise load it.
+  const togglePlayRecording = useCallback((recording: Recording) => {
+    if (studio.nowPlaying?.id === recording.id) {
+      studio.togglePlay();
+    } else {
+      playRecording(recording);
+    }
+  }, [studio, playRecording]);
+
   const toggleStar = useCallback((recordingId: string) => {
     // Local-only for now: quick_vox_messages is a shared 2-party row with
     // sender-only UPDATE (RLS), so a per-viewer star can't be persisted there.
@@ -1778,7 +1789,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                       isPlaying={isItemPlaying(recording.id)}
                       progress={active ? studio.progress : 0}
                       canPlay={!!recording.url}
-                      onPlay={() => playRecording(recording)}
+                      onPlay={() => togglePlayRecording(recording)}
                       indent={isMe ? 'me' : 'them'}
                       padding="p-3.5"
                       playSize="sm"
