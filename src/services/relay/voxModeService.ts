@@ -1177,10 +1177,95 @@ class VoxModeService {
       }
     }
 
-    return workspaces.map(workspace => this.mapDbToWorkspace({
+    const mapped = workspaces.map(workspace => this.mapDbToWorkspace({
       ...workspace,
       member_ids: membersByWorkspace.get(workspace.id) || [],
     }));
+
+    // CH2: overlay real per-user unread counts. mapDbToTeamChannel reads the
+    // dead `unread_count` column (always 0); relay_unread_counts() derives the
+    // true count from this user's last-read marker in vox_channel_state.
+    const unread = await this.getChannelUnreadCounts();
+    if (unread.size > 0) {
+      for (const ws of mapped) {
+        for (const ch of ws.channels) {
+          ch.unreadCount = unread.get(ch.id) ?? 0;
+        }
+      }
+    }
+
+    return mapped;
+  }
+
+  /**
+   * CH2: per-channel unread counts for the current user, keyed by channel id.
+   * Backed by relay_unread_counts() (SECURITY INVOKER — respects team_vox_messages
+   * RLS + this user's own vox_channel_state markers). Channels with zero unread
+   * are absent from the map; callers default them to 0.
+   */
+  async getChannelUnreadCounts(): Promise<Map<string, number>> {
+    const { data, error } = await supabase.rpc('relay_unread_counts');
+    if (error || !data) {
+      if (error) console.error('Error fetching unread counts:', error);
+      return new Map();
+    }
+    return new Map((data as { channel_id: string; unread: number }[]).map(r => [r.channel_id, r.unread]));
+  }
+
+  /**
+   * CH2: mark a channel read for the current user by advancing their last-read
+   * marker to now. Upsert only touches last_read_at/updated_at, so it never
+   * clobbers the notify_pref stored on the same row.
+   */
+  async markChannelRead(channelId: string): Promise<void> {
+    const userId = await this.ensureUserId();
+    if (!userId) return;
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from('vox_channel_state')
+      .upsert(
+        { channel_id: channelId, user_id: userId, last_read_at: now, updated_at: now },
+        { onConflict: 'channel_id,user_id' },
+      );
+    if (error) console.error('Error marking channel read:', error);
+  }
+
+  /**
+   * CH3: read the current user's notification preference for a channel.
+   * Defaults to 'all' when no row exists yet.
+   */
+  async getChannelNotifyPref(channelId: string): Promise<'all' | 'mentions' | 'mute'> {
+    const userId = await this.ensureUserId();
+    if (!userId) return 'all';
+    const { data, error } = await supabase
+      .from('vox_channel_state')
+      .select('notify_pref')
+      .eq('channel_id', channelId)
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (error) console.error('Error loading channel notify pref:', error);
+    return (data?.notify_pref as 'all' | 'mentions' | 'mute') || 'all';
+  }
+
+  /**
+   * CH3: persist the current user's notification preference for a channel,
+   * server-side (per-recipient), so relay_channel_fanout can enforce it. Upsert
+   * only touches notify_pref/updated_at, preserving the last_read_at marker.
+   */
+  async setChannelNotifyPref(channelId: string, pref: 'all' | 'mentions' | 'mute'): Promise<boolean> {
+    const userId = await this.ensureUserId();
+    if (!userId) return false;
+    const { error } = await supabase
+      .from('vox_channel_state')
+      .upsert(
+        { channel_id: channelId, user_id: userId, notify_pref: pref, updated_at: new Date().toISOString() },
+        { onConflict: 'channel_id,user_id' },
+      );
+    if (error) {
+      console.error('Error saving channel notify pref:', error);
+      return false;
+    }
+    return true;
   }
 
   async addMemberToWorkspace(workspaceId: string, memberId: string): Promise<boolean> {
@@ -1406,18 +1491,21 @@ class VoxModeService {
       .update({ last_message_at: new Date().toISOString() })
       .eq('id', channelId);
 
-    // Notify mentioned users
-    for (const mentionedId of mentions) {
-      await this.createNotification(
-        mentionedId,
-        'mention',
-        `${senderName} mentioned you`,
-        'You were mentioned in a team vox',
-        data.id,
-        userId,
-        senderName
-      );
-    }
+    // CH3 + CH4: notification fan-out, enforced per-recipient server-side.
+    // relay_channel_fanout reads each member's own-row notify_pref (which the
+    // sender can't see under RLS) and emits notifications accordingly:
+    //   mute -> never; mentioned -> always; announcement -> all members;
+    //   pref 'all' -> every message. Replaces the old "notify mentions only"
+    //   loop, which ignored prefs and made "Mute"/"Announcement" theatrical.
+    const { error: fanoutError } = await supabase.rpc('relay_channel_fanout', {
+      p_message_id: data.id,
+      p_channel_id: channelId,
+      p_workspace_id: workspaceId,
+      p_message_type: messageType,
+      p_mentions: mentions,
+      p_sender_name: senderName,
+    });
+    if (fanoutError) console.error('Error fanning out channel notifications:', fanoutError);
 
     return this.mapDbToTeamVoxMessage(data);
   }

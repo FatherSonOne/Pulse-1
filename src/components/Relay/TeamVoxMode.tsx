@@ -440,21 +440,25 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
   }, []);
 
   useEffect(() => {
-    if (selectedChannel) {
-      loadMessages();
-      // Y3: Load persisted notification preference for this channel
-      try {
-        const stored = localStorage.getItem(`vox_team_notif_${selectedChannel.id}`);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          setNotificationPref(parsed.pref || 'all');
-        } else {
-          setNotificationPref('all');
-        }
-      } catch {
-        setNotificationPref('all');
-      }
-    }
+    if (!selectedChannel) return;
+    const channelId = selectedChannel.id;
+    loadMessages();
+
+    // CH2: opening a channel clears its unread badge. loadMessages advances the
+    // server marker; here we optimistically zero the count in the visible lists.
+    const clearBadge = (ch: VoxTeamChannel) =>
+      ch.id === channelId ? { ...ch, unreadCount: 0 } : ch;
+    setSelectedWorkspace(prev =>
+      prev ? { ...prev, channels: prev.channels.map(clearBadge) } : prev);
+    setWorkspaces(prev =>
+      prev.map(ws => ({ ...ws, channels: ws.channels.map(clearBadge) })));
+
+    // CH3: load this user's server-side notification preference for the channel.
+    let cancelled = false;
+    voxModeService.getChannelNotifyPref(channelId).then(pref => {
+      if (!cancelled) setNotificationPref(pref);
+    });
+    return () => { cancelled = true; };
   }, [selectedChannel]);
 
   // Y4: Populate channel settings edit fields when modal opens
@@ -476,6 +480,9 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
     if (!selectedChannel) return;
     const data = await voxModeService.getChannelMessages(selectedChannel.id);
     setMessages(data);
+    // CH2: showing/refreshing the active feed means the viewer has seen it —
+    // advance their last-read marker so it never lingers as unread.
+    void voxModeService.markChannelRead(selectedChannel.id);
   };
 
   // Realtime: keep the active channel's feed live. Any insert/update/delete on
@@ -1703,15 +1710,14 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
         tc={tc}
         footer={
           <button
-            onClick={() => {
+            onClick={async () => {
               if (selectedChannel) {
-                try {
-                  localStorage.setItem(
-                    `vox_team_notif_${selectedChannel.id}`,
-                    JSON.stringify({ pref: notificationPref, updatedAt: new Date().toISOString() })
-                  );
+                // CH3: persist server-side (per-recipient) so relay_channel_fanout
+                // actually enforces Mute / Mentions-only / All when others post.
+                const ok = await voxModeService.setChannelNotifyPref(selectedChannel.id, notificationPref);
+                if (ok) {
                   toast.success(`Notifications set to "${notificationPref === 'all' ? 'All Messages' : notificationPref === 'mentions' ? 'Mentions Only' : 'Muted'}"`);
-                } catch {
+                } else {
                   toast.error('Failed to save notification settings');
                 }
               }
