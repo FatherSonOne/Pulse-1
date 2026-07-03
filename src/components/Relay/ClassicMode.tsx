@@ -379,6 +379,13 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
         URL.revokeObjectURL(url);
       });
       blobUrlsRef.current.clear();
+      // Also release any live-analysis AudioContext if we unmount mid-recording
+      // (e.g. navigating away), so a torn-down thread never leaks a context.
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {});
+        audioContextRef.current = null;
+        analyserRef.current = null;
+      }
     };
   }, []);
 
@@ -783,7 +790,11 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       streamRef.current = stream;
       chunksRef.current = [];
 
-      // Set up audio analysis
+      // Set up audio analysis. Close any prior context first so a double-start
+      // (or an interrupted stop) can't leak one.
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {});
+      }
       audioContextRef.current = new AudioContext();
       const source = audioContextRef.current.createMediaStreamSource(stream);
       analyserRef.current = audioContextRef.current.createAnalyser();
@@ -828,14 +839,20 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
         const url = URL.createObjectURL(blob);
         blobUrlsRef.current.add(url);
 
-        // Decode audio for waveform
+        // Decode audio for waveform. The decode AudioContext MUST be closed —
+        // one was leaked on every recording, which (together with the live
+        // context) exhausts Chrome's context pool and throws the "AudioContext
+        // error from the audio device", degrading capture over a session.
         let audioBuffer: AudioBuffer | undefined;
+        let decodeCtx: AudioContext | null = null;
         try {
           const arrayBuffer = await blob.arrayBuffer();
-          const audioCtx = new AudioContext();
-          audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+          decodeCtx = new AudioContext();
+          audioBuffer = await decodeCtx.decodeAudioData(arrayBuffer);
         } catch (e) {
           console.error('Error decoding audio:', e);
+        } finally {
+          decodeCtx?.close().catch(() => {});
         }
 
         setPendingRecording({ blob, url, duration, audioBuffer });
@@ -912,6 +929,15 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       mediaRecorderRef.current.stop();
       streamRef.current?.getTracks().forEach(t => t.stop());
       if (timerRef.current) clearInterval(timerRef.current);
+      // Release the per-recording live-analysis AudioContext (created in
+      // startRecording). onstop decodes with its own short-lived context, so
+      // this one is done the moment recording ends — closing it stops the leak
+      // that was exhausting the WebAudio renderer.
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {});
+        audioContextRef.current = null;
+        analyserRef.current = null;
+      }
       setIsRecording(false);
       setRecordingDuration(0);
       setAudioLevel(0);
