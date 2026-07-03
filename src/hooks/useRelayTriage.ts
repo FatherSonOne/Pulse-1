@@ -204,14 +204,17 @@ export function useRelayTriage(userId: string | undefined | null): UseRelayTriag
             .limit(PER_SOURCE_LIMIT)
         : Promise.resolve({ data: [] as any[], error: null });
 
-      const quickPromise = pulseUserId
-        ? supabase
-            .from('quick_vox_messages')
-            .select('*')
-            .or(`sender_id.eq.${pulseUserId},recipient_id.eq.${pulseUserId}`)
-            .order('created_at', { ascending: false })
-            .limit(PER_SOURCE_LIMIT)
-        : Promise.resolve({ data: [] as any[], error: null });
+      // quick_vox_messages keys sender_id/recipient_id off the AUTH uid
+      // (== user_profiles.id), NOT pulse_users.id. Verified against the live DB:
+      // sender_id/recipient_id match auth_user_id for every row, and
+      // pulse_users.id ≠ auth uid for ~14/16 users — so filtering by pulseUserId
+      // returned ZERO Quick Vox for most users. Filter by the auth uid instead.
+      const quickPromise = supabase
+        .from('quick_vox_messages')
+        .select('*')
+        .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
+        .order('created_at', { ascending: false })
+        .limit(PER_SOURCE_LIMIT);
 
       // For broadcasts: include subscribed channels' last week + anything live
       // in the last 24h (so users see live broadcasts even if not subscribed).
@@ -347,21 +350,24 @@ export function useRelayTriage(userId: string | undefined | null): UseRelayTriag
       const quickSenderIds = Array.from(
         new Set(quickRows.map((r: any) => r.sender_id).filter(Boolean)),
       );
+      // sender_id is the auth uid, so resolve names by pulse_users.auth_user_id
+      // (NOT .id, which diverges from the auth uid for most users). Keyed by the
+      // auth uid so the r.sender_id lookup below hits.
       let pulseUserById = new Map<string, { display_name: string | null; handle: string | null }>();
       if (quickSenderIds.length > 0) {
         const usersResp = await supabase
           .from('pulse_users')
-          .select('id, display_name, handle')
-          .in('id', quickSenderIds);
+          .select('auth_user_id, display_name, handle')
+          .in('auth_user_id', quickSenderIds);
         for (const u of (usersResp as any).data ?? []) {
-          pulseUserById.set(u.id, { display_name: u.display_name, handle: u.handle });
+          if (u.auth_user_id) pulseUserById.set(u.auth_user_id, { display_name: u.display_name, handle: u.handle });
         }
       }
 
       const quickItems: TriageItem[] = quickRows.map((r: any) => {
         const lookup = pulseUserById.get(r.sender_id);
         const senderName = lookup?.display_name || lookup?.handle || 'Unknown';
-        const recipientIsMe = pulseUserId && r.recipient_id === pulseUserId;
+        const recipientIsMe = r.recipient_id === userId;
         return {
           id: r.id,
           kind: 'quick' as const,
