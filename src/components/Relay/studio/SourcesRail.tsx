@@ -43,6 +43,9 @@ export interface SourcesRailProps {
     bookmarked?: number;
     today?: number;
   };
+  /** Durable send-outbox counts. Badges the Direct entry so a voice queued or
+   *  failed for a contact you're not viewing stays visible from any view. */
+  outbox?: { pending: number; failed: number };
 }
 
 interface RailItem {
@@ -85,6 +88,7 @@ export const SourcesRail: React.FC<SourcesRailProps> = ({
   unreadCounts,
   playlistCounts,
   hiddenViews,
+  outbox,
 }) => {
   const railItems = hiddenViews?.length
     ? RAIL_ITEMS.filter(item => !hiddenViews.includes(item.id))
@@ -122,6 +126,17 @@ export const SourcesRail: React.FC<SourcesRailProps> = ({
         {railItems.map(item => {
           const active = view === item.id;
           const count = unreadCounts?.[item.id] ?? 0;
+          // Durable-outbox badge lives on Direct (where quick_vox queues). Failed
+          // (parked) outranks pending; either keeps the entry visible from any view.
+          const ob = item.id === 'direct' ? outbox : undefined;
+          const obTotal = ob ? ob.pending + ob.failed : 0;
+          const obFailed = ob?.failed ?? 0;
+          const obTitle =
+            obTotal > 0
+              ? obFailed > 0
+                ? `${obFailed} voice message${obFailed > 1 ? 's' : ''} failed to send — open Direct to retry`
+                : `${ob!.pending} voice message${ob!.pending > 1 ? 's' : ''} sending…`
+              : undefined;
           return (
             <button
               key={item.id}
@@ -130,16 +145,26 @@ export const SourcesRail: React.FC<SourcesRailProps> = ({
               aria-selected={active}
               data-section={item.id}
               onClick={() => onSelectView(item.id)}
-              title={railCollapsed ? `${item.label} — ${item.desc}  (${item.shortcut})` : undefined}
+              title={
+                railCollapsed
+                  ? `${item.label} — ${item.desc}  (${item.shortcut})${obTitle ? ` · ${obTitle}` : ''}`
+                  : undefined
+              }
               className={`pulse-rail__item ${active ? 'pulse-rail__item--active' : ''}`}
             >
               <span className="pulse-rail__icon-wrap">
                 <item.Icon className="w-4 h-4" />
-                {/* Collapsed-state unread dot — overlays the icon. Expanded
-                    state shows the count to the right instead. */}
-                {railCollapsed && count > 0 && (
+                {/* Collapsed-state dot — outbox (red failed / amber sending)
+                    outranks the unread dot; expanded shows a count pill instead. */}
+                {railCollapsed && obTotal > 0 ? (
+                  <span
+                    className={`pulse-rail__icon-dot ${obFailed > 0 ? '' : 'pulse-dot-anim'}`}
+                    style={{ background: obFailed > 0 ? '#ef4444' : '#f59e0b' }}
+                    aria-hidden="true"
+                  />
+                ) : railCollapsed && count > 0 ? (
                   <span className="pulse-rail__icon-dot pulse-dot-anim" aria-hidden="true" />
-                )}
+                ) : null}
               </span>
               {!railCollapsed && (
                 <>
@@ -147,9 +172,21 @@ export const SourcesRail: React.FC<SourcesRailProps> = ({
                     <span className="pulse-rail__label">{item.label}</span>
                     <span className="pulse-rail__desc">{item.desc}</span>
                   </span>
-                  {count > 0 && (
+                  {obTotal > 0 ? (
+                    <span
+                      className={`ml-auto inline-flex items-center justify-center min-w-[1.25rem] px-1.5 py-0.5 rounded-full text-[10px] font-mono font-semibold ${
+                        obFailed > 0
+                          ? 'bg-red-500/15 text-red-600 dark:text-red-400'
+                          : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                      }`}
+                      title={obTitle}
+                      aria-label={obTitle}
+                    >
+                      {obFailed > 0 ? obFailed : ob!.pending}
+                    </span>
+                  ) : count > 0 ? (
                     <span className="pulse-rail__count" aria-label={`${count} unread`}>{count}</span>
-                  )}
+                  ) : null}
                 </>
               )}
             </button>

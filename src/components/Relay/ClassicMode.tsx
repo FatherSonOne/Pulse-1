@@ -1702,7 +1702,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                         </button>
                       ) : undefined}
                       actions={!isSelectionMode ? (
-                        <div className="absolute right-3 top-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition">
+                        <div className="absolute right-3 top-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100 transition">
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); toggleStar(recording.id); }}

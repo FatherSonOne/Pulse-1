@@ -372,7 +372,13 @@ const InboxCard: React.FC<{
             )}
           </p>
           <div className="mt-2">
-            <AIProvenanceChip vendor="PULSE AI" type="SUMMARY" />
+            {/* Label by source: classic/quick bodies are raw Whisper transcripts;
+                thread/broadcast/note bodies are AI summaries. Don't over-claim. */}
+            {item.kind === 'classic' || item.kind === 'quick' ? (
+              <AIProvenanceChip vendor="WHISPER" type="TRANSCRIPT" />
+            ) : (
+              <AIProvenanceChip vendor="PULSE AI" type="SUMMARY" />
+            )}
           </div>
         </div>
       ) : null}

@@ -29,6 +29,7 @@ import React, { useEffect, useState } from 'react';
 import { Settings as SettingsIcon, Headphones } from 'lucide-react';
 import { Contact } from '../types';
 import { useAuth } from '../hooks/useAuth';
+import { useOutboxBadge } from '../hooks/useOutboxBadge';
 import { useFeatures } from '../contexts/FeatureContext';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import { settingsService } from '../services/settingsService';
@@ -171,6 +172,9 @@ const RELAY_VIEWS: readonly RelayView[] = [
 const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, isDarkMode = false, intent, onIntentConsumed }) => {
   // user.id powers the Triage stream's voice-source queries.
   const { user } = useAuth();
+  // Live send-outbox counts → badges the Direct rail entry so a voice queued or
+  // parked-failed for a contact you're not viewing stays visible from any view.
+  const outboxBadge = useOutboxBadge(user?.id);
   // currentWorkspace scopes vox→task creation (deep-link P3) to extracted_tasks.
   const { currentWorkspace } = useWorkspace();
 
@@ -346,6 +350,7 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
             hiddenViews={liveEnabled ? undefined : ['live']}
             // Unread + playlist counts will wire to real services in Phase 2.
             // For now omit them so the rail doesn't show fabricated numbers.
+            outbox={outboxBadge}
           />
 
           {/* Main pane: mode body + persistent footer + floating mic +
