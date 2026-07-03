@@ -19,6 +19,7 @@ import { Search, X, ArrowLeft, Mail, Link as LinkIcon, MicOff } from 'lucide-rea
 import RecordButton from './RecordButton';
 import RecordingPreview from './RecordingPreview';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
+import { useVoxCaptureSettings } from '../../hooks/useVoxCaptureSettings';
 import { toastMicError } from '../../utils/micErrors';
 import { voxModeService } from '../../services/relay/voxModeService';
 import toast from 'react-hot-toast';
@@ -119,6 +120,13 @@ export const RelayComposer: React.FC<RelayComposerProps> = ({
       }));
   }, [localContacts]);
 
+  // This modal is the primary record surface. It now honors the Audio I/O
+  // settings panel (device, quality preset, EC/NS/AGC) instead of hard-coding
+  // voice_hd — the same settings-aware capture as the canonical StudioRecorder,
+  // so both surfaces record identically. Defaults resolve to voice_hd, so with
+  // untouched settings behaviour is unchanged; the difference only shows once
+  // the user actually changes a setting.
+  const capture = useVoxCaptureSettings();
   const {
     state: recordingState,
     duration,
@@ -132,7 +140,12 @@ export const RelayComposer: React.FC<RelayComposerProps> = ({
     handlePointerDown,
     handlePointerUp,
     handleToggleRecording,
-  } = useVoxRecording({ qualityPreset: 'voice_hd', maxDuration: MAX_DURATION_SEC });
+  } = useVoxRecording({
+    qualityPreset: capture.qualityPreset,
+    deviceId: capture.deviceId,
+    customAudioConstraints: capture.customAudioConstraints,
+    maxDuration: MAX_DURATION_SEC,
+  });
 
   const isOverSoftCap = recordingState === 'recording' && duration >= SOFT_CAP_SEC;
   const recordingProgress = recordingState === 'recording'

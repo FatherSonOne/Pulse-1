@@ -324,10 +324,10 @@ const featureFlagsConfig: FeatureFlagConfig = {
   // first, no AudioContext error), send delivers, AudioIOSettings changes actually
   // affect capture. Dev override: ?ff_relayStudioRecorder=on
   relayStudioRecorder: {
-    enabled: false,
-    rolloutPercentage: 0,
-    targetUsers: ['internal'],
-    description: 'OFF until live-verified — one canonical settings-aware recorder (over useVoxRecording) wired into the Direct studio surface; retires the bespoke ClassicMode recorder. Dev override: ?ff_relayStudioRecorder=on',
+    enabled: true,
+    rolloutPercentage: 100,
+    targetUsers: ['all'],
+    description: 'ON by default (team testing, pre-launch) — one canonical settings-aware recorder (over useVoxRecording). The RelayComposer modal (primary surface) is now settings-aware unconditionally; this flag additionally routes the Direct/ClassicMode inline recorder to StudioRecorder. Kill-switch if capture misbehaves: ?ff_relayStudioRecorder=off',
     version: '0.1.0'
   },
 };
