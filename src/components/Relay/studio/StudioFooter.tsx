@@ -8,7 +8,7 @@
 // State source is RelayStudioContext — this component just renders what's
 // there and dispatches actions back through the same context.
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Play, Pause, Sparkles, Bookmark, Volume2 } from 'lucide-react';
 
 import { useRelayStudio } from './RelayStudioContext';
@@ -49,6 +49,7 @@ export const StudioFooter: React.FC<StudioFooterProps> = ({ suppressIdle = false
     playbackRate,
     isRecording,
     recordingSec,
+    recordingAnalyser,
     togglePlay,
     seek,
     cyclePlaybackRate,
@@ -57,7 +58,14 @@ export const StudioFooter: React.FC<StudioFooterProps> = ({ suppressIdle = false
   } = useRelayStudio();
 
   if (isRecording) {
-    return <RecordingFooter sec={recordingSec} onCancel={cancelRecording} onStopAndSend={stopAndSendRecording} />;
+    return (
+      <RecordingFooter
+        sec={recordingSec}
+        analyser={recordingAnalyser}
+        onCancel={cancelRecording}
+        onStopAndSend={stopAndSendRecording}
+      />
+    );
   }
 
   if (!nowPlaying) {
@@ -152,11 +160,14 @@ export const StudioFooter: React.FC<StudioFooterProps> = ({ suppressIdle = false
 
 interface RecordingFooterProps {
   sec: number;
+  /** Live capture analyser — drives the real mic-reactive waveform. Null until
+   *  the mic warms up, where the bars sit at a quiet baseline. */
+  analyser: AnalyserNode | null;
   onCancel: () => void;
   onStopAndSend: () => void;
 }
 
-const RecordingFooter: React.FC<RecordingFooterProps> = ({ sec, onCancel, onStopAndSend }) => (
+const RecordingFooter: React.FC<RecordingFooterProps> = ({ sec, analyser, onCancel, onStopAndSend }) => (
   <div className="pulse-studio-footer pulse-studio-footer--recording" role="status" aria-live="polite">
     <div className="pulse-studio-footer__rec-badge">
       <span className="pulse-studio-footer__rec-dot pulse-dot-anim" aria-hidden="true" />
@@ -166,18 +177,7 @@ const RecordingFooter: React.FC<RecordingFooterProps> = ({ sec, onCancel, onStop
     <div className="pulse-studio-footer__rec-body">
       <span className="pulse-studio-footer__rec-time">{fmtTime(sec)}</span>
       <div className="pulse-studio-footer__rec-wave">
-        {Array.from({ length: 60 }).map((_, i) => (
-          <i
-            key={i}
-            className="pulse-wf-live-bar"
-            style={{
-              width: 2,
-              height: `${30 + (Math.sin((i + sec) * 0.5) * 0.5 + 0.5) * 70}%`,
-              background: '#ef4444',
-              animationDelay: `${(i % 6) * 0.08}s`,
-            }}
-          />
-        ))}
+        <LiveWaveBars analyser={analyser} />
       </div>
     </div>
 
@@ -192,5 +192,58 @@ const RecordingFooter: React.FC<RecordingFooterProps> = ({ sec, onCancel, onStop
     </div>
   </div>
 );
+
+// Real-time mic waveform. Reads the live AnalyserNode each animation frame and
+// sets bar heights directly on the DOM (no React re-render at 60fps). A light
+// per-bar smoothing (envelope) gives natural motion instead of jitter. When
+// there's no analyser yet (mic warming up), bars rest at a quiet baseline.
+const BAR_COUNT = 56;
+
+const LiveWaveBars: React.FC<{ analyser: AnalyserNode | null }> = ({ analyser }) => {
+  const barsRef = useRef<Array<HTMLElement | null>>([]);
+
+  useEffect(() => {
+    if (!analyser) {
+      barsRef.current.forEach((el) => { if (el) el.style.height = '10%'; });
+      return;
+    }
+    const bins = analyser.frequencyBinCount;
+    const data = new Uint8Array(bins);
+    // Voice energy sits in the lower/mid band; spread the bars across the lower
+    // ~70% of the spectrum so the wave doesn't look dead on the right.
+    const usable = Math.max(1, Math.floor(bins * 0.7));
+    const smoothed = new Float32Array(BAR_COUNT);
+    let raf = 0;
+
+    const draw = () => {
+      analyser.getByteFrequencyData(data);
+      const n = barsRef.current.length;
+      for (let i = 0; i < n; i++) {
+        const bin = Math.min(usable - 1, Math.floor((i / n) * usable));
+        const target = data[bin] / 255; // 0..1
+        // Attack fast, release slower for a natural VU feel.
+        const k = target > smoothed[i] ? 0.6 : 0.25;
+        smoothed[i] += (target - smoothed[i]) * k;
+        const el = barsRef.current[i];
+        if (el) el.style.height = `${Math.max(8, Math.min(100, smoothed[i] * 135))}%`;
+      }
+      raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
+  }, [analyser]);
+
+  return (
+    <>
+      {Array.from({ length: BAR_COUNT }).map((_, i) => (
+        <i
+          key={i}
+          ref={(el) => { barsRef.current[i] = el; }}
+          style={{ width: 2, height: '10%', background: '#ef4444', borderRadius: 1 }}
+        />
+      ))}
+    </>
+  );
+};
 
 export default StudioFooter;

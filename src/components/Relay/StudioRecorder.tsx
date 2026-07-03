@@ -21,11 +21,12 @@
 // Dashboard) migrate in Phase 2c. While OFF, ClassicMode's proven recorder is
 // untouched and this renders nothing.
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { useVoxCaptureSettings } from '../../hooks/useVoxCaptureSettings';
 import { useRelayModeRecorder } from './studio/useRelayModeRecorder';
+import { useRelayStudio } from './studio/RelayStudioContext';
 import RecordingPreview from './RecordingPreview';
 import { voxModeService } from '../../services/relay/voxModeService';
 import { sendQuickVoxDurable } from '../../services/relay/relayOutboxProcessor';
@@ -64,6 +65,15 @@ export const StudioRecorder: React.FC<StudioRecorderProps> = ({
     customAudioConstraints: capture.customAudioConstraints,
     maxDuration: MAX_DURATION_SEC,
   });
+
+  // Publish the live capture analyser to the studio so the footer waveform is
+  // driven by the real mic signal (not a canned animation). useVoxRecording
+  // nulls its analyser on stop/cleanup, so this mirror follows suit.
+  const { setRecordingAnalyser } = useRelayStudio();
+  useEffect(() => {
+    setRecordingAnalyser(rec.analyser);
+    return () => setRecordingAnalyser(null);
+  }, [rec.analyser, setRecordingAnalyser]);
 
   // Bridge capture into the studio shell. Only registers while enabled AND a
   // recipient exists (mirrors ClassicMode's own `enabled: !!activeContactId`),

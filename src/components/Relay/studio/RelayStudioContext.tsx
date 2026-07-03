@@ -64,6 +64,10 @@ export interface RelayStudioState {
    *  shell (FloatingMic / footer) knows the record gesture drives real capture
    *  rather than the notional fallback. */
   hasRecorder: boolean;
+  /** The live capture AnalyserNode while recording (from the active recorder's
+   *  getUserMedia chain), so the footer can draw a REAL mic-reactive waveform
+   *  instead of a canned animation. Null when not recording. */
+  recordingAnalyser: AnalyserNode | null;
 
   // ── chrome ──────────────────────────────────────────────────────────────
   /** EFFECTIVE collapsed state of the sources rail = the user's manual
@@ -132,6 +136,9 @@ export interface RelayStudioApi extends RelayStudioState {
   /** The focused mode reports whether it is currently capturing, so the footer
    *  RECORDING surface + the FloatingMic icon reflect the truth. */
   notifyRecording: (active: boolean) => void;
+  /** The active recorder publishes its live AnalyserNode (or null on stop) so
+   *  the footer waveform is driven by the real mic signal. */
+  setRecordingAnalyser: (analyser: AnalyserNode | null) => void;
   /** Toggle the sources rail collapsed state. Persists to localStorage. */
   toggleRail: () => void;
 }
@@ -201,6 +208,7 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, paneWid
   const [railCollapsed, setRailCollapsed] = useState<boolean>(readInitialRailCollapsed);
   const [playbackRate, setPlaybackRateState] = useState<PlaybackSpeed>(readInitialPlaybackRate);
   const [hasRecorder, setHasRecorder] = useState(false);
+  const [recordingAnalyser, setRecordingAnalyserState] = useState<AnalyserNode | null>(null);
 
   // The focused mode's recording controller + a live mirror of isRecording so
   // toggleRecording can decide start-vs-stop without a stale capture.
@@ -423,7 +431,14 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, paneWid
   // existing recordingSec timer keys off isRecording, so it starts/stops here.
   const notifyRecording = useCallback((active: boolean) => {
     setIsRecording(active);
-    if (!active) setRecordingSec(0);
+    if (!active) {
+      setRecordingSec(0);
+      setRecordingAnalyserState(null); // capture ended — drop the stale node
+    }
+  }, []);
+
+  const setRecordingAnalyser = useCallback((analyser: AnalyserNode | null) => {
+    setRecordingAnalyserState(analyser);
   }, []);
 
   const toggleRail = useCallback(() => setRailCollapsed(c => !c), []);
@@ -473,6 +488,7 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, paneWid
     isRecording,
     recordingSec,
     hasRecorder,
+    recordingAnalyser,
     railCollapsed: effectiveRailCollapsed,
     paneWidth,
     bodyWidth,
@@ -491,11 +507,12 @@ export const RelayStudioProvider: React.FC<ProviderProps> = ({ children, paneWid
     stopAndSendRecording,
     registerRecorder,
     notifyRecording,
+    setRecordingAnalyser,
     toggleRail,
   }), [
-    nowPlaying, isPlaying, progress, currentTime, duration, playbackRate, isRecording, recordingSec, hasRecorder,
+    nowPlaying, isPlaying, progress, currentTime, duration, playbackRate, isRecording, recordingSec, hasRecorder, recordingAnalyser,
     effectiveRailCollapsed, paneWidth, bodyWidth, railAutoCollapsed, singlePane, isMobilePane, railAsSheet,
-    play, togglePlay, stop, seek, setPlaybackRate, cyclePlaybackRate, toggleRecording, cancelRecording, stopAndSendRecording, registerRecorder, notifyRecording, toggleRail,
+    play, togglePlay, stop, seek, setPlaybackRate, cyclePlaybackRate, toggleRecording, cancelRecording, stopAndSendRecording, registerRecorder, notifyRecording, setRecordingAnalyser, toggleRail,
   ]);
 
   return <RelayStudioContext.Provider value={value}>{children}</RelayStudioContext.Provider>;
