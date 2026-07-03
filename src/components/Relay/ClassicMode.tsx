@@ -41,15 +41,10 @@ import {
   FileText,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
-import RecordingPreview from './RecordingPreview';
 import StudioRecorder from './StudioRecorder';
 import VoxRecordArea from './VoxRecordArea';
 
-import { blobToBase64 } from '../../services/audioService';
-import { transcribeMedia, processWithModel } from '../../services/geminiService';
 import { userContactService } from '../../services/userContactService';
-import { whisperService } from '../../services/relay/whisperService';
-import { audioEnhancementService } from '../../services/relay/audioEnhancementService';
 import { voxModeService } from '../../services/relay/voxModeService';
 import { getPlayableUrl } from '../../services/relay/resolveAudioUrl';
 import { relayOutbox } from '../../services/relay/relayOutbox';
@@ -91,7 +86,6 @@ import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
 import {
   useRelayStudio,
-  useRelayModeRecorder,
   StudioMessageCard,
   StudioMasthead,
   avatarColorForId,
@@ -107,7 +101,7 @@ import VoxMessageMenu from './VoxMessageMenu';
 import VoxDownloadModal from './VoxDownloadModal';
 import { archiveRelayConversation } from '../../services/relay/relayArchiveService';
 import { AIProvenanceChip } from '../ui/AIProvenanceChip';
-import { describeMicError, type MicErrorInfo } from '../../utils/micErrors';
+import { type MicErrorInfo } from '../../utils/micErrors';
 
 // How many Direct messages to load per page. The first open loads the most
 // recent page; "Load older" pages further back via the created_at cursor. Caps
@@ -228,43 +222,18 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   // single-pane swap (with .classic--single-pane); inert when the pane is wide
   // enough to show both. A deep-link to a contact opens straight to the thread.
   const [mobileView, setMobileView] = useState<'list' | 'thread'>(initialContactId ? 'thread' : 'list');
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingDuration, setRecordingDuration] = useState(0);
-  const [audioLevel, setAudioLevel] = useState(0);
-  // Set when mic acquisition fails (denied / no device / in use). A permission
-  // denial surfaces a persistent, actionable banner (Electron-aware) rather
-  // than a vanishing toast — see startRecording's catch + the thread render.
+  // Set when mic acquisition fails (denied / no device / in use). Kept as the
+  // persistent-banner scaffold; re-wiring StudioRecorder's mic errors into it is
+  // a follow-up (today StudioRecorder surfaces a toast via useRelayModeRecorder).
   const [micError, setMicError] = useState<MicErrorInfo | null>(null);
   // Playback flows through the shared Voice Studio transport so the persistent
   // StudioFooter reflects + controls whatever plays here. "Which row is active"
-  // is derived from studio.nowPlaying rather than a local playingId.
+  // is derived from studio.nowPlaying rather than a local playingId. Capture +
+  // its presence flag are owned by <StudioRecorder>/useVoxRecording now.
   const studio = useRelayStudio();
 
-  // Safety net: ensure `quick_vox_status.is_recording` clears if the tab is
-  // closed or this view unmounts mid-recording. The hook-based modes get this
-  // via useVoxRecording; ClassicMode owns its own MediaRecorder, so it owns
-  // its own cleanup too.
-  useEffect(() => {
-    if (!isRecording) return;
-    const flipFalse = () => voxModeService.updateQuickVoxStatus(false).catch(() => {});
-    window.addEventListener('pagehide', flipFalse);
-    window.addEventListener('beforeunload', flipFalse);
-    return () => {
-      window.removeEventListener('pagehide', flipFalse);
-      window.removeEventListener('beforeunload', flipFalse);
-      flipFalse();
-    };
-  }, [isRecording]);
   const [showNewVoxModal, setShowNewVoxModal] = useState(false);
-  const [pendingRecording, setPendingRecording] = useState<{
-    blob: Blob;
-    url: string;
-    duration: number;
-    audioBuffer?: AudioBuffer;
-  } | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [transcript, setTranscript] = useState<string>('');
-  const isPreviewing = !!pendingRecording;
 
   // Settings and controls state. The Settings entry point lives at the
   // Relay shell level (the gear icon in Relay.tsx); ClassicMode no longer
@@ -295,7 +264,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   });
 
   // Real-time audio visualization state
-  const [liveAudioLevel, setLiveAudioLevel] = useState<number[]>(new Array(32).fill(0));
 
   // Pulse users state
   const [pulseUsers, setPulseUsers] = useState<EnrichedUserProfile[]>([]);
@@ -365,13 +333,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     : undefined;
 
   // Refs
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const startTimeRef = useRef<number>(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   // The scrollable thread container (.classic-messages). Used to anchor the
   // viewport when prepending older messages so the view doesn't jump.
@@ -393,13 +354,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
         URL.revokeObjectURL(url);
       });
       blobUrlsRef.current.clear();
-      // Also release any live-analysis AudioContext if we unmount mid-recording
-      // (e.g. navigating away), so a torn-down thread never leaks a context.
-      if (audioContextRef.current) {
-        audioContextRef.current.close().catch(() => {});
-        audioContextRef.current = null;
-        analyserRef.current = null;
-      }
     };
   }, []);
 
@@ -907,308 +861,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     }
   }, [activeThreadRecordings, activeContact, apiKey]);
 
-  // ============================================
-  // RECORDING FUNCTIONS
-  // ============================================
-
-  const startRecording = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        }
-      });
-
-      // Acquired — clear any prior mic-failure banner.
-      setMicError(null);
-      streamRef.current = stream;
-      chunksRef.current = [];
-
-      // Set up audio analysis. Close any prior context first so a double-start
-      // (or an interrupted stop) can't leak one.
-      if (audioContextRef.current) {
-        audioContextRef.current.close().catch(() => {});
-      }
-      audioContextRef.current = new AudioContext();
-      const source = audioContextRef.current.createMediaStreamSource(stream);
-      analyserRef.current = audioContextRef.current.createAnalyser();
-      analyserRef.current.fftSize = 256;
-      source.connect(analyserRef.current);
-
-      // Start MediaRecorder
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : 'audio/webm';
-
-      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType });
-
-      mediaRecorderRef.current.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          chunksRef.current.push(e.data);
-        }
-      };
-
-      mediaRecorderRef.current.onstop = async () => {
-        let blob = new Blob(chunksRef.current, { type: mimeType });
-        const duration = (Date.now() - startTimeRef.current) / 1000;
-
-        // Apply audio enhancement if enabled
-        if (settings.audioEnhancement) {
-          try {
-            toast.loading('Enhancing audio...', { id: 'audio-enhance' });
-            const enhancedResult = await audioEnhancementService.enhanceAudio(blob, {
-              noiseReduction: settings.noiseReduction,
-              normalize: true,
-              enhanceClarity: settings.enhanceVoiceClarity,
-              enhanceVoice: settings.enhanceVoiceClarity,
-            });
-            blob = enhancedResult.blob;
-            toast.success(`Audio enhanced (${enhancedResult.appliedEnhancements.join(', ')})`, { id: 'audio-enhance' });
-          } catch (e) {
-            console.error('Audio enhancement error:', e);
-            toast.error('Enhancement failed, using original', { id: 'audio-enhance' });
-          }
-        }
-
-        const url = URL.createObjectURL(blob);
-        blobUrlsRef.current.add(url);
-
-        // Decode audio for waveform. The decode AudioContext MUST be closed —
-        // one was leaked on every recording, which (together with the live
-        // context) exhausts Chrome's context pool and throws the "AudioContext
-        // error from the audio device", degrading capture over a session.
-        let audioBuffer: AudioBuffer | undefined;
-        let decodeCtx: AudioContext | null = null;
-        try {
-          const arrayBuffer = await blob.arrayBuffer();
-          decodeCtx = new AudioContext();
-          audioBuffer = await decodeCtx.decodeAudioData(arrayBuffer);
-        } catch (e) {
-          console.error('Error decoding audio:', e);
-        } finally {
-          decodeCtx?.close().catch(() => {});
-        }
-
-        setPendingRecording({ blob, url, duration, audioBuffer });
-
-        // Start transcription based on engine selection
-        if (settings.autoTranscribe) {
-          setIsAnalyzing(true);
-          try {
-            if (settings.transcriptionEngine === 'whisper') {
-              // Use OpenAI Whisper API
-              const isWhisperConfigured = await whisperService.isConfigured();
-              if (isWhisperConfigured) {
-                toast.loading('Transcribing with Whisper...', { id: 'transcribe' });
-                const result = await whisperService.transcribeWithWordTimestamps(blob);
-                setTranscript(result.text || '');
-                toast.success(`Transcribed (${result.language || 'detected'})`, { id: 'transcribe' });
-              } else {
-                // Fallback to Gemini if Whisper not configured
-                toast.loading('Transcribing...', { id: 'transcribe' });
-                const base64 = await blobToBase64(blob);
-                const transcriptText = await transcribeMedia(base64, 'audio/webm');
-                setTranscript(transcriptText || '');
-                toast.success('Transcribed', { id: 'transcribe' });
-              }
-            } else {
-              // Use Gemini
-              toast.loading('Transcribing with Gemini...', { id: 'transcribe' });
-              const base64 = await blobToBase64(blob);
-              const transcriptText = await transcribeMedia(base64, 'audio/webm');
-              setTranscript(transcriptText || '');
-              toast.success('Transcribed', { id: 'transcribe' });
-            }
-          } catch (e) {
-            console.error('Transcription error:', e);
-            toast.error('Transcription failed', { id: 'transcribe' });
-          }
-          setIsAnalyzing(false);
-        }
-      };
-
-      startTimeRef.current = Date.now();
-      mediaRecorderRef.current.start(100);
-      setIsRecording(true);
-      voxModeService.updateQuickVoxStatus(true).catch(() => {});
-
-      // Update duration timer
-      timerRef.current = setInterval(() => {
-        setRecordingDuration((Date.now() - startTimeRef.current) / 1000);
-
-        // Update audio level
-        if (analyserRef.current) {
-          const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
-          analyserRef.current.getByteFrequencyData(dataArray);
-          const avg = dataArray.reduce((a, b) => a + b) / dataArray.length;
-          setAudioLevel(avg / 255);
-        }
-      }, 50);
-
-    } catch (error) {
-      console.error('Error starting recording:', error);
-      const info = describeMicError(error);
-      // Permission denials get a persistent banner (the fix lives outside the
-      // app — OS/browser settings — so a transient toast would vanish before
-      // the user can act). Non-permission errors stay a toast.
-      if (info.isPermission) {
-        setMicError(info);
-      }
-      toast.error(info.detail, { duration: info.isPermission ? 8000 : 5000 });
-    }
-  }, [apiKey]);
-
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      streamRef.current?.getTracks().forEach(t => t.stop());
-      if (timerRef.current) clearInterval(timerRef.current);
-      // Release the per-recording live-analysis AudioContext (created in
-      // startRecording). onstop decodes with its own short-lived context, so
-      // this one is done the moment recording ends — closing it stops the leak
-      // that was exhausting the WebAudio renderer.
-      if (audioContextRef.current) {
-        audioContextRef.current.close().catch(() => {});
-        audioContextRef.current = null;
-        analyserRef.current = null;
-      }
-      setIsRecording(false);
-      setRecordingDuration(0);
-      setAudioLevel(0);
-      voxModeService.updateQuickVoxStatus(false).catch(() => {});
-    }
-  }, [isRecording]);
-
-  const toggleRecording = useCallback(() => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
-  }, [isRecording, startRecording, stopRecording]);
-
-  const cancelRecording = useCallback(() => {
-    // Revoke the blob URL from the discarded pending recording to free memory
-    if (pendingRecording?.url) {
-      URL.revokeObjectURL(pendingRecording.url);
-      blobUrlsRef.current.delete(pendingRecording.url);
-    }
-    setPendingRecording(null);
-    setTranscript('');
-  }, [pendingRecording]);
-
-  const sendRecording = useCallback(async () => {
-    if (!pendingRecording || !activeContactId) return;
-
-    const isReply = !!replyingTo;
-    const replyToId = replyingTo?.id || undefined;
-    const analysis = replyToId ? { reply_to_id: replyToId } : undefined;
-    const blob = pendingRecording.blob;
-    const duration = pendingRecording.duration;
-    const transcriptText = transcript || undefined;
-
-    const tempId = `rec-${Date.now()}`;
-
-    // Durable path (flag-gated): persist the recording — blob included — to the
-    // outbox so it survives refresh/close/crash/flaky-network, then let the
-    // processor deliver with retry. Sender id via getSession() (LOCAL, offline-
-    // safe — never getUser(), which needs the network and broke this offline the
-    // first time). Any miss falls through to the proven direct path below.
-    if (durableOutboxEnabled) {
-      let senderId: string | undefined;
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        senderId = session?.user?.id;
-      } catch { /* fall through */ }
-
-      if (senderId) {
-        setRecordings(prev => [...prev, {
-          id: tempId, blob, url: pendingRecording.url, duration,
-          timestamp: new Date(), transcription: transcriptText, sender: 'me',
-          contactId: activeContactId, status: 'sending', replyToId,
-        }]);
-        try {
-          await relayOutbox.enqueue({
-            id: tempId, senderId, recipientId: activeContactId, blob, duration,
-            transcript: transcriptText, analysis, replyToId,
-            createdAt: Date.now(), status: 'pending', attempts: 0,
-            nextAttemptAt: Date.now(),
-          });
-          // Durable now — clear the composer and kick the processor. The outbox
-          // event effect reconciles the 'sending' bubble to 'sent' / 'failed'.
-          setPendingRecording(null);
-          setTranscript('');
-          setReplyingTo(null);
-          void processOutbox();
-          return;
-        } catch (e) {
-          // Couldn't even persist — drop the bubble and fall back to direct send.
-          console.error('Outbox enqueue failed, using direct send:', e);
-          setRecordings(prev => prev.filter(r => r.id !== tempId));
-        }
-      }
-      // No session (or enqueue failed) → fall through to the proven direct path.
-    }
-
-    // Optimistic bubble with a temp id; reconciled to the real row id on success,
-    // rolled back on failure so we never show a false "sent" (S0-3).
-    const optimistic: Recording = {
-      id: tempId,
-      blob,
-      url: pendingRecording.url,
-      duration,
-      timestamp: new Date(),
-      transcription: transcriptText,
-      sender: 'me',
-      contactId: activeContactId,
-      status: 'sent',
-      replyToId,
-    };
-    setRecordings(prev => [...prev, optimistic]);
-
-    // Deliver through the real 2-party engine: uploads audio, inserts a
-    // quick_vox_messages row (sender = me, recipient = activeContactId), notifies
-    // the recipient, and fires their realtime sub. activeContactId is a Pulse
-    // user id — the composer + thread only ever surface Pulse users.
-    const sent = await voxModeService.uploadAndSendQuickVox(
-      activeContactId,
-      blob,
-      duration,
-      transcriptText,
-      analysis,
-    );
-
-    if (!sent) {
-      // Honest failure: drop the optimistic bubble, keep the preview so the user
-      // can retry, and surface the error instead of a fake "Message sent!".
-      setRecordings(prev => prev.filter(r => r.id !== tempId));
-      toast.error('Could not send your voice message. Please try again.');
-      return;
-    }
-
-    // Success: swap the temp row for the durable id, clear the composer. Keep the
-    // local blob URL for instant in-session playback (storage holds the copy).
-    setRecordings(prev =>
-      prev.map(r => (r.id === tempId ? { ...r, id: sent.id, status: 'sent' } : r)),
-    );
-    setPendingRecording(null);
-    setTranscript('');
-    setReplyingTo(null);
-    toast.success(isReply ? 'Reply sent!' : 'Message sent!');
-  }, [pendingRecording, activeContactId, transcript, replyingTo, durableOutboxEnabled]);
-
-  const retryRecording = useCallback(() => {
-    // Revoke the blob URL from the discarded pending recording to free memory
-    if (pendingRecording?.url) {
-      URL.revokeObjectURL(pendingRecording.url);
-      blobUrlsRef.current.delete(pendingRecording.url);
-    }
-    setPendingRecording(null);
-    setTranscript('');
-    startRecording();
-  }, [startRecording, pendingRecording]);
 
   // Phase 2c: the bespoke inline recorder is retired. Capture is owned entirely
   // by the canonical <StudioRecorder> (rendered below), which registers itself
@@ -1573,8 +1225,8 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       if (showSummary) { setShowSummary(false); return; }
       if (showDownloadModal) { setShowDownloadModal(false); return; }
       if (showNewVoxModal) { setShowNewVoxModal(false); return; }
-      // Priority 2: discard active recording
-      if (isRecording) { stopRecording(); return; }
+      // Priority 2: discard active recording (owned by the studio recorder now)
+      if (studio.isRecording) { studio.cancelRecording(); return; }
       // Priority 3: exit selection mode
       if (isSelectionMode) { exitSelectionMode(); return; }
       // Priority 4: go back to contact list
@@ -1886,7 +1538,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                   <div className="flex items-center gap-1 shrink-0">
                     <button
                       type="button"
-                      onClick={() => startRecording()}
+                      onClick={() => studio.toggleRecording()}
                       className="px-2.5 py-1 rounded-md text-xs font-medium text-rose-700 dark:text-rose-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                     >
                       Try again
@@ -1923,7 +1575,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                   action={{
                     label: 'Start Recording',
                     onClick: () => {
-                      if (!isRecording) startRecording();
+                      if (!studio.isRecording) studio.toggleRecording();
                     },
                   }}
                   secondaryAction={inviteSecondaryAction}
@@ -2214,29 +1866,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
               )}
               <div ref={messagesEndRef} />
             </div>
-
-            {/* Recording Preview */}
-            {pendingRecording && (
-              <div className="classic-preview-overlay">
-                <div className="classic-preview-card">
-                  <RecordingPreview
-                    recordingData={{
-                      blob: pendingRecording.blob,
-                      url: pendingRecording.url,
-                      duration: pendingRecording.duration,
-                      audioBuffer: pendingRecording.audioBuffer,
-                    }}
-                    onSend={sendRecording}
-                    onCancel={cancelRecording}
-                    onRetry={retryRecording}
-                    isAnalyzing={isAnalyzing}
-                    transcript={transcript}
-                    color={accentColor}
-                    isDarkMode={isDarkMode}
-                  />
-                </div>
-              </div>
-            )}
 
             {/* The ONE canonical recorder (Phase 2c: now the only inline
                 recorder). Registers itself with the studio, owns capture →
