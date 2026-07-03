@@ -377,10 +377,8 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
 
   // Phase 6: Keyboard Shortcuts (after handler functions are defined)
   useRelayKeyboardShortcuts({
-    onToggleRecording: () => {
-      if (recordingState === 'idle') startRecording();
-      else if (recordingState === 'recording') stopRecording();
-    },
+    // SPACE (record) is owned centrally by <RelayShortcutBridge> (Relay.tsx) via
+    // studio.toggleRecording; a mode-level handler here would double-fire.
     onStopRecording: () => {
       // Priority 1: close any open modal/overlay first
       if (showMessageMenu) { setShowMessageMenu(null); return; }

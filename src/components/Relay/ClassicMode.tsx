@@ -1557,10 +1557,10 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   // ============================================
 
   useRelayKeyboardShortcuts({
-    onToggleRecording: () => {
-      if (!isRecording) startRecording();
-      else stopRecording();
-    },
+    // SPACE (record) is owned by <RelayShortcutBridge> in Relay.tsx, which routes
+    // through studio.toggleRecording → the registered recorder (StudioRecorder or
+    // this mode's own). Registering onToggleRecording here too would double-fire
+    // and start a ghost capture that fights for the mic.
     onStopRecording: () => {
       // Priority 1: close any open modal/overlay first
       if (showMessageMenu) { setShowMessageMenu(null); return; }

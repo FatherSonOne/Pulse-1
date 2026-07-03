@@ -42,7 +42,7 @@ import toast from 'react-hot-toast';
 import { avatarColorForId } from './Relay/studio/avatarColor';
 
 // Keyboard shortcuts
-import { useRelayKeyboardShortcuts } from '../hooks/useRelayKeyboardShortcuts';
+import { useRelayKeyboardShortcuts, type RelayShortcutView } from '../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './Relay/VoxKeyboardShortcutsHelp';
 
 // Audience renderers — Relay's six peer views each render one of these.
@@ -78,6 +78,37 @@ const StudioLiveSync: React.FC<{ inLive: boolean }> = ({ inLive }) => {
   useEffect(() => {
     if (inLive) stop();
   }, [inLive, stop]);
+  return null;
+};
+
+// SPACE / view / help shortcuts, centralized INSIDE the provider so SPACE can
+// reach the studio transport. This is the single owner of the record gesture:
+//   • A focused mode with a registered inline recorder (a Direct thread with a
+//     contact selected, a channel, etc.) sets studio.hasRecorder → SPACE drives
+//     studio.toggleRecording() and records inline to that target.
+//   • Otherwise (Inbox/triage, or no target yet) → SPACE opens the composer's
+//     recipient picker.
+// Replaces the old container-level handler that ALWAYS opened the composer and
+// fought each mode's own SPACE handler — two listeners fired at once, so the
+// picker popped open AND the mode kicked off a hidden "ghost" recording that
+// fought for the mic. Modes no longer register their own onToggleRecording.
+const RelayShortcutBridge: React.FC<{
+  onSwitchView: (view: RelayShortcutView) => void;
+  onShowHelp: () => void;
+  onCompose: () => void;
+}> = ({ onSwitchView, onShowHelp, onCompose }) => {
+  const { hasRecorder, toggleRecording } = useRelayStudio();
+  useRelayKeyboardShortcuts(
+    {
+      onSwitchView,
+      onShowHelp,
+      onToggleRecording: () => {
+        if (hasRecorder) toggleRecording();
+        else onCompose();
+      },
+    },
+    true,
+  );
   return null;
 };
 
@@ -292,22 +323,20 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
     }
   }, []);
 
-  // T/D/C/B/N/L switches the view directly. The active-tab style on the
-  // rail already communicates the change, so no toast is fired — repeated
-  // taps would otherwise stack toasts in a couple of seconds.
-  //
-  // Phase 1 contract: SPACE opens RelayComposer (existing behavior).
-  // Phase 2 swaps to studio.toggleRecording for inline recording.
-  useRelayKeyboardShortcuts({
-    onSwitchView: (newView) => setView(newView),
-    onShowHelp: () => setShowShortcutsHelp(true),
-    onToggleRecording: () => openComposer(null),
-  }, true);
+  // Keyboard shortcuts (SPACE / view switch / help) are registered by
+  // <RelayShortcutBridge> INSIDE the provider (below) so SPACE can reach
+  // studio.toggleRecording for inline recording — the Phase 2 swap. Keeping it
+  // here (outside the provider) forced the old always-open-composer behavior.
 
   return (
     <div className="h-full bg-white dark:bg-[#080808] rounded-2xl overflow-hidden border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] animate-fade-in shadow-xl">
       <RelayStudioProvider paneWidth={paneWidth}>
         <StudioLiveSync inLive={view === 'live'} />
+        <RelayShortcutBridge
+          onSwitchView={(newView) => setView(newView)}
+          onShowHelp={() => setShowShortcutsHelp(true)}
+          onCompose={() => openComposer(null)}
+        />
         <div ref={paneRef} className="h-full flex">
           {/* Vertical sources rail — replaces the horizontal tab strip. */}
           <SourcesRail
