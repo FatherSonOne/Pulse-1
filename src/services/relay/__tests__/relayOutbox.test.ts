@@ -21,12 +21,15 @@ vi.mock('../voxModeService', () => ({
   },
 }));
 
-// Mock the auth client the processor reads for the current user id.
+// Mock the auth client the processor reads for the current user id. It uses
+// getSession() (offline-safe local read), not getUser().
 // NOTE: the processor imports '../supabase' from src/services/relay/, which
 // resolves to src/services/supabase — i.e. '../../supabase' from this test file.
-const getUser = vi.fn(async () => ({ data: { user: { id: 'sender-1' } } }));
+const getSession = vi.fn(async () => ({
+  data: { session: { user: { id: 'sender-1' } } },
+}));
 vi.mock('../../supabase', () => ({
-  supabase: { auth: { getUser: () => getUser() } },
+  supabase: { auth: { getSession: () => getSession() } },
 }));
 
 import { relayOutbox, RelayOutboxEntry } from '../relayOutbox';
@@ -60,7 +63,7 @@ async function clearOutbox() {
 describe('relayOutbox store', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
-    getUser.mockResolvedValue({ data: { user: { id: 'sender-1' } } });
+    getSession.mockResolvedValue({ data: { session: { user: { id: 'sender-1' } } } });
     await clearOutbox();
   });
 
@@ -103,7 +106,7 @@ describe('relayOutbox store', () => {
 describe('relayOutbox processor', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
-    getUser.mockResolvedValue({ data: { user: { id: 'sender-1' } } });
+    getSession.mockResolvedValue({ data: { session: { user: { id: 'sender-1' } } } });
     await clearOutbox();
   });
 
@@ -181,7 +184,7 @@ describe('relayOutbox processor', () => {
   });
 
   it('skips work and leaves the queue intact when signed out', async () => {
-    getUser.mockResolvedValue({ data: { user: null } });
+    getSession.mockResolvedValue({ data: { session: null } });
     uploadAndSendQuickVox.mockResolvedValue({ id: 'real-1' });
     await relayOutbox.enqueue(makeEntry({ id: 'a' }));
 

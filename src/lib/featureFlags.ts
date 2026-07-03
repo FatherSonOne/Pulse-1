@@ -290,6 +290,25 @@ const featureFlagsConfig: FeatureFlagConfig = {
     description: 'ON for team testing (pre-launch) — real in-call host-orchestrated Daily breakout rooms. Live AV verification is in progress via this flip.',
     version: '0.1.0'
   },
+
+  // Relay durable send outbox (app-dev sweep #1). Persists each recording (blob
+  // included) to IndexedDB the moment you hit send, then a connectivity-aware
+  // processor delivers it with exponential backoff — so a refresh, tab close,
+  // crash, or flaky network can't lose a voice message (the Voxer-trust gap).
+  // OFF by default: the first integration shipped a getUser()-on-send bug that
+  // broke offline (network auth call returned null → "signed out" + crash). This
+  // is the corrected getSession()-based re-wire, gated until LIVE-verified:
+  // offline → send (bubble stays 'sending') → reconnect delivers; refresh
+  // mid-send survives; parked failures offer tap-to-retry. When OFF, ClassicMode
+  // uses the proven optimistic/reconcile direct-send path (zero change). Enable
+  // in dev to verify: `?ff_relayDurableOutbox=on`.
+  relayDurableOutbox: {
+    enabled: false,
+    rolloutPercentage: 0,
+    targetUsers: ['internal'],
+    description: 'OFF until live-verified — durable IndexedDB send outbox for Direct voice messages (offline-safe via getSession). Dev override: ?ff_relayDurableOutbox=on',
+    version: '0.1.0'
+  },
 };
 
 // User group definitions

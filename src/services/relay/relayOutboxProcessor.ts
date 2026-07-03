@@ -67,9 +67,14 @@ export async function processOutbox(): Promise<void> {
   }
   processing = true;
   try {
+    // getSession() reads the persisted session from local storage — no network,
+    // so this resolves the sender id even right after coming back online (unlike
+    // getUser(), whose token-validation round-trip returns null while offline and
+    // broke the whole feature the first time round).
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: { session },
+    } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return; // not signed in — leave the queue intact for later
 
     const now = Date.now();
@@ -146,8 +151,9 @@ async function scheduleNextDrain(): Promise<void> {
   }
   if (isOffline()) return;
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) return;
 
   const all = await relayOutbox.getAll(user.id);

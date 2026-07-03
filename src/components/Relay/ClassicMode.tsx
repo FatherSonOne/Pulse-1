@@ -51,6 +51,14 @@ import { whisperService } from '../../services/relay/whisperService';
 import { audioEnhancementService } from '../../services/relay/audioEnhancementService';
 import { voxModeService } from '../../services/relay/voxModeService';
 import { getPlayableUrl } from '../../services/relay/resolveAudioUrl';
+import { relayOutbox } from '../../services/relay/relayOutbox';
+import {
+  initRelayOutbox,
+  processOutbox,
+  onOutboxEvent,
+  retryOutboxEntry,
+} from '../../services/relay/relayOutboxProcessor';
+import { useFeatureFlag } from '../../lib/featureFlags';
 import { getCurrentWorkspaceId } from '../../services/ai/getWorkspaceId';
 import { supabase } from '../../services/supabase';
 import type { EnrichedUserProfile, PulseUserProfile } from '../../types/userContact';
@@ -119,7 +127,7 @@ interface Recording {
   isTranscribing?: boolean;
   sender: 'me' | 'other';
   contactId: string;
-  status?: 'sent' | 'delivered' | 'read';
+  status?: 'sending' | 'failed' | 'sent' | 'delivered' | 'read';
   analysis?: {
     sentiment?: string;
     topics?: string[];
@@ -322,6 +330,11 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     getTotalDuration,
   } = useVoxSelection();
 
+  // Durable send outbox (app-dev sweep #1) — OFF by default. When off, sends use
+  // the proven optimistic/reconcile direct path (unchanged). Flip on in dev to
+  // verify offline/refresh/reconnect: `?ff_relayDurableOutbox=on`.
+  const durableOutboxEnabled = useFeatureFlag('relayDurableOutbox');
+
   // Phase 5: AI Enhancement States
   const [showSummary, setShowSummary] = useState(false);
   const [conversationSummary, setConversationSummary] = useState<ConversationSummary | null>(null);
@@ -462,7 +475,16 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
         const myId = await voxModeService.ensureUserId();
         const dbMessages = await voxModeService.getAllQuickVoxMessages({ limit: DIRECT_PAGE_SIZE });
         const loadedRecordings = await mapMessagesToRecordings(dbMessages, myId);
-        setRecordings(loadedRecordings);
+        // Preserve any still-in-flight outbox bubbles ('sending'/'failed') not
+        // yet in the DB, so the network load can't wipe a queued send on refresh
+        // (only relevant when the durable outbox is on; a no-op otherwise).
+        setRecordings((prev) => {
+          const loadedIds = new Set(loadedRecordings.map((r) => r.id));
+          const queued = prev.filter(
+            (r) => (r.status === 'sending' || r.status === 'failed') && !loadedIds.has(r.id),
+          );
+          return queued.length ? [...loadedRecordings, ...queued] : loadedRecordings;
+        });
         // A full page back implies there may be older history to page in.
         setHasOlderMessages(dbMessages.length >= DIRECT_PAGE_SIZE);
         // dbMessages is ascending, so [0] is the oldest loaded — the cursor.
@@ -476,6 +498,92 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     };
     loadRecordings();
   }, [mapMessagesToRecordings]);
+
+  // Durable outbox wiring (app-dev sweep #1), flag-gated. When off this effect
+  // does nothing — the direct send path owns delivery. When on: reconcile the
+  // optimistic 'sending' bubble with the processor's delivery events, revive any
+  // messages queued in a previous session (survived a refresh/crash mid-send),
+  // and start the connectivity-aware drain so queued sends land app-wide. Every
+  // handler is wrapped so a stray error can never white-screen the thread.
+  useEffect(() => {
+    if (!durableOutboxEnabled) return;
+    let cancelled = false;
+
+    const hydrate = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const uid = session?.user?.id;
+        if (!uid || cancelled) return;
+        const entries = await relayOutbox.getAll(uid);
+        if (cancelled || entries.length === 0) return;
+        setRecordings((prev) => {
+          const existing = new Set(prev.map((r) => r.id));
+          const revived: Recording[] = entries
+            .filter((e) => !existing.has(e.id))
+            .map((e) => {
+              const url = URL.createObjectURL(e.blob);
+              blobUrlsRef.current.add(url);
+              return {
+                id: e.id, blob: e.blob, url, duration: e.duration,
+                timestamp: new Date(e.createdAt),
+                transcription: e.transcript || undefined, sender: 'me' as const,
+                contactId: e.recipientId,
+                status: (e.status === 'failed' ? 'failed' : 'sending') as Recording['status'],
+                analysis: e.analysis || undefined, replyToId: e.replyToId,
+              };
+            });
+          return revived.length ? [...prev, ...revived] : prev;
+        });
+      } catch (e) {
+        console.error('Outbox hydrate failed:', e);
+      }
+    };
+
+    const unsubscribe = onOutboxEvent((event) => {
+      if (cancelled) return;
+      try {
+        if (event.type === 'sent') {
+          // Swap temp id → durable row id; keep the local blob URL for instant
+          // in-session playback (storage holds the copy).
+          setRecordings((prev) => prev.map((r) =>
+            r.id === event.id ? { ...r, id: event.message.id, status: 'sent' } : r));
+        } else if (event.type === 'sending') {
+          setRecordings((prev) => prev.map((r) =>
+            r.id === event.id ? { ...r, status: 'sending' } : r));
+        } else if (event.type === 'failed' && event.entry.status === 'failed') {
+          // Only the PARKED state (auto-retry exhausted) reads as failed; interim
+          // backoff attempts stay 'sending' so transient blips stay quiet.
+          setRecordings((prev) => prev.map((r) =>
+            r.id === event.id ? { ...r, status: 'failed' } : r));
+          const failedId = event.id;
+          toast.error((t) => (
+            <span className="flex items-center gap-3">
+              A voice message couldn’t be sent.
+              <button
+                className="underline font-semibold"
+                onClick={() => {
+                  setRecordings((prev) => prev.map((r) =>
+                    r.id === failedId ? { ...r, status: 'sending' } : r));
+                  void retryOutboxEntry(failedId);
+                  toast.dismiss(t.id);
+                }}
+              >Retry</button>
+            </span>
+          ), { duration: 8000 });
+        }
+      } catch (e) {
+        console.error('Outbox event handler error:', e);
+      }
+    });
+
+    hydrate();
+    try { initRelayOutbox(); } catch (e) { console.error('initRelayOutbox failed:', e); }
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [durableOutboxEnabled]);
 
   // Page in the next-older window of Direct history. Prepends to `recordings`
   // (de-duped) and anchors the viewport so the view stays put rather than
@@ -973,9 +1081,51 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     const duration = pendingRecording.duration;
     const transcriptText = transcript || undefined;
 
+    const tempId = `rec-${Date.now()}`;
+
+    // Durable path (flag-gated): persist the recording — blob included — to the
+    // outbox so it survives refresh/close/crash/flaky-network, then let the
+    // processor deliver with retry. Sender id via getSession() (LOCAL, offline-
+    // safe — never getUser(), which needs the network and broke this offline the
+    // first time). Any miss falls through to the proven direct path below.
+    if (durableOutboxEnabled) {
+      let senderId: string | undefined;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        senderId = session?.user?.id;
+      } catch { /* fall through */ }
+
+      if (senderId) {
+        setRecordings(prev => [...prev, {
+          id: tempId, blob, url: pendingRecording.url, duration,
+          timestamp: new Date(), transcription: transcriptText, sender: 'me',
+          contactId: activeContactId, status: 'sending', replyToId,
+        }]);
+        try {
+          await relayOutbox.enqueue({
+            id: tempId, senderId, recipientId: activeContactId, blob, duration,
+            transcript: transcriptText, analysis, replyToId,
+            createdAt: Date.now(), status: 'pending', attempts: 0,
+            nextAttemptAt: Date.now(),
+          });
+          // Durable now — clear the composer and kick the processor. The outbox
+          // event effect reconciles the 'sending' bubble to 'sent' / 'failed'.
+          setPendingRecording(null);
+          setTranscript('');
+          setReplyingTo(null);
+          void processOutbox();
+          return;
+        } catch (e) {
+          // Couldn't even persist — drop the bubble and fall back to direct send.
+          console.error('Outbox enqueue failed, using direct send:', e);
+          setRecordings(prev => prev.filter(r => r.id !== tempId));
+        }
+      }
+      // No session (or enqueue failed) → fall through to the proven direct path.
+    }
+
     // Optimistic bubble with a temp id; reconciled to the real row id on success,
     // rolled back on failure so we never show a false "sent" (S0-3).
-    const tempId = `rec-${Date.now()}`;
     const optimistic: Recording = {
       id: tempId,
       blob,
@@ -1019,7 +1169,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     setTranscript('');
     setReplyingTo(null);
     toast.success(isReply ? 'Reply sent!' : 'Message sent!');
-  }, [pendingRecording, activeContactId, transcript, replyingTo]);
+  }, [pendingRecording, activeContactId, transcript, replyingTo, durableOutboxEnabled]);
 
   const retryRecording = useCallback(() => {
     // Revoke the blob URL from the discarded pending recording to free memory
