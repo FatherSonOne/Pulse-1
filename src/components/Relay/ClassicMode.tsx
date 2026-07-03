@@ -222,9 +222,9 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   // single-pane swap (with .classic--single-pane); inert when the pane is wide
   // enough to show both. A deep-link to a contact opens straight to the thread.
   const [mobileView, setMobileView] = useState<'list' | 'thread'>(initialContactId ? 'thread' : 'list');
-  // Set when mic acquisition fails (denied / no device / in use). Kept as the
-  // persistent-banner scaffold; re-wiring StudioRecorder's mic errors into it is
-  // a follow-up (today StudioRecorder surfaces a toast via useRelayModeRecorder).
+  // Set (via <StudioRecorder onMicError>) when mic acquisition is denied, so the
+  // thread shows a PERSISTENT actionable banner rather than a vanishing toast —
+  // the fix lives in OS/browser settings. Cleared when capture next starts clean.
   const [micError, setMicError] = useState<MicErrorInfo | null>(null);
   // Playback flows through the shared Voice Studio transport so the persistent
   // StudioFooter reflects + controls whatever plays here. "Which row is active"
@@ -1877,6 +1877,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
               isDarkMode={isDarkMode}
               onSent={refreshRecordings}
               durable={durableOutboxEnabled}
+              onMicError={setMicError}
             />
           </>
         ) : (

@@ -17,6 +17,9 @@ export interface LiveWaveBarsProps {
   color?: string;
   /** Resting height (%) when idle / warming up. */
   baseline?: number;
+  /** When true, bars flex to fill the host container's width (used by the
+   *  Dashboard strip); otherwise each bar is a fixed 2px (footer / modal). */
+  fill?: boolean;
 }
 
 export const LiveWaveBars: React.FC<LiveWaveBarsProps> = ({
@@ -24,6 +27,7 @@ export const LiveWaveBars: React.FC<LiveWaveBarsProps> = ({
   barCount = 56,
   color = '#ef4444',
   baseline = 10,
+  fill = false,
 }) => {
   const barsRef = useRef<Array<HTMLElement | null>>([]);
 
@@ -69,7 +73,12 @@ export const LiveWaveBars: React.FC<LiveWaveBarsProps> = ({
         <i
           key={i}
           ref={(el) => { barsRef.current[i] = el; }}
-          style={{ width: 2, height: `${baseline}%`, background: color, borderRadius: 1 }}
+          style={{
+            ...(fill ? { flex: '1 1 0', minWidth: 0 } : { width: 2 }),
+            height: `${baseline}%`,
+            background: color,
+            borderRadius: 1,
+          }}
         />
       ))}
     </>

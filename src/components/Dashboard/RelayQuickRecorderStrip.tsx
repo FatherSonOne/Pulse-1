@@ -1,8 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Mic, Square, Send, X as XIcon, ChevronDown, Loader2 } from 'lucide-react';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
+import { useVoxCaptureSettings } from '../../hooks/useVoxCaptureSettings';
 import { toastMicError } from '../../utils/micErrors';
 import { voxModeService } from '../../services/relay/voxModeService';
+import { sendQuickVoxDurable } from '../../services/relay/relayOutboxProcessor';
+import { LiveWaveBars } from '../Relay/studio/LiveWaveBars';
+import { useFeatureFlag } from '../../lib/featureFlags';
 import { supabase } from '../../services/supabase';
 import toast from 'react-hot-toast';
 import { AppView } from '../../types';
@@ -25,7 +29,6 @@ interface Recipient {
   handle?: string;
 }
 
-const WAVE_BAR_COUNT = 30;
 const LAST_RECIPIENT_KEY = 'pulse_last_relay_recipient';
 
 const formatDuration = (seconds: number): string => {
@@ -35,83 +38,11 @@ const formatDuration = (seconds: number): string => {
   return `${m}:${r.toString().padStart(2, '0')}`;
 };
 
-// Real-mic waveform sourced from the recording hook's AnalyserNode. 30 bars,
-// fftSize=256 already (set in useVoxRecording), so we sample frequencyBinCount
-// (128) down to 30 columns via averaged buckets. Falls back to a single
-// static bar when prefers-reduced-motion is set.
-const LiveWaveform: React.FC<{ analyser: AnalyserNode | null }> = ({ analyser }) => {
-  const [levels, setLevels] = useState<number[]>(() => new Array(WAVE_BAR_COUNT).fill(0));
-  const frameRef = useRef<number | null>(null);
-  const reducedMotion = typeof window !== 'undefined'
-    && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-
-  useEffect(() => {
-    if (!analyser || reducedMotion) return;
-
-    const buffer = new Uint8Array(analyser.frequencyBinCount);
-    const bucketSize = Math.max(1, Math.floor(buffer.length / WAVE_BAR_COUNT));
-
-    const tick = () => {
-      analyser.getByteFrequencyData(buffer);
-      const next: number[] = [];
-      for (let i = 0; i < WAVE_BAR_COUNT; i++) {
-        let sum = 0;
-        const start = i * bucketSize;
-        for (let j = 0; j < bucketSize && (start + j) < buffer.length; j++) {
-          sum += buffer[start + j];
-        }
-        next.push(sum / bucketSize / 255);
-      }
-      setLevels(next);
-      frameRef.current = requestAnimationFrame(tick);
-    };
-    frameRef.current = requestAnimationFrame(tick);
-    return () => {
-      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
-    };
-  }, [analyser, reducedMotion]);
-
-  if (reducedMotion) {
-    // Static 5-bar silhouette so the waveform shape is still readable when
-    // motion is suppressed. Coral kept, animation removed.
-    return (
-      <div
-        className="flex-1 flex items-end gap-1 h-8"
-        aria-label="Recording in progress"
-        role="img"
-      >
-        {[0.4, 0.7, 1.0, 0.65, 0.45].map((h, i) => (
-          <span
-            key={i}
-            className="flex-1 rounded-sm bg-rose-500"
-            style={{ height: `${h * 100}%`, opacity: 0.7 }}
-          />
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className="flex-1 flex items-end gap-px h-8"
-      aria-label="Recording in progress"
-      role="img"
-    >
-      {levels.map((v, i) => (
-        <span
-          key={i}
-          className="flex-1 rounded-sm bg-rose-500"
-          style={{ height: `${Math.max(8, v * 100)}%`, opacity: 0.6 + v * 0.4 }}
-        />
-      ))}
-    </div>
-  );
-};
-
 // Full-width Relay recording surface — lives below the tile grid. Replaces the
 // old RelayPulseTile's narrow slot. At rest it surfaces today's IN/OUT counts
-// + a recipient picker. During recording it shows a real Web Audio waveform.
-// On send it routes through voxModeService.uploadAndSendQuickVox.
+// + a recipient picker. During recording it shows the shared real-mic waveform
+// (LiveWaveBars). Capture honors the Audio I/O settings; send routes through
+// the durable outbox (offline-safe) — the same canonical path as the studio.
 const RelayQuickRecorderStrip: React.FC<RelayQuickRecorderStripProps> = ({
   workspaceId,
   authUserId,
@@ -144,6 +75,8 @@ const RelayQuickRecorderStrip: React.FC<RelayQuickRecorderStripProps> = ({
     };
   }, [pickerOpen]);
 
+  const capture = useVoxCaptureSettings();
+  const durableOutbox = useFeatureFlag('relayDurableOutbox');
   const {
     state: recordingState,
     duration,
@@ -152,7 +85,12 @@ const RelayQuickRecorderStrip: React.FC<RelayQuickRecorderStripProps> = ({
     startRecording,
     stopRecording,
     cancelRecording,
-  } = useVoxRecording({ qualityPreset: 'voice_hd', maxDuration: 180 });
+  } = useVoxRecording({
+    qualityPreset: capture.qualityPreset,
+    deviceId: capture.deviceId,
+    customAudioConstraints: capture.customAudioConstraints,
+    maxDuration: 180,
+  });
 
   // Load today's stats + Pulse users for the recipient picker. The stats
   // logic mirrors what the old RelayPulseTile had, lifted in so the tile can
@@ -242,14 +180,22 @@ const RelayQuickRecorderStrip: React.FC<RelayQuickRecorderStripProps> = ({
     }
     setSending(true);
     try {
-      const result = await voxModeService.uploadAndSendQuickVox(
-        selectedRecipientId,
-        recordingData.blob,
-        recordingData.duration,
-      );
-      if (result) {
+      // Durable path (offline-safe, survives refresh) when the outbox is on;
+      // otherwise the direct upload+send. Both persist the recipient + reset.
+      const ok = durableOutbox
+        ? (await sendQuickVoxDurable({
+            recipientId: selectedRecipientId,
+            blob: recordingData.blob,
+            duration: recordingData.duration,
+          })).status === 'queued'
+        : !!(await voxModeService.uploadAndSendQuickVox(
+            selectedRecipientId,
+            recordingData.blob,
+            recordingData.duration,
+          ));
+      if (ok) {
         localStorage.setItem(LAST_RECIPIENT_KEY, selectedRecipientId);
-        toast.success(`Sent to ${selectedRecipient?.name ?? 'recipient'}`);
+        toast.success(`Sending to ${selectedRecipient?.name ?? 'recipient'}`);
         // Reset to idle by cancelling the preview state.
         cancelRecording();
         if (stats) setStats({ ...stats, sent: stats.sent + 1 });
@@ -368,9 +314,16 @@ const RelayQuickRecorderStrip: React.FC<RelayQuickRecorderStripProps> = ({
           )}
         </div>
 
-        {/* Live waveform during recording; spacer at rest. */}
+        {/* Live mic-reactive waveform during recording; spacer at rest. Shared
+            LiveWaveBars (fill mode) — same engine as the studio footer/modal. */}
         {isRecording ? (
-          <LiveWaveform analyser={analyser} />
+          <div
+            className="flex-1 flex items-end gap-px h-8"
+            aria-label="Recording in progress"
+            role="img"
+          >
+            <LiveWaveBars analyser={analyser} fill barCount={30} color="#f43f5e" baseline={8} />
+          </div>
         ) : (
           <div className="flex-1" />
         )}

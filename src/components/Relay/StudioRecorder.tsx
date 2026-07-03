@@ -27,6 +27,7 @@ import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { useVoxCaptureSettings } from '../../hooks/useVoxCaptureSettings';
 import { useRelayModeRecorder } from './studio/useRelayModeRecorder';
 import { useRelayStudio } from './studio/RelayStudioContext';
+import { describeMicError, toastMicError, type MicErrorInfo } from '../../utils/micErrors';
 import RecordingPreview from './RecordingPreview';
 import { voxModeService } from '../../services/relay/voxModeService';
 import { sendQuickVoxDurable } from '../../services/relay/relayOutboxProcessor';
@@ -48,6 +49,12 @@ export interface StudioRecorderProps {
    *  the host thread paints the bubble from outbox events. When false, send
    *  directly and refresh via onSent. Mirrors the relayDurableOutbox flag. */
   durable?: boolean;
+  /** Report a mic-acquisition failure so the host can show a PERSISTENT banner
+   *  for permission denials (the fix lives in OS/browser settings, so a toast
+   *  vanishes before the user can act). Called with the classified info on a
+   *  permission denial, and with null when capture starts cleanly. Non-permission
+   *  failures (no device / busy) are surfaced as a transient toast here instead. */
+  onMicError?: (info: MicErrorInfo | null) => void;
 }
 
 export const StudioRecorder: React.FC<StudioRecorderProps> = ({
@@ -56,6 +63,7 @@ export const StudioRecorder: React.FC<StudioRecorderProps> = ({
   isDarkMode = false,
   onSent,
   durable = false,
+  onMicError,
 }) => {
   const capture = useVoxCaptureSettings();
 
@@ -75,11 +83,26 @@ export const StudioRecorder: React.FC<StudioRecorderProps> = ({
     return () => setRecordingAnalyser(null);
   }, [rec.analyser, setRecordingAnalyser]);
 
+  // Wrap capture start so a mic failure surfaces as a PERSISTENT banner (via
+  // onMicError) for permission denials, and a transient toast otherwise. We
+  // handle the error here (no rethrow), so useRelayModeRecorder's own catch
+  // never double-reports.
+  const handleStart = useCallback(async () => {
+    onMicError?.(null);
+    try {
+      await rec.startRecording();
+    } catch (err) {
+      const info = describeMicError(err);
+      if (info.isPermission) onMicError?.(info);
+      else toastMicError(err);
+    }
+  }, [rec, onMicError]);
+
   // Bridge capture into the studio shell. Only registers while enabled AND a
   // recipient exists (mirrors ClassicMode's own `enabled: !!activeContactId`),
   // so toggleRecording drives exactly one recorder at a time.
   useRelayModeRecorder({
-    start: rec.startRecording,
+    start: handleStart,
     stop: rec.stopRecording,
     cancel: rec.cancelRecording,
     // Treat 'starting' as recording for the shell so the footer RECORDING
