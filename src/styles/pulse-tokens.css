@@ -44,15 +44,19 @@
   --pulse-tone-neutral-glow: rgba(107, 114, 128, 0.25);
 
   /* ─── Surfaces — light ─── */
-  --pulse-canvas: #f8f8f8;          /* paper-warm */
+  --pulse-canvas: #f8f8f8;          /* paper-warm — navbar + backdrop (kept) */
   --pulse-canvas-soft: #f2f2f2;
-  --pulse-surface: #ffffff;          /* card */
-  --pulse-surface-raised: #f2f2f2;   /* hover/raised card layer */
+  /* Card fill: Champagne — a warm whisper off pure white. #ffffff was the
+     display's peak luminance and glared on large panels; this warm neutral
+     (tinted per the color law) keeps the raised-card read while easing the
+     eyes over long sessions. Chosen in _design-playground/light-surface-token-lab.html. */
+  --pulse-surface: #fdfcf7;          /* card */
+  --pulse-surface-raised: #f3f2ec;   /* hover/raised card layer — warm-matched to champagne surface */
   /* Opaque surface for floating modals/overlays. --pulse-surface is
      translucent on dark (3% white) which is correct on the canvas but lets
      the app bleed through a modal panel; modals use this solid token instead. */
-  --pulse-surface-modal: #ffffff;
-  --pulse-border: rgba(0, 0, 0, 0.08);
+  --pulse-surface-modal: #fdfcf7;
+  --pulse-border: rgba(0, 0, 0, 0.06);
   --pulse-border-strong: rgba(0, 0, 0, 0.16);
 
   /* Immersive deep backdrop — stays dark in BOTH themes (focus dims the

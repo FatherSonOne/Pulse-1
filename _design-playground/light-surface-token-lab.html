@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pulse · Light Surface Token Lab</title>
+<style>
+  /* ── Fixed Pulse light palette (kept as-is) ───────────────── */
+  :root{
+    --canvas:#f8f8f8;        /* navbar + backdrop — Frank keeps this */
+    --canvas-soft:#f2f2f2;
+    --raised:#f2f2f2;
+    --border:rgba(0,0,0,.08);
+    --border-strong:rgba(0,0,0,.16);
+    --ink:#0f0f0f;
+    --ink2:#52525b;
+    --ink3:#6b7280;
+    --rose:#f43f5e;
+    --rose-text:#e11d48;
+    --rose-soft:rgba(244,63,94,.10);
+    --shadow-sm:0 1px 3px rgba(0,0,0,.06);
+    --shadow-md:0 4px 12px rgba(0,0,0,.08);
+    --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+    /* driven by JS */
+    --surface:#ffffff;
+    --card-border:rgba(0,0,0,.08);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:var(--font);
+    color:var(--ink);
+    background:#e9e9ea;
+    padding:22px;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1{font-size:15px;letter-spacing:-.01em;margin:0 0 2px}
+  .sub{font-size:12.5px;color:var(--ink3);margin:0 0 18px;max-width:70ch;line-height:1.5}
+
+  .wrap{display:grid;grid-template-columns:290px 1fr;gap:20px;align-items:start;max-width:1420px;margin:0 auto}
+
+  /* ── Control column ───────────────────────────────────────── */
+  .panel{background:#fff;border:1px solid rgba(0,0,0,.09);border-radius:14px;padding:16px;box-shadow:var(--shadow-md)}
+  .panel + .panel{margin-top:16px}
+  .eyebrow{font-size:10px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--ink3);margin:0 0 10px}
+
+  .group-label{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);margin:14px 0 8px;display:flex;align-items:center;gap:7px}
+  .group-label:first-of-type{margin-top:0}
+  .group-label .dot{width:6px;height:6px;border-radius:50%}
+
+  .swatch{
+    display:flex;align-items:center;gap:11px;width:100%;text-align:left;
+    padding:8px 9px;border:1.5px solid transparent;border-radius:10px;
+    background:transparent;cursor:pointer;transition:border-color .15s,background .15s;margin-bottom:3px;
+  }
+  .swatch:hover{background:rgba(0,0,0,.03)}
+  .swatch.active{border-color:var(--rose);background:var(--rose-soft)}
+  .chip{width:34px;height:34px;border-radius:8px;border:1px solid rgba(0,0,0,.12);flex:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)}
+  .swatch .meta{min-width:0}
+  .swatch .name{font-size:13px;font-weight:600;line-height:1.2}
+  .swatch .hex{font-size:11px;color:var(--ink3);font-family:'JetBrains Mono',ui-monospace,monospace}
+  .swatch .note{font-size:11px;color:var(--ink3);line-height:1.3;margin-top:2px}
+  .rec{font-size:9px;font-weight:800;letter-spacing:.05em;color:#fff;background:var(--rose);padding:2px 6px;border-radius:20px;margin-left:auto;flex:none}
+
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;font-size:13px}
+  .toggle-row + .toggle-row{border-top:1px solid var(--border)}
+  .toggle-row label{font-weight:500}
+  .toggle-row .hint{font-size:11px;color:var(--ink3)}
+  input[type=range]{width:130px;accent-color:var(--rose)}
+  .sw{position:relative;width:40px;height:23px;flex:none}
+  .sw input{opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+  .sw .track{position:absolute;inset:0;background:#d4d4d8;border-radius:20px;transition:background .18s;pointer-events:none}
+  .sw .knob{position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .18s;pointer-events:none}
+  .sw input:checked + .track{background:var(--rose)}
+  .sw input:checked ~ .knob{transform:translateX(17px)}
+
+  /* readout */
+  .readout{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .stat{background:var(--canvas);border:1px solid var(--border);border-radius:9px;padding:9px 10px}
+  .stat .k{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3)}
+  .stat .v{font-size:14px;font-weight:600;font-family:'JetBrains Mono',ui-monospace,monospace;margin-top:2px}
+  .stat .v small{font-size:10px;color:var(--ink3);font-weight:500}
+  .pass{color:#15803d}.warn{color:#b45309}.fail{color:#b91c1c}
+  .cssout{margin-top:12px;background:#0f0f11;border-radius:10px;padding:11px 12px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;line-height:1.7;color:#e4e4e7;overflow-x:auto}
+  .cssout .c{color:#71717a}.cssout .p{color:#fb7185}.cssout .val{color:#a5f3d0}
+  .copy{margin-top:8px;font-size:11px;color:var(--rose-text);background:none;border:none;cursor:pointer;padding:0;font-weight:600}
+
+  /* ── Preview (mini Pulse light UI) ────────────────────────── */
+  .stage{display:flex;flex-direction:column;gap:12px}
+  .stage-head{display:flex;align-items:center;gap:10px}
+  .stage-head .t{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  .stage-head .b{font-size:11px;color:var(--ink3);font-family:'JetBrains Mono',monospace;margin-left:auto}
+
+  .app{
+    display:flex;height:620px;border-radius:16px;overflow:hidden;
+    background:var(--canvas);border:1px solid rgba(0,0,0,.10);box-shadow:0 10px 40px rgba(0,0,0,.13);
+  }
+  .app.compare{gap:0}
+
+  /* nav rail — stays canvas (the off-white Frank likes) */
+  .rail{width:190px;flex:none;background:var(--canvas);padding:14px 12px;border-right:1px solid var(--border);display:flex;flex-direction:column}
+  .brand{display:flex;align-items:center;gap:9px;padding:2px 6px 14px}
+  .logo{width:26px;height:26px;border-radius:50%;background:var(--rose);display:grid;place-items:center;color:#fff;font-weight:800;font-size:13px}
+  .brand .n{font-size:15px;font-weight:800;letter-spacing:.02em}
+  .navsec{font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);margin:14px 8px 6px;display:flex;align-items:center;gap:6px}
+  .navsec .d{width:5px;height:5px;border-radius:50%;background:var(--rose)}
+  .nav{display:flex;align-items:center;gap:10px;padding:7px 9px;border-radius:9px;font-size:13px;color:var(--ink2);font-weight:500}
+  .nav .ico{width:16px;height:16px;border-radius:4px;border:1.6px solid currentColor;opacity:.55;flex:none}
+  .nav.on{color:var(--rose-text);font-weight:600;background:var(--rose-soft)}
+  .nav.on .ico{opacity:1;border-color:var(--rose)}
+
+  /* the surface columns — these consume --surface */
+  .cols{flex:1;display:flex;padding:12px;gap:12px;min-width:0}
+  .card{background:var(--surface);border:1px solid var(--card-border);border-radius:14px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;min-width:0}
+  .col-src{width:132px;flex:none;padding:12px 10px}
+  .col-people{width:230px;flex:none}
+  .col-conv{flex:1;min-width:0}
+
+  .colhead{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);padding:4px 6px 10px}
+  .src{display:flex;gap:9px;align-items:flex-start;padding:8px 7px;border-radius:9px;font-size:12.5px}
+  .src.on{background:var(--rose-soft)}
+  .src .ico{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--ink3);opacity:.6;flex:none;margin-top:1px}
+  .src.on .ico{border-color:var(--rose);opacity:1}
+  .src .nm{font-weight:600;color:var(--ink)}
+  .src.on .nm{color:var(--rose-text)}
+  .src .sm{font-size:10.5px;color:var(--ink3)}
+
+  .search{margin:10px;padding:9px 11px;background:var(--canvas-soft);border:1px solid var(--border);border-radius:10px;font-size:12px;color:var(--ink3)}
+  .person{display:flex;gap:10px;align-items:center;padding:10px 12px;margin:0 8px;border-radius:11px}
+  .person.on{background:var(--raised)}
+  .av{width:34px;height:34px;border-radius:50%;flex:none;background:linear-gradient(135deg,#fb7185,#c084fc)}
+  .av.b{background:linear-gradient(135deg,#38bdf8,#6366f1)}
+  .av.c{background:linear-gradient(135deg,#34d399,#0ea5e9)}
+  .person .nm{font-size:13px;font-weight:600}
+  .person .sm{font-size:11px;color:var(--ink3);margin-top:1px}
+
+  .convhead{display:flex;align-items:center;gap:11px;padding:14px 16px;border-bottom:1px solid var(--border)}
+  .convhead .nm{font-size:15px;font-weight:700}
+  .convhead .sm{font-size:11px;color:var(--ink3)}
+  .convbody{flex:1;padding:16px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+  .bubble{max-width:70%;padding:11px 14px;border-radius:14px;font-size:13px;line-height:1.45}
+  .bubble.recv{background:var(--raised);border:1px solid var(--border);color:var(--ink);align-self:flex-start}
+  .bubble.sent{background:color-mix(in oklab,var(--ink) 9%,transparent);border:1px solid var(--border-strong);color:var(--ink);align-self:flex-end}
+  .wave{height:30px;border-radius:8px;background:
+    repeating-linear-gradient(90deg,var(--rose) 0 2px,transparent 2px 5px);
+    opacity:.55;margin-top:8px}
+  .composer{margin:12px 16px 16px;padding:11px 14px;background:var(--canvas-soft);border:1px solid var(--border);border-radius:12px;font-size:12.5px;color:var(--ink3);display:flex;align-items:center;gap:10px}
+  .send{margin-left:auto;width:30px;height:30px;border-radius:50%;background:var(--rose);flex:none}
+
+  .divlabel{position:absolute;top:8px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.04em;background:#0f0f11;color:#fff;z-index:5}
+  .frame{position:relative;flex:1;min-width:0}
+</style>
+</head>
+<body>
+  <h1>Pulse · Light-Mode Surface Token Lab</h1>
+  <p class="sub">The backdrop off-white (<code>#f8f8f8</code>) and the whole ink/rose/border palette are held fixed, exactly as shipped. Only <code>--pulse-surface</code> (the card/panel fill, currently pure <code>#ffffff</code>) changes. Click a candidate to paint it across the real three-panel layout. Toggle the <b>#ffffff reference</b> to A/B against what ships today.</p>
+
+  <div class="wrap">
+    <!-- ── Controls ────────────────────────────── -->
+    <div>
+      <div class="panel">
+        <p class="eyebrow">Candidate surface</p>
+
+        <div class="group-label"><span class="dot" style="background:#22c55e"></span>Whisper hues · your warm direction, by tint</div>
+        <div id="grp-whisper"></div>
+
+        <div class="group-label"><span class="dot" style="background:#3b82f6"></span>Matte paper · border-led alternative</div>
+        <div id="grp-matte"></div>
+      </div>
+
+      <div class="panel">
+        <p class="eyebrow">Compare &amp; tune</p>
+        <div class="toggle-row">
+          <div><label for="cmp">#ffffff reference</label><div class="hint">Split the stage — candidate vs. today</div></div>
+          <span class="sw"><input type="checkbox" id="cmp"><span class="track"></span><span class="knob"></span></span>
+        </div>
+        <div class="toggle-row">
+          <div><label for="bord">Border strength</label><div class="hint">Matte cards lean on the edge</div></div>
+          <input type="range" id="bord" min="6" max="16" value="7">
+        </div>
+      </div>
+
+      <div class="panel">
+        <p class="eyebrow">Readout</p>
+        <div class="readout">
+          <div class="stat"><div class="k">Hex</div><div class="v" id="r-hex">#ffffff</div></div>
+          <div class="stat"><div class="k">OKLCH</div><div class="v" id="r-oklch" style="font-size:11px">—</div></div>
+          <div class="stat"><div class="k">vs backdrop</div><div class="v" id="r-vscan">—</div></div>
+          <div class="stat"><div class="k">Ink contrast</div><div class="v" id="r-ink">—</div></div>
+        </div>
+        <div class="cssout" id="css">—</div>
+        <button class="copy" id="copy">Copy token override</button>
+      </div>
+    </div>
+
+    <!-- ── Stage ───────────────────────────────── -->
+    <div class="stage">
+      <div class="stage-head">
+        <span class="t" id="stage-name">Whisper Cloud</span>
+        <span class="b" id="stage-hex">#fcfcfc</span>
+      </div>
+      <div class="app" id="app"></div>
+    </div>
+  </div>
+
+<script>
+/* ── Candidate set ─────────────────────────────────────────── */
+const CANDS = {
+  whisper:[
+    {id:'warmcloud', name:'Warm Cloud', hex:'#fdfcfa', note:'Your pick — warm whisper off white. Cozy, still a crisp raised card.', rec:true},
+    {id:'champagne', name:'Champagne', hex:'#fdfcf7', note:'A touch more amber. Reads paper-warm under cool room light.'},
+    {id:'peach', name:'Peach Veil', hex:'#fdfbf9', note:'Warm with a faint blush — leans toward the rose brand family.'},
+    {id:'rosemist', name:'Rose Mist', hex:'#fdfbfc', note:'Faintest rose tint. Nods to the Pulse hue without going pink.'},
+    {id:'porcelain', name:'Porcelain', hex:'#fbfcfd', note:'Cool sibling. Crisp and calm if warm ever feels too creamy.'},
+    {id:'sage', name:'Sage Whisper', hex:'#fbfcfa', note:'Barely-green neutral. Restful, un-clinical take on cool.'},
+    {id:'lilac', name:'Lilac Frost', hex:'#fcfbfd', note:'Whisper of violet. Soft, slightly premium feel.'},
+  ],
+  matte:[
+    {id:'paper', name:'Paper', hex:'#f5f5f6', note:'Neutral matte, just under the backdrop. Glare fully gone.'},
+    {id:'oat', name:'Oat', hex:'#f5f3f0', note:'Warm paper. Easy for long reading sessions.'},
+    {id:'fog', name:'Fog', hex:'#f3f5f6', note:'Cool matte. Quiet without going cold.'},
+  ]
+};
+const FIXED_CANVAS = '#f8f8f8';
+
+/* ── Color math ────────────────────────────────────────────── */
+function hex2rgb(h){h=h.replace('#','');return [0,2,4].map(i=>parseInt(h.substr(i,2),16));}
+function srgb2lin(c){c/=255;return c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4);}
+function relLum([r,g,b]){const[R,G,B]=[r,g,b].map(srgb2lin);return .2126*R+.7152*G+.0722*B;}
+function contrast(a,b){const L1=relLum(hex2rgb(a)),L2=relLum(hex2rgb(b));const hi=Math.max(L1,L2),lo=Math.min(L1,L2);return (hi+.05)/(lo+.05);}
+function rgb2oklch([r,g,b]){
+  const[R,G,B]=[r,g,b].map(srgb2lin);
+  const l=Math.cbrt(.4122214708*R+.5363325363*G+.0514459929*B);
+  const m=Math.cbrt(.2119034982*R+.6806995451*G+.1073969566*B);
+  const s=Math.cbrt(.0883024619*R+.2817188376*G+.6299787005*B);
+  const L=.2104542553*l+.7936177850*m-.0040720468*s;
+  const A=1.9779984951*l-2.4285922050*m+.4505937099*s;
+  const Bb=.0259040371*l+.7827717662*m-.8086757660*s;
+  let C=Math.sqrt(A*A+Bb*Bb), H=Math.atan2(Bb,A)*180/Math.PI; if(H<0)H+=360;
+  return {L:L*100,C,H};
+}
+function fmtOklch(hex){const o=rgb2oklch(hex2rgb(hex));return `${o.L.toFixed(1)}% ${o.C.toFixed(3)} ${o.H.toFixed(0)}`;}
+function gradeVsCanvas(hex){
+  const Ls=relLum(hex2rgb(hex)), Lc=relLum(hex2rgb(FIXED_CANVAS));
+  const diff=((Ls-Lc)/Lc*100);
+  return diff;
+}
+
+/* ── Build the mini-app markup ─────────────────────────────── */
+function appHTML(){return `
+  <div class="rail">
+    <div class="brand"><div class="logo">P</div><div class="n">PULSE</div></div>
+    <div class="navsec"><span class="d"></span>Overview</div>
+    <div class="nav"><span class="ico"></span>Dashboard</div>
+    <div class="navsec"><span class="d"></span>Communication</div>
+    <div class="nav"><span class="ico"></span>Messages</div>
+    <div class="nav"><span class="ico"></span>Email</div>
+    <div class="nav on"><span class="ico"></span>Relay</div>
+    <div class="nav"><span class="ico"></span>Glimpse</div>
+    <div class="navsec"><span class="d"></span>Work</div>
+    <div class="nav"><span class="ico"></span>Calendar</div>
+    <div class="nav"><span class="ico"></span>Contacts</div>
+  </div>
+  <div class="cols">
+    <div class="card col-src">
+      <div class="colhead">Sources</div>
+      <div class="src"><span class="ico"></span><div><div class="nm">Inbox</div><div class="sm">All sources</div></div></div>
+      <div class="src on"><span class="ico"></span><div><div class="nm">Direct</div><div class="sm">One person</div></div></div>
+      <div class="src"><span class="ico"></span><div><div class="nm">Channels</div><div class="sm">A team</div></div></div>
+      <div class="src"><span class="ico"></span><div><div class="nm">Broadcast</div><div class="sm">One to many</div></div></div>
+      <div class="src"><span class="ico"></span><div><div class="nm">Notes</div><div class="sm">Personal</div></div></div>
+    </div>
+    <div class="card col-people">
+      <div class="colhead" style="padding:10px 12px 0">People · 4</div>
+      <div class="search">Search contacts…</div>
+      <div class="person on"><div class="av"></div><div><div class="nm">Finn Lael</div><div class="sm">Voice message · 10:02 AM</div></div></div>
+      <div class="person"><div class="av b"></div><div><div class="nm">A e g i s F M</div><div class="sm">Voice message · 7:37 PM</div></div></div>
+      <div class="person"><div class="av c"></div><div><div class="nm">Damnit Murray</div><div class="sm">Voice message · 2:27 AM</div></div></div>
+      <div class="person"><div class="av"></div><div><div class="nm">Frank Messana</div><div class="sm">Voice message · 2:05 AM</div></div></div>
+    </div>
+    <div class="card col-conv">
+      <div class="convhead"><div class="av"></div><div><div class="nm">Finn Lael</div><div class="sm">Active now · 8 voice</div></div></div>
+      <div class="convbody">
+        <div class="bubble recv">Hey, dropping the recap now. Did the timeline shift on your end?<div class="wave"></div></div>
+        <div class="bubble sent">Yep, pushed a day. I'll confirm the new window this afternoon.<div class="wave"></div></div>
+        <div class="bubble recv">Perfect. Reading against this off-white is much softer already.<div class="wave"></div></div>
+      </div>
+      <div class="composer">Message Finn…<span class="send"></span></div>
+    </div>
+  </div>`;
+}
+
+/* ── State + render ────────────────────────────────────────── */
+let current = CANDS.whisper[0]; // default to Frank's pick — Warm Cloud
+let compare = false;
+let borderAlpha = 7;
+
+const app = document.getElementById('app');
+
+function renderApp(){
+  if(compare){
+    app.classList.add('compare');
+    app.innerHTML = `
+      <div class="frame" style="--surface:${current.hex}">
+        <div class="divlabel" style="left:8px">CANDIDATE · ${current.hex}</div>
+        <div style="display:flex;height:100%">${appHTML()}</div>
+      </div>
+      <div class="frame" style="--surface:#ffffff;border-left:2px dashed rgba(0,0,0,.14)">
+        <div class="divlabel" style="right:8px;background:#71717a">SHIPS TODAY · #ffffff</div>
+        <div style="display:flex;height:100%">${appHTML()}</div>
+      </div>`;
+  } else {
+    app.classList.remove('compare');
+    app.innerHTML = appHTML();
+  }
+}
+
+function apply(c){
+  current = c;
+  document.documentElement.style.setProperty('--surface', c.hex);
+  document.documentElement.style.setProperty('--card-border', `rgba(0,0,0,${(borderAlpha/100).toFixed(3)})`);
+  document.getElementById('stage-name').textContent = c.name;
+  document.getElementById('stage-hex').textContent = c.hex;
+
+  // readouts
+  document.getElementById('r-hex').textContent = c.hex;
+  document.getElementById('r-oklch').textContent = fmtOklch(c.hex);
+  const diff = gradeVsCanvas(c.hex);
+  const vs = document.getElementById('r-vscan');
+  const sign = diff>=0?'+':'';
+  vs.innerHTML = `${sign}${diff.toFixed(1)}%<br><small>${diff>0.4?'above':diff<-0.4?'below':'≈ level'} backdrop</small>`;
+  vs.className = 'v';
+  const ink = contrast(c.hex, '#0f0f0f');
+  const ie = document.getElementById('r-ink');
+  ie.innerHTML = `${ink.toFixed(1)}:1 <small>${ink>=7?'AAA':ink>=4.5?'AA':'fail'}</small>`;
+  ie.className = 'v ' + (ink>=7?'pass':ink>=4.5?'warn':'fail');
+
+  // css block
+  document.getElementById('css').innerHTML =
+    `<span class="c">/* light — swap in pulse-tokens.css */</span><br>`+
+    `<span class="p">--pulse-surface</span>: <span class="val">${c.hex}</span>;<br>`+
+    `<span class="p">--pulse-surface-modal</span>: <span class="val">${c.hex}</span>;<br>`+
+    `<span class="p">--pulse-border</span>: <span class="val">rgba(0,0,0,${(borderAlpha/100).toFixed(2)})</span>;`;
+
+  // active swatch
+  document.querySelectorAll('.swatch').forEach(s=>s.classList.toggle('active', s.dataset.id===c.id));
+  renderApp();
+}
+
+/* build swatch buttons */
+function buildGroup(list, mountId){
+  const mount = document.getElementById(mountId);
+  list.forEach(c=>{
+    const b=document.createElement('button');
+    b.className='swatch'; b.dataset.id=c.id;
+    b.innerHTML = `<span class="chip" style="background:${c.hex}"></span>
+      <span class="meta"><span class="name">${c.name}</span> <span class="hex">${c.hex}</span>
+      <span class="note">${c.note}</span></span>
+      ${c.rec?'<span class="rec">PICK</span>':''}`;
+    b.onclick=()=>apply(c);
+    mount.appendChild(b);
+  });
+}
+buildGroup(CANDS.whisper,'grp-whisper');
+buildGroup(CANDS.matte,'grp-matte');
+
+document.getElementById('cmp').onchange=e=>{compare=e.target.checked;renderApp();};
+document.getElementById('bord').oninput=e=>{borderAlpha=+e.target.value;apply(current);};
+document.getElementById('copy').onclick=()=>{
+  const t=`--pulse-surface: ${current.hex};\n--pulse-surface-modal: ${current.hex};\n--pulse-border: rgba(0,0,0,${(borderAlpha/100).toFixed(2)});`;
+  navigator.clipboard.writeText(t);
+  const btn=document.getElementById('copy');btn.textContent='Copied ✓';setTimeout(()=>btn.textContent='Copy token override',1400);
+};
+
+apply(current);
+</script>
+</body>
+</html>
