@@ -18,6 +18,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Search, X, ArrowLeft, Mail, Link as LinkIcon, MicOff } from 'lucide-react';
 import RecordButton from './RecordButton';
 import RecordingPreview from './RecordingPreview';
+import { LiveWaveBars } from './studio/LiveWaveBars';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { useVoxCaptureSettings } from '../../hooks/useVoxCaptureSettings';
 import { sendQuickVoxDurable } from '../../services/relay/relayOutboxProcessor';
@@ -132,6 +133,7 @@ export const RelayComposer: React.FC<RelayComposerProps> = ({
   const durableOutbox = useFeatureFlag('relayDurableOutbox');
   const {
     state: recordingState,
+    analyser,
     duration,
     recordingData,
     recordingMode,
@@ -528,6 +530,18 @@ export const RelayComposer: React.FC<RelayComposerProps> = ({
                 isDarkMode={isDarkMode}
                 size="lg"
               />
+
+              {/* Live mic-reactive waveform — shows the moment recording is armed
+                  ('starting' → bars rest at baseline until the mic warms, then
+                  react to the voice). Same engine as the studio footer. */}
+              {(recordingState === 'recording' || recordingState === 'starting') && (
+                <div
+                  className="w-full max-w-[220px] mt-5 h-9 flex items-end justify-center gap-[2px]"
+                  aria-hidden="true"
+                >
+                  <LiveWaveBars analyser={analyser} color={ROSE} barCount={44} baseline={8} />
+                </div>
+              )}
 
               {/* Elapsed-vs-cap progress + soft-cap hint. Pulled tight to
                   the timer above so the recording cluster reads as one
