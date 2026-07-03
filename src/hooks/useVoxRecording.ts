@@ -152,10 +152,14 @@ export function useVoxRecording(options: UseVoxRecordingOptions = {}): UseVoxRec
     try {
       cleanup(); // Ensure clean state
 
-      // Request microphone access with high-quality audio constraints
+      // Request microphone access with high-quality audio constraints.
+      // channelCount is `ideal`, NOT `exact`: mono is a preference, but a device
+      // that can't honor an EXACT channel count throws OverconstrainedError and
+      // kills the recording outright. `ideal` degrades (stereo capture) instead
+      // of dying — hardening for mobile / odd input devices.
       const audioConstraints: MediaTrackConstraints = {
         sampleRate: { ideal: audioSettings.sampleRate },
-        channelCount: { exact: audioSettings.channelCount },
+        channelCount: { ideal: audioSettings.channelCount },
         echoCancellation: { ideal: audioSettings.echoCancellation },
         noiseSuppression: { ideal: audioSettings.noiseSuppression },
         autoGainControl: { ideal: audioSettings.autoGainControl },
@@ -169,8 +173,17 @@ export function useVoxRecording(options: UseVoxRecordingOptions = {}): UseVoxRec
       });
       streamRef.current = stream;
 
-      // Setup AudioContext with matching sample rate for visualization
-      const audioContext = new AudioContext({ sampleRate: audioSettings.sampleRate });
+      // Setup AudioContext with matching sample rate for visualization.
+      // Forcing a sampleRate that the hardware/browser can't provide throws on
+      // some devices (notably older Safari / certain Android WebViews) — which
+      // would kill capture. Try the matched rate, then fall back to a default
+      // context so the analyser (visualisation only) never blocks recording.
+      let audioContext: AudioContext;
+      try {
+        audioContext = new AudioContext({ sampleRate: audioSettings.sampleRate });
+      } catch {
+        audioContext = new AudioContext();
+      }
       audioContextRef.current = audioContext;
 
       const source = audioContext.createMediaStreamSource(stream);

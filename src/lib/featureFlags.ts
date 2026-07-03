@@ -309,6 +309,27 @@ const featureFlagsConfig: FeatureFlagConfig = {
     description: 'OFF until live-verified — durable IndexedDB send outbox for Direct voice messages (offline-safe via getSession). Dev override: ?ff_relayDurableOutbox=on',
     version: '0.1.0'
   },
+
+  // Relay ONE canonical recorder (app-dev Phase 2a — composer consolidation).
+  // Relay's capture layer is fragmented: ClassicMode has its own MediaRecorder,
+  // RelayComposer drives useVoxRecording, the Dashboard strip has a third. The
+  // consolidation converges every surface onto ONE recorder built on the proven,
+  // leak-safe useVoxRecording core, made settings-aware (honors the AudioIOSettings
+  // panel — device, quality preset, EC/NS/AGC) and constraint-hardened (no
+  // exact-channel / forced-sampleRate dead recordings). This flag gates the first
+  // slice: Direct/ClassicMode registers the canonical <StudioRecorder> (driven by
+  // the studio FloatingMic + SPACE + StudioFooter surface) INSTEAD of its bespoke
+  // inline recorder. OFF = ClassicMode's proven path is untouched (zero change).
+  // Nothing is retired until this is live-verified: record 5-6 in a row (last =
+  // first, no AudioContext error), send delivers, AudioIOSettings changes actually
+  // affect capture. Dev override: ?ff_relayStudioRecorder=on
+  relayStudioRecorder: {
+    enabled: false,
+    rolloutPercentage: 0,
+    targetUsers: ['internal'],
+    description: 'OFF until live-verified — one canonical settings-aware recorder (over useVoxRecording) wired into the Direct studio surface; retires the bespoke ClassicMode recorder. Dev override: ?ff_relayStudioRecorder=on',
+    version: '0.1.0'
+  },
 };
 
 // User group definitions

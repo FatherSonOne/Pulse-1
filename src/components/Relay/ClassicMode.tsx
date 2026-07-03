@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
+import StudioRecorder from './StudioRecorder';
 import VoxRecordArea from './VoxRecordArea';
 
 import { blobToBase64 } from '../../services/audioService';
@@ -335,6 +336,13 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   // verify offline/refresh/reconnect: `?ff_relayDurableOutbox=on`.
   const durableOutboxEnabled = useFeatureFlag('relayDurableOutbox');
 
+  // Phase 2a (composer consolidation): when on, Direct delegates capture to the
+  // ONE canonical <StudioRecorder> instead of registering its own bespoke
+  // MediaRecorder below — proving the consolidated recorder before anything is
+  // retired. OFF = this component's proven inline recorder is untouched. Flip on
+  // in dev to verify: `?ff_relayStudioRecorder=on`.
+  const studioRecorderEnabled = useFeatureFlag('relayStudioRecorder');
+
   // Phase 5: AI Enhancement States
   const [showSummary, setShowSummary] = useState(false);
   const [conversationSummary, setConversationSummary] = useState<ConversationSummary | null>(null);
@@ -469,35 +477,41 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   // sent or received (S3 cap) and derives the people list + per-contact threads
   // from them. me/them keys off sender_id vs my id; the counterparty (contactId)
   // is the OTHER participant. Older history is paged in via loadOlderMessages.
-  useEffect(() => {
-    const loadRecordings = async () => {
-      try {
-        const myId = await voxModeService.ensureUserId();
-        const dbMessages = await voxModeService.getAllQuickVoxMessages({ limit: DIRECT_PAGE_SIZE });
-        const loadedRecordings = await mapMessagesToRecordings(dbMessages, myId);
-        // Preserve any still-in-flight outbox bubbles ('sending'/'failed') not
-        // yet in the DB, so the network load can't wipe a queued send on refresh
-        // (only relevant when the durable outbox is on; a no-op otherwise).
-        setRecordings((prev) => {
-          const loadedIds = new Set(loadedRecordings.map((r) => r.id));
-          const queued = prev.filter(
-            (r) => (r.status === 'sending' || r.status === 'failed') && !loadedIds.has(r.id),
-          );
-          return queued.length ? [...loadedRecordings, ...queued] : loadedRecordings;
-        });
-        // A full page back implies there may be older history to page in.
-        setHasOlderMessages(dbMessages.length >= DIRECT_PAGE_SIZE);
-        // dbMessages is ascending, so [0] is the oldest loaded — the cursor.
-        setOldestLoadedAt(dbMessages.length > 0 ? dbMessages[0].createdAt.toISOString() : null);
-        // Mark everything I've received as delivered so senders get the receipt
-        // (S1-2). Recipient-scoped RPC; sender-only UPDATE RLS blocks a direct write.
-        voxModeService.markQuickVoxDeliveredAll().catch(() => {});
-      } catch (error) {
-        console.error('Error loading recordings:', error);
-      }
-    };
-    loadRecordings();
+  // Hoisted so both the initial load AND a canonical-recorder send (Phase 2a's
+  // StudioRecorder, which bypasses ClassicMode's optimistic append) can refresh
+  // the thread — the realtime sub only catches INBOUND messages, so a message I
+  // send wouldn't otherwise appear until reload. Behaviour is unchanged from the
+  // prior inline loader.
+  const refreshRecordings = useCallback(async () => {
+    try {
+      const myId = await voxModeService.ensureUserId();
+      const dbMessages = await voxModeService.getAllQuickVoxMessages({ limit: DIRECT_PAGE_SIZE });
+      const loadedRecordings = await mapMessagesToRecordings(dbMessages, myId);
+      // Preserve any still-in-flight outbox bubbles ('sending'/'failed') not
+      // yet in the DB, so the network load can't wipe a queued send on refresh
+      // (only relevant when the durable outbox is on; a no-op otherwise).
+      setRecordings((prev) => {
+        const loadedIds = new Set(loadedRecordings.map((r) => r.id));
+        const queued = prev.filter(
+          (r) => (r.status === 'sending' || r.status === 'failed') && !loadedIds.has(r.id),
+        );
+        return queued.length ? [...loadedRecordings, ...queued] : loadedRecordings;
+      });
+      // A full page back implies there may be older history to page in.
+      setHasOlderMessages(dbMessages.length >= DIRECT_PAGE_SIZE);
+      // dbMessages is ascending, so [0] is the oldest loaded — the cursor.
+      setOldestLoadedAt(dbMessages.length > 0 ? dbMessages[0].createdAt.toISOString() : null);
+      // Mark everything I've received as delivered so senders get the receipt
+      // (S1-2). Recipient-scoped RPC; sender-only UPDATE RLS blocks a direct write.
+      voxModeService.markQuickVoxDeliveredAll().catch(() => {});
+    } catch (error) {
+      console.error('Error loading recordings:', error);
+    }
   }, [mapMessagesToRecordings]);
+
+  useEffect(() => {
+    refreshRecordings();
+  }, [refreshRecordings]);
 
   // Durable outbox wiring (app-dev sweep #1), flag-gated. When off this effect
   // does nothing — the direct send path owns delivery. When on: reconcile the
@@ -1191,7 +1205,10 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     stop: stopRecording,
     cancel: cancelRecording,
     recording: isRecording,
-    enabled: !!activeContactId,
+    // Stand down when the canonical StudioRecorder is driving (Phase 2a): only
+    // one recorder registers at a time, so the studio surface drives exactly the
+    // intended capture. OFF → this proven inline recorder owns capture as before.
+    enabled: !studioRecorderEnabled && !!activeContactId,
   });
 
   // ============================================
@@ -2187,6 +2204,19 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                 </div>
               </div>
             )}
+
+            {/* Phase 2a: the ONE canonical recorder. When the flag is on it
+                registers as Direct's recorder (the block above is inert — its
+                pendingRecording never sets) and owns capture → preview → send
+                through the service chokepoint. When off it renders nothing and
+                the proven path above runs unchanged. Recipient = the open
+                thread's contact. */}
+            <StudioRecorder
+              enabled={studioRecorderEnabled}
+              recipientId={activeContactId}
+              isDarkMode={isDarkMode}
+              onSent={refreshRecordings}
+            />
 
             {/* The in-pane record button is retired (Tier 2: the FloatingMic
                 + StudioFooter RECORDING surface drive capture via the studio
