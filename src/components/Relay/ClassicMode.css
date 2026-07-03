@@ -233,10 +233,24 @@
 .classic-messages {
   flex: 1;
   overflow-y: auto;
+  /* overflow-y:auto with the default overflow-x:visible computes overflow-x to
+     `auto`, which is what produced the stray horizontal scrollbar. Pin it hidden
+     so nothing scrolls sideways. */
+  overflow-x: hidden;
   padding: 20px 24px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* Cap the voice-thread reading column so cards aren't stretched to the full
+   width of a large pane (they read better narrower, and the full-width stretch
+   pushed the right-aligned timestamp/status off-edge). Centered; date labels +
+   message groups + the scroll anchor are the direct children. */
+.classic-messages > * {
+  width: 100%;
+  max-width: 780px;
+  margin-inline: auto;
 }
 
 .classic-messages::-webkit-scrollbar { width: 6px; }
