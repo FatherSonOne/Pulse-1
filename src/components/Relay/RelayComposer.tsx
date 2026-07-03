@@ -20,6 +20,8 @@ import RecordButton from './RecordButton';
 import RecordingPreview from './RecordingPreview';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { useVoxCaptureSettings } from '../../hooks/useVoxCaptureSettings';
+import { sendQuickVoxDurable } from '../../services/relay/relayOutboxProcessor';
+import { useFeatureFlag } from '../../lib/featureFlags';
 import { toastMicError } from '../../utils/micErrors';
 import { voxModeService } from '../../services/relay/voxModeService';
 import toast from 'react-hot-toast';
@@ -127,6 +129,7 @@ export const RelayComposer: React.FC<RelayComposerProps> = ({
   // untouched settings behaviour is unchanged; the difference only shows once
   // the user actually changes a setting.
   const capture = useVoxCaptureSettings();
+  const durableOutbox = useFeatureFlag('relayDurableOutbox');
   const {
     state: recordingState,
     duration,
@@ -277,13 +280,26 @@ export const RelayComposer: React.FC<RelayComposerProps> = ({
         : 'Reply sent to thread';
     } else if (recipient?.kind === 'pulse') {
       const pulse = recipient.contact;
-      send = () =>
-        voxModeService.uploadAndSendQuickVox(
-          pulse.id,
-          recordingData.blob,
-          recordingData.duration,
-        );
-      successLabel = `Sent to ${pulse.name}`;
+      if (durableOutbox) {
+        // Durable path: persist to the outbox (offline-safe, survives refresh)
+        // and let the processor deliver. Returns queued immediately.
+        send = async () => {
+          const r = await sendQuickVoxDurable({
+            recipientId: pulse.id,
+            blob: recordingData.blob,
+            duration: recordingData.duration,
+          });
+          return r.status === 'queued' ? r : null;
+        };
+      } else {
+        send = () =>
+          voxModeService.uploadAndSendQuickVox(
+            pulse.id,
+            recordingData.blob,
+            recordingData.duration,
+          );
+      }
+      successLabel = `Sending to ${pulse.name}`;
     } else if (recipient?.kind === 'share') {
       // Non-Pulse fallback: upload, then hand the URL to the OS share sheet
       // (where available) or copy to the clipboard. This keeps the first-time

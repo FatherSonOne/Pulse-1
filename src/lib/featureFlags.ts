@@ -303,10 +303,10 @@ const featureFlagsConfig: FeatureFlagConfig = {
   // uses the proven optimistic/reconcile direct-send path (zero change). Enable
   // in dev to verify: `?ff_relayDurableOutbox=on`.
   relayDurableOutbox: {
-    enabled: false,
-    rolloutPercentage: 0,
-    targetUsers: ['internal'],
-    description: 'OFF until live-verified — durable IndexedDB send outbox for Direct voice messages (offline-safe via getSession). Dev override: ?ff_relayDurableOutbox=on',
+    enabled: true,
+    rolloutPercentage: 100,
+    targetUsers: ['all'],
+    description: 'ON by default (team testing, pre-launch) — durable IndexedDB send outbox for Direct voice messages: enqueue-first via sendQuickVoxDurable (offline-safe, survives refresh), optimistic sending→sent bubbles, processor retry/backoff. Kill-switch: ?ff_relayDurableOutbox=off',
     version: '0.1.0'
   },
 

@@ -21,6 +21,9 @@ import { relayOutbox, RelayOutboxEntry } from './relayOutbox';
 import type { QuickVoxMessage } from './voxModeTypes';
 
 export type OutboxEvent =
+  // Emitted the instant a recording is persisted (before any delivery attempt)
+  // so the thread can paint an optimistic 'sending' bubble immediately.
+  | { type: 'enqueued'; id: string; entry: RelayOutboxEntry }
   | { type: 'sending'; id: string }
   | { type: 'sent'; id: string; message: QuickVoxMessage }
   | { type: 'failed'; id: string; entry: RelayOutboxEntry };
@@ -53,6 +56,68 @@ function emit(e: OutboxEvent): void {
 
 function isOffline(): boolean {
   return typeof navigator !== 'undefined' && navigator.onLine === false;
+}
+
+export interface DurableSendParams {
+  recipientId: string;
+  blob: Blob;
+  duration: number;
+  transcript?: string;
+  analysis?: any;
+  replyToId?: string;
+}
+
+export type DurableSendResult =
+  | { status: 'queued'; id: string }
+  // Only when we can't even persist (no session to scope the entry to). The
+  // caller keeps the recording so nothing is silently lost.
+  | { status: 'error' };
+
+/**
+ * The durable send chokepoint. Persists the recording to the outbox the instant
+ * it's called (so a refresh/crash/offline can't lose it), paints an optimistic
+ * bubble via the 'enqueued' event, and kicks the processor — which does the
+ * actual upload+send with retry/backoff. Returns immediately; delivery is async.
+ *
+ * Normal online send and offline send take the SAME path — the only difference
+ * is whether the first drain succeeds now or on reconnect. This is why it lives
+ * OUTSIDE voxModeService.uploadAndSendQuickVox (which the processor calls to do
+ * the raw delivery): wrapping, not embedding, avoids a re-enqueue loop.
+ */
+export async function sendQuickVoxDurable(params: DurableSendParams): Promise<DurableSendResult> {
+  // getSession() reads local storage (offline-safe) — never getUser(), whose
+  // network round-trip returns null offline and broke this feature once before.
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const senderId = session?.user?.id;
+  if (!senderId) return { status: 'error' };
+
+  const id =
+    typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `vox-${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+
+  const entry: RelayOutboxEntry = {
+    id,
+    senderId,
+    recipientId: params.recipientId,
+    blob: params.blob,
+    duration: params.duration,
+    transcript: params.transcript,
+    analysis: params.analysis,
+    replyToId: params.replyToId,
+    createdAt: Date.now(),
+    status: 'pending',
+    attempts: 0,
+    nextAttemptAt: Date.now(),
+  };
+
+  await relayOutbox.enqueue(entry);
+  emit({ type: 'enqueued', id, entry });
+  // Arm connectivity triggers (idempotent) and drain now if online.
+  initRelayOutbox();
+  return { status: 'queued', id };
 }
 
 /**

@@ -28,6 +28,7 @@ import { useVoxCaptureSettings } from '../../hooks/useVoxCaptureSettings';
 import { useRelayModeRecorder } from './studio/useRelayModeRecorder';
 import RecordingPreview from './RecordingPreview';
 import { voxModeService } from '../../services/relay/voxModeService';
+import { sendQuickVoxDurable } from '../../services/relay/relayOutboxProcessor';
 
 // 1:1 voice messages stay short — mirror the RelayComposer ceiling so behaviour
 // is identical across the surfaces we're consolidating.
@@ -42,6 +43,10 @@ export interface StudioRecorderProps {
   isDarkMode?: boolean;
   /** Fired after a confirmed successful send (e.g. to nudge a thread refresh). */
   onSent?: () => void;
+  /** When true, send through the durable outbox (offline-safe, survives refresh);
+   *  the host thread paints the bubble from outbox events. When false, send
+   *  directly and refresh via onSent. Mirrors the relayDurableOutbox flag. */
+  durable?: boolean;
 }
 
 export const StudioRecorder: React.FC<StudioRecorderProps> = ({
@@ -49,6 +54,7 @@ export const StudioRecorder: React.FC<StudioRecorderProps> = ({
   recipientId,
   isDarkMode = false,
   onSent,
+  durable = false,
 }) => {
   const capture = useVoxCaptureSettings();
 
@@ -74,31 +80,48 @@ export const StudioRecorder: React.FC<StudioRecorderProps> = ({
 
   const handleSend = useCallback(async () => {
     if (!rec.recordingData || !recipientId) return;
+    const spentUrl = rec.recordingData.url;
     try {
+      if (durable) {
+        // Durable path: persist to the outbox and return immediately. The host
+        // thread paints an optimistic 'sending' bubble from the 'enqueued' event
+        // and the processor delivers with retry/backoff — offline-safe, survives
+        // a refresh. Only 'error' (no session to scope the entry) is a dead end.
+        const result = await sendQuickVoxDurable({
+          recipientId,
+          blob: rec.recordingData.blob,
+          duration: rec.recordingData.duration,
+        });
+        if (result.status === 'error') {
+          toast.error('Could not send. Try again.');
+          return;
+        }
+        rec.sendRecording(); // state → idle; hides the preview (bubble is in-thread)
+        // The outbox bubble owns the blob via its own object URL, so release ours.
+        try { URL.revokeObjectURL(spentUrl); } catch { /* already revoked */ }
+        return;
+      }
+
+      // Direct path (durability off): upload + send now; refresh the thread on
+      // success so the sent message appears.
       const result = await voxModeService.uploadAndSendQuickVox(
         recipientId,
         rec.recordingData.blob,
         rec.recordingData.duration,
       );
       if (!result) {
-        // Service returned null — recoverable. Leave the preview up so the user
-        // can retry the send without re-recording. (Phase 2b turns this failure
-        // into a durable enqueue instead of a dead end.)
         toast.error('Could not send. Try again.');
         return;
       }
       toast.success('Sent');
-      const spentUrl = rec.recordingData.url;
-      rec.sendRecording(); // state → idle; hides the preview
+      rec.sendRecording();
       onSent?.();
-      // sendRecording intentionally keeps recordingData for the caller; we're
-      // done with it, so release the object URL to avoid a per-send blob leak.
       try { URL.revokeObjectURL(spentUrl); } catch { /* already revoked */ }
     } catch (err) {
       console.error('StudioRecorder.handleSend', err);
       toast.error('Could not send. Try again.');
     }
-  }, [rec, recipientId, onSent]);
+  }, [rec, recipientId, onSent, durable]);
 
   if (!enabled) return null;
   if (rec.state !== 'preview' || !rec.recordingData) return null;

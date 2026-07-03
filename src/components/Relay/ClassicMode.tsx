@@ -556,7 +556,28 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     const unsubscribe = onOutboxEvent((event) => {
       if (cancelled) return;
       try {
-        if (event.type === 'sent') {
+        if (event.type === 'enqueued') {
+          // A recording was just persisted (from any surface — StudioRecorder,
+          // the composer). Paint an optimistic 'sending' bubble immediately,
+          // mirroring the hydrate mapping. Thread view filters by activeContactId,
+          // so a bubble for another contact simply waits in its own thread.
+          const e = event.entry;
+          setRecordings((prev) => {
+            if (prev.some((r) => r.id === e.id)) return prev; // dedupe re-emits
+            const url = URL.createObjectURL(e.blob);
+            blobUrlsRef.current.add(url);
+            return [...prev, {
+              id: e.id, blob: e.blob, url, duration: e.duration,
+              timestamp: new Date(e.createdAt),
+              transcription: e.transcript || undefined,
+              sender: 'me' as const,
+              contactId: e.recipientId,
+              status: 'sending' as Recording['status'],
+              analysis: e.analysis || undefined,
+              replyToId: e.replyToId,
+            }];
+          });
+        } else if (event.type === 'sent') {
           // Swap temp id → durable row id; keep the local blob URL for instant
           // in-session playback (storage holds the copy).
           setRecordings((prev) => prev.map((r) =>
@@ -2216,6 +2237,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
               recipientId={activeContactId}
               isDarkMode={isDarkMode}
               onSent={refreshRecordings}
+              durable={durableOutboxEnabled}
             />
 
             {/* The in-pane record button is retired (Tier 2: the FloatingMic
