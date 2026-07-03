@@ -42,6 +42,9 @@ export interface StudioRecorderProps {
   enabled: boolean;
   /** Send target — the open Direct thread's Pulse user id. Null disables send. */
   recipientId: string | null | undefined;
+  /** When replying, the id of the message being replied to. Persisted as
+   *  analysis.reply_to_id so the thread can render + jump to the parent. */
+  replyToId?: string | null;
   isDarkMode?: boolean;
   /** Fired after a confirmed successful send (e.g. to nudge a thread refresh). */
   onSent?: () => void;
@@ -60,6 +63,7 @@ export interface StudioRecorderProps {
 export const StudioRecorder: React.FC<StudioRecorderProps> = ({
   enabled,
   recipientId,
+  replyToId,
   isDarkMode = false,
   onSent,
   durable = false,
@@ -114,6 +118,10 @@ export const StudioRecorder: React.FC<StudioRecorderProps> = ({
   const handleSend = useCallback(async () => {
     if (!rec.recordingData || !recipientId) return;
     const spentUrl = rec.recordingData.url;
+    // Carry the reply pointer in analysis.reply_to_id — the shape the thread
+    // reads (mapMessagesToRecordings → analysis?.reply_to_id) and sendQuickVox
+    // persists (analysis column).
+    const replyAnalysis = replyToId ? { reply_to_id: replyToId } : undefined;
     try {
       if (durable) {
         // Durable path: persist to the outbox and return immediately. The host
@@ -124,12 +132,15 @@ export const StudioRecorder: React.FC<StudioRecorderProps> = ({
           recipientId,
           blob: rec.recordingData.blob,
           duration: rec.recordingData.duration,
+          replyToId: replyToId ?? undefined,
+          analysis: replyAnalysis,
         });
         if (result.status === 'error') {
           toast.error('Could not send. Try again.');
           return;
         }
         rec.sendRecording(); // state → idle; hides the preview (bubble is in-thread)
+        onSent?.(); // let the host clear the reply context (+ refresh)
         // The outbox bubble owns the blob via its own object URL, so release ours.
         try { URL.revokeObjectURL(spentUrl); } catch { /* already revoked */ }
         return;
@@ -141,6 +152,8 @@ export const StudioRecorder: React.FC<StudioRecorderProps> = ({
         recipientId,
         rec.recordingData.blob,
         rec.recordingData.duration,
+        undefined,
+        replyAnalysis,
       );
       if (!result) {
         toast.error('Could not send. Try again.');
@@ -154,7 +167,7 @@ export const StudioRecorder: React.FC<StudioRecorderProps> = ({
       console.error('StudioRecorder.handleSend', err);
       toast.error('Could not send. Try again.');
     }
-  }, [rec, recipientId, onSent, durable]);
+  }, [rec, recipientId, replyToId, onSent, durable]);
 
   if (!enabled) return null;
   if (rec.state !== 'preview' || !rec.recordingData) return null;

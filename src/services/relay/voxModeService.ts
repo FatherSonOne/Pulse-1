@@ -1792,8 +1792,31 @@ class VoxModeService {
 
       const audioUrl = urlData.publicUrl;
 
-      // Send the message with the uploaded URL
-      return await this.sendQuickVox(recipientId, audioUrl, duration, transcript, analysis);
+      // Transcribe if no transcript was supplied — parity with Team Vox
+      // (sendTeamVoxMessage transcribes on send). Direct sends previously wrote
+      // transcript:null, which left every Direct AI feature (Summarize, Meeting
+      // Notes, Chapters, transcript display, reply previews) operating on empty
+      // strings. This runs at the delivery point, so the durable outbox's
+      // optimistic bubble still appears instantly; a failed transcription just
+      // sends without one rather than blocking delivery.
+      let finalTranscript = transcript || '';
+      if (!finalTranscript) {
+        try {
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(audioBlob);
+          });
+          const result = await transcribeMedia(base64, 'audio/webm');
+          finalTranscript = result || '';
+        } catch (transcriptError) {
+          console.error('Quick Vox transcription failed:', transcriptError);
+        }
+      }
+
+      // Send the message with the uploaded URL + transcript
+      return await this.sendQuickVox(recipientId, audioUrl, duration, finalTranscript || undefined, analysis);
     } catch (error) {
       console.error('Error uploading and sending quick vox:', error);
       return null;

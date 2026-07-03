@@ -526,9 +526,13 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
           });
         } else if (event.type === 'sent') {
           // Swap temp id → durable row id; keep the local blob URL for instant
-          // in-session playback (storage holds the copy).
+          // in-session playback (storage holds the copy). Also fold in the
+          // transcript the send pipeline just produced so the sender sees it
+          // without a reload (uploadAndSendQuickVox transcribes at delivery).
           setRecordings((prev) => prev.map((r) =>
-            r.id === event.id ? { ...r, id: event.message.id, status: 'sent' } : r));
+            r.id === event.id
+              ? { ...r, id: event.message.id, status: 'sent', transcription: event.message.transcript || r.transcription }
+              : r));
         } else if (event.type === 'sending') {
           setRecordings((prev) => prev.map((r) =>
             r.id === event.id ? { ...r, status: 'sending' } : r));
@@ -614,26 +618,23 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     let cancelled = false;
     voxModeService
       .subscribeToQuickVox((msg) => {
-        setRecordings((prev) => {
-          if (prev.some((r) => r.id === msg.id)) return prev;
-          return [
-            ...prev,
-            {
-              id: msg.id,
-              blob: new Blob(),
-              url: msg.audioUrl || '',
-              duration: msg.duration || 0,
-              timestamp: msg.createdAt,
-              transcription: msg.transcript || undefined,
-              isTranscribing: false,
-              sender: 'other' as const,
-              contactId: msg.senderId,
-              status: 'delivered' as const,
-              analysis: msg.analysis || undefined,
-              replyToId: msg.analysis?.reply_to_id || undefined,
-            },
-          ];
-        });
+        // Run the inbound message through the SAME mapper the load path uses,
+        // so the audio URL is signed and the blob fetched (parity). The old
+        // inline row used a raw, unsigned msg.audioUrl + an empty Blob, which
+        // broke playback the moment the bucket goes private and made downloads/
+        // archives of a just-received message produce 0-byte files.
+        void (async () => {
+          try {
+            const myId = await voxModeService.ensureUserId();
+            const [mapped] = await mapMessagesToRecordings([msg], myId);
+            // A just-delivered inbound message: force 'delivered' (the mapper
+            // derives status from playedAt/DB status, which is 'sent' on a fresh row).
+            const row: Recording = { ...mapped, status: 'delivered' };
+            setRecordings((prev) => (prev.some((r) => r.id === msg.id) ? prev : [...prev, row]));
+          } catch (e) {
+            console.error('Realtime inbound map failed:', e);
+          }
+        })();
         // Tell the sender it was delivered (S1-2).
         voxModeService.markQuickVoxDeliveredAll().catch(() => {});
       })
@@ -1874,8 +1875,9 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
             <StudioRecorder
               enabled
               recipientId={activeContactId}
+              replyToId={replyingTo?.id ?? null}
               isDarkMode={isDarkMode}
-              onSent={refreshRecordings}
+              onSent={() => { setReplyingTo(null); refreshRecordings(); }}
               durable={durableOutboxEnabled}
               onMicError={setMicError}
             />
