@@ -371,7 +371,10 @@ export function useRelayTriage(userId: string | undefined | null): UseRelayTriag
           durationSec: Number(r.duration ?? 0),
           createdAt: toDate(r.created_at),
           needsReply: Boolean(recipientIsMe && r.played_at == null),
-          summary: undefined,
+          // quick_vox_messages has a real transcript column (Whisper). It was
+          // being dropped here, so every Quick Vox row read "No transcript"
+          // even when one existed. Read it like the other surfaces do.
+          summary: pickSummary(r.transcript),
           audioUrl: r.audio_url ?? '',
           raw: r,
         };

@@ -165,7 +165,15 @@ export const StudioMessageCard: React.FC<StudioMessageCardProps> = ({
               </span>
             )}
             {meta && (
-              <span className="ml-auto font-mono text-[10px] tabular-nums text-zinc-500 dark:text-zinc-400 shrink-0">
+              // When the card has a hover/focus action cluster (absolutely
+              // positioned top-right by the consumer), fade the meta on
+              // hover/focus so the two never overlap — mirrors the Inbox card
+              // (RelayTriageStream). Cards with no actions keep meta visible.
+              <span
+                className={`ml-auto font-mono text-[10px] tabular-nums text-zinc-500 dark:text-zinc-400 shrink-0${
+                  actions ? ' transition-opacity duration-150 group-hover:opacity-0 group-focus-within:opacity-0' : ''
+                }`}
+              >
                 {meta}
               </span>
             )}

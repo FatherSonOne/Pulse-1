@@ -375,11 +375,10 @@ const InboxCard: React.FC<{
             <AIProvenanceChip vendor="PULSE AI" type="SUMMARY" />
           </div>
         </div>
-      ) : (
-        <div className="mt-3 text-[13px] text-zinc-400 dark:text-zinc-500" style={{ paddingLeft: 52 }}>
-          No transcript
-        </div>
-      )}
+      ) : null}
+      {/* No transcript → render nothing. A voice message is complete on its own
+          (avatar + waveform + play); the old grey "No transcript" literal read
+          as broken/unfinished on first run rather than simply empty. */}
 
       {/* Hover actions */}
       {(canReply || onDismiss || onSnooze || onMarkRead || onDelete) && (
