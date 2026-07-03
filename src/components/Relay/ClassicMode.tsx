@@ -1992,21 +1992,50 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                       title={isMe ? 'You' : contactName}
                       meta={`${recording.timestamp.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} · ${formatDuration(recording.duration)}`}
                       headerExtras={isMe ? (
-                        <span
-                          className={`classic-status-icon ml-1 ${
-                            recording.status === 'read'
-                              ? 'text-sky-500 dark:text-sky-400'
-                              : 'text-zinc-400 dark:text-zinc-500'
-                          }`}
-                          title={recording.status === 'read' ? 'Listened' : recording.status === 'delivered' ? 'Delivered' : 'Sent'}
-                        >
-                          {/* sent → single check; delivered/listened → double check;
-                              listened tints sky (read-receipt convention — coral is
-                              reserved for AI surfaces per CLAUDE.md). S1-2. */}
-                          {recording.status === 'sent'
-                            ? <Check className="w-3 h-3" />
-                            : <CheckCheck className="w-3 h-3" />}
-                        </span>
+                        // Durable-outbox states get their OWN visible treatment so
+                        // a queued/failed message never looks like a normal sent
+                        // one. sending → amber spinner + label; failed → red,
+                        // tap-to-retry; else the read/delivered/sent check icons.
+                        recording.status === 'sending' ? (
+                          <span
+                            className="classic-status-icon ml-1 inline-flex items-center gap-1 text-amber-500 dark:text-amber-400"
+                            title="Sending…"
+                          >
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <span className="text-[10px] font-mono uppercase tracking-wide">Sending</span>
+                          </span>
+                        ) : recording.status === 'failed' ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRecordings((prev) => prev.map((r) =>
+                                r.id === recording.id ? { ...r, status: 'sending' } : r));
+                              void retryOutboxEntry(recording.id);
+                            }}
+                            className="classic-status-icon ml-1 inline-flex items-center gap-1 text-rose-500 dark:text-rose-400"
+                            title="Couldn’t send — tap to retry"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            <span className="text-[10px] font-mono uppercase tracking-wide">Retry</span>
+                          </button>
+                        ) : (
+                          <span
+                            className={`classic-status-icon ml-1 ${
+                              recording.status === 'read'
+                                ? 'text-sky-500 dark:text-sky-400'
+                                : 'text-zinc-400 dark:text-zinc-500'
+                            }`}
+                            title={recording.status === 'read' ? 'Listened' : recording.status === 'delivered' ? 'Delivered' : 'Sent'}
+                          >
+                            {/* sent → single check; delivered/listened → double check;
+                                listened tints sky (read-receipt convention — coral is
+                                reserved for AI surfaces per CLAUDE.md). S1-2. */}
+                            {recording.status === 'sent'
+                              ? <Check className="w-3 h-3" />
+                              : <CheckCheck className="w-3 h-3" />}
+                          </span>
+                        )
                       ) : undefined}
                       selectionCheckbox={isSelectionMode ? (
                         <button
