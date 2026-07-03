@@ -344,23 +344,29 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       selectedMentions
     );
 
-    if (message) {
-      setMessages(prev => [...prev, message]);
-
-      import('../../services/analyticsCollector').then(({ default: ac }) => {
-        ac.trackMessageEvent({
-          id: message.id,
-          channel: 'voxer',
-          contactIdentifier: selectedChannel.id,
-          contactName: `#${selectedChannel.name}`,
-          isSent: true,
-          timestamp: new Date(),
-          content: `[Team Vox - ${messageType}]`,
-          duration: recordingData.duration,
-          messageType: 'team_vox'
-        }).catch(err => console.error('Analytics tracking failed:', err));
-      }).catch(() => {});
+    if (!message) {
+      // Upload/RLS failure returns null. Keep the preview + mentions so the user
+      // can retry, and tell them — the old code silently discarded the recording,
+      // so a failed post looked like a successful one.
+      toast.error('Could not send. Try again.');
+      return;
     }
+
+    setMessages(prev => [...prev, message]);
+
+    import('../../services/analyticsCollector').then(({ default: ac }) => {
+      ac.trackMessageEvent({
+        id: message.id,
+        channel: 'voxer',
+        contactIdentifier: selectedChannel.id,
+        contactName: `#${selectedChannel.name}`,
+        isSent: true,
+        timestamp: new Date(),
+        content: `[Team Vox - ${messageType}]`,
+        duration: recordingData.duration,
+        messageType: 'team_vox'
+      }).catch(err => console.error('Analytics tracking failed:', err));
+    }).catch(() => {});
 
     setSelectedMentions([]);
     sendRecording();

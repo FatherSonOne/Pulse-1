@@ -1362,7 +1362,16 @@ class VoxModeService {
     const userId = await this.ensureUserId();
     if (!userId) return null;
 
-    const user = await this.getPulseUser();
+    // Resolve the sender's display name from user_profiles, which is keyed by
+    // the auth uid (== userId here). getPulseUser() looks up pulse_users by
+    // id == auth uid, but pulse_users.id diverges from the auth uid for most
+    // users, so it returned null → every post stamped sender_name 'Unknown'.
+    const { data: senderProfile } = await supabase
+      .from('user_profiles')
+      .select('display_name, full_name, handle')
+      .eq('id', userId)
+      .maybeSingle();
+    const senderName = senderProfile?.display_name || senderProfile?.full_name || senderProfile?.handle || 'Unknown';
 
     // Extract action items from transcript using Gemini AI (with keyword fallback)
     const actionItems = transcript ? await this.extractActionItemsAI(transcript) : [];
@@ -1373,7 +1382,7 @@ class VoxModeService {
         channel_id: channelId,
         workspace_id: workspaceId,
         sender_id: userId,
-        sender_name: user?.displayName || 'Unknown',
+        sender_name: senderName,
         audio_url: audioUrl,
         duration: Math.round(duration),
         transcript,
@@ -1402,11 +1411,11 @@ class VoxModeService {
       await this.createNotification(
         mentionedId,
         'mention',
-        `${user?.displayName} mentioned you`,
+        `${senderName} mentioned you`,
         'You were mentioned in a team vox',
         data.id,
         userId,
-        user?.displayName
+        senderName
       );
     }
 
@@ -1473,18 +1482,23 @@ class VoxModeService {
   }
 
   async getChannelMessages(channelId: string, limit: number = 50, offset: number = 0): Promise<TeamVoxMessage[]> {
+    // Fetch the NEWEST `limit` messages (descending), then reverse to
+    // chronological order for display. The prior ascending range(0,49) returned
+    // the OLDEST 50, so any channel past 50 posts silently stopped showing new
+    // voices — even the realtime refetch re-ran the same oldest-50 query, so new
+    // posts never appeared. offset still pages backwards through older history.
     const { data, error } = await supabase
       .from('team_vox_messages')
       .select('*')
       .eq('channel_id', channelId)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
     if (error || !data) {
       console.error('Error fetching channel messages:', error);
       return [];
     }
-    return data.map(message => this.mapDbToTeamVoxMessage(message));
+    return data.reverse().map(message => this.mapDbToTeamVoxMessage(message));
   }
 
   // ============================================
