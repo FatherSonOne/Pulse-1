@@ -34,9 +34,12 @@ export const LiveWaveBars: React.FC<LiveWaveBarsProps> = ({
     }
     const bins = analyser.frequencyBinCount;
     const data = new Uint8Array(bins);
-    // Voice energy sits in the lower/mid band; spread the bars across the lower
-    // ~70% of the spectrum so the wave doesn't look dead on the right.
-    const usable = Math.max(1, Math.floor(bins * 0.7));
+    // Voice energy concentrates in a handful of LOW bins, so a linear bar→bin
+    // map leaves the right (high-freq) bars dead. Instead: (1) drop the deadest
+    // top of the spectrum, (2) spread the low/mid band across most bars via a
+    // power curve, and (3) lift the high end to offset the natural spectral
+    // rolloff — so nearly all bars react to the voice.
+    const usable = Math.max(1, Math.floor(bins * 0.6));
     const smoothed = new Float32Array(barCount);
     let raf = 0;
 
@@ -44,8 +47,10 @@ export const LiveWaveBars: React.FC<LiveWaveBarsProps> = ({
       analyser.getByteFrequencyData(data);
       const n = barsRef.current.length;
       for (let i = 0; i < n; i++) {
-        const bin = Math.min(usable - 1, Math.floor((i / n) * usable));
-        const target = data[bin] / 255; // 0..1
+        const frac = n > 1 ? i / (n - 1) : 0;               // 0..1 across the bars
+        const bin = Math.min(usable - 1, Math.floor(Math.pow(frac, 1.7) * usable));
+        const gain = 1 + frac * 0.9;                        // compensate HF rolloff
+        const target = Math.min(1, (data[bin] / 255) * gain);
         // Attack fast, release slower for a natural VU feel.
         const k = target > smoothed[i] ? 0.6 : 0.25;
         smoothed[i] += (target - smoothed[i]) * k;
