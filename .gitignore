@@ -237,3 +237,7 @@ build-output.txt
 .warroom-verify/
 .dt-verify/
 .deeplink-verify/
+
+# Scratch diagnostic / screenshot probe scripts (Playwright)
+_design-playground/_*.mjs
+/_diag*.mjs

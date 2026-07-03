@@ -1,8 +1,9 @@
 // GeneralVoxSettings Component - General Relay preferences
 
 import React, { useState, useEffect } from 'react';
-import { Bell, Bot, Brain, ChevronDown, Mic, Play, Radio, Settings2, Vibrate, Wand2 } from 'lucide-react';
+import { Bell, Bot, Brain, Mic, Play, Radio, Settings2, Vibrate, Wand2 } from 'lucide-react';
 import { settingsService, PulseSettings } from '../../../services/settingsService';
+import { CustomSelect } from './CustomSelect';
 
 interface GeneralVoxSettingsProps {
   isDarkMode?: boolean;
@@ -84,24 +85,18 @@ export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
           <Radio className="w-4 h-4" style={{ color: accentColor }} />
           Default landing view
         </label>
-        <div className="relative">
-          <select
-            value={defaultView}
-            onChange={(e) => {
-              const value = e.target.value as RelayView;
-              setDefaultView(value);
-              saveSetting('relayDefaultView', value);
-            }}
-            className={`w-full px-4 py-3 pr-10 rounded-xl border ${tc.border} ${tc.inputBg} ${tc.text} appearance-none cursor-pointer transition-[box-shadow,border-color] ease-pulse focus:outline-none focus:ring-2`}
-          >
-            {RELAY_VIEW_OPTIONS.map((opt) => (
-              <option key={opt.id} value={opt.id}>
-                {opt.name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 ${tc.textMuted} pointer-events-none`} />
-        </div>
+        <CustomSelect
+          value={defaultView}
+          onChange={(value) => {
+            setDefaultView(value);
+            saveSetting('relayDefaultView', value);
+          }}
+          isDarkMode={isDarkMode}
+          accentColor={accentColor}
+          tc={tc}
+          ariaLabel="Default landing view"
+          options={RELAY_VIEW_OPTIONS.map((opt) => ({ value: opt.id, label: opt.name }))}
+        />
         <p className={`text-xs ${tc.textMuted}`}>
           {selectedHint} — Relay opens here on launch.
         </p>

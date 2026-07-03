@@ -8,14 +8,13 @@ import {
   Sliders,
   Waves,
   Radio,
-  CheckCircle2,
-  ChevronDown,
   Gauge,
 } from 'lucide-react';
 import { useMediaDevices } from '../../../hooks/useMediaDevices';
 import { settingsService, PulseSettings } from '../../../services/settingsService';
 import { AUDIO_QUALITY_PRESETS } from '../../../hooks/useVoxRecording';
 import MicrophoneTest from './MicrophoneTest';
+import { CustomSelect } from './CustomSelect';
 
 interface AudioIOSettingsProps {
   isDarkMode?: boolean;
@@ -162,23 +161,19 @@ export const AudioIOSettings: React.FC<AudioIOSettingsProps> = ({
           <Mic className="w-4 h-4" style={{ color: accentColor }} />
           Microphone Input
         </label>
-        <div className="relative">
-          <select
-            value={selectedMic}
-            onChange={(e) => handleMicChange(e.target.value)}
-            disabled={isLoading || !hasPermission}
-            className={`w-full px-4 py-3 pr-10 rounded-xl border ${tc.border} ${tc.inputBg} ${tc.text} appearance-none cursor-pointer transition-[box-shadow,border-color] ease-pulse focus:outline-none focus:ring-2`}
-            style={{ focusRingColor: accentColor }}
-          >
-            <option value="">Default Microphone</option>
-            {audioInputs.map((device) => (
-              <option key={device.deviceId} value={device.deviceId}>
-                {device.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 ${tc.textMuted} pointer-events-none`} />
-        </div>
+        <CustomSelect
+          value={selectedMic}
+          onChange={handleMicChange}
+          disabled={isLoading || !hasPermission}
+          isDarkMode={isDarkMode}
+          accentColor={accentColor}
+          tc={tc}
+          ariaLabel="Microphone Input"
+          options={[
+            { value: '', label: 'Default Microphone' },
+            ...audioInputs.map((device) => ({ value: device.deviceId, label: device.label })),
+          ]}
+        />
       </div>
 
       {/* Speaker Selection */}
@@ -187,22 +182,19 @@ export const AudioIOSettings: React.FC<AudioIOSettingsProps> = ({
           <Volume2 className="w-4 h-4" style={{ color: accentColor }} />
           Speaker Output
         </label>
-        <div className="relative">
-          <select
-            value={selectedSpeaker}
-            onChange={(e) => handleSpeakerChange(e.target.value)}
-            disabled={isLoading || !hasPermission}
-            className={`w-full px-4 py-3 pr-10 rounded-xl border ${tc.border} ${tc.inputBg} ${tc.text} appearance-none cursor-pointer transition-[box-shadow,border-color] ease-pulse focus:outline-none focus:ring-2`}
-          >
-            <option value="">Default Speaker</option>
-            {audioOutputs.map((device) => (
-              <option key={device.deviceId} value={device.deviceId}>
-                {device.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 ${tc.textMuted} pointer-events-none`} />
-        </div>
+        <CustomSelect
+          value={selectedSpeaker}
+          onChange={handleSpeakerChange}
+          disabled={isLoading || !hasPermission}
+          isDarkMode={isDarkMode}
+          accentColor={accentColor}
+          tc={tc}
+          ariaLabel="Speaker Output"
+          options={[
+            { value: '', label: 'Default Speaker' },
+            ...audioOutputs.map((device) => ({ value: device.deviceId, label: device.label })),
+          ]}
+        />
       </div>
 
       {/* Audio Quality — segmented control replaces the prior 3-card grid

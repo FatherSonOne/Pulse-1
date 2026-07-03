@@ -8,11 +8,11 @@ import {
   HardDrive,
   Trash2,
   Clock,
-  ChevronDown,
   FolderCheck,
   AlertCircle,
 } from 'lucide-react';
 import { settingsService, PulseSettings } from '../../../services/settingsService';
+import { CustomSelect } from './CustomSelect';
 
 interface StorageSettingsProps {
   isDarkMode?: boolean;
@@ -233,24 +233,18 @@ export const StorageSettings: React.FC<StorageSettingsProps> = ({
           <Clock className="w-4 h-4" style={{ color: accentColor }} />
           Keep Recordings For
         </label>
-        <div className="relative">
-          <select
-            value={retentionDays}
-            onChange={(e) => {
-              const value = Number(e.target.value);
-              setRetentionDays(value);
-              saveSetting('voxKeepRecordingsDays', value);
-            }}
-            className={`w-full px-4 py-3 pr-10 rounded-xl border ${tc.border} ${tc.inputBg} ${tc.text} appearance-none cursor-pointer transition-[box-shadow,border-color] ease-pulse focus:outline-none focus:ring-2`}
-          >
-            {RETENTION_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 ${tc.textMuted} pointer-events-none`} />
-        </div>
+        <CustomSelect
+          value={retentionDays}
+          onChange={(value) => {
+            setRetentionDays(value);
+            saveSetting('voxKeepRecordingsDays', value);
+          }}
+          isDarkMode={isDarkMode}
+          accentColor={accentColor}
+          tc={tc}
+          ariaLabel="Keep Recordings For"
+          options={RETENTION_OPTIONS}
+        />
         <p className={`text-xs ${tc.textMuted}`}>
           {retentionDays === 0
             ? 'Recordings will be kept indefinitely'

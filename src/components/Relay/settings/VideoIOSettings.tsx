@@ -7,13 +7,12 @@ import {
   VideoOff,
   Camera,
   RefreshCw,
-  ChevronDown,
-  CheckCircle2,
   MonitorPlay,
   FlipHorizontal,
 } from 'lucide-react';
 import { useMediaDevices } from '../../../hooks/useMediaDevices';
 import { settingsService, PulseSettings } from '../../../services/settingsService';
+import { CustomSelect } from './CustomSelect';
 
 interface VideoIOSettingsProps {
   isDarkMode?: boolean;
@@ -274,22 +273,19 @@ export const VideoIOSettings: React.FC<VideoIOSettingsProps> = ({
           <Camera className="w-4 h-4" style={{ color: accentColor }} />
           Camera
         </label>
-        <div className="relative">
-          <select
-            value={selectedCamera}
-            onChange={(e) => handleCameraChange(e.target.value)}
-            disabled={isLoading || !hasPermission}
-            className={`w-full px-4 py-3 pr-10 rounded-xl border ${tc.border} ${tc.inputBg} ${tc.text} appearance-none cursor-pointer transition-[box-shadow,border-color] ease-pulse focus:outline-none focus:ring-2`}
-          >
-            <option value="">Default Camera</option>
-            {videoInputs.map((device) => (
-              <option key={device.deviceId} value={device.deviceId}>
-                {device.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 ${tc.textMuted} pointer-events-none`} />
-        </div>
+        <CustomSelect
+          value={selectedCamera}
+          onChange={handleCameraChange}
+          disabled={isLoading || !hasPermission}
+          isDarkMode={isDarkMode}
+          accentColor={accentColor}
+          tc={tc}
+          ariaLabel="Camera"
+          options={[
+            { value: '', label: 'Default Camera' },
+            ...videoInputs.map((device) => ({ value: device.deviceId, label: device.label })),
+          ]}
+        />
       </div>
 
       {/* Video Quality — segmented control (was 3-card grid). Selected
