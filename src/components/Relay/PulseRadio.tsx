@@ -14,7 +14,6 @@ import {
   Plus,
   Settings,
   Clock,
-  ChevronRight,
   ChevronLeft,
   X,
   Check,
@@ -1041,6 +1040,22 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                         onChange={(e) => setBroadcastTitle(e.target.value)}
                         className="pulse-radio-title-input"
                       />
+                      {/* BR4 — notify picker lives here, in the publish flow, not
+                          buried in Channel Settings. This is the moment before
+                          send, so "who hears about it" is one motion with it. */}
+                      <button
+                        type="button"
+                        onClick={() => setShowNotifyUsers(true)}
+                        className={`pulse-radio-notify-trigger ${selectedNotifyUsers.length > 0 ? 'has-selection' : ''}`}
+                        title="Choose who gets notified when you publish"
+                      >
+                        <BellRing className="w-4 h-4" />
+                        <span>
+                          {selectedNotifyUsers.length > 0
+                            ? `Notifying ${selectedNotifyUsers.length} ${selectedNotifyUsers.length === 1 ? 'person' : 'people'}`
+                            : 'Notify people on publish'}
+                        </span>
+                      </button>
                       <RecordingPreview
                         recordingData={recordingData}
                         onSend={handleSendBroadcast}
@@ -1071,6 +1086,21 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                         onChange={(e) => setBroadcastTitle(e.target.value)}
                         className="pulse-radio-title-input"
                       />
+                      {/* BR4 — set who to notify before you record, so it's ready
+                          the moment you publish from the preview. */}
+                      <button
+                        type="button"
+                        onClick={() => setShowNotifyUsers(true)}
+                        className={`pulse-radio-notify-trigger ${selectedNotifyUsers.length > 0 ? 'has-selection' : ''}`}
+                        title="Choose who gets notified when you publish"
+                      >
+                        <BellRing className="w-4 h-4" />
+                        <span>
+                          {selectedNotifyUsers.length > 0
+                            ? `Notifying ${selectedNotifyUsers.length} ${selectedNotifyUsers.length === 1 ? 'person' : 'people'}`
+                            : 'Notify people on publish'}
+                        </span>
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1457,26 +1487,9 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                 </div>
               </div>
 
-              <div className="pulse-radio-settings-section">
-                <h5>Broadcast Notifications</h5>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowChannelSettings(false);
-                    setShowNotifyUsers(true);
-                  }}
-                  className="pulse-radio-settings-option"
-                >
-                  <div className="pulse-radio-option-icon">
-                    <BellRing className="w-5 h-5" />
-                  </div>
-                  <div className="pulse-radio-option-info">
-                    <p>Notify Users</p>
-                    <span>Select who gets notified</span>
-                  </div>
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
+              {/* BR4 — the "Notify Users" picker moved out of settings and into
+                  the compose/preview flow (it's a per-broadcast choice, not a
+                  channel setting). Reachable now from the record surface. */}
 
               <div className="pulse-radio-settings-section">
                 <h5>Actions</h5>

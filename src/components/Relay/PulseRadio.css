@@ -412,6 +412,29 @@
 .pulse-radio-title-input::placeholder { color: var(--pulse-ink-3); }
 .pulse-radio-title-input:focus { border-color: var(--pulse-rose); }
 
+/* BR4 — notify picker trigger, inline in the compose/preview flow */
+.pulse-radio-notify-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--pulse-canvas-soft);
+  border: 1px solid var(--pulse-border);
+  border-radius: 10px;
+  font-family: var(--pulse-font);
+  font-size: 13px;
+  color: var(--pulse-ink-2);
+  cursor: pointer;
+  transition: border-color var(--pulse-duration) var(--pulse-ease),
+              color var(--pulse-duration) var(--pulse-ease);
+}
+.pulse-radio-notify-trigger:hover { border-color: var(--pulse-rose); color: var(--pulse-ink); }
+.pulse-radio-notify-trigger.has-selection {
+  border-color: var(--pulse-rose);
+  color: var(--pulse-rose);
+}
+
 /* ============================================
    BROADCASTS — flat card, neutral hover, no notch/sweep
    ============================================ */
