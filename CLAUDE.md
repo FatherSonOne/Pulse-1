@@ -355,6 +355,16 @@ spawns — the fix was to verify and commit after each step.
 - Spec docs live in `docs/`. Naming: `<feature>-redesign.md` for in-flight
   redesigns; `<DATE>_<feature>_HANDOFF.md` for handoffs (see
   `docs/LANDING_PAGE_HANDOFF_2026-05-15.md` for the pattern).
+- **Always surface a new doc so it opens in one click — never make the user
+  hunt for it.** Any time Claude creates or updates a document, report, or
+  handoff, it MUST end that turn by presenting the file as a clickable
+  markdown link **with the FULL ABSOLUTE path** (e.g.
+  `[HANDOFF-foo.md](f:/pulse1/docs/deep-dives/HANDOFF-foo.md)`), not a
+  path relative to the primary workspace root. This repo is opened as a
+  *secondary* working root (primary is `f:\QNTM-Assets`), so root-relative
+  links do NOT resolve to a clickable/open-in-editor target — only absolute
+  `f:/pulse1/...` links do. Use forward slashes in the link URL. If several
+  docs were written, list each as its own absolute link.
 - The user's preferences and project memory live in
   `C:\Users\Aegis{FM}\.claude\projects\f--pulse1\memory\` — read
   `MEMORY.md` there at session start for context that persists across
