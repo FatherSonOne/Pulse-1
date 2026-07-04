@@ -13,7 +13,7 @@ import { DraftAnalysis, ThreadContext, CatchUpSummary, AsyncSuggestion, Task, Te
 // googleCalendarService is imported dynamically inside getCalendarContextForAI (its only
 // use) to keep this svc-ai anchor module from statically pulling in svc-calendar — a
 // cross-chunk edge that forms an init cycle and trips TDZ on first load. See vite.config.ts §132.
-import { withFormattedOutput } from "./aiFormattingService";
+import { withFormattedOutput, stripDecorativeEmoji } from "./aiFormattingService";
 import { rateLimitService } from "./rateLimitService";
 import { retryService } from "./retryService";
 import { sanitizationService } from "./sanitizationService";
@@ -395,7 +395,31 @@ Return ONLY valid JSON.`;
         focusRecommendation: "Start by reviewing your tasks and calendar for today."
       };
     }
-    return await invokeAIJson('thread_digest', withFormattedOutput(briefingPrompt, 'briefing'), { workspaceId });
+    const briefing: any = await invokeAIJson('thread_digest', withFormattedOutput(briefingPrompt, 'briefing'), { workspaceId });
+
+    // Defensive: enforce the calm, emoji-free voice even if the model slips a
+    // decorative glyph into a display field. The briefing UI supplies its own
+    // status indicators (the Target pill, priority badges), so glyphs in prose
+    // are pure noise here.
+    if (briefing && typeof briefing === 'object') {
+      if (typeof briefing.greeting === 'string') briefing.greeting = stripDecorativeEmoji(briefing.greeting);
+      if (typeof briefing.summary === 'string') briefing.summary = stripDecorativeEmoji(briefing.summary);
+      if (typeof briefing.focusRecommendation === 'string') briefing.focusRecommendation = stripDecorativeEmoji(briefing.focusRecommendation);
+      if (Array.isArray(briefing.highlights)) {
+        briefing.highlights.forEach((h: any) => {
+          if (h && typeof h.title === 'string') h.title = stripDecorativeEmoji(h.title);
+          if (h && typeof h.detail === 'string') h.detail = stripDecorativeEmoji(h.detail);
+        });
+      }
+      if (Array.isArray(briefing.suggestions)) {
+        briefing.suggestions.forEach((s: any) => {
+          if (s && typeof s.action === 'string') s.action = stripDecorativeEmoji(s.action);
+          if (s && typeof s.reason === 'string') s.reason = stripDecorativeEmoji(s.reason);
+        });
+      }
+    }
+
+    return briefing;
   } catch (e) {
     if (isRouterHardError(e)) throw e;
     if (e instanceof AIJsonParseError) {

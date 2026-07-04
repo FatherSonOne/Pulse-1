@@ -1348,7 +1348,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                   }}
                   className="group inline-flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-rose-500 text-white text-sm font-medium hover:bg-rose-600 active:bg-rose-700 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 max-w-full"
                 >
-                  <Target className="w-4 h-4 shrink-0" />
                   <span className="truncate text-left">{briefing.focusRecommendation}</span>
                   <ArrowRight className="w-4 h-4 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5" />
                 </button>

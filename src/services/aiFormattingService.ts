@@ -1,55 +1,43 @@
 /**
  * AI Output Formatting Service
- * 
+ *
  * Provides consistent formatting instructions for all AI outputs across Pulse.
- * Ensures AI responses use emojis, bold, italic, and creative formatting for better readability.
+ * Voice is calm and precise: hierarchy comes from typography and structure,
+ * never from decorative emoji. Status and priority are conveyed in words here,
+ * and rendered as real UI indicators (dots, pills, badges) by the components.
  */
 
 export const AI_FORMATTING_INSTRUCTIONS = `
-🎨 **FORMATTING GUIDELINES** - Follow these rules for ALL responses:
+FORMATTING GUIDELINES — apply to every response:
 
-1. **Use Emojis Strategically**:
-   - Start sections with relevant emojis (📊 📅 ✅ ⚠️ 💡 🎯 📝 etc.)
-   - Use emojis to highlight key points and add visual interest
-   - Match emoji to content meaning (✨ for insights, 🚀 for action items, ⚡ for urgent, 💪 for encouragement)
+1. Voice: calm, precise, and direct. Write like a sharp assistant, not a
+   cheerleader. No pep-talk, no motivational sign-offs, no exclamation-heavy
+   encouragement.
 
-2. **Text Formatting**:
-   - **Bold** for titles, headers, and important key terms
-   - *Italic* for emphasis, quotes, or subtle points
-   - Use **bold + emoji** for major sections
-   - Keep formatting natural and readable
+2. No decorative emoji. Do not add emoji to headings, bullets, labels, or as
+   status markers. Convey status and priority in words ("Urgent", "Overdue",
+   "High priority"), never with glyphs. The interface renders its own status
+   indicators.
 
-3. **Structure & Hierarchy**:
-   - Break content into clear sections with emoji headers
-   - Use bullet points (•) or numbered lists
-   - Add line breaks for readability
-   - Highlight action items with ✅ or 🎯
+3. Hierarchy through type, not decoration:
+   - **Bold** for section labels, key terms, names, and deadlines.
+   - *Italic* sparingly, for a genuine aside or caveat.
+   - Bullet points (•) or numbered lists for anything scannable.
+   - Line breaks between sections.
 
-4. **Tone & Style**:
-   - Be friendly, professional, and encouraging
-   - Use varied sentence structure
-   - Add personality without being excessive
-   - Make content scannable with formatting
+4. Every word earns its place. Cut restated headings and filler intros. Lead
+   with the most important item.
 
-5. **Examples**:
-   ✅ GOOD:
-   "📊 **Daily Summary**
-   
-   Good morning! Here's what needs your attention today:
-   
-   🎯 **Top Priority**: Complete project proposal (*deadline: 5 PM*)
-   ✅ **Quick Wins**: Reply to 3 pending emails
-   💡 **Opportunity**: Schedule that catch-up call with Sarah
-   
-   You've got this! 💪"
-   
-   ❌ AVOID:
-   "Daily Summary:
-   Complete project proposal by 5 PM.
-   Reply to emails.
-   Call Sarah."
+Example — do this:
+"**Today**
 
-Remember: **Format for humans**, not machines. Make it delightful to read! ✨
+**Top priority:** Finish the project proposal, due 5 PM.
+**Quick wins:** Reply to 3 pending emails; schedule the catch-up with Sarah."
+
+Not this:
+"🎯 **Top Priority**: Complete project proposal... You've got this! 💪"
+
+Format for clarity. Make it fast to read.
 `;
 
 /**
@@ -74,135 +62,108 @@ export type FormattingContext =
   | 'default';
 
 /**
- * Get context-specific formatting hints based on the type of AI interaction
+ * Get context-specific formatting hints based on the type of AI interaction.
+ * All hints are emoji-free; status is expressed in words and rendered by the UI.
  */
 export function getContextualFormattingHints(context: FormattingContext): string {
   const hints: Record<string, string> = {
     briefing: `
-🌅 **Briefing Format**:
-- Start with a warm greeting with time-appropriate emoji
-- Use 🎯 for priorities, ⚠️ for urgent items
-- End with encouraging message
-- Keep it energetic and actionable`,
+Briefing format:
+- Open with a brief, plain greeting. No fanfare.
+- Lead with the single most important item, labelled **Top priority**.
+- Group the rest under short **bold** labels. Keep each line scannable.
+- Flag time-sensitive items in words ("Overdue", "Due 5 PM"), not glyphs.
+- End when the information ends. No motivational sign-off.`,
 
     research: `
-🔍 **Research Format**:
-- Use 📚 for sources, 💡 for insights, ⚠️ for limitations
-- **Bold** key findings and conclusions
-- *Italic* for nuanced points or caveats
-- Structure: Problem → Analysis → Findings → Recommendations`,
+Research format:
+- Structure: Problem → Analysis → Findings → Recommendations.
+- **Bold** key findings and conclusions.
+- *Italic* for genuine caveats or limitations.
+- Cite sources plainly. State uncertainty where it exists.`,
 
     chat: `
-💬 **Conversational Format**:
-- Be natural and friendly with emojis
-- Use formatting sparingly for emphasis
-- Match user's energy level
-- Quick responses can be shorter and punchier`,
+Conversational format:
+- Be natural, direct, and concise. Match the user's energy.
+- Use **bold** only for genuine emphasis. Short answers can stay short.`,
 
     analysis: `
-📊 **Analysis Format**:
-- Start with 📈 or 📉 for trends
-- **Bold** statistics and key metrics
-- Use ⚡ for critical insights
-- Structure data clearly with bullets and sections`,
+Analysis format:
+- Lead with the headline trend in words.
+- **Bold** statistics and key metrics.
+- Structure data with bullets and clear sections.
+- Call out critical insights plainly; do not decorate them.`,
 
     summary: `
-📝 **Summary Format**:
-- Lead with 🎯 **Key Takeaways**
-- Use ✅ for completed items, ⏳ for pending
-- Keep it concise but formatted for scanning
-- End with next steps if applicable`,
+Summary format:
+- Lead with **Key takeaways**.
+- Mark items as done or pending in words, not glyphs.
+- Keep it concise and structured for scanning.
+- End with next steps only if there are any.`,
 
     'email-draft': `
-✉️ **Email Draft Format**:
-- Use a friendly, professional greeting with 👋 if appropriate
-- **Bold** key points and action items
-- Use *italic* for emphasis or gentle suggestions
-- Structure: Greeting → Context → Main Message → Next Steps → Sign-off
-- Add 🎯 for clear call-to-action
-- Keep paragraphs short and scannable
-- End with a warm, encouraging close`,
+Email draft format:
+- Structure: Greeting → Context → Main message → Next steps → Sign-off.
+- Professional, warm, and economical. **Bold** the key ask or action.
+- *Italic* for a gentle suggestion. Short, scannable paragraphs.
+- Close simply. No emoji.`,
 
     'email-analysis': `
-📧 **Email Analysis Format**:
-- Start with 📊 **Email Overview**
-- Use ⚡ for urgent items, 💡 for insights
-- **Bold** sender names, key topics, and action items
-- Highlight sentiment with 😊 😐 😟 indicators
-- Structure: Summary → Key Points → Suggested Actions → Priority Level
-- Use 🏷️ for categorization suggestions`,
+Email analysis format:
+- Structure: Summary → Key points → Suggested actions → Priority.
+- **Bold** sender names, key topics, and action items.
+- State urgency and sentiment in words ("urgent", "positive tone").
+- The UI renders priority and sentiment indicators; do not add glyphs.`,
 
     journal: `
-💭 **Journal Insight Format**:
-- Start with empathetic acknowledgment
-- Use 🌟 for positive observations, 💪 for encouragement
-- *Italic* for gentle reflections and suggestions
-- Keep tone warm, supportive, and non-judgmental
-- End with an encouraging message and 🌈 or ✨
-- Structure: Observation → Reflection → Gentle Suggestion → Encouragement`,
+Journal insight format:
+- Structure: Observation → Reflection → Gentle suggestion.
+- Warm, supportive, and non-judgmental, but not saccharine.
+- *Italic* for gentle reflections. No emoji, no cheerleading.`,
 
     'voice-analysis': `
-🎙️ **Voice Analysis Format**:
-- Start with 📝 **Transcription Summary**
-- Use 🗣️ for speaker identification
-- **Bold** key topics and important phrases
-- Use ⚡ for action items mentioned, 💡 for insights
-- Structure: Overview → Key Points → Action Items → Mood/Tone
-- Add 🎯 for main takeaways`,
+Voice analysis format:
+- Structure: Overview → Key points → Action items → Tone.
+- **Bold** key topics and important phrases.
+- Identify speakers and action items in words.`,
 
     'meeting-notes': `
-📋 **Meeting Notes Format**:
-- Start with 📅 **Meeting Summary** and date/participants
-- Use 🎯 for objectives, ✅ for decisions made
-- **Bold** action items with owner names
-- Use ⏰ for deadlines mentioned
-- Structure: Attendees → Agenda → Discussion Points → Decisions → Action Items → Next Steps
-- End with 📌 **Follow-ups**`,
+Meeting notes format:
+- Structure: Attendees → Agenda → Discussion → Decisions → Action items → Next steps.
+- **Bold** action items with owner names and deadlines.
+- State decisions and deadlines plainly.`,
 
     'task-extraction': `
-✅ **Task Extraction Format**:
-- Use 🎯 for main tasks, ⚡ for urgent items
-- **Bold** task titles and deadlines
-- Structure each task: Title → Description → Priority → Due Date
-- Use priority indicators: 🔴 High, 🟡 Medium, 🟢 Low
-- Add 👤 for assigned person if mentioned
-- Keep task descriptions actionable and clear`,
+Task extraction format:
+- For each task: Title → Description → Priority → Due date.
+- **Bold** task titles and deadlines.
+- State priority in words ("High", "Medium", "Low"); the UI colours it.
+- Name the assignee if mentioned. Keep descriptions actionable.`,
 
     'team-health': `
-👥 **Team Health Format**:
-- Start with 📊 **Team Health Overview**
-- Use health indicators: 💚 Healthy, 💛 Needs Attention, 🔴 Critical
-- **Bold** key metrics and trends
-- Use 📈 for improvements, 📉 for concerns
-- Structure: Overall Status → Strengths → Areas for Improvement → Recommendations
-- End with 💡 **Actionable Suggestions**`,
+Team health format:
+- Structure: Overall status → Strengths → Areas for improvement → Recommendations.
+- **Bold** key metrics and trends.
+- State each area's status in words ("Healthy", "Needs attention", "Critical");
+  the UI renders the health indicators.`,
 
     nudge: `
-💬 **Nudge Format**:
-- Keep it brief, friendly, and action-oriented
-- Use a single relevant emoji to set tone
-- **Bold** the key action or reminder
-- Be encouraging, not pushy
-- Add a touch of personality
-- Example: "👋 Hey! Just a quick reminder to **follow up with Sarah** about the proposal. You've got this! 💪"`,
+Nudge format:
+- One or two sentences. Friendly, direct, not pushy.
+- **Bold** the single action or reminder.
+- No emoji. Example: "Quick reminder to **follow up with Sarah** about the proposal."`,
 
     'image-analysis': `
-📸 **Image Analysis Format**:
-- Start with 🖼️ **Image Overview**
-- Use **Bold** for main subjects and key elements
-- Structure: Scene Description → Key Elements → Notable Details → Insights
-- Add relevant emojis for context (👤 people, 🏢 buildings, 🌳 nature, etc.)
-- Use 💡 for observations and interpretations
-- End with 🎯 **Key Takeaways** if applicable`,
+Image analysis format:
+- Structure: Scene description → Key elements → Notable details → Insights.
+- **Bold** main subjects and key elements.
+- Describe plainly. No decorative emoji.`,
 
     code: `
-💻 **Code Format**:
-- Keep explanations clear and technical
-- Use **Bold** for function names, variables, and key concepts
-- Structure: Purpose → Implementation → Key Points
-- Use ⚠️ for potential issues or gotchas
-- Add 💡 for best practices and tips
-- Keep code blocks clean and well-commented`,
+Code format:
+- Structure: Purpose → Implementation → Key points.
+- **Bold** function names, variables, and key concepts.
+- Flag gotchas and best practices in words. Keep code blocks clean.`,
 
     default: AI_FORMATTING_INSTRUCTIONS
   };
@@ -218,7 +179,7 @@ export function withFormattedOutput(systemPrompt: string, context: FormattingCon
 
 ${getContextualFormattingHints(context)}
 
-**CRITICAL**: Apply these formatting guidelines to your ENTIRE response. Every output should be well-formatted, emoji-enhanced, and visually engaging!`;
+Apply these guidelines to your entire response. Keep it clean, well-structured, and free of decorative emoji.`;
 }
 
 /**
@@ -227,28 +188,26 @@ ${getContextualFormattingHints(context)}
  */
 export function enhancePlainTextOutput(text: string): string {
   if (!text) return text;
-  
+
   // Don't enhance if already formatted
-  if (text.includes('**') || text.includes('*') || /[🎯📊✅⚠️💡🚀⚡📝📅🔍💬📈]/.test(text)) {
+  if (text.includes('**') || text.includes('*')) {
     return text;
   }
-  
-  // Basic enhancement fallback
+
+  // Basic enhancement fallback: bold common leading labels, no emoji.
   let enhanced = text;
-  
-  // Add emoji to common patterns
-  enhanced = enhanced.replace(/^(Action Item|Task|Todo):/gim, '✅ **$1**:');
-  enhanced = enhanced.replace(/^(Priority|Important|Urgent):/gim, '⚡ **$1**:');
-  enhanced = enhanced.replace(/^(Insight|Finding|Discovery):/gim, '💡 **$1**:');
-  enhanced = enhanced.replace(/^(Summary|Overview):/gim, '📝 **$1**:');
-  enhanced = enhanced.replace(/^(Analysis|Data|Metrics):/gim, '📊 **$1**:');
-  
+  enhanced = enhanced.replace(/^(Action Item|Task|Todo):/gim, '**$1**:');
+  enhanced = enhanced.replace(/^(Priority|Important|Urgent):/gim, '**$1**:');
+  enhanced = enhanced.replace(/^(Insight|Finding|Discovery):/gim, '**$1**:');
+  enhanced = enhanced.replace(/^(Summary|Overview):/gim, '**$1**:');
+  enhanced = enhanced.replace(/^(Analysis|Data|Metrics):/gim, '**$1**:');
+
   return enhanced;
 }
 
 /**
  * Parse formatted AI output for rendering
- * Supports markdown-like syntax: **bold**, *italic*, emojis
+ * Supports markdown-like syntax: **bold**, *italic*
  */
 export interface FormattedSegment {
   text: string;
@@ -261,17 +220,17 @@ export function parseFormattedText(text: string): FormattedSegment[] {
   // Simple parser for bold and italic
   const segments: FormattedSegment[] = [];
   let currentPos = 0;
-  
+
   // Regex to match **bold** or *italic*
   const formatRegex = /(\*\*([^*]+)\*\*)|(\*([^*]+)\*)/g;
   let match;
-  
+
   while ((match = formatRegex.exec(text)) !== null) {
     // Add plain text before match
     if (match.index > currentPos) {
       segments.push({ text: text.substring(currentPos, match.index) });
     }
-    
+
     // Add formatted segment
     if (match[1]) {
       // Bold
@@ -280,15 +239,15 @@ export function parseFormattedText(text: string): FormattedSegment[] {
       // Italic
       segments.push({ text: match[4], italic: true });
     }
-    
+
     currentPos = match.index + match[0].length;
   }
-  
+
   // Add remaining text
   if (currentPos < text.length) {
     segments.push({ text: text.substring(currentPos) });
   }
-  
+
   return segments;
 }
 
@@ -297,20 +256,42 @@ export function parseFormattedText(text: string): FormattedSegment[] {
  */
 export function formatToHTML(text: string): string {
   if (!text) return '';
-  
+
   let html = text;
-  
+
   // Convert **bold** to <strong>
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  
+
   // Convert *italic* to <em>
   html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-  
+
   // Preserve line breaks
   html = html.replace(/\n/g, '<br/>');
-  
-  // Emojis are already supported in HTML
+
   return html;
+}
+
+/**
+ * Remove decorative emoji and pictographs from AI-authored display text.
+ *
+ * The formatting guidelines instruct the model to avoid decorative emoji, but
+ * models comply imperfectly. Apply this at the boundary to AI-authored strings
+ * that render in the calm, precise UI surfaces (briefing, nudges, summaries) so
+ * a stray glyph can never leak into the interface. Collapses the whitespace the
+ * removed glyph leaves behind. Does NOT touch user-authored content or reactions.
+ */
+export function stripDecorativeEmoji(text: string): string {
+  if (!text) return text;
+  return text
+    // Emoji, pictographs, symbols, dingbats, and variation/ZWJ modifiers.
+    .replace(
+      /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{1F1E6}-\u{1F1FF}\u{FE00}-\u{FE0F}\u{200D}]/gu,
+      ''
+    )
+    // Tidy up doubled spaces and leading/trailing space a removed glyph leaves.
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/^\s+|\s+$/gm, '')
+    .trim();
 }
 
 /**
