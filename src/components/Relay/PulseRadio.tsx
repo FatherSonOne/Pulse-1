@@ -414,6 +414,32 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
     }
   }, [selectedChannel]);
 
+  // BR8 — realtime: a new broadcast published to the open channel appears in the
+  // feed live, no manual refresh. INSERT-only on purpose: listen/like counts
+  // UPDATE `broadcasts` constantly, and re-fetching on those would fight the
+  // optimistic count state (and flicker). `broadcasts` is in the
+  // supabase_realtime publication (verified live). `loadBroadcasts` takes the id
+  // as an arg, so the callback has no stale closure over selectedChannel.
+  // (A discussion-response INSERT shares channel_id and will also trigger a
+  // harmless top-level re-fetch — idempotent full replace.)
+  useEffect(() => {
+    if (!selectedChannel) return;
+    const channelId = selectedChannel.id;
+    const sub = supabase
+      .channel(`pulse-radio-feed-${channelId}`)
+      .on(
+        'postgres_changes' as any,
+        { event: 'INSERT', schema: 'public', table: 'broadcasts', filter: `channel_id=eq.${channelId}` },
+        () => { void loadBroadcasts(channelId); },
+      )
+      .subscribe();
+    return () => {
+      try { supabase.removeChannel(sub); } catch { /* noop */ }
+    };
+    // Re-subscribe only when the open channel changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedChannel]);
+
   // Deep-link: when the parent passed a broadcast id (e.g. from a triage row
   // click), scroll the matching broadcast row into view once it's loaded.
   // If the broadcast lives on a channel we haven't auto-selected, the row
@@ -439,6 +465,32 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
       if (!cancelled) setDiscussionResponses(r);
     });
     return () => { cancelled = true; };
+  }, [activeBroadcastRoom]);
+
+  // BR8 — realtime: responses added to the open discussion room appear live for
+  // everyone listening, not just the sender. Scoped by parent_broadcast_id so
+  // only this thread's responses fire (top-level broadcasts have a null parent
+  // and won't match). INSERT-only.
+  useEffect(() => {
+    if (!activeBroadcastRoom) return;
+    const roomId = activeBroadcastRoom.id;
+    const sub = supabase
+      .channel(`pulse-radio-room-${roomId}`)
+      .on(
+        'postgres_changes' as any,
+        { event: 'INSERT', schema: 'public', table: 'broadcasts', filter: `parent_broadcast_id=eq.${roomId}` },
+        () => {
+          voxModeService.getBroadcastResponses(roomId)
+            .then((r) => setDiscussionResponses(r))
+            .catch(() => { /* noop — a failed refresh just leaves the last thread state */ });
+        },
+      )
+      .subscribe();
+    return () => {
+      try { supabase.removeChannel(sub); } catch { /* noop */ }
+    };
+    // Re-subscribe only when the open room changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeBroadcastRoom]);
 
   const loadPulseUsers = async () => {
