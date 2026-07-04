@@ -48,6 +48,7 @@ const ALL_USERS_CACHE_TTL_MS = 60_000;
 
 class VoxModeService {
   private userId: string | null = null;
+  private myPulseId: string | null = null;
   private workspaceId: string | null = null;
   private bucketChecked: boolean = false;
   private bucketExists: boolean = false;
@@ -104,72 +105,51 @@ class VoxModeService {
   }
 
   /**
-   * Ensures the current user exists in the pulse_users table.
-   * Creates a new pulse user record if one doesn't exist.
-   * This is required before creating channels or other resources that
-   * have foreign key constraints to pulse_users.
+   * The caller's canonical pulse_users.id (Regime B, linked by auth_user_id).
+   *
+   * BR5: Radio ownership (pulse_channels.owner_id, broadcasts.author_id,
+   * pulse_channel_subscriptions.subscriber_id) FKs pulse_users.id and its RLS now
+   * gates on current_pulse_user_id() — the canonical id, NOT the auth uid. So every
+   * Radio read/write must use this value, not ensureUserId(). For "clean" users
+   * (id == auth uid) it equals the auth uid; for divergent users it's their real
+   * pulse id. Resolved via the server RPC so it can never mint a duplicate row the
+   * way the old hand-rolled id=auth.uid() insert did. Cached per session.
+   *
+   * See docs/deep-dives/HANDOFF-BR5-identity-regime-map-2026-07-03.md.
+   */
+  async ensureMyPulseId(): Promise<string | null> {
+    if (this.myPulseId) return this.myPulseId;
+    const authId = await this.ensureUserId();
+    if (!authId) return null;
+    const { data, error } = await supabase.rpc('ensure_pulse_user_for_auth', { p_auth_user_id: authId });
+    if (error || !data) {
+      console.error('ensure_pulse_user_for_auth failed:', error);
+      return null;
+    }
+    this.myPulseId = data as string;
+    return this.myPulseId;
+  }
+
+  clearPulseIdCache() {
+    this.myPulseId = null;
+  }
+
+  /**
+   * Ensures the current user has a canonical pulse_users row and returns it.
+   *
+   * BR5: delegates row creation to ensure_pulse_user_for_auth() (Regime B), which
+   * links by auth_user_id, adopts a legacy id=auth.uid() row if one exists, or mints
+   * a fresh canonical row — always exactly one row per human. This replaces the old
+   * client insert that keyed the row on id=auth.uid() and produced a second,
+   * divergent-user duplicate the moment it ran.
    */
   async ensurePulseUser(): Promise<PulseUser | null> {
-    const userId = await this.ensureUserId();
-    if (!userId) {
-      console.error('No user ID available for ensurePulseUser');
+    const pulseId = await this.ensureMyPulseId();
+    if (!pulseId) {
+      console.error('No pulse id available for ensurePulseUser');
       return null;
     }
-
-    // Check if user already exists
-    const existingUser = await this.getPulseUser(userId);
-    if (existingUser) {
-      return existingUser;
-    }
-
-    // Get user info from Supabase auth to create a better profile
-    const { data: { user } } = await supabase.auth.getUser();
-    const email = user?.email || '';
-    const displayName = user?.user_metadata?.full_name ||
-                        user?.user_metadata?.name ||
-                        email.split('@')[0] ||
-                        'Pulse User';
-
-    // Generate a unique handle from email or user id
-    const baseHandle = email ? email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '') : userId.slice(0, 8);
-    const handle = `${baseHandle}${Math.floor(Math.random() * 1000)}`;
-
-    // Create the pulse user
-    const { data, error } = await supabase
-      .from('pulse_users')
-      .insert([{
-        id: userId,
-        handle: handle,
-        display_name: displayName,
-        avatar_color: this.generateAvatarColor(),
-        is_verified: false,
-        follower_count: 0,
-        following_count: 0,
-        settings: {
-          notificationsEnabled: true,
-          emailNotifications: true,
-          pushNotifications: true,
-          defaultVoxMode: 'quick_vox',
-          autoPlayIncoming: false,
-          transcriptionEnabled: true,
-          privacyLevel: 'followers',
-        },
-        created_at: new Date().toISOString(),
-        last_active_at: new Date().toISOString(),
-      }])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating pulse user:', error);
-      // If it's a duplicate key error, the user already exists - try to fetch again
-      if (error.code === '23505') {
-        return await this.getPulseUser(userId);
-      }
-      return null;
-    }
-
-    return this.mapDbToPulseUser(data);
+    return this.getPulseUser(pulseId);
   }
 
   getUserId(): string {
@@ -477,14 +457,12 @@ class VoxModeService {
   // ============================================
 
   async createChannel(name: string, description: string, isPublic: boolean = true): Promise<PulseChannel | null> {
-    // Ensure the user exists in pulse_users first (required for foreign key constraint)
-    const pulseUser = await this.ensurePulseUser();
-    if (!pulseUser) {
-      console.error('Failed to ensure pulse user exists before creating channel');
+    // BR5: owner_id must be the canonical pulse_users.id (FK target + RLS gate).
+    const userId = await this.ensureMyPulseId();
+    if (!userId) {
+      console.error('Failed to resolve canonical pulse id before creating channel');
       return null;
     }
-
-    const userId = pulseUser.id;
 
     const { data, error } = await supabase
       .from('pulse_channels')
@@ -511,7 +489,8 @@ class VoxModeService {
   }
 
   async getMyChannels(limit: number = 50, offset: number = 0): Promise<PulseChannel[]> {
-    const userId = await this.ensureUserId();
+    // BR5: channels are owned by the canonical pulse id, not the auth uid.
+    const userId = await this.ensureMyPulseId();
     if (!userId) return [];
 
     const { data, error } = await supabase
@@ -538,13 +517,14 @@ class VoxModeService {
 
     if (error || !subs || subs.length === 0) return [];
 
+    // BR5: subscriber_id now holds the canonical pulse_users.id, so join on id.
     const ids = subs.map(s => s.subscriber_id).filter(Boolean);
     const { data: users } = await supabase
       .from('pulse_users')
-      .select('auth_user_id, display_name, handle, avatar_url')
-      .in('auth_user_id', ids);
+      .select('id, display_name, handle, avatar_url')
+      .in('id', ids);
 
-    const byId = new Map((users ?? []).map(u => [u.auth_user_id, u]));
+    const byId = new Map((users ?? []).map(u => [u.id, u]));
     return subs.map(s => {
       const u = byId.get(s.subscriber_id);
       return {
@@ -585,7 +565,8 @@ class VoxModeService {
    * only channels they could subscribe to, newest-liveliest first.
    */
   async getPublicChannels(limit: number = 50, offset: number = 0): Promise<PulseChannel[]> {
-    const userId = await this.ensureUserId();
+    // BR5: exclude the caller's own channels by canonical pulse id (matches owner_id).
+    const userId = await this.ensureMyPulseId();
 
     let query = supabase
       .from('pulse_channels')
@@ -608,7 +589,8 @@ class VoxModeService {
    * getChannelBroadcasts serves these feeds to a non-owner unchanged.
    */
   async getMySubscribedChannels(): Promise<PulseChannel[]> {
-    const userId = await this.ensureUserId();
+    // BR5: subscriptions are keyed by canonical pulse id.
+    const userId = await this.ensureMyPulseId();
     if (!userId) return [];
 
     const { data: subs, error: subErr } = await supabase
@@ -632,7 +614,7 @@ class VoxModeService {
 
   /** Channel ids the current user subscribes to — for Discover toggle state. */
   async getSubscribedChannelIds(): Promise<Set<string>> {
-    const userId = await this.ensureUserId();
+    const userId = await this.ensureMyPulseId();
     if (!userId) return new Set();
     const { data, error } = await supabase
       .from('pulse_channel_subscriptions')
@@ -643,19 +625,17 @@ class VoxModeService {
   }
 
   /**
-   * Subscribe the current user to a channel. Mirrors createChannel's
-   * ensurePulseUser() dance: subscriber_id FKs pulse_users(id) *and* RLS forces
-   * subscriber_id = auth.uid(), so a pulse_users row keyed by the auth uid must
-   * exist first. Idempotent (unique channel_id+subscriber_id → dup ignored).
-   * Returns the channel's new subscriber_count, or null on failure.
+   * Subscribe the current user to a channel. BR5: subscriber_id FKs pulse_users.id
+   * and RLS now gates on current_pulse_user_id(), so we write the canonical pulse
+   * id (resolved/bootstrapped via ensureMyPulseId). Idempotent (unique
+   * channel_id+subscriber_id → dup ignored). Returns the new subscriber_count.
    */
   async subscribeToChannel(channelId: string): Promise<number | null> {
-    const pulseUser = await this.ensurePulseUser();
-    if (!pulseUser) {
-      console.error('Failed to ensure pulse user before subscribing');
+    const userId = await this.ensureMyPulseId();
+    if (!userId) {
+      console.error('Failed to resolve canonical pulse id before subscribing');
       return null;
     }
-    const userId = pulseUser.id; // == auth uid on the ensured row
 
     const { error } = await supabase
       .from('pulse_channel_subscriptions')
@@ -680,7 +660,7 @@ class VoxModeService {
    * their own row. Returns the channel's new subscriber_count, or null.
    */
   async unsubscribeFromChannel(channelId: string): Promise<number | null> {
-    const userId = await this.ensureUserId();
+    const userId = await this.ensureMyPulseId();
     if (!userId) return null;
 
     const { error } = await supabase
@@ -724,10 +704,11 @@ class VoxModeService {
     scheduledFor?: Date,
     parentBroadcastId?: string
   ): Promise<Broadcast | null> {
-    const userId = await this.ensureUserId();
+    // BR5: broadcasts.author_id FKs pulse_users.id and RLS gates on the canonical id.
+    const userId = await this.ensureMyPulseId();
     if (!userId) return null;
 
-    const user = await this.getPulseUser();
+    const user = await this.getPulseUser(userId);
 
     const { data, error } = await supabase
       .from('broadcasts')
@@ -895,7 +876,8 @@ class VoxModeService {
    * the caller can roll its optimistic removal back.
    */
   async deleteBroadcast(broadcastId: string): Promise<boolean> {
-    const userId = await this.ensureUserId();
+    // BR5: author_id holds the canonical pulse id.
+    const userId = await this.ensureMyPulseId();
     if (!userId) return false;
 
     const { error } = await supabase
