@@ -255,24 +255,24 @@ const RelayQuickRecorderStrip: React.FC<RelayQuickRecorderStripProps> = ({
           disabled={isRecording}
           // Navigating away mid-recording unmounts the hook and discards audio.
           // Disable until the user stops or sends.
-          className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-zinc-400 dark:disabled:hover:text-zinc-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+          className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-zinc-400 dark:disabled:hover:text-zinc-500 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
         >
           OPEN RELAY
         </button>
       </div>
 
-      <div className="flex items-center gap-3 px-3 py-2.5 rounded bg-zinc-50/60 dark:bg-white/[0.03]">
+      <div className="flex items-center gap-3 px-3 py-2.5 rounded-sm bg-zinc-50/60 dark:bg-white/3">
         {/* Recipient picker — pill that opens an inline list */}
         <div className="relative" ref={pickerRef}>
           <button
             onClick={() => setPickerOpen(o => !o)}
             disabled={isRecording}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs bg-white dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.06] text-zinc-700 dark:text-zinc-200 hover:border-rose-500/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm text-xs bg-white dark:bg-white/4 border border-zinc-200 dark:border-white/6 text-zinc-700 dark:text-zinc-200 hover:border-rose-500/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
             aria-haspopup="listbox"
             aria-expanded={pickerOpen}
           >
             <span className="pulse-label text-zinc-400 dark:text-zinc-500">TO</span>
-            <span className="truncate max-w-[8rem]">
+            <span className="truncate max-w-32">
               {selectedRecipient ? selectedRecipient.name : 'Pick…'}
             </span>
             <ChevronDown className="w-3 h-3 text-zinc-400 dark:text-zinc-500" />
@@ -280,7 +280,7 @@ const RelayQuickRecorderStrip: React.FC<RelayQuickRecorderStripProps> = ({
           {pickerOpen && (
             <ul
               role="listbox"
-              className="absolute z-20 mt-1 left-0 min-w-[12rem] max-h-56 overflow-y-auto rounded-lg bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/[0.08] shadow-lg py-1"
+              className="absolute z-20 mt-1 left-0 min-w-48 max-h-56 overflow-y-auto rounded-lg bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/8 shadow-lg py-1"
             >
               {recipients.length === 0 ? (
                 <li className="px-3 py-2 text-xs text-zinc-500 dark:text-zinc-400">
@@ -296,7 +296,7 @@ const RelayQuickRecorderStrip: React.FC<RelayQuickRecorderStripProps> = ({
                       }}
                       role="option"
                       aria-selected={selectedRecipientId === r.id}
-                      className={`w-full text-left flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors ${
+                      className={`w-full text-left flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-zinc-50 dark:hover:bg-white/4 transition-colors ${
                         selectedRecipientId === r.id
                           ? 'text-rose-600 dark:text-rose-400'
                           : 'text-zinc-700 dark:text-zinc-200'
@@ -333,7 +333,7 @@ const RelayQuickRecorderStrip: React.FC<RelayQuickRecorderStripProps> = ({
           {recordingState === 'idle' && (
             <button
               onClick={handleStart}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-xs font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950"
               aria-label="Start recording"
             >
               <Mic className="w-3.5 h-3.5" />
@@ -343,7 +343,7 @@ const RelayQuickRecorderStrip: React.FC<RelayQuickRecorderStripProps> = ({
           {isRecording && (
             <button
               onClick={stopRecording}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
               aria-label="Stop recording"
             >
               <Square className="w-3.5 h-3.5 fill-current" />
@@ -355,7 +355,7 @@ const RelayQuickRecorderStrip: React.FC<RelayQuickRecorderStripProps> = ({
               <button
                 onClick={() => cancelRecording()}
                 disabled={sending}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm text-xs text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/6 disabled:opacity-50 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                 aria-label="Discard recording"
               >
                 <XIcon className="w-3.5 h-3.5" />
@@ -364,7 +364,7 @@ const RelayQuickRecorderStrip: React.FC<RelayQuickRecorderStripProps> = ({
               <button
                 onClick={handleSend}
                 disabled={sending || !selectedRecipientId}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-rose-500 hover:bg-rose-600 active:bg-rose-700 disabled:bg-zinc-300 dark:disabled:bg-white/[0.08] disabled:cursor-not-allowed text-white disabled:text-zinc-500 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-rose-500 hover:bg-rose-600 active:bg-rose-700 disabled:bg-zinc-300 dark:disabled:bg-white/8 disabled:cursor-not-allowed text-white disabled:text-zinc-500 text-xs font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                 aria-label="Send recording"
               >
                 {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}

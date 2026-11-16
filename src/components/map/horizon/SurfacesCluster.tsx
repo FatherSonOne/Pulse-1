@@ -46,7 +46,7 @@ const SurfaceBtn: React.FC<SurfaceBtnProps> = ({ label, Icon, active, badge, isD
     aria-expanded={active}
     aria-label={`${label}${badge && badge > 0 ? ` — ${badge}` : ''}`}
     title={label}
-    className={`relative flex items-center justify-center w-9 h-9 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+    className={`relative flex items-center justify-center w-9 h-9 rounded-lg transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-1 ${
       isDarkMode ? 'focus-visible:ring-zinc-400' : 'focus-visible:ring-zinc-500'
     }`}
     style={{

@@ -466,15 +466,15 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
     text: isDarkMode ? 'text-white' : 'text-gray-900',
     textSecondary: isDarkMode ? 'text-gray-400' : 'text-gray-600',
     textMuted: isDarkMode ? 'text-gray-500' : 'text-gray-400',
-    cardBg: isDarkMode ? 'bg-white/[0.03]' : 'bg-gray-50',
+    cardBg: isDarkMode ? 'bg-white/3' : 'bg-gray-50',
     cardBorder: isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-gray-200/50',
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className={`absolute inset-0 ${tc.overlay} backdrop-blur-sm`}
+        className={`absolute inset-0 ${tc.overlay} backdrop-blur-xs`}
         onClick={onClose}
       />
 
@@ -539,7 +539,7 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
                   <div className="flex items-start gap-3">
                     {/* Icon */}
                     <div
-                      className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0`}
+                      className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0`}
                       style={{
                         background: isSelected ? accentColor : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'),
                         color: isSelected ? 'white' : (isDarkMode ? '#9ca3af' : '#6b7280'),
@@ -552,7 +552,7 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className={`font-semibold ${tc.text}`}>{format.name}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'} ${tc.textMuted}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded-sm ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'} ${tc.textMuted}`}>
                           {format.fileSize}
                         </span>
                       </div>
@@ -562,7 +562,7 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
                     {/* Selected indicator */}
                     {isSelected && (
                       <div
-                        className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+                        className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
                         style={{ background: accentColor }}
                       >
                         <Check className="w-4 h-4 text-white" />
@@ -600,7 +600,7 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
           {/* Error Message */}
           {error && (
             <div className={`mb-4 p-3 rounded-lg flex items-center gap-2 ${isDarkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-50 text-red-600'}`}>
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <AlertCircle className="w-4 h-4 shrink-0" />
               <span className="text-sm">{error}</span>
             </div>
           )}
@@ -623,7 +623,7 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0`}
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0`}
                     style={{
                       background: downloadAsZip ? accentColor : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'),
                       color: downloadAsZip ? 'white' : (isDarkMode ? '#9ca3af' : '#6b7280'),
@@ -639,7 +639,7 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
                   </div>
                   {downloadAsZip && (
                     <div
-                      className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+                      className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
                       style={{ background: accentColor }}
                     >
                       <Check className="w-4 h-4 text-white" />

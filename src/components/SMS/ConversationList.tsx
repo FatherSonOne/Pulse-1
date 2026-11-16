@@ -88,7 +88,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
             placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-green-600 transition"
+            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-hidden focus:border-green-600 transition"
           />
         </div>
 
@@ -133,7 +133,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 >
                   {/* Avatar */}
                   <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0"
+                    className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0"
                     style={{ backgroundColor: avatarColor }}
                   >
                     {getInitials(displayName)}
@@ -145,7 +145,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                       <span className={`font-medium truncate ${isSelected ? 'text-white' : 'text-zinc-200'}`}>
                         {displayName}
                       </span>
-                      <span className="text-xs text-zinc-500 flex-shrink-0 ml-2">
+                      <span className="text-xs text-zinc-500 shrink-0 ml-2">
                         {formatDistanceToNow(conversation.lastMessageAt, { addSuffix: false })}
                       </span>
                     </div>
@@ -154,7 +154,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                         {getLastMessagePreview(conversation)}
                       </p>
                       {conversation.unreadCount > 0 && (
-                        <span className="ml-2 w-5 h-5 rounded-full bg-green-600 text-white text-xs flex items-center justify-center flex-shrink-0">
+                        <span className="ml-2 w-5 h-5 rounded-full bg-green-600 text-white text-xs flex items-center justify-center shrink-0">
                           {conversation.unreadCount}
                         </span>
                       )}

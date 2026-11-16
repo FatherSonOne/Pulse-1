@@ -159,7 +159,7 @@ export const AboutSettings: React.FC = () => {
                   setIsClearingCache(false);
                 }
               }}
-              className="px-3 py-1 text-xs font-semibold text-white bg-rose-500 hover:bg-rose-600 rounded transition"
+              className="px-3 py-1 text-xs font-semibold text-white bg-rose-500 hover:bg-rose-600 rounded-sm transition"
             >
               Clear cache
             </button>

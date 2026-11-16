@@ -17,7 +17,7 @@ interface CRMActionButtonProps {
   messageId?: string;
   templateName?: string;
   icon?: string;
-  variant?: 'primary' | 'secondary' | 'outline';
+  variant?: 'primary' | 'secondary' | 'outline-solid';
 }
 
 /**

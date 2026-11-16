@@ -278,7 +278,7 @@ export const FolderListView: React.FC = () => {
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); void handleToggleStar(email); }}
-                      className={`p-1 rounded hover:pulse-rose-bg-soft-color ${email.is_starred ? 'pulse-rose-color' : 'pulse-ink-3-color'}`}
+                      className={`p-1 rounded-sm hover:pulse-rose-bg-soft-color ${email.is_starred ? 'pulse-rose-color' : 'pulse-ink-3-color'}`}
                       title="Star / unstar"
                       aria-label={email.is_starred ? `Unstar email from ${row.from}` : `Star email from ${row.from}`}
                     >
@@ -287,7 +287,7 @@ export const FolderListView: React.FC = () => {
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); void handleArchive(email); }}
-                      className="p-1 rounded hover:pulse-rose-bg-soft-color pulse-ink-3-color"
+                      className="p-1 rounded-sm hover:pulse-rose-bg-soft-color pulse-ink-3-color"
                       title="Archive"
                       aria-label={`Archive email from ${row.from}`}
                     >
@@ -296,7 +296,7 @@ export const FolderListView: React.FC = () => {
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setSnoozeTargetEmailId(email.id); }}
-                      className="p-1 rounded hover:pulse-rose-bg-soft-color pulse-ink-3-color"
+                      className="p-1 rounded-sm hover:pulse-rose-bg-soft-color pulse-ink-3-color"
                       title="Snooze"
                       aria-label={`Snooze email from ${row.from}`}
                     >
@@ -305,7 +305,7 @@ export const FolderListView: React.FC = () => {
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); void handleTrash(email); }}
-                      className="p-1 rounded hover:pulse-rose-bg-soft-color pulse-ink-3-color"
+                      className="p-1 rounded-sm hover:pulse-rose-bg-soft-color pulse-ink-3-color"
                       title="Move to trash"
                       aria-label={`Move email from ${row.from} to trash`}
                     >

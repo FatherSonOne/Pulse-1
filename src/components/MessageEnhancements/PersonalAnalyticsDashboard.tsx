@@ -143,7 +143,7 @@ const MilestoneItem: React.FC<MilestoneItemProps> = ({ title, achievedAt, catego
 
   return (
     <div className="flex items-center gap-3 py-2">
-      <div className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0" />
+      <div className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate">
           {title}
@@ -233,7 +233,7 @@ export const PersonalAnalyticsDashboard: React.FC<PersonalAnalyticsDashboardProp
               onClick={() => setActiveTab('overview')}
               className={`px-3 py-1 text-xs font-medium rounded-md transition ${
                 activeTab === 'overview'
-                  ? 'bg-white dark:bg-zinc-600 text-zinc-800 dark:text-white shadow-sm'
+                  ? 'bg-white dark:bg-zinc-600 text-zinc-800 dark:text-white shadow-xs'
                   : 'text-zinc-600 dark:text-zinc-400'
               }`}
             >
@@ -243,7 +243,7 @@ export const PersonalAnalyticsDashboard: React.FC<PersonalAnalyticsDashboardProp
               onClick={() => setActiveTab('milestones')}
               className={`px-3 py-1 text-xs font-medium rounded-md transition ${
                 activeTab === 'milestones'
-                  ? 'bg-white dark:bg-zinc-600 text-zinc-800 dark:text-white shadow-sm'
+                  ? 'bg-white dark:bg-zinc-600 text-zinc-800 dark:text-white shadow-xs'
                   : 'text-zinc-600 dark:text-zinc-400'
               }`}
             >

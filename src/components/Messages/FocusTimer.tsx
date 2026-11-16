@@ -202,7 +202,7 @@ export const FocusTimer: React.FC<FocusTimerProps> = ({
         <div
           className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all ${
             mode === 'work'
-              ? 'bg-[#881337] text-[#fecdd3] shadow-lg'
+              ? 'bg-rose-900 text-rose-200 shadow-lg'
               : 'bg-zinc-100 dark:bg-[rgba(255,255,255,0.055)] text-zinc-600 dark:text-[#b4b4b8]'
           }`}
         >

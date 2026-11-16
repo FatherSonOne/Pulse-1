@@ -950,7 +950,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                   <button
                     type="button"
                     onClick={() => setMobileView('list')}
-                    className="mb-3 inline-flex items-center gap-1.5 text-sm text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] transition ease-pulse"
+                    className="mb-3 inline-flex items-center gap-1.5 text-sm text-(--pulse-ink-2) hover:text-(--pulse-ink) transition ease-pulse"
                     aria-label="Back to channels"
                     title="Back to channels"
                   >
@@ -1213,7 +1213,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
 
                   {relatedBroadcasts.length > 0 && (
                     <div className="mt-6">
-                      <div className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-400 mb-3">
+                      <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-3">
                         Related broadcasts
                       </div>
                       <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
@@ -1247,7 +1247,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                                 <Radio className="w-3.5 h-3.5 text-rose-500 shrink-0" />
                                 <span className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 truncate">{b.title}</span>
                                 {b.episodeNumber ? (
-                                  <span className="text-[9px] font-mono uppercase tracking-[0.1em] text-zinc-400 shrink-0">EP {b.episodeNumber}</span>
+                                  <span className="text-[9px] font-mono uppercase tracking-widest text-zinc-400 shrink-0">EP {b.episodeNumber}</span>
                                 ) : null}
                               </div>
                               <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
@@ -1281,13 +1281,13 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                                   onDelete={() => {
                                     setShowMessageMenu(null);
                                     toast((t) => (
-                                      <span className="flex flex-col gap-2 min-w-[14rem]">
+                                      <span className="flex flex-col gap-2 min-w-56">
                                         <span className="text-sm">Delete this broadcast forever? This can't be undone.</span>
                                         <div className="flex items-center gap-2 justify-end">
                                           <button
                                             type="button"
                                             onClick={() => toast.dismiss(t.id)}
-                                            className="font-mono text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                            className="font-mono text-[10px] uppercase tracking-widest px-2 py-1 rounded-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                                           >
                                             Cancel
                                           </button>
@@ -1305,7 +1305,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                                                 toast.error("Couldn't delete — you may not own this broadcast.");
                                               }
                                             }}
-                                            className="font-mono text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded bg-rose-500 hover:bg-rose-600 text-white"
+                                            className="font-mono text-[10px] uppercase tracking-widest px-2 py-1 rounded-sm bg-rose-500 hover:bg-rose-600 text-white"
                                           >
                                             Delete
                                           </button>
@@ -1692,7 +1692,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
             {/* Discussion thread — the voice responses to this broadcast. */}
             {discussionResponses.length > 0 && (
               <div className="mt-3 space-y-2 max-h-52 overflow-y-auto">
-                <div className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-400 px-1">
+                <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 dark:text-zinc-400 px-1">
                   {discussionResponses.length} {discussionResponses.length === 1 ? 'response' : 'responses'}
                 </div>
                 {discussionResponses.map((r) => (
@@ -1777,7 +1777,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
 
       {/* Phase 5: AI Enhancement Modals */}
       {conversationSummary && showSummary && (
-        <div className="fixed inset-0 bg-zinc-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-zinc-950/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="max-w-2xl w-full">
             <MessageAIPanel
               summary={conversationSummary}

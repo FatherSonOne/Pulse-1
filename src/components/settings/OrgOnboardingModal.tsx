@@ -157,7 +157,7 @@ export const OrgOnboardingModal: React.FC = () => {
 
   return (
     <div
-      className="pulse-modal-scrim fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      className="pulse-modal-scrim fixed inset-0 z-9999 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
@@ -179,7 +179,7 @@ export const OrgOnboardingModal: React.FC = () => {
             disabled={isSaving}
             aria-label="Close and return to your previous workspace"
             title="Return to previous workspace"
-            className="absolute top-3 right-3 p-1.5 rounded-lg text-[var(--pulse-ink-3)] hover:text-[var(--pulse-ink)] hover:bg-zinc-100 dark:hover:bg-zinc-800 transition disabled:opacity-40 disabled:cursor-not-allowed z-10"
+            className="absolute top-3 right-3 p-1.5 rounded-lg text-(--pulse-ink-3) hover:text-(--pulse-ink) hover:bg-zinc-100 dark:hover:bg-zinc-800 transition disabled:opacity-40 disabled:cursor-not-allowed z-10"
           >
             <X className="w-4 h-4" aria-hidden="true" />
           </button>
@@ -193,13 +193,13 @@ export const OrgOnboardingModal: React.FC = () => {
           </div>
           <h1
             id={titleId}
-            className="text-2xl sm:text-3xl font-semibold tracking-tight text-[var(--pulse-ink)]"
+            className="text-2xl sm:text-3xl font-semibold tracking-tight text-(--pulse-ink)"
           >
             Name your organization
           </h1>
           <p
             id={descId}
-            className="text-sm mt-2 leading-relaxed text-[var(--pulse-ink-2)]"
+            className="text-sm mt-2 leading-relaxed text-(--pulse-ink-2)"
           >
             This is the space where you and your team will work together on Pulse.
             You can change it later in Settings.
@@ -222,7 +222,7 @@ export const OrgOnboardingModal: React.FC = () => {
               maxLength={80}
               disabled={isSaving}
               aria-required="true"
-              className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-[var(--pulse-ink)] placeholder-[var(--pulse-ink-3)] focus:outline-none focus:ring-2 focus:ring-[var(--pulse-rose)] focus:border-transparent transition disabled:opacity-50"
+              className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-(--pulse-ink) placeholder-(--pulse-ink-3) focus:outline-hidden focus:ring-2 focus:ring-(--pulse-rose) focus:border-transparent transition disabled:opacity-50"
             />
           </div>
 

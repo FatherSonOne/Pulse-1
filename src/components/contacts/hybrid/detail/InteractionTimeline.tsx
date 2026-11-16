@@ -60,7 +60,7 @@ export const InteractionTimeline: React.FC<{ contact: Contact; userId?: string }
   return (
     <div>
       <span
-        className="block mb-3 text-[10px] uppercase tracking-[0.1em] text-zinc-400 dark:text-zinc-500"
+        className="block mb-3 text-[10px] uppercase tracking-widest text-zinc-400 dark:text-zinc-500"
         style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
       >
         Interaction timeline
@@ -83,7 +83,7 @@ export const InteractionTimeline: React.FC<{ contact: Contact; userId?: string }
               className="flex items-start gap-3 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800"
             >
               <div
-                className={`mt-0.5 w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
+                className={`mt-0.5 w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
                   email.is_sent ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-500'
                 }`}
               >
@@ -98,7 +98,7 @@ export const InteractionTimeline: React.FC<{ contact: Contact; userId?: string }
                   >
                     {email.subject || '(no subject)'}
                   </p>
-                  <span className="text-xs text-zinc-400 dark:text-zinc-500 flex-shrink-0">
+                  <span className="text-xs text-zinc-400 dark:text-zinc-500 shrink-0">
                     {email.received_at ? new Date(email.received_at).toLocaleDateString() : '—'}
                   </span>
                 </div>

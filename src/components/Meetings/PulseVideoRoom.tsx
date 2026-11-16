@@ -135,7 +135,7 @@ const ParticipantTile: React.FC<{ sessionId: string; isLocal?: boolean }> = ({ s
   const color = identityColor(name);
 
   return (
-    <div className="relative w-full h-full rounded-xl overflow-hidden bg-white/[0.03] border border-white/[0.08]">
+    <div className="relative w-full h-full rounded-xl overflow-hidden bg-white/3 border border-white/8">
       {videoOff ? (
         <div
           className="absolute inset-0 flex items-center justify-center"
@@ -159,7 +159,7 @@ const ParticipantTile: React.FC<{ sessionId: string; isLocal?: boolean }> = ({ s
 
       {/* Name label — mono uppercase tracked per Coral Cockpit */}
       <div className="absolute bottom-2 left-2 right-2 flex items-center gap-1.5">
-        <span className="bg-[#080808]/60 text-white/90 font-mono uppercase tracking-[0.1em] text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm truncate">
+        <span className="bg-[#080808]/60 text-white/90 font-mono uppercase tracking-widest text-[10px] px-2 py-0.5 rounded-full backdrop-blur-xs truncate">
           {participant?.user_name ?? 'Guest'}{isLocal ? ' · YOU' : ''}
         </span>
         {participant?.tracks?.audio?.state === 'off' && (
@@ -199,10 +199,10 @@ const WaitingForParticipants: React.FC<{
   };
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center text-center bg-white/[0.02] border border-white/[0.06] rounded-xl">
+    <div className="relative w-full h-full flex flex-col items-center justify-center text-center bg-white/2 border border-white/6 rounded-xl">
       <div className="space-y-6 max-w-md px-8">
         <div className="space-y-2">
-          <p className="font-mono uppercase tracking-[0.1em] text-[11px] text-white/40">
+          <p className="font-mono uppercase tracking-widest text-[11px] text-white/40">
             WAITING FOR PARTICIPANTS
           </p>
           <p
@@ -215,7 +215,7 @@ const WaitingForParticipants: React.FC<{
 
         <p className="text-sm text-white/55">Share the link to invite someone.</p>
 
-        <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.10] rounded-xl px-3 py-2">
+        <div className="flex items-center gap-2 bg-white/4 border border-white/10 rounded-xl px-3 py-2">
           <span
             className="flex-1 font-mono text-[11px] text-white/55 truncate text-left"
             style={{ fontVariantNumeric: 'tabular-nums' }}
@@ -226,12 +226,12 @@ const WaitingForParticipants: React.FC<{
             type="button"
             onClick={copy}
             aria-label="Copy meeting link"
-            className="text-white/50 hover:text-rose-400 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded p-1"
+            className="text-white/50 hover:text-rose-400 transition-colors shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm p-1"
           >
             <Copy size={14} />
           </button>
           {copied && (
-            <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-rose-400">
+            <span className="font-mono uppercase tracking-widest text-[10px] text-rose-400">
               COPIED
             </span>
           )}
@@ -240,7 +240,7 @@ const WaitingForParticipants: React.FC<{
 
       {/* Self-preview corner-tile — only when camera is on */}
       {cameraOn && localId && (
-        <div className="absolute bottom-4 right-4 w-40 h-28 rounded-lg overflow-hidden border border-white/[0.10] shadow-lg">
+        <div className="absolute bottom-4 right-4 w-40 h-28 rounded-lg overflow-hidden border border-white/10 shadow-lg">
           <ParticipantTile sessionId={localId} isLocal />
         </div>
       )}
@@ -312,14 +312,14 @@ const DevicePickerPopover: React.FC<{
       ref={ref}
       role="menu"
       aria-label="Device settings"
-      className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-80 bg-white/[0.05] border border-white/[0.10] rounded-xl backdrop-blur-xl py-2 shadow-2xl z-30"
+      className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-80 bg-white/5 border border-white/10 rounded-xl backdrop-blur-xl py-2 shadow-2xl z-30"
     >
-      <div className="flex items-center justify-between px-3 pb-2 border-b border-white/[0.06]">
-        <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-white/55">DEVICES</span>
+      <div className="flex items-center justify-between px-3 pb-2 border-b border-white/6">
+        <span className="font-mono uppercase tracking-widest text-[10px] text-white/55">DEVICES</span>
         <ChevronDown size={12} className="text-white/30 rotate-180" aria-hidden="true" />
       </div>
 
-      <div className="px-3 pt-2 pb-1 font-mono uppercase tracking-[0.1em] text-[10px] text-white/35">MICROPHONE</div>
+      <div className="px-3 pt-2 pb-1 font-mono uppercase tracking-widest text-[10px] text-white/35">MICROPHONE</div>
       {audioInputs.length === 0 ? (
         <p className="px-3 py-1 text-xs text-white/40">No microphones detected</p>
       ) : (
@@ -330,7 +330,7 @@ const DevicePickerPopover: React.FC<{
             role="menuitemradio"
             aria-checked={currentAudioId === d.deviceId}
             onClick={() => selectAudio(d.deviceId)}
-            className={`w-full text-left px-3 py-1.5 text-xs hover:bg-white/[0.05] truncate transition-colors focus-visible:outline-none focus-visible:bg-white/[0.05] ${
+            className={`w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 truncate transition-colors focus-visible:outline-hidden focus-visible:bg-white/5 ${
               currentAudioId === d.deviceId ? 'text-rose-400' : 'text-white/80'
             }`}
           >
@@ -339,7 +339,7 @@ const DevicePickerPopover: React.FC<{
         ))
       )}
 
-      <div className="px-3 pt-3 pb-1 font-mono uppercase tracking-[0.1em] text-[10px] text-white/35 border-t border-white/[0.04] mt-1">CAMERA</div>
+      <div className="px-3 pt-3 pb-1 font-mono uppercase tracking-widest text-[10px] text-white/35 border-t border-white/4 mt-1">CAMERA</div>
       {videoInputs.length === 0 ? (
         <p className="px-3 py-1 text-xs text-white/40">No cameras detected</p>
       ) : (
@@ -350,7 +350,7 @@ const DevicePickerPopover: React.FC<{
             role="menuitemradio"
             aria-checked={currentVideoId === d.deviceId}
             onClick={() => selectVideo(d.deviceId)}
-            className={`w-full text-left px-3 py-1.5 text-xs hover:bg-white/[0.05] truncate transition-colors focus-visible:outline-none focus-visible:bg-white/[0.05] ${
+            className={`w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 truncate transition-colors focus-visible:outline-hidden focus-visible:bg-white/5 ${
               currentVideoId === d.deviceId ? 'text-rose-400' : 'text-white/80'
             }`}
           >
@@ -822,12 +822,12 @@ const MeetingRoom: React.FC<{
         {joinError ? (
           <div className="flex flex-col items-center gap-4 max-w-sm text-center">
             <AlertCircle size={28} className="text-rose-400" />
-            <p className="font-mono uppercase tracking-[0.1em] text-[11px] text-white/55">JOIN FAILED</p>
+            <p className="font-mono uppercase tracking-widest text-[11px] text-white/55">JOIN FAILED</p>
             <p className="text-sm text-white/70 leading-snug">{joinError}</p>
             <button
               type="button"
               onClick={() => onLeave()}
-              className="mt-2 bg-white/10 hover:bg-white/15 text-white px-4 py-2 rounded-xl transition-colors font-mono uppercase tracking-[0.1em] text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+              className="mt-2 bg-white/10 hover:bg-white/15 text-white px-4 py-2 rounded-xl transition-colors font-mono uppercase tracking-widest text-[11px] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
             >
               BACK
             </button>
@@ -835,7 +835,7 @@ const MeetingRoom: React.FC<{
         ) : (
           <div className="flex flex-col items-center gap-3">
             <Loader2 size={32} className="animate-spin motion-reduce:animate-none text-white/40" />
-            <p className="font-mono uppercase tracking-[0.1em] text-[11px] text-white/55">CONNECTING</p>
+            <p className="font-mono uppercase tracking-widest text-[11px] text-white/55">CONNECTING</p>
           </div>
         )}
       </div>
@@ -853,12 +853,12 @@ const MeetingRoom: React.FC<{
       )}
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-[#080808]/80 border-b border-white/10 backdrop-blur-sm">
+      <div className="flex items-center justify-between px-4 py-2.5 bg-[#080808]/80 border-b border-white/10 backdrop-blur-xs">
         <div className="flex items-center gap-3">
           <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse motion-reduce:animate-none" />
           <span className="font-semibold text-sm truncate max-w-xs">{meetingTitle}</span>
           {isRecording && (
-            <span className="flex items-center gap-1 bg-rose-500/15 text-rose-400 font-mono uppercase tracking-[0.1em] text-[10px] px-2 py-0.5 rounded-full border border-rose-500/30">
+            <span className="flex items-center gap-1 bg-rose-500/15 text-rose-400 font-mono uppercase tracking-widest text-[10px] px-2 py-0.5 rounded-full border border-rose-500/30">
               <Circle size={6} className="fill-rose-400" /> REC
             </span>
           )}
@@ -872,7 +872,7 @@ const MeetingRoom: React.FC<{
           >
             {formatTime(elapsed)}
           </span>
-          <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-white/40">
+          <span className="font-mono uppercase tracking-widest text-[10px] text-white/40">
             {allParticipants.length} {allParticipants.length === 1 ? 'PARTICIPANT' : 'PARTICIPANTS'}
           </span>
         </div>
@@ -906,10 +906,10 @@ const MeetingRoom: React.FC<{
 
         {/* Side panel */}
         {sidePanel !== 'none' && (
-          <div className="w-72 bg-white/[0.03] border-l border-white/[0.06] flex flex-col">
+          <div className="w-72 bg-white/3 border-l border-white/6 flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-              <span className="font-mono uppercase tracking-[0.1em] text-[11px] text-white/70">{sidePanel}</span>
-              <button type="button" aria-label="Close panel" onClick={() => setSidePanel('none')} className="text-white/40 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded">
+              <span className="font-mono uppercase tracking-widest text-[11px] text-white/70">{sidePanel}</span>
+              <button type="button" aria-label="Close panel" onClick={() => setSidePanel('none')} className="text-white/40 hover:text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm">
                 <X size={16} />
               </button>
             </div>
@@ -918,13 +918,13 @@ const MeetingRoom: React.FC<{
               <>
                 <div className="flex-1 overflow-y-auto p-3 space-y-3">
                   {chatMessages.length === 0 && (
-                    <p className="text-white/30 font-mono uppercase tracking-[0.1em] text-[10px] text-center pt-4">NO MESSAGES YET</p>
+                    <p className="text-white/30 font-mono uppercase tracking-widest text-[10px] text-center pt-4">NO MESSAGES YET</p>
                   )}
                   {chatMessages.map(msg => (
                     <div key={msg.id} className={`flex flex-col ${msg.isLocal ? 'items-end' : 'items-start'}`}>
-                      <span className="text-white/40 font-mono uppercase tracking-[0.1em] text-[10px] mb-0.5">{msg.sender}</span>
+                      <span className="text-white/40 font-mono uppercase tracking-widest text-[10px] mb-0.5">{msg.sender}</span>
                       <div className={`px-3 py-1.5 rounded-xl text-sm max-w-[90%] ${
-                        msg.isLocal ? 'bg-white/[0.08] text-white' : 'bg-white/[0.04] text-white/90'
+                        msg.isLocal ? 'bg-white/8 text-white' : 'bg-white/4 text-white/90'
                       }`}>
                         {msg.text}
                       </div>
@@ -938,7 +938,7 @@ const MeetingRoom: React.FC<{
                       onChange={e => setChatInput(e.target.value)}
                       placeholder="Message"
                       aria-label="Chat message"
-                      className="flex-1 bg-white/10 text-white text-sm px-3 py-1.5 rounded-lg outline-none placeholder:text-white/30 focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                      className="flex-1 bg-white/10 text-white text-sm px-3 py-1.5 rounded-lg outline-hidden placeholder:text-white/30 focus-visible:ring-2 focus-visible:ring-rose-500/40"
                     />
                     <button type="submit" className="bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
                       Send
@@ -965,7 +965,7 @@ const MeetingRoom: React.FC<{
       {/* ── Live transcript ─────────────────────────────────────────────────── */}
       {transcriptEnabled && (
         <div
-          className="px-4 pt-2 pb-2 max-h-28 overflow-y-auto border-t border-white/[0.04]"
+          className="px-4 pt-2 pb-2 max-h-28 overflow-y-auto border-t border-white/4"
           aria-live="polite"
           aria-label="Live transcript"
         >
@@ -973,13 +973,13 @@ const MeetingRoom: React.FC<{
             <AIProvenanceChip vendor="DEEPGRAM" type="LIVE" fresh={transcriptLines.length > 0} />
           </div>
           {transcriptLines.length === 0 ? (
-            <p className="font-mono uppercase tracking-[0.1em] text-[10px] text-white/30">
+            <p className="font-mono uppercase tracking-widest text-[10px] text-white/30">
               LISTENING
             </p>
           ) : (
             transcriptLines.slice(-3).map((line, i) => (
               <p key={i} className={`text-xs leading-snug ${line.isFinal ? 'text-white/70' : 'text-white/40 italic'}`}>
-                <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-rose-400">{line.speaker}</span>{' '}
+                <span className="font-mono uppercase tracking-widest text-[10px] text-rose-400">{line.speaker}</span>{' '}
                 <span className="font-sans">{line.text}</span>
               </p>
             ))
@@ -991,9 +991,9 @@ const MeetingRoom: React.FC<{
            Three tiers: primary (Mic, Camera) elevated in a tinted group;
            secondary (Share, Record, Transcribe) flat; tertiary (Chat,
            People) icon-only. Leave isolated on the far right. */}
-      <div className="flex items-center justify-center gap-3 px-6 py-3 bg-white/[0.03] border-t border-white/[0.06]">
+      <div className="flex items-center justify-center gap-3 px-6 py-3 bg-white/3 border-t border-white/6">
         {/* Primary — elevated group */}
-        <div className="flex items-center gap-1 bg-white/[0.04] rounded-xl p-1">
+        <div className="flex items-center gap-1 bg-white/4 rounded-xl p-1">
           <ControlButton
             active={micOn}
             onClick={toggleMic}
@@ -1014,7 +1014,7 @@ const MeetingRoom: React.FC<{
           />
         </div>
 
-        <div className="h-7 w-px bg-white/[0.08]" aria-hidden="true" />
+        <div className="h-7 w-px bg-white/8" aria-hidden="true" />
 
         {/* Secondary — flat group (with device picker anchored above the Devices button) */}
         <div className="relative flex items-center gap-1">
@@ -1066,7 +1066,7 @@ const MeetingRoom: React.FC<{
           )}
         </div>
 
-        <div className="h-7 w-px bg-white/[0.08]" aria-hidden="true" />
+        <div className="h-7 w-px bg-white/8" aria-hidden="true" />
 
         {/* Tertiary — icon-only */}
         <div className="flex items-center gap-1">
@@ -1095,10 +1095,10 @@ const MeetingRoom: React.FC<{
           type="button"
           onClick={() => setShowEndConfirm(true)}
           aria-label="Leave meeting"
-          className="flex flex-col items-center gap-1 bg-rose-500 hover:bg-rose-600 text-white px-5 py-2.5 rounded-xl transition-colors ml-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+          className="flex flex-col items-center gap-1 bg-rose-500 hover:bg-rose-600 text-white px-5 py-2.5 rounded-xl transition-colors ml-3 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
         >
           <PhoneOff size={18} />
-          <span className="font-mono uppercase tracking-[0.1em] text-[10px]">LEAVE</span>
+          <span className="font-mono uppercase tracking-widest text-[10px]">LEAVE</span>
         </button>
       </div>
 
@@ -1116,15 +1116,15 @@ const MeetingRoom: React.FC<{
 
       {/* ── End call confirmation ────────────────────────────────────────────── */}
       {showEndConfirm && (
-        <div className="absolute inset-0 bg-[#080808]/70 flex items-center justify-center z-50 backdrop-blur-sm">
-          <div className="bg-white/[0.04] border border-white/[0.10] rounded-2xl p-6 w-80 text-center space-y-4 backdrop-blur-xl">
+        <div className="absolute inset-0 bg-[#080808]/70 flex items-center justify-center z-50 backdrop-blur-xs">
+          <div className="bg-white/4 border border-white/10 rounded-2xl p-6 w-80 text-center space-y-4 backdrop-blur-xl">
             {isSummarizing ? (
               <>
                 <Loader2 size={28} className="animate-spin motion-reduce:animate-none text-white/50 mx-auto" />
                 <div className="flex justify-center">
                   <AIProvenanceChip vendor="GEMINI" type="SUMMARY" fresh />
                 </div>
-                <p className="text-white font-mono uppercase tracking-[0.1em] text-[11px]">GENERATING</p>
+                <p className="text-white font-mono uppercase tracking-widest text-[11px]">GENERATING</p>
               </>
             ) : (
               <>
@@ -1140,14 +1140,14 @@ const MeetingRoom: React.FC<{
                   <button
                     type="button"
                     onClick={() => setShowEndConfirm(false)}
-                    className="flex-1 bg-white/10 hover:bg-white/20 text-white py-2 rounded-xl transition-colors font-mono uppercase tracking-[0.1em] text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                    className="flex-1 bg-white/10 hover:bg-white/20 text-white py-2 rounded-xl transition-colors font-mono uppercase tracking-widest text-[11px] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                   >
                     STAY
                   </button>
                   <button
                     type="button"
                     onClick={handleLeave}
-                    className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-2 rounded-xl transition-colors font-mono uppercase tracking-[0.1em] text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                    className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-2 rounded-xl transition-colors font-mono uppercase tracking-widest text-[11px] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                   >
                     LEAVE
                   </button>
@@ -1179,10 +1179,10 @@ const BreakoutBanner: React.FC<{ endsAt: number | null; broadcast: string | null
 
   return (
     <div
-      className={`flex items-center justify-center gap-3 px-4 py-2 text-[11px] font-mono uppercase tracking-[0.1em] border-b ${
+      className={`flex items-center justify-center gap-3 px-4 py-2 text-[11px] font-mono uppercase tracking-widest border-b ${
         ending
           ? 'bg-rose-500/20 text-rose-200 border-rose-500/30'
-          : 'bg-white/[0.06] text-white/70 border-white/10'
+          : 'bg-white/6 text-white/70 border-white/10'
       }`}
       role="status"
       aria-live="polite"
@@ -1223,7 +1223,7 @@ const ParticipantRow: React.FC<{ sessionId: string; isLocal: boolean }> = ({ ses
       </div>
       <span className="flex-1 text-sm text-white/90 truncate">
         {name}
-        {isLocal && <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-white/40 ml-1.5">YOU</span>}
+        {isLocal && <span className="font-mono uppercase tracking-widest text-[10px] text-white/40 ml-1.5">YOU</span>}
       </span>
       {isMuted && <MicOff size={12} className="text-rose-400 shrink-0" aria-label="Muted" />}
       {isVideoOff && <VideoOff size={12} className="text-white/30 shrink-0" aria-label="Camera off" />}
@@ -1252,17 +1252,17 @@ const ControlButton: React.FC<{
     aria-keyshortcuts={shortcut}
     title={shortcut ? `${label} · ${shortcut}` : (iconOnly ? label : undefined)}
     onClick={onClick}
-    className={`flex flex-col items-center gap-1 ${iconOnly ? 'px-2.5 py-2' : 'px-3 py-2'} rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
+    className={`flex flex-col items-center gap-1 ${iconOnly ? 'px-2.5 py-2' : 'px-3 py-2'} rounded-xl transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
       danger
         ? 'bg-rose-500/15 text-rose-400 hover:bg-rose-500/25'
         : highlight
         ? 'bg-white/10 text-rose-400 hover:bg-white/15'
-        : 'bg-white/[0.06] text-white/80 hover:bg-white/[0.12]'
+        : 'bg-white/6 text-white/80 hover:bg-white/12'
     }`}
   >
     {active ? activeIcon : inactiveIcon}
     {!iconOnly && (
-      <span className="font-mono uppercase tracking-[0.1em] text-[10px]">{label}</span>
+      <span className="font-mono uppercase tracking-widest text-[10px]">{label}</span>
     )}
   </button>
 );
@@ -1287,14 +1287,14 @@ const Lobby: React.FC<{
     <div className="flex items-center justify-center h-full bg-[#080808] text-white">
       <div className="w-full max-w-sm space-y-6 p-8">
         <div className="text-center space-y-3">
-          <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center mx-auto mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-white/4 border border-white/10 flex items-center justify-center mx-auto mb-4">
             <Video size={24} className="text-rose-400" />
           </div>
-          <p className="font-mono uppercase tracking-[0.1em] text-[10px] text-white/40">PULSE MEETING</p>
+          <p className="font-mono uppercase tracking-widest text-[10px] text-white/40">PULSE MEETING</p>
           <h2 className="text-xl font-semibold">{meetingTitle}</h2>
         </div>
 
-        <div className="flex items-center gap-2 bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2">
+        <div className="flex items-center gap-2 bg-white/4 border border-white/10 rounded-xl px-3 py-2">
           <span className="flex-1 font-mono text-[11px] text-white/55 truncate" style={{ fontVariantNumeric: 'tabular-nums' }}>
             {window.location.origin}/meet/{roomUrl.split('/').pop()}
           </span>
@@ -1302,12 +1302,12 @@ const Lobby: React.FC<{
             type="button"
             aria-label="Copy meeting link"
             onClick={copyLink}
-            className="text-white/40 hover:text-rose-400 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+            className="text-white/40 hover:text-rose-400 transition-colors shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
           >
             <Copy size={14} />
           </button>
           {copied && (
-            <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-rose-400">COPIED</span>
+            <span className="font-mono uppercase tracking-widest text-[10px] text-rose-400">COPIED</span>
           )}
         </div>
 
@@ -1315,14 +1315,14 @@ const Lobby: React.FC<{
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 bg-white/10 hover:bg-white/15 text-white py-3 rounded-xl transition-colors font-mono uppercase tracking-[0.1em] text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+            className="flex-1 bg-white/10 hover:bg-white/15 text-white py-3 rounded-xl transition-colors font-mono uppercase tracking-widest text-[11px] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
           >
             CANCEL
           </button>
           <button
             type="button"
             onClick={onJoin}
-            className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-3 rounded-xl transition-colors font-mono uppercase tracking-[0.1em] text-[11px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+            className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-3 rounded-xl transition-colors font-mono uppercase tracking-widest text-[11px] font-semibold focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
           >
             JOIN NOW
           </button>
@@ -1380,7 +1380,7 @@ const PulseVideoRoom: React.FC<PulseVideoRoomProps> = ({
     return (
       <div className="flex flex-col items-center justify-center h-full bg-[#080808] text-white gap-3">
         <Loader2 size={28} className="animate-spin motion-reduce:animate-none text-white/40" />
-        <p className="font-mono uppercase tracking-[0.1em] text-[10px] text-white/40">JOINING</p>
+        <p className="font-mono uppercase tracking-widest text-[10px] text-white/40">JOINING</p>
       </div>
     );
   }

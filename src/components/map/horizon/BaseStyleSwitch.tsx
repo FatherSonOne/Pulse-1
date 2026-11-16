@@ -33,7 +33,7 @@ export const BaseStyleSwitch: React.FC<BaseStyleSwitchProps> = ({
   onDensityChange,
 }) => {
   const btnClass = (active: boolean) =>
-    `flex items-center gap-1 px-2 py-1 rounded text-[10px] tracking-[0.1em] uppercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+    `flex items-center gap-1 px-2 py-1 rounded text-[10px] tracking-widest uppercase transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-1 ${
       isDarkMode ? 'focus-visible:ring-zinc-400' : 'focus-visible:ring-zinc-500'
     } ${
       active
@@ -47,7 +47,7 @@ export const BaseStyleSwitch: React.FC<BaseStyleSwitchProps> = ({
 
   return (
     <div
-      className={`absolute bottom-20 right-4 z-10 flex items-center gap-1 rounded-lg p-0.5 shadow-md backdrop-blur-sm ${
+      className={`absolute bottom-20 right-4 z-10 flex items-center gap-1 rounded-lg p-0.5 shadow-md backdrop-blur-xs ${
         isDarkMode ? 'bg-zinc-900/85 border border-white/10' : 'bg-white/90 border border-gray-200'
       }`}
       style={{ fontFamily: "'JetBrains Mono', monospace" }}

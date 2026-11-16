@@ -111,7 +111,7 @@ export const ReconnectGoogleModal: React.FC<ReconnectGoogleModalProps> = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs"
         onClick={onClose}
         onKeyDown={handleKeyDown}
       >
@@ -166,7 +166,7 @@ export const ReconnectGoogleModal: React.FC<ReconnectGoogleModalProps> = ({
                 }}
               >
                 <ShieldAlert
-                  className="w-4 h-4 mt-0.5 flex-shrink-0"
+                  className="w-4 h-4 mt-0.5 shrink-0"
                   style={{ color: 'var(--pulse-tone-warning)' }}
                   aria-hidden="true"
                 />
@@ -185,7 +185,7 @@ export const ReconnectGoogleModal: React.FC<ReconnectGoogleModalProps> = ({
               style={{ background: 'var(--pulse-canvas)' }}
             >
               <div
-                className="text-[11px] uppercase tracking-[0.1em] mb-1"
+                className="text-[11px] uppercase tracking-widest mb-1"
                 style={{ color: 'var(--pulse-ink-3)', fontFamily: monoFont, fontWeight: 600 }}
               >
                 {t('contacts.reconnectModal.why_label')}

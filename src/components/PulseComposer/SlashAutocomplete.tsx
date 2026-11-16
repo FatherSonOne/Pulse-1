@@ -66,7 +66,7 @@ export const SlashAutocomplete: React.FC<SlashAutocompleteProps> = ({
     <div
       ref={containerRef}
       className={[
-        'rounded-xl shadow-2xl backdrop-blur animate-fade-in overflow-hidden',
+        'rounded-xl shadow-2xl backdrop-blur-sm animate-fade-in overflow-hidden',
         isMobile ? 'w-full' : 'w-[320px]',
         isDarkMode
           ? 'bg-zinc-900/95 border border-white/10 text-zinc-100'
@@ -117,7 +117,7 @@ export const SlashAutocomplete: React.FC<SlashAutocompleteProps> = ({
                 <span
                   aria-hidden="true"
                   className={[
-                    'inline-block w-1 self-stretch rounded',
+                    'inline-block w-1 self-stretch rounded-sm',
                     isActive
                       ? isDarkMode
                         ? 'bg-white/30'

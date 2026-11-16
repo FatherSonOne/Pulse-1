@@ -156,7 +156,7 @@ const MapPreview: React.FC<MapPreviewProps> = ({
               type="button"
               onClick={onOpenInMap}
               aria-label="Open in Map"
-              className="flex-shrink-0 inline-flex items-center gap-1 text-[11px] font-medium text-rose-500 hover:text-rose-600 transition-colors"
+              className="shrink-0 inline-flex items-center gap-1 text-[11px] font-medium text-rose-500 hover:text-rose-600 transition-colors"
             >
               Map
               <ExternalLink size={10} />

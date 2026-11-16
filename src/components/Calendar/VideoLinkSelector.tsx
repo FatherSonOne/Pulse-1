@@ -136,10 +136,10 @@ export const VideoLinkSelector: React.FC<VideoLinkSelectorProps> = ({
             key={p.id}
             type="button"
             onClick={() => { void generate(p.id); }}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-rose) ${
               selected === p.id
-                ? 'bg-[var(--pulse-rose)] border-[var(--pulse-rose)] text-white'
-                : 'bg-[var(--pulse-canvas-soft)] dark:bg-[var(--pulse-surface)] border-[var(--pulse-border-strong)] text-[var(--pulse-ink-2)] hover:border-[var(--pulse-rose-soft)] hover:text-[var(--pulse-rose)]'
+                ? 'bg-(--pulse-rose) border-(--pulse-rose) text-white'
+                : 'bg-(--pulse-canvas-soft) dark:bg-(--pulse-surface) border-(--pulse-border-strong) text-(--pulse-ink-2) hover:border-(--pulse-rose-soft) hover:text-(--pulse-rose)'
             }`}
           >
             {p.icon}
@@ -158,19 +158,19 @@ export const VideoLinkSelector: React.FC<VideoLinkSelectorProps> = ({
             </div>
           ) : result?.needsSetup ? (
             <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-              <ExternalLink className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+              <ExternalLink className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
               <div>
                 <p className="text-xs text-amber-700 dark:text-amber-400">{result.setupPrompt}</p>
               </div>
             </div>
           ) : result?.url ? (
-            <div className="flex items-center gap-2 p-2.5 bg-[var(--pulse-canvas-soft)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg">
-              <span className="flex-1 text-xs text-[var(--pulse-ink-2)] font-mono truncate">{result.url}</span>
+            <div className="flex items-center gap-2 p-2.5 bg-(--pulse-canvas-soft) dark:bg-(--pulse-surface) border border-(--pulse-border) rounded-lg">
+              <span className="flex-1 text-xs text-(--pulse-ink-2) font-mono truncate">{result.url}</span>
               <button
                 type="button"
                 onClick={handleCopy}
                 title="Copy link"
-                className="flex-shrink-0 p-1.5 text-zinc-400 hover:text-[var(--pulse-rose)] transition rounded"
+                className="shrink-0 p-1.5 text-zinc-400 hover:text-(--pulse-rose) transition rounded-sm"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
@@ -178,7 +178,7 @@ export const VideoLinkSelector: React.FC<VideoLinkSelectorProps> = ({
                 type="button"
                 onClick={() => { void generate(selected); }}
                 title="Regenerate"
-                className="flex-shrink-0 p-1.5 text-zinc-400 hover:text-[var(--pulse-rose)] transition rounded"
+                className="shrink-0 p-1.5 text-zinc-400 hover:text-(--pulse-rose) transition rounded-sm"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
               </button>

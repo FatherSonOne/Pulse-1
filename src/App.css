@@ -3,10 +3,13 @@
    CMF Nothing Brand Design System
    ============================================ */
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* Tailwind v4: keep the reset in the base layer (see index.css). */
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
 }
 
 /* ============================================

@@ -682,14 +682,14 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
             type="button"
             onClick={() => setCopilotOpen(true)}
             aria-label="Open Pulse AI co-pilot"
-            className="fixed right-4 bottom-[calc(1.25rem+var(--pulse-bottom-bar))] z-[60] w-12 h-12 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+            className="fixed right-4 bottom-[calc(1.25rem+var(--pulse-bottom-bar))] z-60 w-12 h-12 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform"
             style={{ background: 'var(--pulse-rose)', color: '#fff' }}
           >
             <Sparkles className="w-5 h-5" />
           </button>
           {copilotOpen && (
-            <div className="fixed inset-0 z-[80] flex justify-end" role="dialog" aria-modal="true" aria-label="Pulse AI co-pilot">
-              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setCopilotOpen(false)} aria-hidden="true" />
+            <div className="fixed inset-0 z-80 flex justify-end" role="dialog" aria-modal="true" aria-label="Pulse AI co-pilot">
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-xs" onClick={() => setCopilotOpen(false)} aria-hidden="true" />
               <div
                 className="relative w-[88%] max-w-sm h-full flex flex-col border-l p-4 overflow-hidden"
                 style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}
@@ -751,7 +751,7 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
           tile opens FindTeammatesSheet. */}
       {showAddChooser && (
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+          className="fixed inset-0 z-70 flex items-center justify-center p-4"
           style={{ background: 'rgba(0, 0, 0, 0.70)', backdropFilter: 'blur(8px)' }}
           onClick={() => setShowAddChooser(false)}
           role="presentation"
@@ -788,7 +788,7 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
                 style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}
               >
                 <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                   style={{ background: 'var(--pulse-tone-info-soft)' }}
                 >
                   <UserSearch className="w-4 h-4" style={{ color: 'var(--pulse-tone-info)' }} aria-hidden="true" />
@@ -810,7 +810,7 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
                 style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}
               >
                 <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                   style={{ background: 'var(--pulse-rose-soft)' }}
                 >
                   <Users className="w-4 h-4" style={{ color: 'var(--pulse-rose)' }} aria-hidden="true" />
@@ -832,7 +832,7 @@ export const ContactsHybridPeople: React.FC<ContactsHybridPeopleProps> = ({
                 style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)' }}
               >
                 <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                   style={{ background: 'var(--pulse-tone-neutral-soft)' }}
                 >
                   <UserPlus className="w-4 h-4" style={{ color: 'var(--pulse-tone-neutral)' }} aria-hidden="true" />

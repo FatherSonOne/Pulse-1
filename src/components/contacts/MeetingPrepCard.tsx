@@ -43,7 +43,7 @@ export const MeetingPrepCardComponent: React.FC<MeetingPrepCardProps> = ({
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div
-          className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+          className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
             isUrgent
               ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400'
               : 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400'
@@ -75,7 +75,7 @@ export const MeetingPrepCardComponent: React.FC<MeetingPrepCardProps> = ({
     <div
       className={`rounded-xl border overflow-hidden ${
         isUrgent
-          ? 'bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/10 dark:to-amber-900/10 border-orange-200 dark:border-orange-900/30'
+          ? 'bg-linear-to-br from-orange-50 to-amber-50 dark:from-orange-900/10 dark:to-amber-900/10 border-orange-200 dark:border-orange-900/30'
           : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
       }`}
     >
@@ -84,7 +84,7 @@ export const MeetingPrepCardComponent: React.FC<MeetingPrepCardProps> = ({
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3">
             <div
-              className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+              className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
                 isUrgent
                   ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400'
                   : 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400'
@@ -337,8 +337,8 @@ export const MeetingPrepBanner: React.FC<MeetingPrepBannerProps> = ({
     <div
       className={`p-3 rounded-lg flex items-center gap-3 cursor-pointer transition ${
         isUrgent
-          ? 'bg-gradient-to-r from-orange-100 to-amber-100 dark:from-orange-900/20 dark:to-amber-900/20 hover:from-orange-200 hover:to-amber-200'
-          : 'bg-gradient-to-r from-rose-100 to-rose-100 dark:from-rose-900/20 dark:to-rose-900/20 hover:from-rose-200 hover:to-rose-200'
+          ? 'bg-linear-to-r from-orange-100 to-amber-100 dark:from-orange-900/20 dark:to-amber-900/20 hover:from-orange-200 hover:to-amber-200'
+          : 'bg-linear-to-r from-rose-100 to-rose-100 dark:from-rose-900/20 dark:to-rose-900/20 hover:from-rose-200 hover:to-rose-200'
       }`}
       onClick={() => onViewCard(nextMeeting)}
     >

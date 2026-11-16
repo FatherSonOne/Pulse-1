@@ -178,7 +178,7 @@ export const AIModelPreferencesCard: React.FC = () => {
               }`}
             >
               <div
-                className={`flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center ${
+                className={`shrink-0 w-8 h-8 rounded-md flex items-center justify-center ${
                   selected
                     ? 'bg-rose-500 text-white'
                     : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'
@@ -229,13 +229,13 @@ export const AIModelPreferencesCard: React.FC = () => {
           {AI_MODEL_CATALOG.map((m) => (
             <div
               key={m.id}
-              className="flex items-center justify-between gap-2 px-2 py-1.5 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800 rounded text-xs"
+              className="flex items-center justify-between gap-2 px-2 py-1.5 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800 rounded-sm text-xs"
             >
               <div className="min-w-0">
                 <span className="font-medium text-zinc-900 dark:text-white">{m.label}</span>
                 <span className="text-zinc-400 dark:text-zinc-500 ml-2">{m.tagline}</span>
               </div>
-              <span className="text-[10px] text-zinc-500 uppercase tracking-wider flex-shrink-0">
+              <span className="text-[10px] text-zinc-500 uppercase tracking-wider shrink-0">
                 {m.tier}
               </span>
             </div>

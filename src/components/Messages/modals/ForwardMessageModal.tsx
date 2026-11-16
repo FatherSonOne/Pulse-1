@@ -53,7 +53,7 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+        className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
         onClick={onClose}
       >
         <motion.div
@@ -71,12 +71,12 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
           {/* Header */}
           <div className="p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-between items-center">
             <h3 className="font-bold dark:text-white flex items-center gap-2">
-              <Share className="text-[var(--pulse-rose)]" />
+              <Share className="text-(--pulse-rose)" />
               Forward Message
             </h3>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg hover:bg-[var(--pulse-surface-raised)] flex items-center justify-center transition"
+              className="w-8 h-8 rounded-lg hover:bg-(--pulse-surface-raised) flex items-center justify-center transition"
             >
               <X className="text-zinc-500" />
             </button>
@@ -100,14 +100,14 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
                   <button
                     key={thread.id}
                     onClick={() => onForward(thread.id)}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-[var(--pulse-surface-raised)] transition group"
+                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-(--pulse-surface-raised) transition group"
                   >
                     <div
                       className={`w-9 h-9 rounded-full ${thread.avatarColor} flex items-center justify-center text-white text-sm font-bold`}
                     >
                       {thread.contactName.charAt(0)}
                     </div>
-                    <span className="text-sm dark:text-white font-medium group-hover:text-[var(--pulse-rose-deep)] dark:group-hover:text-[var(--pulse-rose-bright)] transition">
+                    <span className="text-sm dark:text-white font-medium group-hover:text-(--pulse-rose-deep) dark:group-hover:text-(--pulse-rose-bright) transition">
                       {thread.contactName}
                     </span>
                     <ChevronRight className="text-xs text-zinc-400 ml-auto opacity-0 group-hover:opacity-100 transition" />

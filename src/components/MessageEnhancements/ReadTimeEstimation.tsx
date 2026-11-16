@@ -191,10 +191,10 @@ export const ReadTimeEstimation: React.FC<ReadTimeEstimationProps> = ({
   return (
     <div className="space-y-4">
       {/* Stats Overview */}
-      <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+      <div className="bg-linear-to-r from-blue-500/10 to-indigo-500/10 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-xs">
               <Hourglass className="text-blue-500" />
             </div>
             <div>
@@ -261,7 +261,7 @@ export const ReadTimeEstimation: React.FC<ReadTimeEstimationProps> = ({
                 type="checkbox"
                 checked={preferences.includeImages}
                 onChange={(e) => updatePreference('includeImages', e.target.checked)}
-                className="rounded text-blue-500"
+                className="rounded-sm text-blue-500"
               />
               <span className="text-sm text-zinc-700 dark:text-zinc-300">Include image viewing time</span>
             </div>
@@ -271,7 +271,7 @@ export const ReadTimeEstimation: React.FC<ReadTimeEstimationProps> = ({
                   type="number"
                   value={preferences.imageViewTime}
                   onChange={(e) => updatePreference('imageViewTime', Number(e.target.value))}
-                  className="w-14 px-2 py-1 text-xs rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                  className="w-14 px-2 py-1 text-xs rounded-sm border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
                 />
                 <span className="text-xs text-zinc-500">sec</span>
               </div>
@@ -285,7 +285,7 @@ export const ReadTimeEstimation: React.FC<ReadTimeEstimationProps> = ({
                 type="checkbox"
                 checked={preferences.includeDocuments}
                 onChange={(e) => updatePreference('includeDocuments', e.target.checked)}
-                className="rounded text-blue-500"
+                className="rounded-sm text-blue-500"
               />
               <span className="text-sm text-zinc-700 dark:text-zinc-300">Include document reading time</span>
             </div>
@@ -295,7 +295,7 @@ export const ReadTimeEstimation: React.FC<ReadTimeEstimationProps> = ({
                   type="number"
                   value={preferences.documentPageTime}
                   onChange={(e) => updatePreference('documentPageTime', Number(e.target.value))}
-                  className="w-14 px-2 py-1 text-xs rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                  className="w-14 px-2 py-1 text-xs rounded-sm border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
                 />
                 <span className="text-xs text-zinc-500">sec/pg</span>
               </div>
@@ -357,7 +357,7 @@ export const ReadTimeEstimation: React.FC<ReadTimeEstimationProps> = ({
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">
+                  <div className="w-8 h-8 rounded-full bg-linear-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">
                     {msg.sender.charAt(0)}
                   </div>
                   <div>
@@ -383,7 +383,7 @@ export const ReadTimeEstimation: React.FC<ReadTimeEstimationProps> = ({
                   </span>
                   <button
                     onClick={() => handleMarkAsRead(msg.id)}
-                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700 transition"
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded-sm hover:bg-zinc-100 dark:hover:bg-zinc-700 transition"
                     title="Mark as read"
                   >
                     <Check className="text-zinc-400 text-xs" />
@@ -442,7 +442,7 @@ export const ReadTimeBadge: React.FC<ReadTimeBadgeProps> = ({ seconds, showLabel
   };
 
   return (
-    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium ${getColor()}`}>
+    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-xs font-medium ${getColor()}`}>
       <Clock className="text-[10px]" />
       {showLabel && <span>{formatTime(seconds)} read</span>}
       {!showLabel && <span>{formatTime(seconds)}</span>}

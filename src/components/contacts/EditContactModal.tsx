@@ -94,10 +94,10 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
 
   return (
     <>
-    <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+    <div className="fixed inset-0 z-70 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
       <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 animate-scale-in max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center flex-shrink-0">
+        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center shrink-0">
           <h3 className="font-bold dark:text-white flex items-center gap-2">
             <UserPen className="text-blue-500" /> Edit Contact
           </h3>
@@ -135,7 +135,7 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
                 value={form.name}
                 onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="John Doe"
-                className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-hidden transition"
               />
             </div>
             <div className="col-span-2">
@@ -147,7 +147,7 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
                 value={form.email}
                 onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
                 placeholder="john@example.com"
-                className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-hidden transition"
               />
             </div>
             <div>
@@ -157,7 +157,7 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
                 value={form.phone}
                 onChange={(e) => setForm(prev => ({ ...prev, phone: e.target.value }))}
                 placeholder="+1 555..."
-                className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-hidden transition"
               />
             </div>
             <div>
@@ -167,7 +167,7 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
                 value={form.role}
                 onChange={(e) => setForm(prev => ({ ...prev, role: e.target.value }))}
                 placeholder="Manager"
-                className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-hidden transition"
               />
             </div>
             <div className="col-span-2">
@@ -177,7 +177,7 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
                 value={form.company}
                 onChange={(e) => setForm(prev => ({ ...prev, company: e.target.value }))}
                 placeholder="Acme Inc"
-                className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-hidden transition"
               />
             </div>
 
@@ -212,7 +212,7 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
                   <button
                     key={group}
                     onClick={() => handleAddGroup(group)}
-                    className="px-2 py-0.5 text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+                    className="px-2 py-0.5 text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-sm hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
                   >
                     + {group}
                   </button>
@@ -227,7 +227,7 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
                 onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
                 placeholder="Notes..."
                 rows={3}
-                className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition resize-none"
+                className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-hidden transition resize-none"
               />
             </div>
           </div>
@@ -266,7 +266,7 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex justify-between gap-3 flex-shrink-0">
+        <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex justify-between gap-3 shrink-0">
           <button
             onClick={onClose}
             className="px-4 py-2 rounded-lg text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"

@@ -218,9 +218,9 @@ export const TranslationHub: React.FC<TranslationHubProps> = ({
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="bg-gradient-to-r from-sky-500/10 to-blue-500/10 dark:from-sky-900/20 dark:to-blue-900/20 rounded-xl p-4 border border-sky-200 dark:border-sky-800">
+      <div className="bg-linear-to-r from-sky-500/10 to-blue-500/10 dark:from-sky-900/20 dark:to-blue-900/20 rounded-xl p-4 border border-sky-200 dark:border-sky-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-sm">
+          <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-xs">
             <Languages className="text-sky-500 text-lg" />
           </div>
           <div>
@@ -243,7 +243,7 @@ export const TranslationHub: React.FC<TranslationHubProps> = ({
             onClick={() => setActiveTab(tab.id)}
             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition ${
               activeTab === tab.id
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
@@ -305,7 +305,7 @@ export const TranslationHub: React.FC<TranslationHubProps> = ({
               {sourceText && (
                 <button
                   onClick={() => setSourceText('')}
-                  className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded"
+                  className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-sm"
                 >
                   <X className="text-zinc-400 text-xs" />
                 </button>
@@ -341,7 +341,7 @@ export const TranslationHub: React.FC<TranslationHubProps> = ({
                 </span>
                 <button
                   onClick={() => navigator.clipboard.writeText(translatedText)}
-                  className="p-1 hover:bg-sky-100 dark:hover:bg-sky-900/30 rounded"
+                  className="p-1 hover:bg-sky-100 dark:hover:bg-sky-900/30 rounded-sm"
                 >
                   <Copy className="text-sky-500 text-xs" />
                 </button>
@@ -371,7 +371,7 @@ export const TranslationHub: React.FC<TranslationHubProps> = ({
                     <ArrowRight className="text-[10px]" />
                     <span>{getLanguage(entry.targetLanguage)?.flag}</span>
                     {entry.isAutoDetected && (
-                      <span className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-700 rounded text-[10px]">
+                      <span className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-700 rounded-sm text-[10px]">
                         Auto
                       </span>
                     )}
@@ -425,7 +425,7 @@ export const TranslationHub: React.FC<TranslationHubProps> = ({
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-white text-xs font-bold">
+                    <div className="w-8 h-8 rounded-full bg-linear-to-br from-sky-400 to-blue-500 flex items-center justify-center text-white text-xs font-bold">
                       {pref.contactName.charAt(0)}
                     </div>
                     <div>
@@ -438,7 +438,7 @@ export const TranslationHub: React.FC<TranslationHubProps> = ({
                   <select
                     value={pref.preferredLanguage}
                     onChange={(e) => updateContactPreference(pref.contactId, e.target.value)}
-                    className="px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs"
+                    className="px-2 py-1 rounded-sm border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs"
                   >
                     {LANGUAGES.map(lang => (
                       <option key={lang.code} value={lang.code}>
@@ -509,7 +509,7 @@ export const TranslationHub: React.FC<TranslationHubProps> = ({
                 onClick={() => updateSetting(setting.key, !settings[setting.key])}
                 className={`w-10 h-5 rounded-full transition-colors ${settings[setting.key] ? 'bg-sky-500' : 'bg-zinc-300 dark:bg-zinc-600'}`}
               >
-                <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform ${settings[setting.key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${settings[setting.key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
               </button>
             </div>
           ))}
@@ -549,7 +549,7 @@ export const TranslateButton: React.FC<TranslateButtonProps> = ({ text, onTransl
     <button
       onClick={handleTranslate}
       disabled={isTranslating}
-      className="inline-flex items-center gap-1 px-2 py-1 text-xs text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded transition"
+      className="inline-flex items-center gap-1 px-2 py-1 text-xs text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-sm transition"
     >
       {isTranslating ? (
         <Loader2 className="animate-spin" />

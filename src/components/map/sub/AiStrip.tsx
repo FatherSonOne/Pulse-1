@@ -106,8 +106,8 @@ export const AiStrip: React.FC<AiStripProps> = ({
     ? 'flex flex-col gap-1.5 p-3'
     : `flex items-center gap-3 px-3 py-2 ${
         isDarkMode
-          ? 'bg-gradient-to-r from-rose-500/10 via-rose-500/5 to-transparent'
-          : 'bg-gradient-to-r from-rose-50 via-rose-50/40 to-transparent'
+          ? 'bg-linear-to-r from-rose-500/10 via-rose-500/5 to-transparent'
+          : 'bg-linear-to-r from-rose-50 via-rose-50/40 to-transparent'
       }`;
   // In 'card' this is the floating card SHELL (rounded coral panel); in 'band' it
   // is the bottom rule. (Single-div branches combine stripCls + this; two-div
@@ -121,7 +121,7 @@ export const AiStrip: React.FC<AiStripProps> = ({
   // body: wraps full-width in the card; flex-1 + truncate in the band.
   const bodyBase = isCard ? 'text-[13px] leading-snug' : 'text-xs flex-1 truncate';
   // actions: own row in the card; inline (no shrink) in the band.
-  const actionsCls = isCard ? 'flex items-center gap-2 mt-1 flex-wrap' : 'flex items-center gap-1 flex-shrink-0';
+  const actionsCls = isCard ? 'flex items-center gap-2 mt-1 flex-wrap' : 'flex items-center gap-1 shrink-0';
   const monoStyle = { fontFamily: "'JetBrains Mono', monospace" } as const;
   // Direction D (P4): at the 'now' detent the route strip is framed as a
   // next-stop nudge rather than a full route. (Only meaningful under Horizon —
@@ -144,9 +144,9 @@ export const AiStrip: React.FC<AiStripProps> = ({
     return (
       <div className={`${stripCls} ${wrapperBorderCls}`} role="status" aria-live="polite">
         <div className={headerCls}>
-          <Navigation size={14} className="text-rose-500 flex-shrink-0" />
+          <Navigation size={14} className="text-rose-500 shrink-0" />
           <span
-            className="text-[10px] tracking-[0.1em] uppercase text-rose-500 flex-shrink-0"
+            className="text-[10px] tracking-widest uppercase text-rose-500 shrink-0"
             style={monoStyle}
           >
             PULSE AI · UNDERWAY
@@ -159,7 +159,7 @@ export const AiStrip: React.FC<AiStripProps> = ({
           <button
             type="button"
             onClick={onOpenInSystemMaps}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-sm text-[11px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1"
           >
             Open in Maps
             <ChevronRight size={11} />
@@ -168,7 +168,7 @@ export const AiStrip: React.FC<AiStripProps> = ({
             type="button"
             onClick={onDismissRoute}
             aria-label="Dismiss route"
-            className={`p-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
+            className={`p-1.5 rounded transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
               isDarkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-rose-500/10 text-gray-500'
             }`}
           >
@@ -213,9 +213,9 @@ export const AiStrip: React.FC<AiStripProps> = ({
       <div className={wrapperBorderCls}>
         <div className={stripCls} role="status" aria-live="polite">
           <div className={headerCls}>
-            <ArrowUpDown size={14} className="text-rose-500 flex-shrink-0" aria-hidden="true" />
+            <ArrowUpDown size={14} className="text-rose-500 shrink-0" aria-hidden="true" />
             <span
-              className="text-[10px] tracking-[0.1em] uppercase text-rose-500 flex-shrink-0"
+              className="text-[10px] tracking-widest uppercase text-rose-500 shrink-0"
               style={monoStyle}
             >
               PULSE AI · REORDER
@@ -228,7 +228,7 @@ export const AiStrip: React.FC<AiStripProps> = ({
             <button
               type="button"
               onClick={onReorderCancel}
-              className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
+              className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
                 isDarkMode ? 'text-gray-300 hover:bg-white/10' : 'text-gray-600 hover:bg-rose-500/10'
               }`}
             >
@@ -238,7 +238,7 @@ export const AiStrip: React.FC<AiStripProps> = ({
               type="button"
               onClick={onAccept}
               disabled={acceptingRoute || validCount < 2}
-              className="px-2.5 py-1 rounded text-[11px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="px-2.5 py-1 rounded-sm text-[11px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {acceptingRoute ? 'Routing…' : 'Accept'}
             </button>
@@ -251,7 +251,7 @@ export const AiStrip: React.FC<AiStripProps> = ({
         </p>
         <ul
           className={`px-3 pb-2 pt-1 space-y-1 ${
-            isDarkMode ? 'bg-rose-500/[0.04]' : 'bg-rose-50/40'
+            isDarkMode ? 'bg-rose-500/4' : 'bg-rose-50/40'
           }`}
           aria-label="Reorder stops"
           aria-describedby="reorder-instructions"
@@ -311,7 +311,7 @@ export const AiStrip: React.FC<AiStripProps> = ({
                   setDragFromIdx(null);
                   setDragOverIdx(null);
                 }}
-                className={`flex items-center gap-2.5 px-2 py-1.5 rounded cursor-grab active:cursor-grabbing select-none transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
+                className={`flex items-center gap-2.5 px-2 py-1.5 rounded cursor-grab active:cursor-grabbing select-none transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
                   isDarkMode
                     ? 'bg-zinc-900/60 border border-white/5 hover:border-rose-500/30'
                     : 'bg-white border border-rose-100 hover:border-rose-300'
@@ -340,7 +340,7 @@ export const AiStrip: React.FC<AiStripProps> = ({
                   }}
                   disabled={atTop}
                   aria-label={`Move ${stop.label} up`}
-                  className={`p-1 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 disabled:opacity-30 disabled:cursor-not-allowed ${
+                  className={`p-1 rounded transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 disabled:opacity-30 disabled:cursor-not-allowed ${
                     isDarkMode ? 'text-gray-400 hover:bg-white/10 hover:text-rose-300' : 'text-gray-500 hover:bg-rose-500/10 hover:text-rose-600'
                   }`}
                 >
@@ -354,7 +354,7 @@ export const AiStrip: React.FC<AiStripProps> = ({
                   }}
                   disabled={atBottom}
                   aria-label={`Move ${stop.label} down`}
-                  className={`p-1 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 disabled:opacity-30 disabled:cursor-not-allowed ${
+                  className={`p-1 rounded transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 disabled:opacity-30 disabled:cursor-not-allowed ${
                     isDarkMode ? 'text-gray-400 hover:bg-white/10 hover:text-rose-300' : 'text-gray-500 hover:bg-rose-500/10 hover:text-rose-600'
                   }`}
                 >
@@ -379,8 +379,8 @@ export const AiStrip: React.FC<AiStripProps> = ({
         <div className={wrapperBorderCls}>
           <div className={stripCls} role="status" aria-live="polite">
             <div className={headerCls}>
-              <Sparkles size={14} className="text-rose-500 flex-shrink-0" />
-              <span className="text-[10px] tracking-[0.1em] uppercase text-rose-500 flex-shrink-0" style={monoStyle}>
+              <Sparkles size={14} className="text-rose-500 shrink-0" />
+              <span className="text-[10px] tracking-widest uppercase text-rose-500 shrink-0" style={monoStyle}>
                 {routeLabel}
               </span>
             </div>
@@ -397,7 +397,7 @@ export const AiStrip: React.FC<AiStripProps> = ({
                   onClick={() => setWhyExpanded(v => !v)}
                   aria-expanded={whyExpanded}
                   aria-controls="pulse-ai-rationale"
-                  className={`inline-flex items-center gap-0.5 px-2 py-1.5 rounded text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
+                  className={`inline-flex items-center gap-0.5 px-2 py-1.5 rounded text-[11px] font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
                     isDarkMode ? 'text-gray-400 hover:text-rose-300 hover:bg-white/5' : 'text-gray-500 hover:text-rose-600 hover:bg-rose-500/5'
                   }`}
                 >
@@ -413,7 +413,7 @@ export const AiStrip: React.FC<AiStripProps> = ({
                 type="button"
                 onClick={onReorderStart}
                 disabled={acceptingRoute || count < 2}
-                className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed ${
                   isDarkMode ? 'text-gray-300 hover:bg-white/10' : 'text-gray-600 hover:bg-rose-500/10'
                 }`}
               >
@@ -424,7 +424,7 @@ export const AiStrip: React.FC<AiStripProps> = ({
                 type="button"
                 onClick={onAccept}
                 disabled={acceptingRoute || count < 2}
-                className="px-2.5 py-1 rounded text-[11px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="px-2.5 py-1 rounded-sm text-[11px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {acceptingRoute ? 'Routing…' : 'Accept'}
               </button>
@@ -434,7 +434,7 @@ export const AiStrip: React.FC<AiStripProps> = ({
             <div
               id="pulse-ai-rationale"
               aria-hidden={!whyExpanded}
-              className={isDarkMode ? 'bg-rose-500/[0.04]' : 'bg-rose-50/40'}
+              className={isDarkMode ? 'bg-rose-500/4' : 'bg-rose-50/40'}
               style={{
                 display: 'grid',
                 gridTemplateRows: whyExpanded ? '1fr' : '0fr',
@@ -464,12 +464,12 @@ export const AiStrip: React.FC<AiStripProps> = ({
       // rendered. Surface them as affordances — only when the host wired a handler
       // (mapHorizon ON). Coral here is legit (AI band, CLAUDE.md §4).
       const affordanceCls =
-        'inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium flex-shrink-0 transition-colors text-rose-500 hover:bg-rose-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1';
+        'inline-flex items-center gap-1 px-2 py-1 rounded-sm text-[11px] font-medium shrink-0 transition-colors text-rose-500 hover:bg-rose-500/10 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1';
       return (
         <div className={`${stripCls} ${wrapperBorderCls}`} role="status" aria-live="polite">
           <div className={headerCls}>
-            <Sparkles size={14} className="text-rose-500 flex-shrink-0" />
-            <span className="text-[10px] tracking-[0.1em] uppercase text-rose-500 flex-shrink-0" style={monoStyle}>
+            <Sparkles size={14} className="text-rose-500 shrink-0" />
+            <span className="text-[10px] tracking-widest uppercase text-rose-500 shrink-0" style={monoStyle}>
               {label}
             </span>
           </div>
@@ -509,8 +509,8 @@ export const AiStrip: React.FC<AiStripProps> = ({
     return (
       <div className={`${stripCls} ${wrapperBorderCls}`} role="status" aria-live="polite">
         <div className={headerCls}>
-          <Sparkles size={14} className={`flex-shrink-0 ${isDarkMode ? 'text-rose-500/70' : 'text-rose-500/80'}`} />
-          <span className="text-[10px] tracking-[0.1em] uppercase text-rose-500/70 flex-shrink-0" style={monoStyle}>
+          <Sparkles size={14} className={`shrink-0 ${isDarkMode ? 'text-rose-500/70' : 'text-rose-500/80'}`} />
+          <span className="text-[10px] tracking-widest uppercase text-rose-500/70 shrink-0" style={monoStyle}>
             PULSE AI · ROUTE
           </span>
         </div>
@@ -526,8 +526,8 @@ export const AiStrip: React.FC<AiStripProps> = ({
     return (
       <div className={`${stripCls} ${wrapperBorderCls}`} role="status" aria-live="polite">
         <div className={headerCls}>
-          <Sparkles size={14} className="text-rose-500/60 flex-shrink-0" />
-          <span className="text-[10px] tracking-[0.1em] uppercase text-rose-500/60 flex-shrink-0" style={monoStyle}>
+          <Sparkles size={14} className="text-rose-500/60 shrink-0" />
+          <span className="text-[10px] tracking-widest uppercase text-rose-500/60 shrink-0" style={monoStyle}>
             PULSE AI · PAUSED
           </span>
         </div>
@@ -543,8 +543,8 @@ export const AiStrip: React.FC<AiStripProps> = ({
     return (
       <div className={`${stripCls} ${wrapperBorderCls}`} role="status" aria-live="polite">
         <div className={headerCls}>
-          <Sparkles size={14} className="text-rose-500/70 flex-shrink-0" />
-          <span className="text-[10px] tracking-[0.1em] uppercase text-rose-500/70 flex-shrink-0" style={monoStyle}>
+          <Sparkles size={14} className="text-rose-500/70 shrink-0" />
+          <span className="text-[10px] tracking-widest uppercase text-rose-500/70 shrink-0" style={monoStyle}>
             {routeLabel}
           </span>
         </div>

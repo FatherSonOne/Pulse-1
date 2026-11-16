@@ -108,10 +108,10 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
   };
 
   return (
-    <div ref={sidebarRef} className={`w-full md:w-[30%] md:min-w-[280px] md:max-w-[400px] border-r border-[var(--pulse-border)] bg-[var(--pulse-canvas)] flex-shrink-0 flex flex-col ${mobileView === 'chat' ? 'max-md:hidden' : ''}`}>
+    <div ref={sidebarRef} className={`w-full md:w-[30%] md:min-w-[280px] md:max-w-[400px] border-r border-(--pulse-border) bg-(--pulse-canvas) shrink-0 flex flex-col ${mobileView === 'chat' ? 'max-md:hidden' : ''}`}>
       {/* Header — mono section label + actions */}
       <div className="px-5 pt-5 pb-3 flex justify-between items-center">
-        <h2 className="font-mono uppercase tracking-[0.1em] text-[11px] text-zinc-600 dark:text-zinc-400 flex items-center gap-2">
+        <h2 className="font-mono uppercase tracking-widest text-[11px] text-zinc-600 dark:text-zinc-400 flex items-center gap-2">
           <span>MESSAGES</span>
           {conversationCount > 0 && (
             <>
@@ -124,12 +124,12 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
           {/* Invite Team — labeled, always visible per user direction (early-org invite affordance) */}
           <button
             onClick={() => setShowInviteModal(true)}
-            className="h-8 px-2.5 rounded-md inline-flex items-center gap-1.5 text-rose-700 dark:text-rose-400 hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-colors active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+            className="h-8 px-2.5 rounded-md inline-flex items-center gap-1.5 text-rose-700 dark:text-rose-400 hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-colors active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
             title="Invite a teammate to your workspace"
             aria-label="Invite teammate"
           >
             <UserPlus className="w-3.5 h-3.5" />
-            <span className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium">INVITE</span>
+            <span className="font-mono uppercase tracking-widest text-[10px] font-medium">INVITE</span>
           </button>
           {/* RemindersInbox — preserved but self-hides when zero reminders due */}
           {onJumpToConversation && (
@@ -138,7 +138,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
           {/* Keyboard shortcuts — mono ⌘ glyph, also bound to ? */}
           <button
             onClick={() => setShowShortcuts(true)}
-            className="h-8 w-8 rounded-md inline-flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-white/[0.055] hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+            className="h-8 w-8 rounded-md inline-flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-white/5.5 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
             title="Keyboard shortcuts (? to open)"
             aria-label="Keyboard shortcuts"
           >
@@ -147,12 +147,12 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
           {/* Compose — ghost coral with ⌘N hint (drops 1 of 3 filled-coral attractors) */}
           <button
             onClick={() => setShowNewChatModal(true)}
-            className="h-8 px-2.5 rounded-md inline-flex items-center gap-1.5 text-rose-700 dark:text-rose-400 hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-colors active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+            className="h-8 px-2.5 rounded-md inline-flex items-center gap-1.5 text-rose-700 dark:text-rose-400 hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-colors active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
             title="New conversation (⌘N)"
             aria-label="New conversation"
           >
             <SquarePen className="w-3.5 h-3.5" />
-            <span className="hidden md:inline font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-600 dark:text-zinc-400">⌘N</span>
+            <span className="hidden md:inline font-mono uppercase tracking-widest text-[10px] text-zinc-600 dark:text-zinc-400">⌘N</span>
           </button>
         </div>
       </div>
@@ -170,18 +170,18 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
             onChange={e => onSearchInput(e.target.value)}
             onFocus={() => setIsSearchOpen(true)}
             aria-label="Search conversations"
-            className="w-full bg-transparent border-0 border-b border-zinc-200 dark:border-white/[0.06] rounded-none px-9 py-2 text-[13px] outline-none text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:border-rose-500/60 transition-colors"
+            className="w-full bg-transparent border-0 border-b border-zinc-200 dark:border-white/6 rounded-none px-9 py-2 text-[13px] outline-hidden text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 dark:placeholder:text-zinc-400 focus:border-rose-500/60 transition-colors"
           />
           {searchQuery ? (
             <button
               onClick={() => { setSearchQuery(''); setSearchResults([]); setThreadFilter('all'); }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md inline-flex items-center justify-center text-zinc-400 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-white/[0.055] transition-colors active:scale-[0.97] motion-reduce:active:scale-100"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md inline-flex items-center justify-center text-zinc-400 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-white/5.5 transition-colors active:scale-[0.97] motion-reduce:active:scale-100"
               aria-label="Clear search"
             >
               <X className="w-3 h-3" />
             </button>
           ) : (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-600 dark:text-zinc-400 pointer-events-none" aria-hidden="true">⌘K</span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono uppercase tracking-widest text-[10px] text-zinc-600 dark:text-zinc-400 pointer-events-none" aria-hidden="true">⌘K</span>
           )}
         </div>
         {/* Filter chips — icon-led segmented control (FilterBar). Active chip
@@ -202,10 +202,10 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
               <button
                 key={f}
                 onClick={() => { setSearchFilter(f); handleSearch(searchQuery); }}
-                className={`h-6 px-2 rounded font-mono uppercase tracking-[0.1em] text-[10px] font-medium transition-colors ${
+                className={`h-6 px-2 rounded font-mono uppercase tracking-widest text-[10px] font-medium transition-colors ${
                   searchFilter === f
                     ? 'bg-rose-500/10 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/40 dark:hover:bg-white/[0.04]'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/40 dark:hover:bg-white/4'
                 }`}
               >
                 {f}
@@ -256,8 +256,8 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                       ${activePulseConversation === conv.id
                         ? 'bg-rose-50 dark:bg-rose-500/10 ring-1 ring-rose-500/20'
                         : cursorConvId === conv.id
-                        ? 'bg-rose-500/[0.04] dark:bg-rose-500/[0.06] ring-1 ring-rose-500/40'
-                        : 'hover:bg-zinc-100/60 dark:hover:bg-white/[0.04]'}`}
+                        ? 'bg-rose-500/4 dark:bg-rose-500/6 ring-1 ring-rose-500/40'
+                        : 'hover:bg-zinc-100/60 dark:hover:bg-white/4'}`}
                   >
                     <button
                       onClick={(e) => {
@@ -265,7 +265,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                         setSelectedContactUserId(otherUser.id);
                         setShowContactPanel(true);
                       }}
-                      className="w-10 h-10 rounded-full bg-rose-500/15 dark:bg-rose-500/15 flex items-center justify-center text-rose-700 dark:text-rose-300 text-sm font-medium flex-shrink-0 relative hover:bg-rose-500/20 dark:hover:bg-rose-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                      className="w-10 h-10 rounded-full bg-rose-500/15 dark:bg-rose-500/15 flex items-center justify-center text-rose-700 dark:text-rose-300 text-sm font-medium shrink-0 relative hover:bg-rose-500/20 dark:hover:bg-rose-500/20 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                       title="View contact details"
                     >
                       {otherUser.avatar_url ? (
@@ -288,7 +288,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                     <button
                       type="button"
                       onClick={() => handleSelectConversation(conv.id)}
-                      className="flex-1 overflow-hidden min-w-0 text-left bg-transparent border-0 p-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] focus-visible:ring-offset-1 rounded"
+                      className="flex-1 overflow-hidden min-w-0 text-left bg-transparent border-0 p-0 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-rose) focus-visible:ring-offset-1 rounded-sm"
                       aria-label={`Open conversation with ${otherUser.display_name || otherUser.full_name || otherUser.handle || 'Unknown'}`}
                     >
                       <div className="flex justify-between items-baseline mb-0.5">
@@ -311,17 +311,17 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                       </div>
                       <div className="flex items-center gap-1.5">
                         {isSlack && (
-                          <span className="font-mono text-[10px] text-purple-600 dark:text-purple-300 flex-shrink-0" title="Delivered via Slack">Slack</span>
+                          <span className="font-mono text-[10px] text-purple-600 dark:text-purple-300 shrink-0" title="Delivered via Slack">Slack</span>
                         )}
                         {!isSlack && otherUser.handle && (
-                          <span className="font-mono text-[10px] text-zinc-600 dark:text-zinc-400 flex-shrink-0">@{otherUser.handle}</span>
+                          <span className="font-mono text-[10px] text-zinc-600 dark:text-zinc-400 shrink-0">@{otherUser.handle}</span>
                         )}
                         {conv.last_message_preview ? (
                           <p className={`text-[12px] truncate ${hasUnread ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-600 dark:text-zinc-400'}`}>
                             {conv.last_message_preview}
                           </p>
                         ) : (
-                          <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-600 dark:text-zinc-400">
+                          <span className="font-mono uppercase tracking-widest text-[10px] text-zinc-600 dark:text-zinc-400">
                             NO MESSAGES YET · TAP TO START
                           </span>
                         )}
@@ -341,7 +341,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                     <ThreadBadges actions={messageEnhancements.getThreadActions(conv.id)} />
                     {hasUnread && (
                       <span
-                        className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300 tabular-nums"
+                        className="font-mono uppercase tracking-widest text-[10px] font-medium px-1.5 py-0.5 rounded-sm bg-rose-500/10 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300 tabular-nums"
                         aria-label={`${conv.unread_count} unread`}
                       >
                         {conv.unread_count}
@@ -366,15 +366,15 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
         ) : (
           /* Empty state — quiet, mono, no SaaS-template card */
           <div className="flex flex-col items-start justify-start py-8 px-4 space-y-3">
-            <p className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-600 dark:text-zinc-400">
+            <p className="font-mono uppercase tracking-widest text-[10px] text-zinc-600 dark:text-zinc-400">
               NO CONVERSATIONS YET
             </p>
-            <p className="text-[13px] text-zinc-600 dark:text-zinc-400 leading-[1.5] max-w-[240px]">
+            <p className="text-[13px] text-zinc-600 dark:text-zinc-400 leading-normal max-w-[240px]">
               Start your first conversation with a Pulse user.
             </p>
             <button
               onClick={() => setShowNewChatModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 -ml-2 rounded-md text-rose-700 dark:text-rose-400 hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 -ml-2 rounded-md text-rose-700 dark:text-rose-400 hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
             >
               <Plus className="w-3.5 h-3.5" />
               <span className="text-[13px] font-medium">New conversation</span>

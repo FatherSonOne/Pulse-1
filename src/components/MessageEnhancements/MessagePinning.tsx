@@ -149,7 +149,7 @@ export const MessagePinning: React.FC<MessagePinningProps> = ({
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20">
+      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-linear-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
@@ -170,7 +170,7 @@ export const MessagePinning: React.FC<MessagePinningProps> = ({
             onClick={() => setActiveTab('pinned')}
             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition ${
               activeTab === 'pinned'
-                ? 'bg-white dark:bg-zinc-600 text-zinc-800 dark:text-white shadow-sm'
+                ? 'bg-white dark:bg-zinc-600 text-zinc-800 dark:text-white shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white'
             }`}
           >
@@ -181,7 +181,7 @@ export const MessagePinning: React.FC<MessagePinningProps> = ({
             onClick={() => setActiveTab('highlights')}
             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition ${
               activeTab === 'highlights'
-                ? 'bg-white dark:bg-zinc-600 text-zinc-800 dark:text-white shadow-sm'
+                ? 'bg-white dark:bg-zinc-600 text-zinc-800 dark:text-white shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white'
             }`}
           >
@@ -252,7 +252,7 @@ export const MessagePinning: React.FC<MessagePinningProps> = ({
                         className="p-3 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition"
                       >
                         <div className="flex items-start gap-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-${config.color}-100 dark:bg-${config.color}-900/40`}>
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-${config.color}-100 dark:bg-${config.color}-900/40`}>
                             <i className={`fa-solid ${config.icon} text-${config.color}-500 text-sm`} />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -297,12 +297,12 @@ export const MessagePinning: React.FC<MessagePinningProps> = ({
                                   value={editNote}
                                   onChange={(e) => setEditNote(e.target.value)}
                                   placeholder="Add a note..."
-                                  className="flex-1 px-2 py-1 text-xs rounded border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-800 dark:text-white"
+                                  className="flex-1 px-2 py-1 text-xs rounded-sm border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-800 dark:text-white"
                                   autoFocus
                                 />
                                 <button
                                   onClick={() => handleSaveNote(pin.id)}
-                                  className="px-2 py-1 text-xs bg-indigo-500 text-white rounded hover:bg-indigo-600"
+                                  className="px-2 py-1 text-xs bg-indigo-500 text-white rounded-sm hover:bg-indigo-600"
                                 >
                                   Save
                                 </button>
@@ -315,7 +315,7 @@ export const MessagePinning: React.FC<MessagePinningProps> = ({
                               </div>
                             ) : pin.note ? (
                               <div
-                                className="mt-2 p-2 bg-zinc-50 dark:bg-zinc-900 rounded text-[10px] text-zinc-600 dark:text-zinc-400 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                className="mt-2 p-2 bg-zinc-50 dark:bg-zinc-900 rounded-sm text-[10px] text-zinc-600 dark:text-zinc-400 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
                                 onClick={() => {
                                   setEditingId(pin.id);
                                   setEditNote(pin.note || '');
@@ -381,7 +381,7 @@ export const MessagePinning: React.FC<MessagePinningProps> = ({
                 <div key={color}>
                   <div className="px-4 py-2 bg-zinc-50 dark:bg-zinc-900/50 sticky top-0">
                     <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded ${highlightColors[color as keyof typeof highlightColors]}`} />
+                      <div className={`w-3 h-3 rounded-sm ${highlightColors[color as keyof typeof highlightColors]}`} />
                       <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 capitalize">
                         {color} ({items.length})
                       </span>
@@ -397,11 +397,11 @@ export const MessagePinning: React.FC<MessagePinningProps> = ({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <p className={`text-sm text-zinc-800 dark:text-white px-1 rounded ${highlightColors[highlight.color]}`}>
+                              <p className={`text-sm text-zinc-800 dark:text-white px-1 rounded-sm ${highlightColors[highlight.color]}`}>
                                 "{highlight.text}"
                               </p>
                               {highlight.label && (
-                                <span className="inline-block mt-1 px-1.5 py-0.5 text-[10px] bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded">
+                                <span className="inline-block mt-1 px-1.5 py-0.5 text-[10px] bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded-sm">
                                   {highlight.label}
                                 </span>
                               )}

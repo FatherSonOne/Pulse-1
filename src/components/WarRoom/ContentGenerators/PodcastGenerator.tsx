@@ -437,14 +437,14 @@ REQUIREMENTS:
             value={elApiKey}
             onChange={(e) => setElApiKey(e.target.value)}
             placeholder="ElevenLabs API Key"
-            className="text-sm w-full px-3 py-2 rounded-lg focus:outline-none"
+            className="text-sm w-full px-3 py-2 rounded-lg focus:outline-hidden"
             style={fieldStyle}
           />
           {availableVoices.length > 0 && (
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>Host 1 (Sarah)</label>
-                <select value={host1Voice} onChange={(e) => setHost1Voice(e.target.value)} className="text-sm w-full mt-1 px-3 py-2 rounded-lg focus:outline-none" style={fieldStyle}>
+                <select value={host1Voice} onChange={(e) => setHost1Voice(e.target.value)} className="text-sm w-full mt-1 px-3 py-2 rounded-lg focus:outline-hidden" style={fieldStyle}>
                   {availableVoices.map((v: any) => (
                     <option key={v.voice_id} value={v.voice_id}>{v.name}</option>
                   ))}
@@ -452,7 +452,7 @@ REQUIREMENTS:
               </div>
               <div>
                 <label className="text-xs" style={{ color: 'var(--pulse-ink-3)' }}>Host 2 (Marcus)</label>
-                <select value={host2Voice} onChange={(e) => setHost2Voice(e.target.value)} className="text-sm w-full mt-1 px-3 py-2 rounded-lg focus:outline-none" style={fieldStyle}>
+                <select value={host2Voice} onChange={(e) => setHost2Voice(e.target.value)} className="text-sm w-full mt-1 px-3 py-2 rounded-lg focus:outline-hidden" style={fieldStyle}>
                   {availableVoices.map((v: any) => (
                     <option key={v.voice_id} value={v.voice_id}>{v.name}</option>
                   ))}
@@ -526,12 +526,12 @@ REQUIREMENTS:
                     <p className="text-xs mb-2" style={{ ...monoLabel, color: 'var(--pulse-ink-3)' }}>Documents to discuss</p>
                     <div className="flex flex-wrap gap-2 justify-center max-w-lg mx-auto">
                       {docsToUse.slice(0, 5).map(doc => (
-                        <span key={doc.id} className="text-xs px-2 py-1 rounded" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
+                        <span key={doc.id} className="text-xs px-2 py-1 rounded-sm" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
                           {doc.title}
                         </span>
                       ))}
                       {docsToUse.length > 5 && (
-                        <span className="text-xs px-2 py-1 rounded" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
+                        <span className="text-xs px-2 py-1 rounded-sm" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
                           +{docsToUse.length - 5} more
                         </span>
                       )}
@@ -624,7 +624,7 @@ REQUIREMENTS:
                       <select
                         value={playbackSpeed}
                         onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))}
-                        className="text-sm px-2 py-1 rounded-lg focus:outline-none"
+                        className="text-sm px-2 py-1 rounded-lg focus:outline-hidden"
                         style={fieldStyle}
                       >
                         <option value={0.75}>0.75x</option>
@@ -681,7 +681,7 @@ REQUIREMENTS:
                     >
                       <div className="flex items-start gap-3">
                         <div className="shrink-0">
-                          <span className="inline-block text-xs px-2 py-0.5 rounded" style={getSpeakerStyle(line.speaker)}>
+                          <span className="inline-block text-xs px-2 py-0.5 rounded-sm" style={getSpeakerStyle(line.speaker)}>
                             {line.speaker === 'host1' ? 'Sarah' : 'Marcus'}
                           </span>
                         </div>

@@ -223,7 +223,7 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
     >
 
       {/* Tab bar */}
-      <div className="flex-shrink-0 bg-white dark:bg-white/[0.03] border-b border-zinc-200 dark:border-white/[0.06]">
+      <div className="shrink-0 bg-white dark:bg-white/3 border-b border-zinc-200 dark:border-white/6">
         <div className="flex items-stretch px-2 pt-2 gap-0.5">
           {TABS.map(tab => {
             const isActive = activeMode === tab.id;
@@ -235,8 +235,8 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
                   relative flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium uppercase tracking-[0.06em]
                   transition-colors duration-150
                   ${isActive
-                    ? 'bg-zinc-50 dark:bg-white/[0.055] text-rose-500 dark:text-rose-400 border border-b-0 border-zinc-200 dark:border-white/10'
-                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-white/[0.04]'
+                    ? 'bg-zinc-50 dark:bg-white/5.5 text-rose-500 dark:text-rose-400 border border-b-0 border-zinc-200 dark:border-white/10'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-white/4'
                   }
                 `}
                 style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
@@ -246,7 +246,7 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
                 <span>{tab.label}</span>
                 {/* Keyboard shortcut hint */}
                 {!isActive && (
-                  <span className="hidden sm:inline-flex ml-0.5 w-4 h-4 items-center justify-center bg-zinc-100 dark:bg-white/[0.06] text-zinc-400 text-[9px] font-mono rounded">
+                  <span className="hidden sm:inline-flex ml-0.5 w-4 h-4 items-center justify-center bg-zinc-100 dark:bg-white/6 text-zinc-400 text-[9px] font-mono rounded-sm">
                     {tab.shortcut}
                   </span>
                 )}
@@ -266,7 +266,7 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
               onClick={() => window.dispatchEvent(new CustomEvent('pulse:navigate', {
                 detail: { view: AppView.MAP },
               }))}
-              className="hidden sm:flex items-center gap-1 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400 rounded border border-zinc-200 dark:border-zinc-700 hover:border-rose-300 hover:text-rose-500 dark:hover:border-rose-400/40 dark:hover:text-rose-300 transition-colors"
+              className="hidden sm:flex items-center gap-1 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400 rounded-sm border border-zinc-200 dark:border-zinc-700 hover:border-rose-300 hover:text-rose-500 dark:hover:border-rose-400/40 dark:hover:text-rose-300 transition-colors"
               title="Open Map (top-level section)"
               style={{ fontFamily: "'JetBrains Mono', monospace" }}
             >
@@ -275,7 +275,7 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
             </button>
             <button
               onClick={handleSearchFocus}
-              className="hidden sm:flex items-center gap-1 px-2 py-1 text-[10px] text-zinc-400 dark:text-zinc-600 rounded border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
+              className="hidden sm:flex items-center gap-1 px-2 py-1 text-[10px] text-zinc-400 dark:text-zinc-600 rounded-sm border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
               title="Search contacts (⌘K)"
             >
               <Search className="text-[9px]" />

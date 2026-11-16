@@ -59,7 +59,7 @@ const CategoryTabsBase: React.FC<CategoryTabsProps> = ({
               w-full flex items-center gap-3 px-3 py-2.5
               text-sm font-medium text-left
               border-l-2 transition-colors duration-200
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2
+              focus:outline-hidden focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2
               ${isActive
                 ? 'border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-white bg-zinc-50 dark:bg-zinc-800/50'
                 : 'border-transparent text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-200'
@@ -67,7 +67,7 @@ const CategoryTabsBase: React.FC<CategoryTabsProps> = ({
             `}
           >
             {/* Category Dot Indicator */}
-            <div className={`w-1 h-1 rounded-full ${category.dot} flex-shrink-0`} />
+            <div className={`w-1 h-1 rounded-full ${category.dot} shrink-0`} />
 
             {/* Category Name */}
             <span className="flex-1 tracking-wide text-xs uppercase font-bold">

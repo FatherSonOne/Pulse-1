@@ -59,7 +59,7 @@ const TypingBubble: React.FC<{
   return (
     <div className="flex items-center gap-2 animate-fade-in">
       <CollaboratorAvatar collaborator={collaborator} size="sm" />
-      <div className="bg-zinc-100 dark:bg-zinc-800 rounded-2xl rounded-bl-sm px-4 py-2.5 shadow-sm border border-zinc-200 dark:border-zinc-700">
+      <div className="bg-zinc-100 dark:bg-zinc-800 rounded-2xl rounded-bl-sm px-4 py-2.5 shadow-xs border border-zinc-200 dark:border-zinc-700">
         <TypingDots color="bg-zinc-500 dark:bg-zinc-400" />
       </div>
     </div>

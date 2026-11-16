@@ -114,7 +114,7 @@ export const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
+      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-linear-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
             <BookOpen className="text-amber-500 text-sm" />
@@ -137,7 +137,7 @@ export const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({
             value={searchQuery}
             onChange={e => handleSearch(e.target.value)}
             placeholder="Search knowledge base..."
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-sm text-zinc-800 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-sm text-zinc-800 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-hidden"
           />
           {isSearching && (
             <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 animate-spin" />
@@ -217,7 +217,7 @@ export const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({
                       {article.tags.slice(0, 3).map(tag => (
                         <span
                           key={tag}
-                          className="px-1.5 py-0.5 rounded text-[9px] bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400"
+                          className="px-1.5 py-0.5 rounded-sm text-[9px] bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400"
                         >
                           {tag}
                         </span>
@@ -246,7 +246,7 @@ export const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({
                     className="p-3 rounded-lg border border-zinc-100 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition"
                   >
                     <div className="flex items-start gap-2">
-                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${getContextTypeColor(ctx.type)}`}>
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${getContextTypeColor(ctx.type)}`}>
                         <i className={`fa-solid ${getContextTypeIcon(ctx.type)} text-xs`} />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -267,7 +267,7 @@ export const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({
                           </span>
                           <button
                             onClick={() => onInsertContext?.(ctx.content)}
-                            className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60 transition"
+                            className="flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60 transition"
                           >
                             <Plus />
                             Insert

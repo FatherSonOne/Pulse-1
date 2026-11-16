@@ -268,7 +268,7 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
                   placeholder="Search templates..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pulse-surface-raised border pulse-border-color rounded-lg pl-10 pr-4 py-2.5 text-sm pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border"
+                  className="w-full pulse-surface-raised border pulse-border-color rounded-lg pl-10 pr-4 py-2.5 text-sm pulse-ink-color placeholder:pulse-ink-3-color focus:outline-hidden focus:pulse-rose-border"
                 />
               </div>
 
@@ -382,13 +382,13 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
                         <div className="flex items-center gap-1">
                           <button
                             onClick={(e) => { e.stopPropagation(); handleEdit(template); }}
-                            className="w-6 h-6 rounded hover:pulse-surface flex items-center justify-center pulse-ink-3-color hover:pulse-ink-color transition"
+                            className="w-6 h-6 rounded-sm hover:pulse-surface flex items-center justify-center pulse-ink-3-color hover:pulse-ink-color transition"
                           >
                             <Pen className="text-xs" />
                           </button>
                           <button
                             onClick={(e) => handleDelete(template, e)}
-                            className="w-6 h-6 rounded hover:pulse-surface flex items-center justify-center pulse-ink-3-color transition hover:text-[color:var(--pulse-tone-overdue)]"
+                            className="w-6 h-6 rounded-sm hover:pulse-surface flex items-center justify-center pulse-ink-3-color transition hover:text-(--pulse-tone-overdue)"
                           >
                             <Trash2 className="text-xs" />
                           </button>
@@ -412,7 +412,7 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   placeholder="e.g., Sales Follow-up"
-                  className="w-full pulse-surface-raised border pulse-border-color rounded-lg px-4 py-2.5 pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border"
+                  className="w-full pulse-surface-raised border pulse-border-color rounded-lg px-4 py-2.5 pulse-ink-color placeholder:pulse-ink-3-color focus:outline-hidden focus:pulse-rose-border"
                 />
               </div>
 
@@ -424,7 +424,7 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   placeholder="Brief description of template usage"
-                  className="w-full pulse-surface-raised border pulse-border-color rounded-lg px-4 py-2.5 pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border"
+                  className="w-full pulse-surface-raised border pulse-border-color rounded-lg px-4 py-2.5 pulse-ink-color placeholder:pulse-ink-3-color focus:outline-hidden focus:pulse-rose-border"
                 />
               </div>
 
@@ -436,7 +436,7 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
                   value={formCategory}
                   onChange={(e) => setFormCategory(e.target.value)}
                   placeholder="e.g., Sales, Support, Marketing"
-                  className="w-full pulse-surface-raised border pulse-border-color rounded-lg px-4 py-2.5 pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border"
+                  className="w-full pulse-surface-raised border pulse-border-color rounded-lg px-4 py-2.5 pulse-ink-color placeholder:pulse-ink-3-color focus:outline-hidden focus:pulse-rose-border"
                 />
               </div>
 
@@ -448,7 +448,7 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
                   value={formSubject}
                   onChange={(e) => setFormSubject(e.target.value)}
                   placeholder="Email subject line"
-                  className="w-full pulse-surface-raised border pulse-border-color rounded-lg px-4 py-2.5 pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border"
+                  className="w-full pulse-surface-raised border pulse-border-color rounded-lg px-4 py-2.5 pulse-ink-color placeholder:pulse-ink-3-color focus:outline-hidden focus:pulse-rose-border"
                 />
               </div>
 
@@ -461,7 +461,7 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
                   onChange={(e) => setFormBody(e.target.value)}
                   placeholder="Email body content... Use {{variableName}} for dynamic content"
                   rows={12}
-                  className="w-full pulse-surface-raised border pulse-border-color rounded-lg px-4 py-3 pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border font-mono-pulse text-sm resize-none"
+                  className="w-full pulse-surface-raised border pulse-border-color rounded-lg px-4 py-3 pulse-ink-color placeholder:pulse-ink-3-color focus:outline-hidden focus:pulse-rose-border font-mono-pulse text-sm resize-none"
                 />
               </div>
 

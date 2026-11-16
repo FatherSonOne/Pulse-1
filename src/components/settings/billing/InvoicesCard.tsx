@@ -141,7 +141,7 @@ export const InvoicesCard: React.FC<Props> = ({ invoices }) => {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3 flex-shrink-0">
+                <div className="flex items-center gap-3 shrink-0">
                   <span className="text-sm font-semibold text-zinc-900 dark:text-white">
                     {formatCents(inv.amount_paid || inv.amount_due, inv.currency)}
                   </span>

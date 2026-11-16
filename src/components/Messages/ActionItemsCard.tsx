@@ -36,10 +36,10 @@ export const ActionItemsCard: React.FC<ActionItemsCardProps> = ({
   const dueDate = metadata.actionItems?.[0]?.dueDate;
 
   return (
-    <div className="rounded-xl ring-1 ring-zinc-200 dark:ring-white/[0.06] bg-zinc-50 dark:bg-white/[0.03] overflow-hidden mt-1">
+    <div className="rounded-xl ring-1 ring-zinc-200 dark:ring-white/6 bg-zinc-50 dark:bg-white/3 overflow-hidden mt-1">
       {/* Header — coral provenance chip + task title + priority dot */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-zinc-200 dark:border-white/[0.06]">
-        <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-white/[0.04] ring-1 ring-zinc-200 dark:ring-white/[0.06] flex items-center justify-center text-lg">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-zinc-200 dark:border-white/6">
+        <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-white/4 ring-1 ring-zinc-200 dark:ring-white/6 flex items-center justify-center text-lg">
           ✅
         </div>
         <div className="flex-1">
@@ -92,12 +92,12 @@ export const ActionItemsCard: React.FC<ActionItemsCardProps> = ({
           status colors are reserved for actual completion / urgency
           state, not for "click here to act on this." */}
       {actions.length > 0 && (
-        <div className="px-4 py-3 border-t border-zinc-200 dark:border-white/[0.06] flex flex-wrap gap-2">
+        <div className="px-4 py-3 border-t border-zinc-200 dark:border-white/6 flex flex-wrap gap-2">
           {actions.map((action, i) => (
             <button
               key={i}
               onClick={() => onAction?.(action) || (action.url && window.open(action.url, '_blank'))}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase tracking-[0.1em] font-medium bg-transparent hover:bg-zinc-100 dark:hover:bg-white/[0.06] text-zinc-700 dark:text-zinc-300 ring-1 ring-zinc-200 dark:ring-white/[0.08] hover:ring-zinc-300 dark:hover:ring-white/[0.12] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase tracking-widest font-medium bg-transparent hover:bg-zinc-100 dark:hover:bg-white/6 text-zinc-700 dark:text-zinc-300 ring-1 ring-zinc-200 dark:ring-white/8 hover:ring-zinc-300 dark:hover:ring-white/12 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
             >
               {action.url && <ExternalLink className="w-3 h-3" />}
               {action.label}

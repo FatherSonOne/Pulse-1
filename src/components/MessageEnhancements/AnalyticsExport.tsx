@@ -234,10 +234,10 @@ export const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-indigo-200 dark:border-indigo-800">
+      <div className="bg-linear-to-r from-indigo-500/10 to-purple-500/10 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-indigo-200 dark:border-indigo-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-xs">
               <FileOutput className="text-indigo-500" />
             </div>
             <div>
@@ -264,7 +264,7 @@ export const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
             onClick={() => setActiveTab(tab.id)}
             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition ${
               activeTab === tab.id
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
@@ -349,7 +349,7 @@ export const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
                   onClick={() => setOptions(prev => ({ ...prev, [option.key]: !prev[option.key] }))}
                   className={`w-10 h-5 rounded-full transition-colors ${options[option.key] ? 'bg-indigo-500' : 'bg-zinc-300 dark:bg-zinc-600'}`}
                 >
-                  <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform ${options[option.key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${options[option.key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </button>
               </div>
             ))}
@@ -430,7 +430,7 @@ export const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
                     </span>
                     <button
                       onClick={() => onDownload?.(job.id)}
-                      className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded text-xs font-medium hover:bg-indigo-200 dark:hover:bg-indigo-900/50"
+                      className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-sm text-xs font-medium hover:bg-indigo-200 dark:hover:bg-indigo-900/50"
                     >
                       <Download className="mr-1" />
                       Download

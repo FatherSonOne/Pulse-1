@@ -126,7 +126,7 @@ const ReactionBubble: React.FC<{
         transition-all duration-200 ease-out
         hover:scale-110 active:scale-95
         ${reaction.me
-          ? 'bg-blue-100 dark:bg-blue-900/40 border-2 border-blue-400 dark:border-blue-500 shadow-sm shadow-blue-200 dark:shadow-blue-900/50'
+          ? 'bg-blue-100 dark:bg-blue-900/40 border-2 border-blue-400 dark:border-blue-500 shadow-xs shadow-blue-200 dark:shadow-blue-900/50'
           : 'bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600'
         }
         ${isAnimating ? 'animate-bounce' : ''}

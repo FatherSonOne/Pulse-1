@@ -358,7 +358,7 @@ const NotificationItem: React.FC<{
       <div className="flex gap-3">
         {/* Category Icon */}
         <div
-          className={`w-10 h-10 rounded-full ${CategoryColors[notification.category]} flex items-center justify-center flex-shrink-0`}
+          className={`w-10 h-10 rounded-full ${CategoryColors[notification.category]} flex items-center justify-center shrink-0`}
         >
           {notification.senderAvatar ? (
             <img
@@ -385,7 +385,7 @@ const NotificationItem: React.FC<{
             >
               {notification.title}
             </p>
-            <span className="text-[10px] text-zinc-400 whitespace-nowrap flex-shrink-0">
+            <span className="text-[10px] text-zinc-400 whitespace-nowrap shrink-0">
               {formatTime(notification.timestamp)}
             </span>
           </div>

@@ -769,7 +769,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
               setShowNewWorkspace(true);
             }
           }}
-          className={`p-0.5 rounded ${tc.btnGhost}`}
+          className={`p-0.5 rounded-sm ${tc.btnGhost}`}
           aria-label="New channel"
           title={selectedWorkspace ? 'New channel' : 'New workspace'}
         >
@@ -785,7 +785,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             onClick={() => handleSelectChannel(selectedWorkspace!, channel)}
             className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[13px] text-left transition ${
               isActive
-                ? 'text-[var(--pulse-rose-text)] font-medium'
+                ? 'text-(--pulse-rose-text) font-medium'
                 : `${tc.textSecondary} ${tc.hoverBg}`
             }`}
             style={isActive ? { background: 'var(--pulse-rose-soft)' } : undefined}
@@ -852,7 +852,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
               </div>
               <span className={`text-[12px] truncate flex-1 ${tc.text}`}>{m.name}</span>
               {m.role && (
-                <span className={`font-mono text-[9px] uppercase tracking-[0.1em] shrink-0 ${tc.textMuted}`}>
+                <span className={`font-mono text-[9px] uppercase tracking-widest shrink-0 ${tc.textMuted}`}>
                   {m.role}
                 </span>
               )}
@@ -870,7 +870,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             <div className="rounded-lg p-3" style={{ background: 'var(--pulse-coral-bg-12)' }}>
               <div className="flex items-center gap-1.5 mb-1">
                 <Sparkles className="w-3 h-3" style={{ color: 'var(--pulse-coral-fg)' }} />
-                <span className="font-mono text-[9px] uppercase tracking-[0.1em]" style={{ color: 'var(--pulse-coral-fg)' }}>
+                <span className="font-mono text-[9px] uppercase tracking-widest" style={{ color: 'var(--pulse-coral-fg)' }}>
                   Digest
                 </span>
               </div>
@@ -1162,14 +1162,14 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                 <>
                                   {message.mentions.length > 0 && (
                                     <span
-                                      className="px-1.5 py-0.5 rounded font-mono text-[9px] uppercase tracking-[0.1em]"
+                                      className="px-1.5 py-0.5 rounded-sm font-mono text-[9px] uppercase tracking-widest"
                                       style={{ background: 'var(--pulse-coral-bg-12)', color: 'var(--pulse-coral-fg)' }}
                                     >
                                       @Mention
                                     </span>
                                   )}
                                   {message.messageType === 'standup' && (
-                                    <span className="px-2 py-0.5 text-[10px] rounded-full bg-[#f43f5e]/15 text-[#e11d48] dark:text-[#fb7185]">Standup</span>
+                                    <span className="px-2 py-0.5 text-[10px] rounded-full bg-[#f43f5e]/15 text-rose-600 dark:text-[#fb7185]">Standup</span>
                                   )}
                                   {message.messageType === 'announcement' && (
                                     <span className="px-2 py-0.5 text-[10px] rounded-full bg-red-500/15 text-red-500">Announcement</span>
@@ -1197,7 +1197,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                   }}
                                   className={`w-7 h-7 shrink-0 self-center rounded-lg flex items-center justify-center transition-colors ease-pulse ${
                                     isSelected(message.id)
-                                      ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
+                                      ? 'bg-[#f43f5e] border-2 border-rose-600'
                                       : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
                                   }`}
                                   aria-label={isSelected(message.id) ? 'Deselect message' : 'Select message'}
@@ -1245,7 +1245,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                         /^@\w+$/.test(s) ? (
                                           <span
                                             key={i}
-                                            className="px-1 rounded"
+                                            className="px-1 rounded-sm"
                                             style={{ background: 'var(--pulse-coral-bg-12)', color: 'var(--pulse-coral-fg)' }}
                                           >
                                             {s}
@@ -1351,13 +1351,13 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                 onDelete={() => {
                                   setShowMessageMenu(null);
                                   toast((t) => (
-                                    <span className="flex flex-col gap-2 min-w-[14rem]">
+                                    <span className="flex flex-col gap-2 min-w-56">
                                       <span className="text-sm">Delete this voice message forever? This can't be undone.</span>
                                       <div className="flex items-center gap-2 justify-end">
                                         <button
                                           type="button"
                                           onClick={() => toast.dismiss(t.id)}
-                                          className="font-mono text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                          className="font-mono text-[10px] uppercase tracking-widest px-2 py-1 rounded-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                                         >
                                           Cancel
                                         </button>
@@ -1373,7 +1373,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                               toast.error('Failed to delete message');
                                             }
                                           }}
-                                          className="font-mono text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded bg-rose-500 hover:bg-rose-600 text-white"
+                                          className="font-mono text-[10px] uppercase tracking-widest px-2 py-1 rounded-sm bg-rose-500 hover:bg-rose-600 text-white"
                                         >
                                           Delete
                                         </button>
@@ -1526,7 +1526,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   value={workspaceName}
                   onChange={(e) => setWorkspaceName(e.target.value)}
                   placeholder="My Team"
-                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse`}
+                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-hidden focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse`}
                 />
               </div>
               <div>
@@ -1538,7 +1538,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   onChange={(e) => setWorkspaceDesc(e.target.value)}
                   placeholder="What's this workspace for?"
                   rows={3}
-                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse resize-none`}
+                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-hidden focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse resize-none`}
                 />
               </div>
             </div>
@@ -1586,7 +1586,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   value={channelName}
                   onChange={(e) => setChannelName(e.target.value)}
                   placeholder="new-channel"
-                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse`}
+                  className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-hidden focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse`}
                 />
               </div>
               {/* Channel Type — segmented control replaces the 2×2 icon-card
@@ -1608,9 +1608,9 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                       role="radio"
                       aria-checked={channelType === type}
                       onClick={() => setChannelType(type)}
-                      className={`flex-1 px-3 py-1.5 rounded font-mono text-[11px] uppercase tracking-[0.1em] transition ${
+                      className={`flex-1 px-3 py-1.5 rounded font-mono text-[11px] uppercase tracking-widest transition ${
                         channelType === type
-                          ? 'bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185]'
+                          ? 'bg-[rgba(244,63,94,0.10)] text-rose-600 dark:text-[#fb7185]'
                           : isDarkMode
                             ? 'text-[#b4b4b8] hover:text-[#fafafa]'
                             : 'text-[#52525b] hover:text-[#0f0f0f]'
@@ -1654,7 +1654,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             placeholder="Search Pulse users..."
             value={memberSearchQuery}
             onChange={(e) => setMemberSearchQuery(e.target.value)}
-            className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse`}
+            className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-hidden focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse`}
           />
         </div>
 
@@ -1824,7 +1824,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                 type="text"
                 value={editChannelName}
                 onChange={(e) => setEditChannelName(e.target.value)}
-                className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse`}
+                className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-hidden focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse`}
               />
             </div>
             <div>
@@ -1835,7 +1835,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                 onChange={(e) => setEditChannelDesc(e.target.value)}
                 placeholder="What's this channel about?"
                 rows={3}
-                className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse resize-none`}
+                className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-hidden focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse resize-none`}
               />
             </div>
             <div className={`p-4 rounded-xl ${tc.cardBg} border ${tc.border}`}>
@@ -1886,7 +1886,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             placeholder="Search team members..."
             value={mentionSearchQuery}
             onChange={(e) => setMentionSearchQuery(e.target.value)}
-            className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse`}
+            className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-hidden focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse`}
           />
         </div>
 
@@ -1964,7 +1964,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
 
       {/* Conversation Summary Modal */}
       {conversationSummary && showSummary && (
-        <div className="fixed inset-0 bg-zinc-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-zinc-950/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="max-w-2xl w-full">
             <MessageAIPanel
               summary={conversationSummary}
@@ -1978,7 +1978,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       {/* Meeting Notes Modal */}
       {meetingNotes && (
         <div
-          className="fixed inset-0 bg-zinc-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-zinc-950/50 backdrop-blur-xs z-50 flex items-center justify-center p-4"
           onClick={() => setMeetingNotes(null)}
         >
           <div className="max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
@@ -2001,7 +2001,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
 
       {/* AI Auto-Chapters Panel */}
       {activeChapters.length > 0 && chapterMessageId && (
-        <div className="fixed bottom-[calc(1rem+var(--pulse-bottom-bar))] left-4 right-4 z-[200] max-w-2xl mx-auto">
+        <div className="fixed bottom-[calc(1rem+var(--pulse-bottom-bar))] left-4 right-4 z-200 max-w-2xl mx-auto">
           <div className="relative">
             <button
               type="button"

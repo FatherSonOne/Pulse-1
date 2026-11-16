@@ -40,10 +40,10 @@ export const ContactListItem: React.FC<ContactListItemProps> = ({
         }
       }}
       aria-current={selected ? 'true' : undefined}
-      className={`group w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left border transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
+      className={`group w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left border transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-400 ${
         selected
-          ? 'bg-[var(--pulse-rose-soft)] border-[var(--pulse-rose-soft)]'
-          : 'border-transparent hover:bg-[var(--pulse-surface-raised)]'
+          ? 'bg-(--pulse-rose-soft) border-(--pulse-rose-soft)'
+          : 'border-transparent hover:bg-(--pulse-surface-raised)'
       }`}
     >
       {/* Bulk-select checkbox */}
@@ -88,7 +88,7 @@ export const ContactListItem: React.FC<ContactListItemProps> = ({
           </span>
           {contact.pulseUserId && (
             <span
-              className="shrink-0 w-1.5 h-1.5 rounded-full bg-[var(--pulse-rose)]"
+              className="shrink-0 w-1.5 h-1.5 rounded-full bg-(--pulse-rose)"
               title="On Pulse"
               aria-label="On Pulse"
             />

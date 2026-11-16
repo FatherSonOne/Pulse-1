@@ -351,7 +351,7 @@ export const SmartFolders: React.FC<SmartFoldersProps> = ({
                 e.stopPropagation();
                 handleDeleteFolder(folder.id);
               }}
-              className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition"
+              className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-sm transition"
             >
               <Trash2 className="text-red-500 text-xs" />
             </button>
@@ -473,7 +473,7 @@ export const SmartFolders: React.FC<SmartFoldersProps> = ({
               {msg.labels.length > 0 && (
                 <div className="flex gap-1 mt-2">
                   {msg.labels.map(label => (
-                    <span key={label} className="px-1.5 py-0.5 rounded text-[10px] bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400">
+                    <span key={label} className="px-1.5 py-0.5 rounded-sm text-[10px] bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400">
                       {label}
                     </span>
                   ))}
@@ -493,7 +493,7 @@ export const SmartFolders: React.FC<SmartFoldersProps> = ({
                 <h3 className="font-semibold text-zinc-900 dark:text-white">Create Smart Folder</h3>
                 <button
                   onClick={() => setShowCreateModal(false)}
-                  className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded"
+                  className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-sm"
                 >
                   <X className="text-zinc-500" />
                 </button>
@@ -557,7 +557,7 @@ export const SmartFolders: React.FC<SmartFoldersProps> = ({
                           <select
                             value={rule.conjunction}
                             onChange={(e) => updateRule(rule.id, { conjunction: e.target.value as 'AND' | 'OR' })}
-                            className="px-2 py-1 text-xs rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                            className="px-2 py-1 text-xs rounded-sm border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
                           >
                             <option value="AND">AND</option>
                             <option value="OR">OR</option>
@@ -566,7 +566,7 @@ export const SmartFolders: React.FC<SmartFoldersProps> = ({
                         <select
                           value={rule.field}
                           onChange={(e) => updateRule(rule.id, { field: e.target.value as FolderRule['field'] })}
-                          className="px-2 py-1 text-xs rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                          className="px-2 py-1 text-xs rounded-sm border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
                         >
                           <option value="sender">Sender</option>
                           <option value="subject">Subject</option>
@@ -577,7 +577,7 @@ export const SmartFolders: React.FC<SmartFoldersProps> = ({
                         <select
                           value={rule.operator}
                           onChange={(e) => updateRule(rule.id, { operator: e.target.value as FolderRule['operator'] })}
-                          className="px-2 py-1 text-xs rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                          className="px-2 py-1 text-xs rounded-sm border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
                         >
                           <option value="contains">contains</option>
                           <option value="equals">equals</option>
@@ -588,12 +588,12 @@ export const SmartFolders: React.FC<SmartFoldersProps> = ({
                           type="text"
                           value={rule.value}
                           onChange={(e) => updateRule(rule.id, { value: e.target.value })}
-                          className="flex-1 px-2 py-1 text-xs rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                          className="flex-1 px-2 py-1 text-xs rounded-sm border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
                           placeholder="Value"
                         />
                         <button
                           onClick={() => removeRule(rule.id)}
-                          className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded"
+                          className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-sm"
                         >
                           <Trash2 className="text-red-500 text-xs" />
                         </button>

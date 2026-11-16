@@ -52,7 +52,7 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+        className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
         onClick={onClose}
       >
         <motion.div
@@ -70,12 +70,12 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
           {/* Header */}
           <div className="p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-between items-center">
             <h3 className="font-bold dark:text-white flex items-center gap-2">
-              <Clock className="text-[var(--pulse-rose)]" />
+              <Clock className="text-(--pulse-rose)" />
               Schedule Message
             </h3>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg hover:bg-[var(--pulse-surface-raised)] flex items-center justify-center transition"
+              className="w-8 h-8 rounded-lg hover:bg-(--pulse-surface-raised) flex items-center justify-center transition"
             >
               <X className="text-zinc-500" />
             </button>
@@ -93,7 +93,7 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
                 onChange={e => onMessageTextChange(e.target.value)}
                 rows={3}
                 placeholder="Write the message to send later…"
-                className="w-full border rounded-lg px-3 py-2 text-sm bg-white dark:bg-[rgba(255,255,255,0.055)] dark:border-[rgba(255,255,255,0.10)] dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-rose-500/40"
+                className="w-full border rounded-lg px-3 py-2 text-sm bg-white dark:bg-[rgba(255,255,255,0.055)] dark:border-[rgba(255,255,255,0.10)] dark:text-white resize-none focus:outline-hidden focus:ring-2 focus:ring-rose-500/40"
               />
             </div>
 
@@ -131,7 +131,7 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
                   {scheduledMessages.map(msg => (
                     <div
                       key={msg.id}
-                      className="flex justify-between items-center text-xs bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)] p-2 rounded"
+                      className="flex justify-between items-center text-xs bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)] p-2 rounded-sm"
                     >
                       <span className="truncate flex-1">{msg.text}</span>
                       <span className="text-zinc-400 ml-2">

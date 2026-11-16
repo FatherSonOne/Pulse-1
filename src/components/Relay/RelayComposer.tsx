@@ -418,7 +418,7 @@ export const RelayComposer: React.FC<RelayComposerProps> = ({
             </button>
           )}
           <h2
-            className={`flex-1 font-mono text-[11px] uppercase tracking-[0.1em] ${
+            className={`flex-1 font-mono text-[11px] uppercase tracking-widest ${
               isDarkMode ? 'text-zinc-300' : 'text-zinc-700'
             }`}
           >
@@ -646,7 +646,7 @@ const RecipientPicker: React.FC<RecipientPickerProps> = ({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search Pulse contacts"
-          className={`flex-1 bg-transparent outline-none text-sm ${
+          className={`flex-1 bg-transparent outline-hidden text-sm ${
             isDarkMode
               ? 'text-zinc-100 placeholder:text-zinc-500'
               : 'text-zinc-900 placeholder:text-zinc-400'
@@ -744,7 +744,7 @@ const RecipientPicker: React.FC<RecipientPickerProps> = ({
                     {contact.name}
                   </div>
                   <div
-                    className={`font-mono text-[11px] uppercase tracking-[0.1em] truncate ${
+                    className={`font-mono text-[11px] uppercase tracking-widest truncate ${
                       isDarkMode ? 'text-zinc-500' : 'text-zinc-400'
                     }`}
                   >
@@ -819,7 +819,7 @@ const RecipientPicker: React.FC<RecipientPickerProps> = ({
                         <span className="truncate">{contact.email}</span>
                       </>
                     ) : (
-                      <span className="font-mono text-[10px] uppercase tracking-[0.1em]">
+                      <span className="font-mono text-[10px] uppercase tracking-widest">
                         Share via link
                       </span>
                     )}

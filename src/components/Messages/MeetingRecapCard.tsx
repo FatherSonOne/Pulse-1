@@ -52,7 +52,7 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
             {hasProfile ? (
               <span className="text-base leading-none">{profile.icon || '📋'}</span>
             ) : (
-              <MessageSquare className="w-4 h-4 text-[var(--pulse-rose)]" />
+              <MessageSquare className="w-4 h-4 text-(--pulse-rose)" />
             )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -104,10 +104,10 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
             <div className="space-y-3">
               {metadata.profileSections.map((section, i) => (
                 <div key={i} className="rounded-lg bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.03)] border border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)] p-3">
-                  <div className="text-[10px] font-mono font-medium text-[var(--pulse-ink-2)] uppercase tracking-[0.1em] mb-1.5">
+                  <div className="text-[10px] font-mono font-medium text-(--pulse-ink-2) uppercase tracking-widest mb-1.5">
                     {section.title}
                   </div>
-                  <div className="text-sm text-[var(--pulse-ink)] leading-relaxed whitespace-pre-wrap">
+                  <div className="text-sm text-(--pulse-ink) leading-relaxed whitespace-pre-wrap">
                     {section.content}
                   </div>
                 </div>
@@ -123,13 +123,13 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
           {/* Key Decisions */}
           {metadata.keyDecisions?.length && (
             <div className="rounded-lg bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] border border-[rgba(244,63,94,0.15)] p-3">
-              <div className="text-[10px] font-mono font-medium text-[var(--pulse-rose-text)] uppercase tracking-[0.1em] mb-2">
+              <div className="text-[10px] font-mono font-medium text-(--pulse-rose-text) uppercase tracking-widest mb-2">
                 Key Decisions
               </div>
               <ul className="space-y-1">
                 {metadata.keyDecisions.map((d, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-[var(--pulse-ink)]">
-                    <span className="text-[var(--pulse-rose)] mt-0.5 flex-shrink-0">•</span>
+                  <li key={i} className="flex items-start gap-2 text-sm text-(--pulse-ink)">
+                    <span className="text-(--pulse-rose) mt-0.5 shrink-0">•</span>
                     <span>{d}</span>
                   </li>
                 ))}
@@ -140,14 +140,14 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
           {/* Action Items summary */}
           {metadata.actionItems?.length && (
             <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/15 p-3">
-              <div className="font-mono text-xs font-medium text-emerald-400 uppercase tracking-[0.1em] mb-2 flex items-center gap-1">
+              <div className="font-mono text-xs font-medium text-emerald-400 uppercase tracking-widest mb-2 flex items-center gap-1">
                 <CheckSquare className="w-3 h-3" />
                 Action Items ({metadata.actionItems.length})
               </div>
               <ul className="space-y-1.5">
                 {metadata.actionItems.slice(0, 5).map((item, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
-                    <span className="text-emerald-400 mt-0.5 flex-shrink-0">✓</span>
+                    <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
                     <div>
                       <span className="text-zinc-300">{item.description}</span>
                       {item.assignee && (
@@ -185,7 +185,7 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
             <button
               key={i}
               onClick={() => onAction?.(action) || (action.url && window.open(action.url, '_blank'))}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition bg-[rgba(244,63,94,0.10)] hover:bg-[rgba(244,63,94,0.15)] text-[var(--pulse-rose-text)] border border-[rgba(244,63,94,0.20)] hover:border-[rgba(244,63,94,0.35)]"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition bg-[rgba(244,63,94,0.10)] hover:bg-[rgba(244,63,94,0.15)] text-(--pulse-rose-text) border border-[rgba(244,63,94,0.20)] hover:border-[rgba(244,63,94,0.35)]"
             >
               {action.action === 'rate_meeting' ? (
                 <Star className="w-3 h-3" />

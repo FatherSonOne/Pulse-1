@@ -136,7 +136,7 @@ export const GeofencesDrawer: React.FC<GeofencesDrawerProps> = ({
   };
 
   const monoStyle: React.CSSProperties = { fontFamily: "'JetBrains Mono', monospace" };
-  const sectionLabelCls = `text-[10px] tracking-[0.1em] uppercase ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`;
+  const sectionLabelCls = `text-[10px] tracking-widest uppercase ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`;
 
   return (
     <div
@@ -155,12 +155,12 @@ export const GeofencesDrawer: React.FC<GeofencesDrawerProps> = ({
         }`}
       >
         {/* Header — neutral chrome. */}
-        <div className={`flex items-center justify-between px-4 py-3 border-b flex-shrink-0 ${
+        <div className={`flex items-center justify-between px-4 py-3 border-b shrink-0 ${
           isDarkMode ? 'border-white/10' : 'border-gray-100'
         }`}>
           <div className="flex items-center gap-2">
             <MapPin size={14} className={isDarkMode ? 'text-gray-400' : 'text-gray-500'} aria-hidden="true" />
-            <span id="geofences-drawer-title" className="text-[11px] tracking-[0.1em] uppercase" style={monoStyle}>
+            <span id="geofences-drawer-title" className="text-[11px] tracking-widest uppercase" style={monoStyle}>
               Geofences
             </span>
           </div>
@@ -169,7 +169,7 @@ export const GeofencesDrawer: React.FC<GeofencesDrawerProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className={`p-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+            className={`p-1.5 rounded transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-1 ${
               isDarkMode ? 'hover:bg-white/10 text-gray-400 focus-visible:ring-zinc-400' : 'hover:bg-gray-100 text-gray-500 focus-visible:ring-zinc-500'
             }`}
           >
@@ -189,7 +189,7 @@ export const GeofencesDrawer: React.FC<GeofencesDrawerProps> = ({
                 color: isDarkMode ? '#fcd34d' : '#b45309',
               }}
             >
-              <span aria-hidden className="mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#f59e0b' }} />
+              <span aria-hidden className="mt-1 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: '#f59e0b' }} />
               <span>
                 Arrival alerts require <strong>Live location ON</strong>. Geofences only detect enter/exit
                 while you're broadcasting — turn on Broadcast to get alerts. The rings below are always real.
@@ -212,7 +212,7 @@ export const GeofencesDrawer: React.FC<GeofencesDrawerProps> = ({
                 aria-checked={ringsVisible}
                 aria-label="Show geofence rings on map"
                 onClick={() => onToggleRings(!ringsVisible)}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-1 ${
                   isDarkMode ? 'focus-visible:ring-zinc-400' : 'focus-visible:ring-zinc-500'
                 } ${ringsVisible ? 'bg-rose-500' : isDarkMode ? 'bg-white/15' : 'bg-gray-300'}`}
               >
@@ -242,7 +242,7 @@ export const GeofencesDrawer: React.FC<GeofencesDrawerProps> = ({
                   return (
                     <div
                       key={place.id}
-                      className={`rounded-xl border px-3 py-3 ${isDarkMode ? 'border-white/10 bg-white/[0.02]' : 'border-gray-200 bg-white'}`}
+                      className={`rounded-xl border px-3 py-3 ${isDarkMode ? 'border-white/10 bg-white/2' : 'border-gray-200 bg-white'}`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
@@ -259,7 +259,7 @@ export const GeofencesDrawer: React.FC<GeofencesDrawerProps> = ({
                           disabled={saving}
                           aria-label="Remove geofence"
                           title="Remove geofence"
-                          className={`p-1.5 rounded transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 ${
+                          className={`p-1.5 rounded transition-colors disabled:opacity-40 focus-visible:outline-hidden focus-visible:ring-2 ${
                             isDarkMode ? 'text-gray-400 hover:bg-white/10 focus-visible:ring-zinc-400' : 'text-gray-500 hover:bg-gray-100 focus-visible:ring-zinc-500'
                           }`}
                         >
@@ -276,7 +276,7 @@ export const GeofencesDrawer: React.FC<GeofencesDrawerProps> = ({
                               onClick={() => handleSetRadius(place.id, m)}
                               disabled={saving}
                               aria-pressed={active}
-                              className={`px-2 py-1 rounded text-[10px] tracking-[0.05em] transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 ${
+                              className={`px-2 py-1 rounded text-[10px] tracking-wider transition-colors disabled:opacity-40 focus-visible:outline-hidden focus-visible:ring-2 ${
                                 isDarkMode ? 'focus-visible:ring-zinc-400' : 'focus-visible:ring-zinc-500'
                               } ${
                                 active
@@ -318,7 +318,7 @@ export const GeofencesDrawer: React.FC<GeofencesDrawerProps> = ({
                       key={ev.id}
                       className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 ${
                         ev.surfaced ? 'opacity-55' : ''
-                      } ${isDarkMode ? 'border-white/10 bg-white/[0.02]' : 'border-gray-200 bg-white'}`}
+                      } ${isDarkMode ? 'border-white/10 bg-white/2' : 'border-gray-200 bg-white'}`}
                     >
                       <Icon size={14} className={isDarkMode ? 'text-gray-400' : 'text-gray-500'} aria-hidden="true" />
                       <div className="min-w-0 flex-1">
@@ -337,7 +337,7 @@ export const GeofencesDrawer: React.FC<GeofencesDrawerProps> = ({
                           onClick={() => handleMarkReviewed(ev.id)}
                           aria-label="Mark reviewed"
                           title="Mark reviewed"
-                          className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 ${
+                          className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded transition-colors focus-visible:outline-hidden focus-visible:ring-2 ${
                             isDarkMode ? 'text-gray-300 hover:bg-white/10 focus-visible:ring-zinc-400' : 'text-gray-600 hover:bg-gray-100 focus-visible:ring-zinc-500'
                           }`}
                         >

@@ -23,7 +23,7 @@ export const SyncPreferences: React.FC<SyncPreferencesProps> = ({ slackChannels 
                     aria-label="Sync Frequency"
                     defaultValue={localStorage.getItem('pulse_sync_frequency') || 'realtime'}
                     onChange={(e) => localStorage.setItem('pulse_sync_frequency', e.target.value)}
-                    className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-sm dark:text-white text-zinc-900 focus:outline-none"
+                    className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-sm dark:text-white text-zinc-900 focus:outline-hidden"
                 >
                     <option value="realtime">Real-time (Instant)</option>
                     <option value="15min">Every 15 minutes</option>

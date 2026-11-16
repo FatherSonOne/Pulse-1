@@ -99,7 +99,7 @@ export const LeadGradeBadge: React.FC<LeadGradeBadgeProps> = ({
 
   return (
     <div
-      className={`${sizeConfig[size]} rounded-md flex items-center justify-center font-bold text-white shadow-sm`}
+      className={`${sizeConfig[size]} rounded-md flex items-center justify-center font-bold text-white shadow-xs`}
       style={{ backgroundColor: gradeColor }}
       title={`Lead Grade: ${grade}`}
     >

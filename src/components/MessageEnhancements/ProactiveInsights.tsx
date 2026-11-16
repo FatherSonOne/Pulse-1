@@ -50,7 +50,7 @@ export const ProactiveInsights: React.FC<ProactiveInsightsProps> = ({
           className={`border rounded-lg p-4 ${getColorClasses(insight.type)}`}
         >
           <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 mt-0.5">
+            <div className="shrink-0 mt-0.5">
               {getIcon(insight.type)}
             </div>
             <div className="flex-1 min-w-0">
@@ -93,7 +93,7 @@ export const ProactiveInsights: React.FC<ProactiveInsightsProps> = ({
                       <button
                         key={actionIndex}
                         onClick={() => onActionClick(action)}
-                        className="block w-full text-left text-xs px-3 py-2 rounded bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors border border-gray-200 dark:border-gray-700"
+                        className="block w-full text-left text-xs px-3 py-2 rounded-sm bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors border border-gray-200 dark:border-gray-700"
                       >
                         → {action}
                       </button>

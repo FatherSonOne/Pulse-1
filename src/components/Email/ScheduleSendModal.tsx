@@ -101,7 +101,7 @@ export const ScheduleSendModal: React.FC<ScheduleSendModalProps> = ({ onSchedule
         <button
           type="button"
           onClick={onClose}
-          className="w-6 h-6 rounded flex items-center justify-center pulse-ink-3-color hover:pulse-ink-color hover:pulse-surface-raised transition"
+          className="w-6 h-6 rounded-sm flex items-center justify-center pulse-ink-3-color hover:pulse-ink-color hover:pulse-surface-raised transition"
           aria-label="Close schedule menu"
         >
           <X className="w-3.5 h-3.5" />
@@ -142,14 +142,14 @@ export const ScheduleSendModal: React.FC<ScheduleSendModalProps> = ({ onSchedule
             value={customDate}
             onChange={(e) => setCustomDate(e.target.value)}
             min={minDate}
-            className="flex-1 rounded-lg px-2 py-1.5 text-xs pulse-ink-color border pulse-border-color focus:outline-none focus:pulse-rose-border"
+            className="flex-1 rounded-lg px-2 py-1.5 text-xs pulse-ink-color border pulse-border-color focus:outline-hidden focus:pulse-rose-border"
             style={{ background: 'var(--pulse-surface-raised)' }}
           />
           <input
             type="time"
             value={customTime}
             onChange={(e) => setCustomTime(e.target.value)}
-            className="w-20 rounded-lg px-2 py-1.5 text-xs pulse-ink-color border pulse-border-color focus:outline-none focus:pulse-rose-border"
+            className="w-20 rounded-lg px-2 py-1.5 text-xs pulse-ink-color border pulse-border-color focus:outline-hidden focus:pulse-rose-border"
             style={{ background: 'var(--pulse-surface-raised)' }}
           />
         </div>

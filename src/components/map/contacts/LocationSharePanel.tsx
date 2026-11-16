@@ -98,7 +98,7 @@ const LocationSharePanel: React.FC<LocationSharePanelProps> = ({ contact, myUser
           disabled={saving}
           className={`relative w-10 h-5 rounded-full transition-colors ${isSharing ? 'bg-rose-500' : isDarkMode ? 'bg-gray-700' : 'bg-gray-300'}`}
         >
-          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${isSharing ? 'translate-x-5' : 'translate-x-0.5'}`} />
+          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${isSharing ? 'translate-x-5' : 'translate-x-0.5'}`} />
         </button>
       </div>
 

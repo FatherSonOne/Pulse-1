@@ -202,24 +202,24 @@ interface SectionProps {
 }
 
 const Section: React.FC<SectionProps> = ({ label, summary, expanded, onToggle, children }) => (
-  <div className="border-t border-[var(--pulse-border)] first:border-t-0">
+  <div className="border-t border-(--pulse-border) first:border-t-0">
     <button
       type="button"
       onClick={onToggle}
       aria-expanded={expanded}
-      className="w-full flex items-center justify-between gap-3 py-3 text-left rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] focus-visible:ring-offset-2 transition"
+      className="w-full flex items-center justify-between gap-3 py-3 text-left rounded-md focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-rose) focus-visible:ring-offset-2 transition"
     >
       <div className="flex items-center gap-3 min-w-0">
-        <span className="font-mono text-[10px] tracking-[0.12em] uppercase font-semibold text-[var(--pulse-ink-3)] w-12 shrink-0">
+        <span className="font-mono text-[10px] tracking-[0.12em] uppercase font-semibold text-(--pulse-ink-3) w-12 shrink-0">
           {label}
         </span>
-        <span className={`text-sm truncate ${summary === '—' ? 'text-[var(--pulse-ink-3)]' : 'text-[var(--pulse-ink)]'}`}>
+        <span className={`text-sm truncate ${summary === '—' ? 'text-(--pulse-ink-3)' : 'text-(--pulse-ink)'}`}>
           {summary}
         </span>
       </div>
       <ChevronRight
         size={14}
-        className="shrink-0 text-[var(--pulse-ink-3)] transition-transform duration-200"
+        className="shrink-0 text-(--pulse-ink-3) transition-transform duration-200"
         style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0)' }}
         aria-hidden="true"
       />
@@ -236,7 +236,7 @@ const Section: React.FC<SectionProps> = ({ label, summary, expanded, onToggle, c
 const MonoLabel: React.FC<{ children: React.ReactNode; htmlFor?: string }> = ({ children, htmlFor }) => (
   <label
     htmlFor={htmlFor}
-    className="block font-mono text-[10px] tracking-[0.1em] uppercase font-semibold text-[var(--pulse-ink-3)] mb-1.5"
+    className="block font-mono text-[10px] tracking-widest uppercase font-semibold text-(--pulse-ink-3) mb-1.5"
   >
     {children}
   </label>
@@ -244,11 +244,11 @@ const MonoLabel: React.FC<{ children: React.ReactNode; htmlFor?: string }> = ({ 
 
 // ─── Standard input class (coral focus ring, token-driven) ─────────────────
 const INPUT_BASE =
-  'w-full bg-[var(--pulse-canvas-soft)] dark:bg-white/[0.03] ' +
-  'border border-[var(--pulse-border)] rounded-lg px-3 py-2.5 text-sm ' +
-  'text-[var(--pulse-ink)] placeholder:text-[var(--pulse-ink-3)] ' +
-  'outline-none focus:border-[var(--pulse-rose)] ' +
-  'focus:ring-2 focus:ring-[var(--pulse-rose-soft)] transition';
+  'w-full bg-(--pulse-canvas-soft) dark:bg-white/3 ' +
+  'border border-(--pulse-border) rounded-lg px-3 py-2.5 text-sm ' +
+  'text-(--pulse-ink) placeholder:text-(--pulse-ink-3) ' +
+  'outline-hidden focus:border-(--pulse-rose) ' +
+  'focus:ring-2 focus:ring-(--pulse-rose-soft) transition';
 
 export const EventCreationModal = React.memo<EventCreationModalProps>((props) => {
   const isEdit = !!props.editingEvent;
@@ -374,7 +374,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
 
   return (
     <div
-      className="absolute inset-0 z-50 bg-[var(--pulse-canvas)]/70 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4 overflow-y-auto"
+      className="absolute inset-0 z-50 bg-(--pulse-canvas)/70 dark:bg-black/70 backdrop-blur-xs flex items-center justify-center animate-fade-in p-4 overflow-y-auto"
       onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
       role="dialog"
       aria-modal="true"
@@ -383,13 +383,13 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
       <form
         ref={formRef}
         onSubmit={(e) => { setIsDirty(false); props.onSubmit(e); }}
-        className="bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-2xl w-full max-w-lg shadow-2xl animate-scale-in my-8 flex flex-col max-h-[calc(100vh-4rem)]"
+        className="bg-(--pulse-surface) dark:bg-(--pulse-surface) border border-(--pulse-border) rounded-2xl w-full max-w-lg shadow-2xl animate-scale-in my-8 flex flex-col max-h-[calc(100vh-4rem)]"
       >
         {/* ── Header ────────────────────────────────────────────── */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
           <h3
             id="event-modal-title"
-            className="font-mono text-[11px] tracking-[0.15em] uppercase font-semibold text-[var(--pulse-ink-3)]"
+            className="font-mono text-[11px] tracking-[0.15em] uppercase font-semibold text-(--pulse-ink-3)"
           >
             {isEdit ? 'Edit event' : 'New event'}
           </h3>
@@ -397,7 +397,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
             type="button"
             aria-label="Close"
             onClick={handleClose}
-            className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-[var(--pulse-ink-3)] hover:text-[var(--pulse-ink)] hover:bg-[var(--pulse-surface-raised)] dark:hover:bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] transition"
+            className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-(--pulse-ink-3) hover:text-(--pulse-ink) hover:bg-(--pulse-surface-raised) dark:hover:bg-white/5 outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-rose) transition"
           >
             <X size={16} aria-hidden="true" />
           </button>
@@ -413,13 +413,13 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
             placeholder={isEdit ? 'Event title' : 'Lunch with Tom Friday 1pm'}
             value={props.newEventTitle}
             onChange={(e) => handleTitleChange(e.target.value)}
-            className="w-full bg-transparent border-0 outline-none text-xl font-medium text-[var(--pulse-ink)] placeholder:text-[var(--pulse-ink-3)] placeholder:font-normal focus:outline-none p-0"
+            className="w-full bg-transparent border-0 outline-hidden text-xl font-medium text-(--pulse-ink) placeholder:text-(--pulse-ink-3) placeholder:font-normal focus:outline-hidden p-0"
           />
 
           {/* Parsed confidence chips (Cron-style) */}
           {(parsed.date || parsed.start || parsed.end) && (
             <div className="flex flex-wrap items-center gap-1.5 mt-2">
-              <span className="font-mono text-[9px] tracking-[0.15em] uppercase text-[var(--pulse-ink-3)]">
+              <span className="font-mono text-[9px] tracking-[0.15em] uppercase text-(--pulse-ink-3)">
                 Parsed
               </span>
               {parsed.date && !dismissed.has('date') && (
@@ -445,7 +445,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
             onToggle={() => toggle('when')}
           >
             {/* All-day toggle */}
-            <label className="inline-flex items-center gap-2 cursor-pointer text-sm text-[var(--pulse-ink-2)]">
+            <label className="inline-flex items-center gap-2 cursor-pointer text-sm text-(--pulse-ink-2)">
               <input
                 type="checkbox"
                 checked={props.newEventAllDay}
@@ -453,7 +453,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
                 className="sr-only peer"
               />
               <span
-                className="w-8 h-4 rounded-full bg-[var(--pulse-border-strong)] peer-checked:bg-[var(--pulse-rose)] peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--pulse-rose-soft)] relative transition-colors duration-200
+                className="w-8 h-4 rounded-full bg-(--pulse-border-strong) peer-checked:bg-(--pulse-rose) peer-focus-visible:ring-2 peer-focus-visible:ring-(--pulse-rose-soft) relative transition-colors duration-200
                   after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:w-3 after:h-3 after:rounded-full after:transition-transform peer-checked:after:translate-x-4"
                 aria-hidden="true"
               />
@@ -560,7 +560,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
                   return contact ? (
                     <span
                       key={id}
-                      className="inline-flex items-center gap-1.5 px-2 py-1 bg-[var(--pulse-surface-raised)] dark:bg-white/[0.04] rounded-full text-xs text-[var(--pulse-ink)]"
+                      className="inline-flex items-center gap-1.5 px-2 py-1 bg-(--pulse-surface-raised) dark:bg-white/4 rounded-full text-xs text-(--pulse-ink)"
                     >
                       <span className={`w-4 h-4 rounded-full ${contact.avatarColor} flex items-center justify-center text-[8px] text-white font-bold`}>
                         {contact.name.charAt(0).toUpperCase()}
@@ -570,7 +570,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
                         type="button"
                         aria-label={`Remove ${contact.name}`}
                         onClick={() => { props.onRemoveAttendee(id); markDirty(); }}
-                        className="text-[var(--pulse-ink-3)] hover:text-[var(--pulse-tone-overdue)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] rounded-full"
+                        className="text-(--pulse-ink-3) hover:text-(--pulse-tone-overdue) outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-rose) rounded-full"
                       >
                         <X size={10} aria-hidden="true" />
                       </button>
@@ -590,7 +590,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
                       key={contact.id}
                       type="button"
                       onClick={() => { props.onAddAttendee(contact.id); markDirty(); }}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-[var(--pulse-canvas-soft)] dark:bg-white/[0.03] hover:bg-[var(--pulse-surface-raised)] dark:hover:bg-white/[0.06] rounded-full text-xs text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] transition"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-(--pulse-canvas-soft) dark:bg-white/3 hover:bg-(--pulse-surface-raised) dark:hover:bg-white/6 rounded-full text-xs text-(--pulse-ink-2) hover:text-(--pulse-ink) whitespace-nowrap outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-rose) transition"
                     >
                       <span className={`w-4 h-4 rounded-full ${contact.avatarColor} flex items-center justify-center text-[8px] text-white font-bold`}>
                         {contact.name.charAt(0).toUpperCase()}
@@ -644,8 +644,8 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
                       type="button"
                       onClick={() => { props.onTypeChange(type.id as CalendarEvent['type']); markDirty(); }}
                       aria-pressed={active}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] focus-visible:ring-offset-1 ${
-                        active ? 'text-[var(--pulse-surface)]' : 'text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)]'
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-rose) focus-visible:ring-offset-1 ${
+                        active ? 'text-(--pulse-surface)' : 'text-(--pulse-ink-2) hover:text-(--pulse-ink)'
                       }`}
                       style={active
                         ? { backgroundColor: type.color, borderColor: type.color }
@@ -660,7 +660,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
                 <button
                   type="button"
                   onClick={props.onOpenCustomTypesManager}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-dashed border-[var(--pulse-border-strong)] text-[var(--pulse-ink-3)] hover:text-[var(--pulse-ink-2)] hover:border-[var(--pulse-ink-3)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] transition"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-dashed border-(--pulse-border-strong) text-(--pulse-ink-3) hover:text-(--pulse-ink-2) hover:border-(--pulse-ink-3) outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-rose) transition"
                 >
                   <Sliders size={12} aria-hidden="true" />
                   Manage
@@ -683,10 +683,10 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
                       title={color.name}
                       aria-label={color.name}
                       onClick={() => { props.onColorChange(color.class); markDirty(); }}
-                      className={`w-7 h-7 rounded-full ${color.class} transition outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--pulse-rose)] ${
+                      className={`w-7 h-7 rounded-full ${color.class} transition outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-(--pulse-rose) ${
                         active
-                          ? 'ring-2 ring-offset-2 ring-[var(--pulse-rose)]'
-                          : 'ring-2 ring-offset-2 ring-transparent hover:ring-[var(--pulse-border-strong)]'
+                          ? 'ring-2 ring-offset-2 ring-(--pulse-rose)'
+                          : 'ring-2 ring-offset-2 ring-transparent hover:ring-(--pulse-border-strong)'
                       }`}
                     />
                   );
@@ -707,8 +707,8 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
                         type="button"
                         onClick={() => { props.onStatusChange!(s); markDirty(); }}
                         aria-pressed={active}
-                        className={`rounded-full transition outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[var(--pulse-rose)] ${
-                          active ? 'ring-2 ring-offset-1 ring-[var(--pulse-rose)]' : 'opacity-60 hover:opacity-100'
+                        className={`rounded-full transition outline-hidden focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-(--pulse-rose) ${
+                          active ? 'ring-2 ring-offset-1 ring-(--pulse-rose)' : 'opacity-60 hover:opacity-100'
                         }`}
                       >
                         <EventStatusBadge status={s} />
@@ -734,24 +734,24 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
         </div>
 
         {/* ── Footer ────────────────────────────────────────────── */}
-        <div className="border-t border-[var(--pulse-border)] px-5 py-3">
+        <div className="border-t border-(--pulse-border) px-5 py-3">
           {draftGuard ? (
             <div className="flex items-center justify-between gap-2">
-              <span className="font-mono text-[10px] tracking-[0.1em] uppercase text-[var(--pulse-ink-2)]">
+              <span className="font-mono text-[10px] tracking-widest uppercase text-(--pulse-ink-2)">
                 Discard draft?
               </span>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setDraftGuard(false)}
-                  className="font-mono text-[11px] tracking-[0.1em] uppercase font-semibold px-3 py-1.5 rounded-md text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] hover:bg-[var(--pulse-surface-raised)] dark:hover:bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] transition"
+                  className="font-mono text-[11px] tracking-widest uppercase font-semibold px-3 py-1.5 rounded-md text-(--pulse-ink-2) hover:text-(--pulse-ink) hover:bg-(--pulse-surface-raised) dark:hover:bg-white/5 outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-rose) transition"
                 >
                   Keep editing
                 </button>
                 <button
                   type="button"
                   onClick={() => { setIsDirty(false); setDraftGuard(false); props.onClose(); }}
-                  className="font-mono text-[11px] tracking-[0.1em] uppercase font-semibold px-3 py-1.5 rounded-md text-[var(--pulse-tone-overdue)] hover:bg-[var(--pulse-tone-overdue-soft)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-tone-overdue)] transition"
+                  className="font-mono text-[11px] tracking-widest uppercase font-semibold px-3 py-1.5 rounded-md text-(--pulse-tone-overdue) hover:bg-(--pulse-tone-overdue-soft) outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-tone-overdue) transition"
                 >
                   Discard
                 </button>
@@ -759,21 +759,21 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
             </div>
           ) : (
             <div className="flex items-center justify-between gap-3">
-              <span className="font-mono text-[10px] tracking-[0.1em] uppercase text-[var(--pulse-ink-3)] hidden sm:inline">
+              <span className="font-mono text-[10px] tracking-widest uppercase text-(--pulse-ink-3) hidden sm:inline">
                 <kbd className="font-mono">⌘↵</kbd> to save
               </span>
               <div className="flex items-center gap-2 ml-auto">
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-4 py-2 text-sm font-medium text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] transition"
+                  className="px-4 py-2 text-sm font-medium text-(--pulse-ink-2) hover:text-(--pulse-ink) rounded-lg outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-rose) transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={!props.newEventTitle.trim()}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--pulse-rose)] transition"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-(--pulse-rose) hover:bg-(--pulse-rose-deep) text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-(--pulse-rose) transition"
                 >
                   {isEdit ? <Check size={14} aria-hidden="true" /> : <Plus size={14} aria-hidden="true" />}
                   {isEdit ? 'Save changes' : 'Create event'}
@@ -791,13 +791,13 @@ EventCreationModal.displayName = 'EventCreationModal';
 
 // ─── Dismissible parsed-confidence chip ────────────────────────────────────
 const ChipDismissible: React.FC<{ label: string; onDismiss: () => void }> = ({ label, onDismiss }) => (
-  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--pulse-rose-softer)] text-[var(--pulse-rose-text)] font-mono text-[10px] tracking-[0.05em]">
+  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-(--pulse-rose-softer) text-(--pulse-rose-text) font-mono text-[10px] tracking-wider">
     {label}
     <button
       type="button"
       onClick={onDismiss}
       aria-label={`Dismiss ${label}`}
-      className="text-[var(--pulse-rose-text)]/70 hover:text-[var(--pulse-rose-text)] outline-none focus-visible:ring-1 focus-visible:ring-[var(--pulse-rose)] rounded-full"
+      className="text-(--pulse-rose-text)/70 hover:text-(--pulse-rose-text) outline-hidden focus-visible:ring-1 focus-visible:ring-(--pulse-rose) rounded-full"
     >
       <X size={10} aria-hidden="true" />
     </button>

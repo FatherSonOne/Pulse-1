@@ -128,10 +128,10 @@ const ToolOverlay: React.FC<ToolOverlayProps> = ({
         type="button"
         onClick={onClick}
         aria-pressed={isActive}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-widest font-medium transition-colors whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
           isActive
-            ? 'bg-rose-500/[0.10] dark:bg-rose-500/[0.15] text-rose-600 dark:text-rose-bright'
-            : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright'
+            ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-bright'
+            : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/4 hover:text-rose-500 dark:hover:text-rose-bright'
         }`}
       >
         <i className={`fa-solid ${icon} text-[10px] opacity-70`} />
@@ -144,11 +144,11 @@ const ToolOverlay: React.FC<ToolOverlayProps> = ({
       {/* Tool Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[rgba(255,255,255,0.03)]">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-rose-500/[0.10] dark:bg-rose-500/[0.15] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-lg bg-rose-500/10 dark:bg-rose-500/15 flex items-center justify-center">
             <i className={`fa-solid ${config.icon} text-rose-600 dark:text-rose-bright text-base`}></i>
           </div>
           <div>
-            <div className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-rose-600 dark:text-rose-bright">
+            <div className="font-mono uppercase tracking-widest text-[10px] font-medium text-rose-600 dark:text-rose-bright">
               MESSAGE TOOL
             </div>
             <h3 className="text-base font-medium text-zinc-900 dark:text-white leading-tight">{config.title}</h3>
@@ -156,7 +156,7 @@ const ToolOverlay: React.FC<ToolOverlayProps> = ({
         </div>
         <button
           onClick={onClose}
-          className="w-8 h-8 rounded-md text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright hover:bg-rose-500/[0.08] dark:hover:bg-rose-500/[0.10] flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+          className="w-8 h-8 rounded-md text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright hover:bg-rose-500/8 dark:hover:bg-rose-500/10 flex items-center justify-center transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
           title="Close and return to chat (Esc)"
           aria-label="Close"
         >

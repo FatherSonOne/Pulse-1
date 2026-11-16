@@ -247,12 +247,12 @@ export const AIMediatorPanel: React.FC<AIMediatorPanelProps> = ({
   // thick coloured border per the Status-Stays-Status rule.
   const severityBadge = (
     <div className="flex items-center gap-2 flex-wrap">
-      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-[0.1em] font-medium ${
+      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest font-medium ${
         alertLevel === 'high'
-          ? 'bg-red-500/[0.08] dark:bg-red-500/[0.12] text-red-700 dark:text-red-300'
+          ? 'bg-red-500/8 dark:bg-red-500/12 text-red-700 dark:text-red-300'
           : alertLevel === 'medium'
-            ? 'bg-amber-500/[0.08] dark:bg-amber-500/[0.12] text-amber-700 dark:text-amber-300'
-            : 'bg-zinc-500/[0.08] dark:bg-zinc-500/[0.12] text-zinc-700 dark:text-zinc-300'
+            ? 'bg-amber-500/8 dark:bg-amber-500/12 text-amber-700 dark:text-amber-300'
+            : 'bg-zinc-500/8 dark:bg-zinc-500/12 text-zinc-700 dark:text-zinc-300'
       }`}>
         <i className={`fa-solid ${
           alertLevel === 'high' ? 'fa-triangle-exclamation' :
@@ -280,12 +280,12 @@ export const AIMediatorPanel: React.FC<AIMediatorPanelProps> = ({
             {signals.slice(0, 3).map(signal => (
               <span
                 key={signal.id}
-                className={`inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-[0.1em] font-medium px-2 py-1 rounded ${
+                className={`inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest font-medium px-2 py-1 rounded ${
                   signal.severity === 'high'
-                    ? 'bg-red-500/[0.08] dark:bg-red-500/[0.12] text-red-700 dark:text-red-300'
+                    ? 'bg-red-500/8 dark:bg-red-500/12 text-red-700 dark:text-red-300'
                     : signal.severity === 'medium'
-                      ? 'bg-amber-500/[0.08] dark:bg-amber-500/[0.12] text-amber-700 dark:text-amber-300'
-                      : 'bg-zinc-500/[0.08] dark:bg-zinc-500/[0.12] text-zinc-700 dark:text-zinc-300'
+                      ? 'bg-amber-500/8 dark:bg-amber-500/12 text-amber-700 dark:text-amber-300'
+                      : 'bg-zinc-500/8 dark:bg-zinc-500/12 text-zinc-700 dark:text-zinc-300'
                 }`}
               >
                 <i className={`fa-solid ${
@@ -303,7 +303,7 @@ export const AIMediatorPanel: React.FC<AIMediatorPanelProps> = ({
         {/* Suggestions */}
         {suggestions.length > 0 && (
           <div className="space-y-2">
-            <div className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-500 dark:text-zinc-400">
+            <div className="text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-500 dark:text-zinc-400">
               Suggestions
             </div>
             {suggestions.map(suggestion => (
@@ -328,7 +328,7 @@ export const AIMediatorPanel: React.FC<AIMediatorPanelProps> = ({
                   <button
                     type="button"
                     onClick={() => onApplySuggestion(suggestion)}
-                    className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium px-2.5 py-1.5 rounded-md whitespace-nowrap transition-colors bg-rose-500/[0.10] hover:bg-rose-500/[0.18] dark:bg-rose-500/[0.15] dark:hover:bg-rose-500/[0.22] text-rose-600 dark:text-rose-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                    className="text-[10px] font-mono uppercase tracking-widest font-medium px-2.5 py-1.5 rounded-md whitespace-nowrap transition-colors bg-rose-500/10 hover:bg-rose-500/18 dark:bg-rose-500/15 dark:hover:bg-rose-500/22 text-rose-600 dark:text-rose-bright focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                   >
                     {suggestion.actionLabel}
                   </button>
@@ -340,7 +340,7 @@ export const AIMediatorPanel: React.FC<AIMediatorPanelProps> = ({
 
         {/* Quick tips */}
         <div className="bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.03)] rounded-lg p-3 ring-1 ring-[rgba(0,0,0,0.06)] dark:ring-[rgba(255,255,255,0.06)]">
-          <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-500 dark:text-zinc-400 mb-2">
+          <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-500 dark:text-zinc-400 mb-2">
             <Lightbulb className="w-3 h-3" />
             Quick tips
           </div>
@@ -397,7 +397,7 @@ export const AIMediatorPanel: React.FC<AIMediatorPanelProps> = ({
               onDismiss();
             }}
             aria-label="Dismiss AI Mediator"
-            className="w-7 h-7 rounded-md text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright hover:bg-rose-500/[0.08] dark:hover:bg-rose-500/[0.10] flex items-center justify-center transition-colors"
+            className="w-7 h-7 rounded-md text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright hover:bg-rose-500/8 dark:hover:bg-rose-500/10 flex items-center justify-center transition-colors"
           >
             <X className="w-3.5 h-3.5" />
           </button>

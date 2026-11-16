@@ -69,7 +69,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
                       onSmartReply(reply);
                       setShowReplies(false);
                     }}
-                    className="w-full text-left px-3 py-2 rounded text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
+                    className="w-full text-left px-3 py-2 rounded-sm text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
                   >
                     {reply}
                   </button>
@@ -105,7 +105,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
                       onEmojiReaction(item.emoji);
                       setShowEmojis(false);
                     }}
-                    className="w-10 h-10 rounded hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-xl transition-colors"
+                    className="w-10 h-10 rounded-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-xl transition-colors"
                     title={item.label}
                   >
                     {item.emoji}

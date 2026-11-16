@@ -76,7 +76,7 @@ export const ActivityMonitorSettings: React.FC = () => {
               settingsService.set('activityMonitorRetentionDays', v);
             }}
             title="Activity data retention period"
-            className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+            className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-hidden focus:ring-2 focus:ring-rose-500"
           >
             <option value={30}>30 days</option>
             <option value={90}>90 days</option>

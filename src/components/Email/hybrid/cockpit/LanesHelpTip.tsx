@@ -53,7 +53,7 @@ export const LanesHelpTip: React.FC = () => {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="p-0.5 rounded hover:pulse-surface-raised pulse-ink-3-color"
+              className="p-0.5 rounded-sm hover:pulse-surface-raised pulse-ink-3-color"
               aria-label="Close"
             >
               <X className="w-3.5 h-3.5" />
@@ -110,7 +110,7 @@ export const LanesHelpTip: React.FC = () => {
 
 const Rule: React.FC<{ label: string; body: string }> = ({ label, body }) => (
   <div className="flex items-start gap-2.5">
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-mono-pulse tracking-wide-mono pulse-coral-bg-color pulse-coral-fg-color shrink-0 mt-0.5">
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm text-[9px] font-mono-pulse tracking-wide-mono pulse-coral-bg-color pulse-coral-fg-color shrink-0 mt-0.5">
       {label}
     </span>
     <p className="pulse-ink-2-color flex-1">{body}</p>

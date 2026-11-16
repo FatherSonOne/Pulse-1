@@ -138,7 +138,7 @@ export const DocumentSearch: React.FC<DocumentSearchProps> = ({
 
     return parts.map((part, i) =>
       regex.test(part) ? (
-        <mark key={i} className="bg-yellow-400/30 text-yellow-200 rounded px-0.5">
+        <mark key={i} className="bg-yellow-400/30 text-yellow-200 rounded-sm px-0.5">
           {part}
         </mark>
       ) : (
@@ -226,7 +226,7 @@ export const DocumentSearch: React.FC<DocumentSearchProps> = ({
             <i className={`fa ${showFilters ? 'fa-chevron-up' : 'fa-filter'}`}></i>
             {showFilters ? 'Hide filters' : 'Show filters'}
             {fileTypeFilter.length > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 bg-rose-500/20 text-rose-400 rounded text-xs">
+              <span className="ml-1 px-1.5 py-0.5 bg-rose-500/20 text-rose-400 rounded-sm text-xs">
                 {fileTypeFilter.length}
               </span>
             )}

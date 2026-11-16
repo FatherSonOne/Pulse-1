@@ -110,7 +110,7 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, onClose }) => {
   return (
     <div className="h-full bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 flex flex-col animate-fade-in shadow-xl">
       {/* Header */}
-      <div className="bg-gradient-to-r from-cyan-600 to-blue-600 p-4 flex justify-between items-center">
+      <div className="bg-linear-to-r from-cyan-600 to-blue-600 p-4 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
             <Zap className="text-white" />
@@ -151,7 +151,7 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, onClose }) => {
                     onClick={() => setSearchMode(mode)}
                     className={`px-3 py-1.5 rounded-md text-xs font-bold transition ${
                       searchMode === mode
-                        ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow'
+                        ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
                         : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
                     }`}
                   >
@@ -182,7 +182,7 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, onClose }) => {
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {results.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center py-12">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-100 to-blue-100 dark:from-cyan-900/30 dark:to-blue-900/30 flex items-center justify-center mb-6">
+            <div className="w-24 h-24 rounded-full bg-linear-to-br from-cyan-100 to-blue-100 dark:from-cyan-900/30 dark:to-blue-900/30 flex items-center justify-center mb-6">
               <BarChart3 className="text-4xl text-cyan-600 dark:text-cyan-400" />
             </div>
             <h3 className="text-lg font-semibold dark:text-white text-zinc-900 mb-2">Ask Anything</h3>
@@ -214,7 +214,7 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, onClose }) => {
           <div key={result.id} className="animate-slide-up">
             {/* Query */}
             <div className="flex items-start gap-3 mb-4">
-              <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center shrink-0">
                 <User className="text-zinc-500 text-sm" />
               </div>
               <div className="flex-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl rounded-tl-none px-4 py-3">
@@ -224,7 +224,7 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, onClose }) => {
 
             {/* Answer */}
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
                 <Zap className="text-white text-sm" />
               </div>
               <div className="flex-1">
@@ -258,7 +258,7 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, onClose }) => {
                             href={url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded text-[10px] text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/30 transition truncate max-w-[200px]"
+                            className="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-sm text-[10px] text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/30 transition truncate max-w-[200px]"
                             title={url}
                           >
                             [{i + 1}] {new URL(url).hostname}
@@ -280,7 +280,7 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, onClose }) => {
                               setQuery(rq);
                               handleSearch(rq);
                             }}
-                            className="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded text-xs text-zinc-600 dark:text-zinc-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/30 hover:text-cyan-700 dark:hover:text-cyan-400 transition"
+                            className="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-sm text-xs text-zinc-600 dark:text-zinc-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/30 hover:text-cyan-700 dark:hover:text-cyan-400 transition"
                           >
                             {rq}
                           </button>
@@ -333,12 +333,12 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, onClose }) => {
             onKeyDown={handleKeyDown}
             placeholder="Ask anything..."
             disabled={isSearching}
-            className="flex-1 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm dark:text-white focus:border-cyan-500 outline-none transition disabled:opacity-50"
+            className="flex-1 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm dark:text-white focus:border-cyan-500 outline-hidden transition disabled:opacity-50"
           />
           <button
             onClick={() => handleSearch()}
             disabled={isSearching || !query.trim()}
-            className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl font-bold transition disabled:opacity-50 flex items-center gap-2"
+            className="px-6 py-3 bg-linear-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl font-bold transition disabled:opacity-50 flex items-center gap-2"
           >
             {isSearching ? (
               <Loader2 className="animate-spin" />

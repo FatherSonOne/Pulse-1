@@ -56,7 +56,7 @@ export const WorkspaceInviteAccept: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-rose-50 to-pink-50 dark:from-zinc-950 dark:to-zinc-900 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-rose-50 to-pink-50 dark:from-zinc-950 dark:to-zinc-900 px-4">
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl dark:shadow-2xl border border-zinc-200 dark:border-zinc-800 p-10 max-w-[380px] w-full flex flex-col items-center gap-4 text-center">
         {/* Logo */}
         <div className="flex items-center gap-2 mb-2">
@@ -103,7 +103,7 @@ export const WorkspaceInviteAccept: React.FC = () => {
             <button
               type="button"
               onClick={goToLogin}
-              className="mt-1 px-6 py-2.5 rounded-lg bg-gradient-to-r from-rose-500 to-pink-500 text-white text-sm font-semibold hover:from-rose-600 hover:to-pink-600 transition"
+              className="mt-1 px-6 py-2.5 rounded-lg bg-linear-to-r from-rose-500 to-pink-500 text-white text-sm font-semibold hover:from-rose-600 hover:to-pink-600 transition"
             >
               Go to sign in
             </button>
@@ -120,7 +120,7 @@ export const WorkspaceInviteAccept: React.FC = () => {
             <button
               type="button"
               onClick={() => { window.location.href = '/'; }}
-              className="mt-1 px-6 py-2.5 rounded-lg bg-gradient-to-r from-rose-500 to-pink-500 text-white text-sm font-semibold hover:from-rose-600 hover:to-pink-600 transition"
+              className="mt-1 px-6 py-2.5 rounded-lg bg-linear-to-r from-rose-500 to-pink-500 text-white text-sm font-semibold hover:from-rose-600 hover:to-pink-600 transition"
             >
               Go to Pulse
             </button>

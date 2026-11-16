@@ -92,17 +92,17 @@ export const SnoozeModal: React.FC<SnoozeModalProps> = ({ onSnooze, onClose }) =
   const minDate = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center animate-fadeIn">
-      <div className="bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] rounded-xl shadow-2xl w-80 animate-scaleIn">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center animate-fadeIn">
+      <div className="bg-(--pulse-surface) border border-(--pulse-border) rounded-xl shadow-2xl w-80 animate-scaleIn">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[color:var(--pulse-border)]">
-          <div className="flex items-center gap-2 text-[var(--pulse-ink)] font-medium">
-            <Clock className="text-[var(--pulse-ink-2)]" />
+        <div className="flex items-center justify-between px-4 py-3 border-b border-(--pulse-border)">
+          <div className="flex items-center gap-2 text-(--pulse-ink) font-medium">
+            <Clock className="text-(--pulse-ink-2)" />
             <span>Snooze until</span>
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded hover:bg-[var(--pulse-surface-raised)] flex items-center justify-center text-[var(--pulse-ink-3)] hover:text-[var(--pulse-ink)] transition"
+            className="w-7 h-7 rounded-sm hover:bg-(--pulse-surface-raised) flex items-center justify-center text-(--pulse-ink-3) hover:text-(--pulse-ink) transition"
           >
             <X />
           </button>
@@ -118,12 +118,12 @@ export const SnoozeModal: React.FC<SnoozeModalProps> = ({ onSnooze, onClose }) =
               <button
                 key={idx}
                 onClick={() => handleQuickSnooze(option.getDate)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--pulse-surface-raised)] transition text-left"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-(--pulse-surface-raised) transition text-left"
               >
-                <i className={`fa-solid ${option.icon} w-5 text-[var(--pulse-ink-3)]`}></i>
+                <i className={`fa-solid ${option.icon} w-5 text-(--pulse-ink-3)`}></i>
                 <div className="flex-1">
-                  <div className="text-sm text-[var(--pulse-ink)]">{option.label}</div>
-                  <div className="text-xs text-[var(--pulse-ink-3)]">{option.sublabel}</div>
+                  <div className="text-sm text-(--pulse-ink)">{option.label}</div>
+                  <div className="text-xs text-(--pulse-ink-3)">{option.sublabel}</div>
                 </div>
               </button>
             );
@@ -131,30 +131,30 @@ export const SnoozeModal: React.FC<SnoozeModalProps> = ({ onSnooze, onClose }) =
         </div>
 
         {/* Divider */}
-        <div className="border-t border-[color:var(--pulse-border)] mx-4"></div>
+        <div className="border-t border-(--pulse-border) mx-4"></div>
 
         {/* Custom date/time */}
         <div className="p-4">
-          <div className="text-xs text-[var(--pulse-ink-3)] mb-2 font-medium">Pick date & time</div>
+          <div className="text-xs text-(--pulse-ink-3) mb-2 font-medium">Pick date & time</div>
           <div className="flex gap-2">
             <input
               type="date"
               value={customDate}
               onChange={(e) => setCustomDate(e.target.value)}
               min={minDate}
-              className="flex-1 bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] rounded-lg px-3 py-2 text-sm text-[var(--pulse-ink)] focus:outline-none focus:border-[color:var(--pulse-rose)]"
+              className="flex-1 bg-(--pulse-surface) border border-(--pulse-border) rounded-lg px-3 py-2 text-sm text-(--pulse-ink) focus:outline-hidden focus:border-(--pulse-rose)"
             />
             <input
               type="time"
               value={customTime}
               onChange={(e) => setCustomTime(e.target.value)}
-              className="w-24 bg-[var(--pulse-surface)] border border-[color:var(--pulse-border)] rounded-lg px-3 py-2 text-sm text-[var(--pulse-ink)] focus:outline-none focus:border-[color:var(--pulse-rose)]"
+              className="w-24 bg-(--pulse-surface) border border-(--pulse-border) rounded-lg px-3 py-2 text-sm text-(--pulse-ink) focus:outline-hidden focus:border-(--pulse-rose)"
             />
           </div>
           <button
             onClick={handleCustomSnooze}
             disabled={!customDate}
-            className="w-full mt-3 bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] disabled:opacity-50 text-white font-medium py-2 rounded-lg transition flex items-center justify-center gap-2"
+            className="w-full mt-3 bg-(--pulse-rose) hover:bg-(--pulse-rose-deep) disabled:opacity-50 text-white font-medium py-2 rounded-lg transition flex items-center justify-center gap-2"
           >
             <Clock />
             Snooze

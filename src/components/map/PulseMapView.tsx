@@ -616,7 +616,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           onClick={() => window.dispatchEvent(new CustomEvent('pulse:navigate', {
             detail: { view: AppView.SETTINGS, section: 'integrations' },
           }))}
-          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 transition-colors"
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 transition-colors"
         >
           Open Settings
         </button>
@@ -681,7 +681,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
 
   return (
     <div className={`pulse-map-section flex flex-col w-full h-full rounded-xl overflow-hidden border ${
-      isDarkMode ? 'border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.35)]' : 'border-gray-200 shadow-sm'
+      isDarkMode ? 'border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.35)]' : 'border-gray-200 shadow-xs'
     }`}>
       <style>{`
         @keyframes contactsMapPanelEnter {
@@ -1185,7 +1185,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
             (Routes button appears in F5 once its drawer exists.) pointer-events-none
             on the bar + auto on its children so map drags still work in the gaps. */}
         {mapHorizonFloat && (
-          <div className="absolute top-3 left-3 right-3 z-30 flex items-start gap-2 flex-wrap pointer-events-none [&>*]:pointer-events-auto">
+          <div className="absolute top-3 left-3 right-3 z-30 flex items-start gap-2 flex-wrap pointer-events-none *:pointer-events-auto">
             <HorizonScrubberPill
               horizon={horizon}
               onHorizonChange={setHorizon}
@@ -1304,7 +1304,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
             onClick={handleRecenter}
             aria-label="Recenter on my location"
             title="My location"
-            className={`absolute bottom-9 right-4 z-20 w-9 h-9 rounded-lg flex items-center justify-center backdrop-blur-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+            className={`absolute bottom-9 right-4 z-20 w-9 h-9 rounded-lg flex items-center justify-center backdrop-blur-md transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-1 ${
               isDarkMode ? 'focus-visible:ring-zinc-400' : 'focus-visible:ring-zinc-500'
             }`}
             style={{
@@ -1329,7 +1329,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
             onClick={() => setShowGeofences(true)}
             aria-haspopup="dialog"
             aria-label={`Geofences${geofencedPlaces.length > 0 ? ` — ${geofencedPlaces.length}` : ''}`}
-            className={`absolute bottom-14 left-4 px-2.5 py-1 rounded-md text-[10px] tracking-[0.1em] uppercase shadow-md backdrop-blur-sm flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 transition-colors ${
+            className={`absolute bottom-14 left-4 px-2.5 py-1 rounded-md text-[10px] tracking-widest uppercase shadow-md backdrop-blur-xs flex items-center gap-1.5 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-1 transition-colors ${
               isDarkMode ? 'bg-zinc-900/85 text-gray-200 hover:bg-zinc-900 border border-white/10 focus-visible:ring-zinc-400' : 'bg-white/90 text-gray-700 hover:bg-white border border-gray-200 focus-visible:ring-zinc-500'
             }`}
             style={{ fontFamily: "'JetBrains Mono', monospace" }}
@@ -1347,7 +1347,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
           <button
             type="button"
             onClick={() => setShowLiveSheet(true)}
-            className={`absolute bottom-4 left-4 px-2.5 py-1 rounded-md text-[10px] tracking-[0.1em] uppercase shadow-md backdrop-blur-sm flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 transition-colors ${
+            className={`absolute bottom-4 left-4 px-2.5 py-1 rounded-md text-[10px] tracking-widest uppercase shadow-md backdrop-blur-xs flex items-center gap-1.5 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 transition-colors ${
               isDarkMode ? 'bg-zinc-900/85 text-gray-200 hover:bg-zinc-900 border border-white/10' : 'bg-white/90 text-gray-700 hover:bg-white border border-gray-200'
             }`}
             style={{ fontFamily: "'JetBrains Mono', monospace" }}
@@ -1367,7 +1367,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
             the float layout uses the combined count chip below. */}
         {liveBroadcasters.length === 0 && !mapHorizonFloat && (
           <div
-            className={`absolute bottom-4 left-4 px-2.5 py-1 rounded-md text-[10px] tracking-[0.1em] uppercase shadow-md backdrop-blur-sm flex items-center gap-1.5 ${
+            className={`absolute bottom-4 left-4 px-2.5 py-1 rounded-md text-[10px] tracking-widest uppercase shadow-md backdrop-blur-xs flex items-center gap-1.5 ${
               isDarkMode ? 'bg-zinc-900/85 text-gray-300 border border-white/10' : 'bg-white/90 text-gray-600 border border-gray-200'
             }`}
             style={{ fontFamily: "'JetBrains Mono', monospace" }}
@@ -1436,7 +1436,7 @@ const PulseMapView: React.FC<PulseMapViewProps> = ({
                   onClick={() => setFloatFiltersDismissed(true)}
                   aria-label="Hide filters"
                   title="Hide filters"
-                  className={`absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+                  className={`absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full flex items-center justify-center transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-1 ${
                     isDarkMode ? 'focus-visible:ring-zinc-400' : 'focus-visible:ring-zinc-500'
                   }`}
                   style={{

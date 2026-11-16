@@ -3,7 +3,7 @@
 // BottomSheet.tsx (Calendar's snap-point sheet) never had: focus trap,
 // Escape, focus restore on close, body scroll lock. Dark panels are opaque
 // (dark:bg-zinc-950) per the floating-panel rule — translucent surfaces are
-// for in-canvas cards only. z-[9500]: above the z-50-saturated section
+// for in-canvas cards only. z-9500: above the z-50-saturated section
 // content and the palette dropdown (9000), below the 9999/10000 modal band.
 
 import React, { useEffect } from 'react';
@@ -34,7 +34,7 @@ export const MobileSheet: React.FC<MobileSheetProps> = ({ title, onClose, onEsca
   }, []);
 
   return ReactDOM.createPortal(
-    <div className="fixed inset-0 z-[9500] md:hidden">
+    <div className="fixed inset-0 z-9500 md:hidden">
       <div
         className="absolute inset-0 bg-zinc-950/50 backdrop-blur-md animate-capture-scrim-enter"
         onClick={onClose}
@@ -45,17 +45,17 @@ export const MobileSheet: React.FC<MobileSheetProps> = ({ title, onClose, onEsca
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="absolute bottom-0 inset-x-0 max-h-[80vh] flex flex-col rounded-t-2xl bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-white/[0.08] shadow-2xl overflow-hidden animate-sheet-up"
+        className="absolute bottom-0 inset-x-0 max-h-[80vh] flex flex-col rounded-t-2xl bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-white/8 shadow-2xl overflow-hidden animate-sheet-up"
       >
-        <div className="shrink-0 flex items-center justify-between pl-4 pr-2 py-1.5 border-b border-zinc-100 dark:border-white/[0.06]">
-          <span className="font-mono text-[11px] font-medium tracking-[0.1em] uppercase text-zinc-500 dark:text-zinc-400">
+        <div className="shrink-0 flex items-center justify-between pl-4 pr-2 py-1.5 border-b border-zinc-100 dark:border-white/6">
+          <span className="font-mono text-[11px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-400">
             {title}
           </span>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="w-10 h-10 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+            className="w-10 h-10 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-white/4 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
           >
             <X className="w-4 h-4" />
           </button>

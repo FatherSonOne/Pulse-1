@@ -69,7 +69,7 @@ function SlackDmStarter({
 
   return (
     <div className="mt-4 pt-4 border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
-      <p className="text-[10px] font-mono font-medium text-zinc-500 uppercase tracking-[0.1em] mb-2 px-1">
+      <p className="text-[10px] font-mono font-medium text-zinc-500 uppercase tracking-widest mb-2 px-1">
         <MessagesSquare className="mr-1 inline w-3 h-3 text-purple-500" /> Message on Slack (as you)
       </p>
       <div className="flex gap-2">
@@ -79,12 +79,12 @@ function SlackDmStarter({
           onChange={(e) => { setEmail(e.target.value); if (error) setError(null); }}
           onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
           placeholder="their@email.com"
-          className="flex-1 min-w-0 px-3 py-2.5 bg-[var(--pulse-surface-raised)] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] rounded-xl text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          className="flex-1 min-w-0 px-3 py-2.5 bg-(--pulse-surface-raised) border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] rounded-xl text-sm dark:text-white focus:outline-hidden focus:ring-2 focus:ring-purple-500 focus:border-transparent"
         />
         <button
           onClick={submit}
           disabled={busy || !email.trim()}
-          className="px-3.5 py-2.5 rounded-xl text-sm font-medium bg-purple-500/10 dark:bg-purple-500/15 text-purple-600 dark:text-purple-300 hover:bg-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 flex-shrink-0 transition"
+          className="px-3.5 py-2.5 rounded-xl text-sm font-medium bg-purple-500/10 dark:bg-purple-500/15 text-purple-600 dark:text-purple-300 hover:bg-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 shrink-0 transition"
         >
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessagesSquare className="w-4 h-4" />}
           Slack
@@ -230,7 +230,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
     <>
       {/* New Chat Modal */}
       {props.showNewChatModal && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
+        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center animate-fade-in p-4">
           <div ref={newChatRef} role="dialog" aria-modal="true" aria-label="New conversation" className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
             <div className="p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-between items-center">
               <h3 className="font-bold dark:text-white flex items-center gap-2">
@@ -251,7 +251,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                     value={props.pulseUserSearch}
                     onChange={(e) => props.setPulseUserSearch(e.target.value)}
                     placeholder="Search by @handle or name..."
-                    className="w-full pl-10 pr-4 py-3 bg-[var(--pulse-surface-raised)] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] rounded-xl text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 bg-(--pulse-surface-raised) border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] rounded-xl text-sm dark:text-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     autoFocus
                   />
                   {props.isSearchingPulseUsers && (
@@ -264,7 +264,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                     {/* Recent Contacts */}
                     {props.recentPulseContacts.length > 0 && (
                       <div>
-                        <p className="text-[10px] font-mono font-medium text-zinc-500 uppercase tracking-[0.1em] mb-2 px-1">
+                        <p className="text-[10px] font-mono font-medium text-zinc-500 uppercase tracking-widest mb-2 px-1">
                           <History className="mr-1" /> Recent
                         </p>
                         <div className="space-y-1">
@@ -274,7 +274,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                               onClick={() => props.startPulseConversation(user)}
                               className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition text-left"
                             >
-                              <div className="w-9 h-9 rounded-full bg-[var(--pulse-rose-soft)] flex items-center justify-center text-[var(--pulse-coral-fg)] font-medium text-sm">
+                              <div className="w-9 h-9 rounded-full bg-(--pulse-rose-soft) flex items-center justify-center text-(--pulse-coral-fg) font-medium text-sm">
                                 {user.avatar_url ? (
                                   <img src={user.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                                 ) : (
@@ -284,7 +284,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium dark:text-white truncate text-sm flex items-center gap-1">
                                   {user.display_name || user.full_name || 'Pulse User'}
-                                  {user.is_verified && <CheckCircle2 className="text-[var(--pulse-rose)] text-[10px]" />}
+                                  {user.is_verified && <CheckCircle2 className="text-(--pulse-rose) text-[10px]" />}
                                 </div>
                                 {user.handle && <div className="text-[11px] text-emerald-500 truncate">@{user.handle}</div>}
                               </div>
@@ -298,7 +298,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                     {/* Suggested Users */}
                     {props.suggestedPulseUsers.length > 0 && (
                       <div>
-                        <p className="text-[10px] font-mono font-medium text-zinc-500 uppercase tracking-[0.1em] mb-2 px-1">
+                        <p className="text-[10px] font-mono font-medium text-zinc-500 uppercase tracking-widest mb-2 px-1">
                           <Users className="mr-1" /> Discover Pulse Users
                         </p>
                         <div className="space-y-1">
@@ -308,7 +308,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                               onClick={() => props.startPulseConversation(user)}
                               className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition text-left"
                             >
-                              <div className="w-9 h-9 rounded-full bg-[var(--pulse-rose-soft)] flex items-center justify-center text-[var(--pulse-coral-fg)] font-medium text-sm">
+                              <div className="w-9 h-9 rounded-full bg-(--pulse-rose-soft) flex items-center justify-center text-(--pulse-coral-fg) font-medium text-sm">
                                 {user.avatar_url ? (
                                   <img src={user.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                                 ) : (
@@ -318,7 +318,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium dark:text-white truncate text-sm flex items-center gap-1">
                                   {user.display_name || user.full_name || 'Pulse User'}
-                                  {user.is_verified && <CheckCircle2 className="text-[var(--pulse-rose)] text-[10px]" />}
+                                  {user.is_verified && <CheckCircle2 className="text-(--pulse-rose) text-[10px]" />}
                                 </div>
                                 {user.handle && <div className="text-[11px] text-emerald-500 truncate">@{user.handle}</div>}
                               </div>
@@ -343,7 +343,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                   </div>
                 ) : props.pulseSearchResults.length === 0 && !props.isSearchingPulseUsers ? (
                   <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-[var(--pulse-surface-raised)] rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="w-16 h-16 bg-(--pulse-surface-raised) rounded-full flex items-center justify-center mx-auto mb-4">
                       <UserX className="text-2xl text-zinc-400" />
                     </div>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">
@@ -361,7 +361,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                         onClick={() => props.startPulseConversation(user)}
                         className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition text-left border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800"
                       >
-                        <div className="w-10 h-10 rounded-full bg-[var(--pulse-rose-soft)] flex items-center justify-center text-[var(--pulse-coral-fg)] font-medium">
+                        <div className="w-10 h-10 rounded-full bg-(--pulse-rose-soft) flex items-center justify-center text-(--pulse-coral-fg) font-medium">
                           {user.avatar_url ? (
                             <img src={user.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                           ) : (
@@ -372,7 +372,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                           <div className="font-medium dark:text-white truncate flex items-center gap-2">
                             {user.display_name || user.full_name || 'Pulse User'}
                             {user.is_verified && (
-                              <CheckCircle2 className="text-[var(--pulse-rose)] text-xs" />
+                              <CheckCircle2 className="text-(--pulse-rose) text-xs" />
                             )}
                           </div>
                           {user.handle && (
@@ -405,33 +405,33 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
 
       {/* Artifact Modal */}
       {props.showArtifactModal && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
+        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center animate-fade-in p-4">
           <div ref={artifactRef} role="dialog" aria-modal="true" aria-label="Channel artifact" className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-2xl h-[80%] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
-            <div className="p-4 border-b border-[var(--pulse-border)] flex justify-between items-center bg-[var(--pulse-canvas)]">
+            <div className="p-4 border-b border-(--pulse-border) flex justify-between items-center bg-(--pulse-canvas)">
               <h3 className="font-bold dark:text-white flex items-center gap-2"><FileText /> Channel Artifact</h3>
               <button onClick={() => props.setShowArtifactModal(false)}><X className="text-zinc-500" /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-8">
               {props.loadingArtifact ? (
                 <div className="flex flex-col items-center justify-center h-full gap-4">
-                  <Loader2 className="text-2xl text-[var(--pulse-rose)] animate-spin" />
+                  <Loader2 className="text-2xl text-(--pulse-rose) animate-spin" />
                   <p className="text-sm text-zinc-500">Generating spec from conversation history...</p>
                 </div>
               ) : props.artifact ? (
                 <div className="prose dark:prose-invert max-w-none text-sm">
                   <h1 className="text-2xl font-bold mb-4">{props.artifact.title}</h1>
-                  <div className="bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] p-4 rounded-xl mb-6 text-[var(--pulse-ink)] italic">
+                  <div className="bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] p-4 rounded-xl mb-6 text-(--pulse-ink) italic">
                     {props.artifact.overview}
                   </div>
-                  <h3 className="font-mono font-medium uppercase text-xs tracking-[0.1em] text-zinc-500 mb-2">Decisions Log</h3>
+                  <h3 className="font-mono font-medium uppercase text-xs tracking-widest text-zinc-500 mb-2">Decisions Log</h3>
                   <ul className="list-disc list-inside mb-6 space-y-1">
                     {props.artifact.decisions.map((d, i) => <li key={i} className="text-zinc-700 dark:text-zinc-300">{d}</li>)}
                   </ul>
-                  <h3 className="font-mono font-medium uppercase text-xs tracking-[0.1em] text-zinc-500 mb-2">Specifications</h3>
+                  <h3 className="font-mono font-medium uppercase text-xs tracking-widest text-zinc-500 mb-2">Specifications</h3>
                   <div className="whitespace-pre-wrap font-mono text-zinc-600 dark:text-zinc-400 bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)] p-4 rounded-xl mb-6">
                     {props.artifact.spec}
                   </div>
-                  <h3 className="font-mono font-medium uppercase text-xs tracking-[0.1em] text-zinc-500 mb-2">Milestones</h3>
+                  <h3 className="font-mono font-medium uppercase text-xs tracking-widest text-zinc-500 mb-2">Milestones</h3>
                   <div className="space-y-2">
                     {props.artifact.milestones.map((m, i) => (
                       <div key={i} className="flex items-center gap-2">
@@ -449,7 +449,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
               <button
                 onClick={props.handleExportToDocs}
                 disabled={props.loadingArtifact || !props.artifact || props.exportingToDocs}
-                className="bg-[rgba(244,63,94,0.06)] hover:bg-[rgba(244,63,94,0.10)] text-[var(--pulse-rose-text)] border border-[rgba(244,63,94,0.20)] px-6 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50 mr-3 flex items-center gap-2"
+                className="bg-[rgba(244,63,94,0.06)] hover:bg-[rgba(244,63,94,0.10)] text-(--pulse-rose-text) border border-[rgba(244,63,94,0.20)] px-6 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50 mr-3 flex items-center gap-2"
               >
                 {props.exportingToDocs ? <Loader2 className="animate-spin" /> : <FileText />}
                 Export to Docs
@@ -478,11 +478,11 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
 
       {/* Forward Message Modal — Pulse conversations only. */}
       {props.showForwardModal && props.forwardingMessage && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
+        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center animate-fade-in p-4">
           <div ref={forwardRef} role="dialog" aria-modal="true" aria-label="Forward message" className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
             <div className="p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-between items-center">
               <h3 className="font-bold dark:text-white flex items-center gap-2">
-                <Share className="text-[var(--pulse-rose)]" /> Forward Message
+                <Share className="text-(--pulse-rose)" /> Forward Message
               </h3>
               <button onClick={() => props.setShowForwardModal(false)}><X className="text-zinc-500" /></button>
             </div>
@@ -506,9 +506,9 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                               void props.handleForwardPulseMessage(props.forwardingMessage.id, other.id);
                             }
                           }}
-                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--pulse-surface-raised)] transition"
+                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-(--pulse-surface-raised) transition"
                         >
-                          <div className="w-8 h-8 rounded-full bg-[var(--pulse-rose-soft)] flex items-center justify-center text-[var(--pulse-coral-fg)] text-xs font-medium flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-(--pulse-rose-soft) flex items-center justify-center text-(--pulse-coral-fg) text-xs font-medium shrink-0">
                             {other.avatar_url
                               ? <img src={other.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                               : label.charAt(0).toUpperCase()}
@@ -530,15 +530,15 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
 
       {/* Keyboard Shortcuts Modal */}
       {props.showShortcuts && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4" onClick={() => props.setShowShortcuts(false)}>
-          <div ref={shortcutsRef} className="bg-[var(--pulse-surface)] w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-[var(--pulse-border)]" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
-            <div className="p-4 border-b border-zinc-200 dark:border-white/[0.06] flex justify-between items-center">
+        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center animate-fade-in p-4" onClick={() => props.setShowShortcuts(false)}>
+          <div ref={shortcutsRef} className="bg-(--pulse-surface) w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-(--pulse-border)" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
+            <div className="p-4 border-b border-zinc-200 dark:border-white/6 flex justify-between items-center">
               <h3 className="font-medium text-zinc-900 dark:text-white flex items-center gap-2">
                 <Keyboard className="w-4 h-4 text-zinc-400 dark:text-zinc-500" /> Keyboard Shortcuts
               </h3>
               <button
                 onClick={() => props.setShowShortcuts(false)}
-                className="w-7 h-7 rounded-md text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright hover:bg-zinc-100 dark:hover:bg-white/[0.04] flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                className="w-7 h-7 rounded-md text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright hover:bg-zinc-100 dark:hover:bg-white/4 flex items-center justify-center transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                 aria-label="Close shortcuts"
               >
                 <X className="w-4 h-4" />
@@ -546,9 +546,9 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
             </div>
             <div className="p-4 space-y-1">
               {Object.entries(KEYBOARD_SHORTCUTS).map(([key, action]) => (
-                <div key={key} className="flex justify-between items-center py-1.5 border-b border-zinc-100/60 dark:border-white/[0.04] last:border-b-0">
+                <div key={key} className="flex justify-between items-center py-1.5 border-b border-zinc-100/60 dark:border-white/4 last:border-b-0">
                   <span className="text-sm text-zinc-700 dark:text-zinc-300">{action}</span>
-                  <kbd className="px-2 py-0.5 bg-zinc-100 dark:bg-white/[0.06] rounded text-[10px] font-mono uppercase tracking-[0.05em] text-zinc-600 dark:text-zinc-300 tabular-nums">{key}</kbd>
+                  <kbd className="px-2 py-0.5 bg-zinc-100 dark:bg-white/6 rounded-sm text-[10px] font-mono uppercase tracking-wider text-zinc-600 dark:text-zinc-300 tabular-nums">{key}</kbd>
                 </div>
               ))}
             </div>
@@ -576,7 +576,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
 
       {/* Delete Confirmation Modal */}
       {props.showDeleteConfirm && props.threadToDelete && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
+        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center animate-fade-in p-4">
           <div ref={deleteRef} role="alertdialog" aria-modal="true" aria-label="Delete conversation confirmation" className="bg-white dark:bg-[rgba(255,255,255,0.03)] w-full max-w-sm rounded-2xl shadow-2xl animate-scale-in border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
             <div className="p-6 text-center">
               <div className="w-16 h-16 rounded-full bg-red-500/15 dark:bg-red-500/20 ring-1 ring-red-500/30 flex items-center justify-center mx-auto mb-4">
@@ -589,13 +589,13 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
               <div className="flex gap-3">
                 <button
                   onClick={() => { props.setShowDeleteConfirm(false); props.setThreadToDelete(null); }}
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-[rgba(255,255,255,0.10)] text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-[rgba(255,255,255,0.10)] text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-100 dark:hover:bg-white/4 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={props.handleDeleteThread}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-rose-500 text-white font-medium hover:bg-rose-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-rose-500 text-white font-medium hover:bg-rose-600 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                 >
                   Delete
                 </button>
@@ -616,7 +616,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
           <div className="flex-1 overflow-y-auto flex flex-col bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.03)]/50">
             <div className="p-5 flex justify-between items-center border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
               <h2 className="font-bold text-lg text-zinc-900 dark:text-white tracking-tight">Pulse Messages</h2>
-              <button onClick={props.closeDrawer} className="w-12 h-12 flex items-center justify-center text-zinc-500 hover:bg-[var(--pulse-surface-raised)] rounded-lg transition" aria-label="Close drawer">
+              <button onClick={props.closeDrawer} className="w-12 h-12 flex items-center justify-center text-zinc-500 hover:bg-(--pulse-surface-raised) rounded-lg transition" aria-label="Close drawer">
                 <X className="text-lg" />
               </button>
             </div>
@@ -630,7 +630,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                   <Smartphone className="text-sm" />
                 </button>
               )}
-              <button onClick={() => { props.setShowShortcuts(true); props.closeDrawer(); }} className="w-12 h-12 rounded-lg text-zinc-400 hover:bg-[var(--pulse-surface-raised)] flex items-center justify-center transition" title="Keyboard shortcuts">
+              <button onClick={() => { props.setShowShortcuts(true); props.closeDrawer(); }} className="w-12 h-12 rounded-lg text-zinc-400 hover:bg-(--pulse-surface-raised) flex items-center justify-center transition" title="Keyboard shortcuts">
                 <Keyboard className="text-sm" />
               </button>
               <button onClick={() => { props.setShowNewChatModal(true); props.closeDrawer(); }} className="w-12 h-12 rounded-lg bg-[#e8e8e8] dark:bg-[rgba(255,255,255,0.055)] text-zinc-600 dark:text-zinc-300 flex items-center justify-center transition" title="New message">
@@ -654,9 +654,9 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                         <div
                           onClick={() => props.handleSelectConversation(conv.id)}
                           className={`p-3 rounded-xl cursor-pointer transition flex items-center gap-3
-                            ${props.activePulseConversation === conv.id ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-[var(--pulse-surface-raised)]/50'}`}
+                            ${props.activePulseConversation === conv.id ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-(--pulse-surface-raised)/50'}`}
                         >
-                          <div className="w-10 h-10 rounded-full bg-[var(--pulse-rose-soft)] flex items-center justify-center text-[var(--pulse-coral-fg)] text-sm font-medium flex-shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-(--pulse-rose-soft) flex items-center justify-center text-(--pulse-coral-fg) text-sm font-medium shrink-0">
                             {otherUser.avatar_url ? (
                               <img src={otherUser.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                             ) : (
@@ -681,14 +681,14 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30 flex items-center justify-center mb-4">
+                  <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30 flex items-center justify-center mb-4">
                     <MessagesSquare className="text-2xl text-rose-500" />
                   </div>
                   <h3 className="text-zinc-900 dark:text-white font-semibold mb-2">No Messages Yet</h3>
                   <p className="text-zinc-500 text-sm mb-4">Start a conversation with a Pulse user.</p>
                   <button
                     onClick={() => { props.setShowNewChatModal(true); props.closeDrawer(); }}
-                    className="px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-600 text-white text-sm font-medium rounded-lg"
+                    className="px-4 py-2 bg-linear-to-r from-rose-500 to-pink-600 text-white text-sm font-medium rounded-lg"
                   >
                     <Plus className="mr-2" />
                     New Conversation

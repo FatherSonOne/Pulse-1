@@ -936,20 +936,20 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   // Matches the safety the Inbox uses so the two surfaces feel like one product.
   const deleteRecording = useCallback((recordingId: string) => {
     toast((t) => (
-      <span className="flex flex-col gap-2 min-w-[14rem]">
+      <span className="flex flex-col gap-2 min-w-56">
         <span className="text-sm">Delete this voice message forever? This can't be undone.</span>
         <div className="flex items-center gap-2 justify-end">
           <button
             type="button"
             onClick={() => toast.dismiss(t.id)}
-            className="font-mono text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="font-mono text-[10px] uppercase tracking-widest px-2 py-1 rounded-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={() => { toast.dismiss(t.id); performDelete(recordingId); }}
-            className="font-mono text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded bg-rose-500 hover:bg-rose-600 text-white"
+            className="font-mono text-[10px] uppercase tracking-widest px-2 py-1 rounded-sm bg-rose-500 hover:bg-rose-600 text-white"
           >
             Delete
           </button>
@@ -1404,7 +1404,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
               const headerOnline = activeContact.onlineStatus === 'online';
               const hasContent = activeThreadRecordings.length > 0;
               return (
-                <header className="flex items-center gap-3 px-5 py-4 border-b border-[var(--pulse-border)]">
+                <header className="flex items-center gap-3 px-5 py-4 border-b border-(--pulse-border)">
                   {studio.singlePane && (
                     <button
                       type="button"
@@ -1561,7 +1561,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                     type="button"
                     onClick={loadOlderMessages}
                     disabled={isLoadingOlder}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-mono text-[10px] uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400 border border-[var(--pulse-border)] hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 transition"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-mono text-[10px] uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400 border border-(--pulse-border) hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 transition"
                   >
                     {isLoadingOlder ? <Loader2 className="w-3 h-3 animate-spin" /> : <Clock className="w-3 h-3" />}
                     {isLoadingOlder ? 'Loading…' : 'Load older messages'}
@@ -1694,7 +1694,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                           }}
                           className={`w-7 h-7 shrink-0 self-center rounded-lg flex items-center justify-center transition-colors ease-pulse ${
                             isSelected(recording.id)
-                              ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
+                              ? 'bg-[#f43f5e] border-2 border-rose-600'
                               : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
                           }`}
                           aria-label={isSelected(recording.id) ? 'Deselect message' : 'Select message'}
@@ -1707,7 +1707,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); toggleStar(recording.id); }}
-                            className={`inline-flex items-center justify-center w-6 h-6 rounded-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
+                            className={`inline-flex items-center justify-center w-6 h-6 rounded-md transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-400 ${
                               recording.starred
                                 ? 'text-amber-500'
                                 : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800'
@@ -1720,7 +1720,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); toggleBookmark(recording.id); }}
-                            className={`inline-flex items-center justify-center w-6 h-6 rounded-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
+                            className={`inline-flex items-center justify-center w-6 h-6 rounded-md transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-400 ${
                               recording.bookmarked
                                 ? 'text-rose-600 dark:text-rose-400'
                                 : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800'
@@ -1733,7 +1733,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); setReplyContext(recording); }}
-                            className="inline-flex items-center justify-center w-6 h-6 rounded-md text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+                            className="inline-flex items-center justify-center w-6 h-6 rounded-md text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-400"
                             aria-label="Reply"
                             title="Reply"
                           >
@@ -1742,7 +1742,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); setShowReactionPicker(showReactionPicker === recording.id ? null : recording.id); }}
-                            className="inline-flex items-center justify-center w-6 h-6 rounded-md text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+                            className="inline-flex items-center justify-center w-6 h-6 rounded-md text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-400"
                             aria-label="React"
                             title="React"
                           >
@@ -1756,7 +1756,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                               setMenuAnchorRect(rect);
                               setShowMessageMenu(showMessageMenu === recording.id ? null : recording.id);
                             }}
-                            className="inline-flex items-center justify-center w-6 h-6 rounded-md text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+                            className="inline-flex items-center justify-center w-6 h-6 rounded-md text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-400"
                             aria-label="More actions"
                             title="More"
                           >
@@ -1815,7 +1815,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); handleGenerateChapters(recording); }}
-                            className="text-xs text-[#e11d48] dark:text-[#fb7185] hover:underline flex items-center gap-1"
+                            className="text-xs text-rose-600 dark:text-[#fb7185] hover:underline flex items-center gap-1"
                             title="Generate AI chapter markers for this message"
                           >
                             <List className="w-3 h-3" />
@@ -2020,7 +2020,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
 
       {/* Conversation Summary Modal */}
       {conversationSummary && showSummary && (
-        <div className="fixed inset-0 bg-zinc-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-zinc-950/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="max-w-2xl w-full">
             <MessageAIPanel
               summary={conversationSummary}
@@ -2034,7 +2034,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       {/* Meeting Notes Modal */}
       {meetingNotes && (
         <div
-          className="fixed inset-0 bg-zinc-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-zinc-950/50 backdrop-blur-xs z-50 flex items-center justify-center p-4"
           onClick={() => setMeetingNotes(null)}
         >
           <div
@@ -2053,7 +2053,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
 
       {/* Auto-Chapters Panel */}
       {activeChapters.length > 0 && chapterRecordingId && (
-        <div className="fixed bottom-[calc(1rem+var(--pulse-bottom-bar))] left-4 right-4 z-[200] max-w-2xl mx-auto">
+        <div className="fixed bottom-[calc(1rem+var(--pulse-bottom-bar))] left-4 right-4 z-200 max-w-2xl mx-auto">
           <div className="relative">
             <button
               type="button"
@@ -2061,7 +2061,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                 setActiveChapters([]);
                 setChapterRecordingId(null);
               }}
-              className="absolute -top-2 -right-2 z-10 w-8 h-8 rounded-full bg-[#f43f5e] text-white hover:bg-[#e11d48] transition flex items-center justify-center shadow-lg"
+              className="absolute -top-2 -right-2 z-10 w-8 h-8 rounded-full bg-[#f43f5e] text-white hover:bg-rose-600 transition flex items-center justify-center shadow-lg"
               title="Close chapters"
             >
               <X className="w-4 h-4" />

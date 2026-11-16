@@ -77,13 +77,13 @@ export const ThreadCollaboration: React.FC<ThreadCollaborationProps> = ({
   const getRoleBadge = (role: Participant['role']) => {
     switch (role) {
       case 'owner':
-        return <span className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded">Owner</span>;
+        return <span className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-sm">Owner</span>;
       case 'participant':
-        return <span className="px-1.5 py-0.5 text-[9px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded">Active</span>;
+        return <span className="px-1.5 py-0.5 text-[9px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-sm">Active</span>;
       case 'viewer':
-        return <span className="px-1.5 py-0.5 text-[9px] font-bold bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded">Viewer</span>;
+        return <span className="px-1.5 py-0.5 text-[9px] font-bold bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded-sm">Viewer</span>;
       case 'mentioned':
-        return <span className="px-1.5 py-0.5 text-[9px] font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded">Mentioned</span>;
+        return <span className="px-1.5 py-0.5 text-[9px] font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded-sm">Mentioned</span>;
     }
   };
 
@@ -198,14 +198,14 @@ export const ThreadCollaboration: React.FC<ThreadCollaborationProps> = ({
               <div className="opacity-0 group-hover:opacity-100 transition flex items-center gap-1">
                 <button
                   onClick={() => onChangeRole?.(participant.id, participant.role === 'viewer' ? 'participant' : 'viewer')}
-                  className="p-1.5 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                  className="p-1.5 rounded-sm text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
                   title="Change role"
                 >
                   <UserPen className="text-xs" />
                 </button>
                 <button
                   onClick={() => onRemove?.(participant.id)}
-                  className="p-1.5 rounded text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  className="p-1.5 rounded-sm text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                   title="Remove"
                 >
                   <UserMinus className="text-xs" />
@@ -243,14 +243,14 @@ export const ThreadCollaboration: React.FC<ThreadCollaborationProps> = ({
               <div className="flex gap-1">
                 <button
                   onClick={() => onResendInvite?.(invite.id)}
-                  className="p-1.5 rounded text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                  className="p-1.5 rounded-sm text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40"
                   title="Resend"
                 >
                   <Send className="text-xs" />
                 </button>
                 <button
                   onClick={() => onCancelInvite?.(invite.id)}
-                  className="p-1.5 rounded text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  className="p-1.5 rounded-sm text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                   title="Cancel"
                 >
                   <X className="text-xs" />
@@ -283,7 +283,7 @@ export const ThreadCollaboration: React.FC<ThreadCollaborationProps> = ({
                   value={inviteEmail}
                   onChange={e => setInviteEmail(e.target.value)}
                   placeholder="colleague@company.com"
-                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-hidden"
                 />
               </div>
               <div>

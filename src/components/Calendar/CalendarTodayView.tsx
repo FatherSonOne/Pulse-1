@@ -86,14 +86,14 @@ const WeekStrip: React.FC<{ focusDate: Date; events: CalendarEvent[]; onPick: (d
             <button
               key={i}
               onClick={() => onPick(d)}
-              className="rounded-lg border px-2 py-1.5 text-center transition hover:bg-zinc-50 dark:hover:bg-white/[0.04]"
+              className="rounded-lg border px-2 py-1.5 text-center transition hover:bg-zinc-50 dark:hover:bg-white/4"
               style={{
                 borderColor: isFocus ? 'rgb(244 63 94)' : 'var(--pulse-border, rgba(0,0,0,0.08))',
                 background: isFocus ? 'rgba(244,63,94,0.06)' : 'transparent',
               }}
             >
-              <div className={`font-mono text-[9px] tracking-[0.12em] ${isToday ? 'text-[var(--pulse-rose)]' : 'text-zinc-500 dark:text-zinc-400'}`}>{DOW3[d.getDay()]}</div>
-              <div className={`text-[15px] mt-0.5 ${isFocus ? 'text-[var(--pulse-rose-text)] font-semibold' : 'text-zinc-900 dark:text-white'}`} style={{ fontVariantNumeric: 'tabular-nums' }}>{d.getDate()}</div>
+              <div className={`font-mono text-[9px] tracking-[0.12em] ${isToday ? 'text-(--pulse-rose)' : 'text-zinc-500 dark:text-zinc-400'}`}>{DOW3[d.getDay()]}</div>
+              <div className={`text-[15px] mt-0.5 ${isFocus ? 'text-(--pulse-rose-text) font-semibold' : 'text-zinc-900 dark:text-white'}`} style={{ fontVariantNumeric: 'tabular-nums' }}>{d.getDate()}</div>
               <div className="flex items-center justify-center gap-0.5 mt-1 h-1.5">
                 {Array.from({ length: Math.min(count, 4) }).map((_, k) => <span key={k} className="w-1 h-1 rounded-full bg-zinc-400 dark:bg-zinc-500" />)}
               </div>
@@ -119,7 +119,7 @@ const AgendaSpine: React.FC<{
   if (events.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center select-none">
-        <div className="w-16 h-16 rounded-2xl bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] flex items-center justify-center mb-4">
+        <div className="w-16 h-16 rounded-2xl bg-zinc-100 dark:bg-white/4 border border-zinc-200 dark:border-white/8 flex items-center justify-center mb-4">
           <Calendar className="w-7 h-7 text-zinc-400" strokeWidth={1.5} />
         </div>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">Nothing scheduled.</p>
@@ -136,10 +136,10 @@ const AgendaSpine: React.FC<{
         const active = selectedId === ev.id;
         return (
           <div key={ev.id} className="relative mb-2">
-            <div className="absolute -left-[64px] top-2 w-[48px] text-right font-mono text-[11px] text-zinc-500 dark:text-zinc-400" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            <div className="absolute left-[-64px] top-2 w-[48px] text-right font-mono text-[11px] text-zinc-500 dark:text-zinc-400" style={{ fontVariantNumeric: 'tabular-nums' }}>
               {ev.allDay ? 'all' : fmtTime(asDate(ev.start))}
             </div>
-            <div className="absolute -left-[13px] top-2.5 w-2.5 h-2.5 rounded-full border-2 bg-white dark:bg-zinc-950" style={{ borderColor: meta.color }} />
+            <div className="absolute left-[-13px] top-2.5 w-2.5 h-2.5 rounded-full border-2 bg-white dark:bg-zinc-950" style={{ borderColor: meta.color }} />
             <button
               onClick={() => onSelect(active ? null : ev.id)}
               className="w-full text-left rounded-xl border p-2.5 transition"
@@ -258,7 +258,7 @@ const DayTimeline: React.FC<{
 
   return (
     <div className="max-h-full overflow-auto rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-      <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-10 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm flex items-center gap-2">
+      <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-10 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xs flex items-center gap-2">
         <span className="text-[13px] font-semibold text-zinc-900 dark:text-white">
           {WEEKDAYS[focusDate.getDay()]}, {MONTHS[focusDate.getMonth()]} {focusDate.getDate()}
         </span>
@@ -293,7 +293,7 @@ const DayTimeline: React.FC<{
           {hours.map((h, i) => (
             <React.Fragment key={h}>
               <div className="absolute left-0 right-0 border-t border-zinc-100 dark:border-zinc-900" style={{ top: i * HOUR_H }} />
-              <div className="absolute -left-[48px] -translate-y-1.5 font-mono text-[10px] text-zinc-400" style={{ top: i * HOUR_H, fontVariantNumeric: 'tabular-nums' }}>
+              <div className="absolute left-[-48px] -translate-y-1.5 font-mono text-[10px] text-zinc-400" style={{ top: i * HOUR_H, fontVariantNumeric: 'tabular-nums' }}>
                 {((h + 11) % 12) + 1}{h < 12 ? 'a' : 'p'}
               </div>
             </React.Fragment>
@@ -326,7 +326,7 @@ const DayTimeline: React.FC<{
             return (
               <div key={`buf-${ev.id}`} className="absolute left-0 right-2 rounded-md flex items-center justify-center"
                 style={{ top, height: h, backgroundImage: 'repeating-linear-gradient(135deg, var(--pulse-border, rgba(0,0,0,0.08)) 0 5px, transparent 5px 10px)' }}>
-                <span className={`flex items-center gap-1 text-[10px] font-medium px-1.5 rounded ${buf.isTight ? 'text-red-600 dark:text-red-400' : 'text-zinc-500'}`}>
+                <span className={`flex items-center gap-1 text-[10px] font-medium px-1.5 rounded-sm ${buf.isTight ? 'text-red-600 dark:text-red-400' : 'text-zinc-500'}`}>
                   <Car className="w-3 h-3" />{buf.travelLabel}
                 </span>
               </div>
@@ -336,7 +336,7 @@ const DayTimeline: React.FC<{
           {/* now line */}
           {showNow && nowMins >= winTop && nowMins <= endH * 60 && (
             <div className="absolute left-0 right-2 z-20 pointer-events-none" style={{ top: topOf(nowMins) }}>
-              <div className="h-px bg-[var(--pulse-rose)]" /><div className="absolute -left-1 -top-1 w-2 h-2 rounded-full bg-[var(--pulse-rose)]" />
+              <div className="h-px bg-(--pulse-rose)" /><div className="absolute -left-1 -top-1 w-2 h-2 rounded-full bg-(--pulse-rose)" />
             </div>
           )}
 
@@ -368,7 +368,7 @@ const DayTimeline: React.FC<{
                 <span className="absolute left-0 top-0 bottom-0 w-px" style={{ background: meta.color }} />
                 <div className="flex items-center gap-1 pl-1.5">
                   <span className="text-[12px] font-medium text-zinc-900 dark:text-white truncate">{ev.title}</span>
-                  {conflict && <AlertTriangle className="w-3 h-3 text-[var(--pulse-tone-overdue)] shrink-0" />}
+                  {conflict && <AlertTriangle className="w-3 h-3 text-(--pulse-tone-overdue) shrink-0" />}
                 </div>
                 {!dense && h > 34 && (
                   <div className="pl-1.5 font-mono text-[10px] text-zinc-500 dark:text-zinc-400 truncate" style={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -430,7 +430,7 @@ const AiRail: React.FC<{
               {selectedConflict && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400">double-booked</span>}
             </div>
           )}
-          <button onClick={() => onOpenEvent(selected)} className="mt-2.5 w-full py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-[12px] text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition flex items-center justify-center gap-1.5">
+          <button onClick={() => onOpenEvent(selected)} className="mt-2.5 w-full py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-[12px] text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-white/4 transition flex items-center justify-center gap-1.5">
             Open details <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -439,22 +439,22 @@ const AiRail: React.FC<{
       {/* Pulse AI header card */}
       <div className="rounded-xl border p-3" style={{ borderColor: 'rgba(244,63,94,0.25)', background: 'rgba(244,63,94,0.05)' }}>
         <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="w-4 h-4 text-[var(--pulse-rose)]" />
-          <span className="font-mono text-[11px] tracking-[0.12em] text-[var(--pulse-rose-text)]">PULSE AI · TODAY</span>
+          <Sparkles className="w-4 h-4 text-(--pulse-rose)" />
+          <span className="font-mono text-[11px] tracking-[0.12em] text-(--pulse-rose-text)">PULSE AI · TODAY</span>
         </div>
 
         <div className="space-y-2">
           {/* travel buffers are computed locally (distance matrix) — always shown */}
           {tightBuffers.slice(0, 2).map((b, i) => (
             <div key={`b-${i}`} className="flex items-start gap-2">
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-red-500/15 text-red-600 dark:text-red-400 shrink-0">drive</span>
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-sm bg-red-500/15 text-red-600 dark:text-red-400 shrink-0">drive</span>
               <div className="text-[12px] text-zinc-800 dark:text-zinc-100 leading-snug">{b.recommendation || `Tight transfer to ${b.toEvent.title}`}</div>
             </div>
           ))}
           {/* conflicts + focus require the AI pass */}
           {aiReady && conflicts.slice(0, 3).map((c, i) => (
             <div key={`c-${i}`} className="flex items-start gap-2">
-              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${c.priority === 'high' ? 'bg-red-500/15 text-red-600 dark:text-red-400' : c.priority === 'medium' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-zinc-500/15 text-zinc-500'}`}>conflict</span>
+              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-sm shrink-0 ${c.priority === 'high' ? 'bg-red-500/15 text-red-600 dark:text-red-400' : c.priority === 'medium' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-zinc-500/15 text-zinc-500'}`}>conflict</span>
               <div className="text-[12px] text-zinc-800 dark:text-zinc-100 leading-snug">
                 {c.conflictingEvents.map(e => e.title).join(' ↔ ')}
                 {c.suggestedResolutions[0] && <div className="text-[11px] text-zinc-500">{c.suggestedResolutions[0].description}</div>}
@@ -463,13 +463,13 @@ const AiRail: React.FC<{
           ))}
           {aiReady && focusBlocks.slice(0, 1).map((f, i) => (
             <div key={`f-${i}`} className="flex items-start gap-2">
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-600 dark:text-violet-400 shrink-0">focus</span>
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-sm bg-violet-500/15 text-violet-600 dark:text-violet-400 shrink-0">focus</span>
               <div className="text-[12px] text-zinc-800 dark:text-zinc-100 leading-snug">{f.startTime}–{f.endTime} {f.protected ? 'protected' : 'available'} for deep work.</div>
             </div>
           ))}
           {/* deepen / clean states */}
           {!aiReady && (
-            <button onClick={onOpenAIPanel} className="w-full mt-0.5 py-1.5 rounded-lg bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white text-[12px] font-medium transition">
+            <button onClick={onOpenAIPanel} className="w-full mt-0.5 py-1.5 rounded-lg bg-(--pulse-rose) hover:bg-(--pulse-rose-deep) text-white text-[12px] font-medium transition">
               {tightBuffers.length > 0 ? 'Scan for conflicts & focus' : 'Run analysis'}
             </button>
           )}
@@ -482,9 +482,9 @@ const AiRail: React.FC<{
       {/* fix / assistant entry */}
       {aiReady && hasSignal && (
         <div className="rounded-xl border p-3" style={{ borderColor: 'rgba(244,63,94,0.25)', background: 'rgba(244,63,94,0.05)' }}>
-          <div className="font-mono text-[11px] tracking-[0.12em] text-[var(--pulse-rose-text)] mb-2">RESOLVE</div>
+          <div className="font-mono text-[11px] tracking-[0.12em] text-(--pulse-rose-text) mb-2">RESOLVE</div>
           <p className="text-[12px] text-zinc-600 dark:text-zinc-300 leading-snug">Open the assistant to auto-arrange the day, reschedule a conflict, or protect a focus block.</p>
-          <button onClick={onOpenAIPanel} className="mt-2.5 w-full py-1.5 rounded-lg bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white text-[12px] font-medium transition">Open assistant</button>
+          <button onClick={onOpenAIPanel} className="mt-2.5 w-full py-1.5 rounded-lg bg-(--pulse-rose) hover:bg-(--pulse-rose-deep) text-white text-[12px] font-medium transition">Open assistant</button>
         </div>
       )}
 
@@ -574,16 +574,16 @@ export const CalendarTodayView: React.FC<CalendarTodayViewProps> = ({
     <div className="flex flex-col h-full bg-zinc-50/50 dark:bg-black">
       {/* sub-view toggle + quick add */}
       <div className="flex items-center gap-3 px-4 pt-3 shrink-0">
-        <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-zinc-100 dark:bg-white/[0.05]">
+        <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-zinc-100 dark:bg-white/5">
           {segs.map(s => (
             <button key={s.id} onClick={() => setSubView(s.id)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] font-medium transition ${subView === s.id ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}>
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] font-medium transition ${subView === s.id ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}>
               {s.icon}{s.label}
             </button>
           ))}
         </div>
         <button onClick={() => onDateClick(currentDate)}
-          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white text-[12px] font-medium transition">
+          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-(--pulse-rose) hover:bg-(--pulse-rose-deep) text-white text-[12px] font-medium transition">
           <Plus className="w-3.5 h-3.5" />New event
         </button>
       </div>

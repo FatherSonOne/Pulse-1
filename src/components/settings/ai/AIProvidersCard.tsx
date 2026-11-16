@@ -205,7 +205,7 @@ export const AIProvidersCard: React.FC = () => {
         {!byoLoading && byoStatus.hasKey && !byoEditing && (
           <div className="flex items-center justify-between gap-3 px-3 py-2 bg-white dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-lg">
             <div className="flex items-center gap-2 min-w-0">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
               <div className="min-w-0">
                 <p className="text-sm font-mono text-zinc-900 dark:text-white truncate">
                   {byoStatus.hint}
@@ -248,7 +248,7 @@ export const AIProvidersCard: React.FC = () => {
               placeholder="sk-..."
               autoComplete="off"
               spellCheck={false}
-              className="w-full px-3 py-2 text-sm font-mono bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+              className="w-full px-3 py-2 text-sm font-mono bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
             />
             <div className="flex items-center justify-between gap-3">
               <a
@@ -308,7 +308,7 @@ export const AIProvidersCard: React.FC = () => {
                 type="checkbox"
                 checked={orgAllowed[p.key]}
                 onChange={(e) => setOrgAllowed(prev => ({ ...prev, [p.key]: e.target.checked }))}
-                className="w-4 h-4 mt-0.5 text-rose-500 border-zinc-300 rounded focus:ring-rose-500"
+                className="w-4 h-4 mt-0.5 text-rose-500 border-zinc-300 rounded-sm focus:ring-rose-500"
               />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-zinc-900 dark:text-white">{p.label}</p>
@@ -318,8 +318,8 @@ export const AIProvidersCard: React.FC = () => {
           ))}
 
           {!orgAllowed.openai && !orgAllowed.anthropic && !orgAllowed.google && (
-            <div className="flex items-start gap-2 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/40 rounded">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/40 rounded-sm">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <p className="text-[11px] text-amber-700 dark:text-amber-300">
                 With every provider disabled, AI features will be unavailable for the entire organization.
               </p>

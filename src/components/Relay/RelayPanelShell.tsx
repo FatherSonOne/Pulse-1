@@ -53,7 +53,7 @@ export const RelayPanelShell: React.FC<RelayPanelShellProps> = ({
       <div className={tc.modalOverlay} onClick={onClose} />
       <div className={`relative w-full ${widthClass} rounded-2xl border ${tc.modalBg} p-5 flex flex-col`}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className={`text-[11px] font-mono uppercase tracking-[0.1em] ${tc.textSecondary}`}>
+          <h3 className={`text-[11px] font-mono uppercase tracking-widest ${tc.textSecondary}`}>
             {label}
           </h3>
           <button

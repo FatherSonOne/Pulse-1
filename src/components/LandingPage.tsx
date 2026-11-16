@@ -533,15 +533,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
       {/* ── Skip to main content (ADA) ── */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-rose-600 focus:text-white focus:rounded-lg focus:font-semibold focus:shadow-xl focus:outline-none"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-9999 focus:px-4 focus:py-2 focus:bg-rose-600 focus:text-white focus:rounded-lg focus:font-semibold focus:shadow-xl focus:outline-hidden"
       >
         Skip to main content
       </a>
 
       {/* ── J: Scroll Progress Bar ── */}
-      <div className="fixed top-0 left-0 right-0 z-[200] h-[3px] pointer-events-none" aria-hidden="true">
+      <div className="fixed top-0 left-0 right-0 z-200 h-[3px] pointer-events-none" aria-hidden="true">
         <div
-          className="h-full bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 transition-none"
+          className="h-full bg-linear-to-r from-rose-500 via-pink-500 to-purple-500 transition-none"
           style={{ width: `${scrollProgress * 100}%`, boxShadow: '0 0 8px rgba(244,63,94,0.7)' }}
         />
       </div>
@@ -551,7 +551,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
         <button
           type="button"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-8 right-6 z-[150] w-11 h-11 rounded-full bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-500/40 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 bounce-up"
+          className="fixed bottom-8 right-6 z-150 w-11 h-11 rounded-full bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-500/40 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 bounce-up"
           aria-label="Back to top"
         >
           <ChevronUp className="text-sm" />
@@ -561,14 +561,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
       {/* ── Guide Drawer ── */}
       {isGuideOpen && (
         <div
-          className="fixed inset-0 z-[300]"
+          className="fixed inset-0 z-300"
           role="dialog"
           aria-modal="true"
           aria-labelledby="guide-drawer-title"
         >
           {/* Backdrop */}
           <div
-            className="absolute inset-0 backdrop-blur-sm overlay-in cursor-pointer"
+            className="absolute inset-0 backdrop-blur-xs overlay-in cursor-pointer"
             style={{ background: 'rgba(8, 8, 8, 0.7)' }}
             onClick={() => setIsGuideOpen(false)}
             aria-hidden="true"
@@ -576,7 +576,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
           {/* Panel */}
           <div className={`absolute top-0 right-0 bottom-0 w-full max-w-3xl border-l shadow-2xl drawer-open flex flex-col ${isDarkMode ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-stone-200'}`}>
             {/* Drawer header */}
-            <div className={`flex items-center justify-between px-6 py-4 border-b backdrop-blur-sm shrink-0 ${isDarkMode ? 'border-zinc-800 bg-zinc-950/95' : 'border-stone-200 bg-white/95'}`}>
+            <div className={`flex items-center justify-between px-6 py-4 border-b backdrop-blur-xs shrink-0 ${isDarkMode ? 'border-zinc-800 bg-zinc-950/95' : 'border-stone-200 bg-white/95'}`}>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/25 flex items-center justify-center" aria-hidden="true">
                   <BookOpen className="text-rose-400 text-sm" />
@@ -1037,7 +1037,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
       `}</style>
 
       {/* ── Navigation ── */}
-      <nav aria-label="Main navigation" className={`lp-dark fixed top-0 left-0 right-0 z-[100] backdrop-blur-xl border-b ${heroDark ? 'bg-zinc-950/85 border-zinc-800/50' : 'bg-white/85 border-stone-200/60'}`}>
+      <nav aria-label="Main navigation" className={`lp-dark fixed top-0 left-0 right-0 z-100 backdrop-blur-xl border-b ${heroDark ? 'bg-zinc-950/85 border-zinc-800/50' : 'bg-white/85 border-stone-200/60'}`}>
         <div className="max-w-7xl mx-auto px-4 py-3 md:px-6 md:py-4 flex items-center justify-between">
 
           {/* Left: Pulse logo + page nav (QntmEcos credit lives in the studio band + footer, not crowding the mark) */}
@@ -1045,11 +1045,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
             <button
               type="button"
               onClick={handleLogoClick}
-              className="flex items-center gap-2.5 cursor-pointer group bg-transparent border-0 p-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+              className="flex items-center gap-2.5 cursor-pointer group bg-transparent border-0 p-0 rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
               aria-label="Pulse, return home"
             >
               {/* Brand Globe mark — same mark as hero, footer, favicon & asset library */}
-              <span className="inline-flex group-hover:scale-[1.04] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
+              <span className="inline-flex group-hover:scale-[1.04] transition-transform duration-300 ease-pulse">
                 <QntmEcosIcon size={36} />
               </span>
               <span
@@ -1123,13 +1123,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                   the tab order until the menu is open. */}
               <div
                 id="lp-download-menu"
-                className={`absolute top-full left-1/2 -translate-x-1/2 pt-3 w-64 z-[200] transition-[opacity,transform] duration-200 ${
+                className={`absolute top-full left-1/2 -translate-x-1/2 pt-3 w-64 z-200 transition-[opacity,transform] duration-200 ${
                   downloadsOpen ? 'opacity-100 translate-y-0 pointer-events-auto visible' : 'opacity-0 -translate-y-2 pointer-events-none invisible'
                 }`}
               >
                 <div className="relative bg-zinc-900 border border-zinc-700/80 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
                 {/* Arrow */}
-                <div className="absolute -top-[6px] left-1/2 -translate-x-1/2 w-3 h-3 bg-zinc-900 border-l border-t border-zinc-700/80 rotate-45" />
+                <div className="absolute top-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 bg-zinc-900 border-l border-t border-zinc-700/80 rotate-45" />
 
                 <div className="p-2">
                   {/* Windows PC */}
@@ -1139,7 +1139,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800 group transition"
                   >
-                    <span className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center flex-shrink-0">
+                    <span className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center shrink-0">
                       <LayoutGrid className="text-blue-400 text-sm" />
                     </span>
                     <div className="text-left">
@@ -1156,7 +1156,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800 group transition"
                   >
-                    <span className="w-8 h-8 rounded-lg bg-green-500/15 flex items-center justify-center flex-shrink-0">
+                    <span className="w-8 h-8 rounded-lg bg-green-500/15 flex items-center justify-center shrink-0">
                       <Play className="text-green-400 text-sm" />
                     </span>
                     <div className="text-left">
@@ -1172,7 +1172,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                     download
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800 group transition"
                   >
-                    <span className="w-8 h-8 rounded-lg bg-rose-500/15 flex items-center justify-center flex-shrink-0">
+                    <span className="w-8 h-8 rounded-lg bg-rose-500/15 flex items-center justify-center shrink-0">
                       <Smartphone className="text-rose-400 text-sm" />
                     </span>
                     <div className="text-left">
@@ -1186,7 +1186,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
 
                   {/* iOS — Coming soon */}
                   <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl opacity-45 cursor-not-allowed">
-                    <span className="w-8 h-8 rounded-lg bg-zinc-700/40 flex items-center justify-center flex-shrink-0">
+                    <span className="w-8 h-8 rounded-lg bg-zinc-700/40 flex items-center justify-center shrink-0">
                       <Apple className="text-zinc-400 text-sm" />
                     </span>
                     <div className="text-left">
@@ -1369,7 +1369,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
 
           {/* Badge */}
           <div className="hero-asymm-badge animate-blur-reveal blur-delay-1">
-            <span className="relative flex h-2 w-2 flex-shrink-0" aria-hidden="true">
+            <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
             </span>
@@ -1422,7 +1422,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
       )}{/* end hero (home only) */}
 
       {/* ── Light body zone — every section below the dark hero (Logos Vision model) ── */}
-      <div className={variant === 'home' ? 'lp-light' : 'bg-[var(--lp-hero-navy)]'}>
+      <div className={variant === 'home' ? 'lp-light' : 'bg-(--lp-hero-navy)'}>
 
       {/* ── Real-product proof band (home) — shows the actual shipped surface, no mockups.
            Sits right under the hero so a cold visitor sees the real app before the CTA repeats.
@@ -1432,7 +1432,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 md:gap-16 items-center">
           <div>
             <div className="hero-asymm-badge mb-5">
-              <span className="relative flex h-2 w-2 flex-shrink-0" aria-hidden="true">
+              <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
               </span>
               The actual app
@@ -1484,7 +1484,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
             <a
               key={c.name}
               href={`/features#${c.anchor}`}
-              className={`group flex flex-col gap-1 px-5 py-5 border-t transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/50 ${isDarkMode ? 'border-zinc-800/60 hover:bg-zinc-900/60' : 'border-stone-200/70 hover:bg-white'}`}
+              className={`group flex flex-col gap-1 px-5 py-5 border-t transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/50 ${isDarkMode ? 'border-zinc-800/60 hover:bg-zinc-900/60' : 'border-stone-200/70 hover:bg-white'}`}
             >
               <span className="flex items-center gap-1.5">
                 <span className={`w-1.5 h-1.5 rounded-full shrink-0 transition-colors ${isDarkMode ? 'bg-zinc-600 group-hover:bg-rose-500' : 'bg-stone-300 group-hover:bg-rose-500'}`} aria-hidden="true" />
@@ -1508,7 +1508,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
           <div className="hero-asymm-grid" aria-hidden="true" />
           <div className="max-w-6xl mx-auto relative z-10">
             <div className="hero-asymm-badge mb-5">
-              <span className="relative flex h-2 w-2 flex-shrink-0" aria-hidden="true">
+              <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
               </span>
@@ -1530,7 +1530,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
         <div className="hero-grain-overlay" style={{ opacity: isDarkMode ? 0.22 : 0.05 }} aria-hidden="true" />
         <div className="max-w-3xl mx-auto text-center relative z-10 pt-24 pb-16">
           <div className="hero-asymm-badge mx-auto mb-6" style={{ width: 'fit-content' }}>
-            <span className="relative flex h-2 w-2 flex-shrink-0" aria-hidden="true">
+            <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
             </span>
@@ -1606,7 +1606,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                     </div>
                   </div>
                   {/* AI Briefing card */}
-                  <div className="mx-3 mt-3 p-3 rounded-xl bg-gradient-to-r from-rose-500/15 to-pink-500/10 border border-rose-500/20">
+                  <div className="mx-3 mt-3 p-3 rounded-xl bg-linear-to-r from-rose-500/15 to-pink-500/10 border border-rose-500/20">
                     <div className="flex items-center gap-2 mb-1">
                       <Wand2 className="text-[9px] text-rose-400" />
                       <span className="text-[9px] font-bold text-rose-300">AI Briefing Ready</span>
@@ -1680,7 +1680,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                   <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-900/80 border border-zinc-800">
                     <div className="flex items-center gap-1">
                       {s.keys.map(k => (
-                        <kbd key={k} className="px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-[10px] font-mono font-bold text-zinc-300">{k}</kbd>
+                        <kbd key={k} className="px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 rounded-sm text-[10px] font-mono font-bold text-zinc-300">{k}</kbd>
                       ))}
                     </div>
                     <span className="text-xs text-zinc-500">{s.desc}</span>
@@ -1703,7 +1703,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                             <span className="text-[11px] text-zinc-500">{s.desc}</span>
                             <div className="flex items-center gap-0.5 shrink-0">
                               {s.keys.map(k => (
-                                <kbd key={k} className="px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-[10px] font-mono font-bold text-zinc-300">{k}</kbd>
+                                <kbd key={k} className="px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 rounded-sm text-[10px] font-mono font-bold text-zinc-300">{k}</kbd>
                               ))}
                             </div>
                           </div>
@@ -1731,9 +1731,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Pulse Card */}
             <div className="relative group animate-fade-in animation-delay-200">
-              <div className="absolute inset-0 bg-gradient-to-br from-rose-500/30 to-pink-500/25 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"></div>
-              <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl hover:border-rose-500/60 transition-all duration-150 flex flex-col hover:-translate-y-0.5 card-elevated-rose overflow-hidden">
-                <div className="flex items-center justify-center h-24 bg-gradient-to-br from-rose-500/10 via-rose-500/5 to-transparent border-b border-rose-500/15 group-hover:from-rose-500/15 transition-colors duration-150">
+              <div className="absolute inset-0 bg-linear-to-br from-rose-500/30 to-pink-500/25 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 ease-pulse"></div>
+              <div className="relative h-full bg-zinc-950/90 backdrop-blur-xs border border-zinc-800 rounded-3xl hover:border-rose-500/60 transition-all duration-150 flex flex-col hover:-translate-y-0.5 card-elevated-rose overflow-hidden">
+                <div className="flex items-center justify-center h-24 bg-linear-to-br from-rose-500/10 via-rose-500/5 to-transparent border-b border-rose-500/15 group-hover:from-rose-500/15 transition-colors duration-150">
                   {/* Pulse — Globe·Solid mark (rose→pink disc with knockout heartbeat). Canonical brand asset. */}
                   <svg viewBox="0 0 240 240" width="54" height="54" fill="none" aria-hidden="true" style={{ filter: 'drop-shadow(0 0 10px rgba(244,63,94,0.35))' }}>
                     <defs>
@@ -1748,10 +1748,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                     <circle cx="120" cy="120" r="103.99" fill="url(#pulseGlobeGrad)" mask="url(#pulseGlobeCut)"/>
                   </svg>
                 </div>
-                <div className="p-8 flex flex-col flex-grow">
+                <div className="p-8 flex flex-col grow">
                   <h3 className="text-2xl font-bold mb-4 text-white">Pulse</h3>
                   <div className="text-sm font-bold text-rose-500 tracking-wider uppercase mb-4">Communication and Intelligence</div>
-                  <p className="text-zinc-400 mb-6 flex-grow">The voice and ears of your organisation. Real-time messaging, 5 Relay peers + Triage stream, Glimpse async video, calendar, maps, and analytics in one interface.</p>
+                  <p className="text-zinc-400 mb-6 grow">The voice and ears of your organisation. Real-time messaging, 5 Relay peers + Triage stream, Glimpse async video, calendar, maps, and analytics in one interface.</p>
                   <ul className="space-y-3 text-zinc-300 text-sm">
                     <li className="flex items-center gap-2"><Check className="text-rose-500" /> 5 Relay Peers + Glimpse + AI Transcription</li>
                     <li className="flex items-center gap-2"><Check className="text-rose-500" /> War Room with 8 Slash Commands</li>
@@ -1765,9 +1765,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
 
             {/* Logos Vision Card */}
             <div className="relative group animate-fade-in animation-delay-300">
-              <div className="absolute inset-0 bg-gradient-to-br from-teal-400/25 to-teal-500/20 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"></div>
-              <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl hover:border-teal-400/60 transition-all duration-150 flex flex-col hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(34,166,164,0.25)] card-elevated overflow-hidden">
-                <div className="flex items-center justify-center h-24 bg-gradient-to-br from-teal-400/10 via-teal-400/5 to-transparent border-b border-teal-400/15 group-hover:from-teal-400/15 transition-colors duration-150">
+              <div className="absolute inset-0 bg-linear-to-br from-teal-400/25 to-teal-500/20 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 ease-pulse"></div>
+              <div className="relative h-full bg-zinc-950/90 backdrop-blur-xs border border-zinc-800 rounded-3xl hover:border-teal-400/60 transition-all duration-150 flex flex-col hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(34,166,164,0.25)] card-elevated overflow-hidden">
+                <div className="flex items-center justify-center h-24 bg-linear-to-br from-teal-400/10 via-teal-400/5 to-transparent border-b border-teal-400/15 group-hover:from-teal-400/15 transition-colors duration-150">
                   {/* Logos Vision — Orbital Core mark (patina→terracotta ring + terracotta core). Canonical brand asset (Terracotta + Patina). */}
                   <svg viewBox="0 0 80 80" width="52" height="52" fill="none" aria-hidden="true" style={{ filter: 'drop-shadow(0 0 10px rgba(82,181,166,0.35))' }}>
                     <defs>
@@ -1779,11 +1779,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                     <circle cx="40" cy="40" r="11" fill="#D4765A"/>
                   </svg>
                 </div>
-                <div className="p-8 flex flex-col flex-grow">
+                <div className="p-8 flex flex-col grow">
                   <div className="flex items-center gap-2 mb-4">
                     <h3 className="text-2xl font-bold text-white">Logos Vision</h3>
                     <span
-                      className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border"
+                      className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-sm border"
                       style={{
                         color: isDarkMode ? '#5eead4' : '#0f766e',
                         background: isDarkMode ? 'rgba(45,212,191,0.15)' : 'rgba(13,148,136,0.10)',
@@ -1792,7 +1792,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                     >Coming 2026</span>
                   </div>
                   <div className="text-sm font-bold text-teal-400 tracking-wider uppercase mb-4">CRM and Relationships</div>
-                  <p className="text-zinc-400 mb-6 flex-grow">The memory of your organization. Deep relationship intelligence with health scoring and native CRM integrations you'll log interactions to in one click.</p>
+                  <p className="text-zinc-400 mb-6 grow">The memory of your organization. Deep relationship intelligence with health scoring and native CRM integrations you'll log interactions to in one click.</p>
                   <ul className="space-y-3 text-zinc-300 text-sm">
                     <li className="flex items-center gap-2"><Check className="text-teal-400" /> 0-100 Relationship Scoring</li>
                     <li className="flex items-center gap-2"><Check className="text-teal-400" /> Native CRM Integrations</li>
@@ -1807,8 +1807,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                 Subtitle uses Amber so it occupies a distinct visual slot in the Trinity row (Pulse = rose, LV = teal, Entomate = amber).
                 Crimson leads the icon band + hover state where it ties to the logo's red hands. */}
             <div className="relative group animate-fade-in animation-delay-400">
-              <div className="absolute inset-0 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]" style={{background: 'radial-gradient(ellipse at 50% 30%, rgba(255,45,107,0.24) 0%, rgba(255,184,0,0.12) 55%, rgba(0,245,212,0.08) 80%, transparent 100%)'}}></div>
-              <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl transition-all duration-150 flex flex-col hover:-translate-y-0.5 card-elevated overflow-hidden" style={{'--tw-border-opacity': '1'} as React.CSSProperties} onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,45,107,0.45)', e.currentTarget.style.boxShadow = '0 8px 32px rgba(255,45,107,0.22), 0 0 0 1px rgba(255,184,0,0.12)')} onMouseLeave={e => (e.currentTarget.style.borderColor = '', e.currentTarget.style.boxShadow = '')}>
+              <div className="absolute inset-0 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 ease-pulse" style={{background: 'radial-gradient(ellipse at 50% 30%, rgba(255,45,107,0.24) 0%, rgba(255,184,0,0.12) 55%, rgba(0,245,212,0.08) 80%, transparent 100%)'}}></div>
+              <div className="relative h-full bg-zinc-950/90 backdrop-blur-xs border border-zinc-800 rounded-3xl transition-all duration-150 flex flex-col hover:-translate-y-0.5 card-elevated overflow-hidden" style={{'--tw-border-opacity': '1'} as React.CSSProperties} onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,45,107,0.45)', e.currentTarget.style.boxShadow = '0 8px 32px rgba(255,45,107,0.22), 0 0 0 1px rgba(255,184,0,0.12)')} onMouseLeave={e => (e.currentTarget.style.borderColor = '', e.currentTarget.style.boxShadow = '')}>
                 <div className="flex items-center justify-center h-24 border-b transition-colors duration-150 relative overflow-hidden" style={{background: 'linear-gradient(135deg, rgba(255,45,107,0.16) 0%, rgba(255,184,0,0.07) 55%, rgba(0,245,212,0.05) 100%)', borderColor: 'rgba(255,45,107,0.22)'}}>
                   {/* Brand color washes — amber + mint corners so all three brand voices register, not just crimson */}
                   <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at 12% 30%, rgba(255,184,0,0.12) 0%, transparent 40%), radial-gradient(circle at 88% 70%, rgba(0,245,212,0.10) 0%, transparent 40%)' }} aria-hidden="true" />
@@ -1843,10 +1843,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                     <circle cx="48.00" cy="111.20" r="3.52" fill="#FF2D6B"/>
                   </svg>
                 </div>
-                <div className="p-8 flex flex-col flex-grow">
+                <div className="p-8 flex flex-col grow">
                   <div className="flex items-center gap-2 mb-2">
                     <h3 className="text-2xl font-bold text-white">Entomate</h3>
-                    <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: isDarkMode ? 'rgba(255,184,0,0.15)' : 'rgba(180,83,9,0.10)', color: isDarkMode ? '#FFD166' : '#b45309', border: `1px solid ${isDarkMode ? 'rgba(255,184,0,0.30)' : 'rgba(180,83,9,0.30)'}` }}>Coming 2027</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-sm" style={{ background: isDarkMode ? 'rgba(255,184,0,0.15)' : 'rgba(180,83,9,0.10)', color: isDarkMode ? '#FFD166' : '#b45309', border: `1px solid ${isDarkMode ? 'rgba(255,184,0,0.30)' : 'rgba(180,83,9,0.30)'}` }}>Coming 2027</span>
                   </div>
                   <div
                     className="text-[11px] font-semibold uppercase mb-4"
@@ -1854,7 +1854,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                   >
                     Meeting Intelligence and Workflows
                   </div>
-                  <p className="text-zinc-400 mb-6 flex-grow leading-relaxed">
+                  <p className="text-zinc-400 mb-6 grow leading-relaxed">
                     The intelligence layer of your organization. A bot will join your meetings, transcribe, and extract decisions and actions. Daily briefings flag blockers before standup, and visual workflows execute the follow-through across your stack.
                   </p>
                   <ul className="space-y-3 text-zinc-300 text-sm">
@@ -1874,7 +1874,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
       {/* ── Home conversion tail (home only): scenarios · download · pricing · FAQ ── */}
       {variant === 'home' && (<>
       {/* ── Use-Case Scenarios ── */}
-      <section id="scenarios" className="py-24 px-6 bg-gradient-to-b from-zinc-900/20 to-zinc-950 border-b border-zinc-800/30">
+      <section id="scenarios" className="py-24 px-6 bg-linear-to-b from-zinc-900/20 to-zinc-950 border-b border-zinc-800/30">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12 animate-fade-in">
             <h2 className="text-3xl sm:text-5xl font-bold mb-6 text-zinc-50">How it works.</h2>
@@ -1903,7 +1903,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
 
           {SHOW_ENTERPRISE_SCENARIO && activeScenario === 'enterprise' ? (
             <div className="relative">
-              <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-rose-500/50 to-transparent -translate-y-1/2 z-0"></div>
+              <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-linear-to-r from-transparent via-rose-500/50 to-transparent -translate-y-1/2 z-0"></div>
               <div className="grid lg:grid-cols-4 gap-6 relative z-10">
                 {[
                   { num: '1', system: 'PULSE', badgeClass: 'from-rose-500 to-pink-500', labelClass: 'text-rose-400', borderClass: 'hover:border-rose-500/40', title: 'The Signal', body: 'A high-priority email from a key client lands. Pulse flags it "Urgent", extracts requirements, and routes it to the grants channel with an AI summary.' },
@@ -1911,8 +1911,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                   { num: '3', system: 'ENTOMATE', badgeClass: 'from-emerald-500 to-emerald-600', labelClass: 'text-emerald-400', borderClass: 'hover:border-emerald-500/40', title: 'The Action', body: 'An Apply workflow fires. A task is created for the Grant Writer, a kickoff meeting is scheduled based on availability, and an acknowledgment email is drafted.' },
                   { num: '4', system: 'WAR ROOM', badgeClass: 'from-rose-500 to-rose-600', labelClass: 'text-rose-400', borderClass: 'hover:border-rose-500/40', title: 'The Intelligence', body: 'The War Room researches grant requirements, compares past applications using your uploaded sources, and outputs a polished grant proposal draft in minutes.' },
                 ].map((step) => (
-                  <div key={step.num} className={`bg-zinc-900/90 backdrop-blur-sm border border-zinc-800 p-7 rounded-2xl relative hover:-translate-y-0.5 transition-all duration-300 card-elevated ${step.borderClass} group animate-fade-in`}>
-                    <div className={`absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br ${step.badgeClass} rounded-full flex items-center justify-center text-white font-bold shadow-lg text-sm`}>{step.num}</div>
+                  <div key={step.num} className={`bg-zinc-900/90 backdrop-blur-xs border border-zinc-800 p-7 rounded-2xl relative hover:-translate-y-0.5 transition-all duration-300 card-elevated ${step.borderClass} group animate-fade-in`}>
+                    <div className={`absolute -top-4 -right-4 w-8 h-8 bg-linear-to-br ${step.badgeClass} rounded-full flex items-center justify-center text-white font-bold shadow-lg text-sm`}>{step.num}</div>
                     <div className={`font-bold mb-2 text-xs tracking-wider ${step.labelClass}`}>{step.system}</div>
                     <h4 className="text-lg font-bold text-white mb-3">{step.title}</h4>
                     <p className="text-zinc-400 text-sm leading-relaxed">{step.body}</p>
@@ -1923,7 +1923,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
           ) : (
             <div className="relative max-w-5xl mx-auto">
               {/* Coral spine — connects the step nodes (desktop only) */}
-              <div className="hidden lg:block absolute top-8 left-[12%] right-[12%] h-px bg-gradient-to-r from-rose-500/0 via-rose-500/45 to-rose-500/0" aria-hidden="true"></div>
+              <div className="hidden lg:block absolute top-8 left-[12%] right-[12%] h-px bg-linear-to-r from-rose-500/0 via-rose-500/45 to-rose-500/0" aria-hidden="true"></div>
               <ol className="grid lg:grid-cols-3 gap-x-8 gap-y-12">
                 {[
                   { kicker: 'Relay Direct', title: 'Drop and go', body: "You're driving. One tap records a Relay Direct, scheduled to deliver when your recipient is most active." },
@@ -1982,7 +1982,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                 button's hit area. */}
             <span
               aria-hidden="true"
-              className="absolute top-1 bottom-1 rounded-lg bg-gradient-to-r from-fuchsia-600 to-pink-600 shadow-lg shadow-rose-500/20"
+              className="absolute top-1 bottom-1 rounded-lg bg-linear-to-r from-fuchsia-600 to-pink-600 shadow-lg shadow-rose-500/20"
               style={{
                 left: '4px',
                 width: 'calc(50% - 4px)',
@@ -2031,13 +2031,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
             {/* md:order-2 centers the highlighted/recommended tier on desktop so
                 visual emphasis matches position; mobile keeps it first (entry). */}
             <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-rose-500/10 flex flex-col md:order-2">
-              <div className="h-1 bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-500" aria-hidden="true" />
-              <div className="lp-pricing-featured bg-gradient-to-br from-zinc-950 to-zinc-900 border-x border-b border-zinc-700/60 rounded-b-2xl p-8 sm:p-10 space-y-6 flex-1 flex flex-col">
+              <div className="h-1 bg-linear-to-r from-fuchsia-500 via-pink-500 to-rose-500" aria-hidden="true" />
+              <div className="lp-pricing-featured bg-linear-to-br from-zinc-950 to-zinc-900 border-x border-b border-zinc-700/60 rounded-b-2xl p-8 sm:p-10 space-y-6 flex-1 flex flex-col">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <p className="text-xs font-bold uppercase tracking-widest text-rose-400">Pulse Solo</p>
-                      <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-sm bg-rose-500/15 text-rose-300 border border-rose-500/30">
                         Start here
                       </span>
                     </div>
@@ -2051,7 +2051,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                         : `1 seat · $${PULSE_SOLO_PRICING.yearly.toLocaleString()}/yr · 2 months free · ${PULSE_SOLO_PRICING.trialDays} days free`}
                     </p>
                   </div>
-                  <div className="hidden sm:flex w-14 h-14 rounded-xl bg-gradient-to-br from-fuchsia-500 to-pink-600 items-center justify-center flex-shrink-0 shadow-lg shadow-rose-500/30">
+                  <div className="hidden sm:flex w-14 h-14 rounded-xl bg-linear-to-br from-fuchsia-500 to-pink-600 items-center justify-center shrink-0 shadow-lg shadow-rose-500/30">
                     <HeartPulse size={26} className="text-white" />
                   </div>
                 </div>
@@ -2059,7 +2059,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                 <ul className="space-y-3 pt-2 flex-1">
                   {PULSE_SOLO_FEATURES.map((feat) => (
                     <li key={feat} className="flex items-start gap-3 text-sm text-zinc-200">
-                      <Check size={18} className="text-emerald-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                      <Check size={18} className="text-emerald-400 mt-0.5 shrink-0" aria-hidden="true" />
                       <span>{feat}</span>
                     </li>
                   ))}
@@ -2068,7 +2068,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                 <button
                   type="button"
                   onClick={onGetStarted}
-                  className="lp-cta-primary w-full py-3.5 rounded-xl bg-gradient-to-r from-fuchsia-600 via-pink-600 to-rose-600 hover:from-fuchsia-500 hover:via-pink-500 hover:to-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2"
+                  className="lp-cta-primary w-full py-3.5 rounded-xl bg-linear-to-r from-fuchsia-600 via-pink-600 to-rose-600 hover:from-fuchsia-500 hover:via-pink-500 hover:to-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2"
                 >
                   <Rocket size={16} aria-hidden="true" />
                   Launch Pulse
@@ -2084,7 +2084,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <p className="text-xs font-bold uppercase tracking-widest text-rose-400">Pulse Team</p>
-                      <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-sm bg-zinc-800 text-zinc-400 border border-zinc-700">
                         Min 2 seats
                       </span>
                     </div>
@@ -2098,7 +2098,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                         : `$${PULSE_TEAM_PRICING.yearly.toLocaleString()}/seat/yr · 2 months free · ${PULSE_TEAM_PRICING.trialDays} days free`}
                     </p>
                   </div>
-                  <div className="hidden sm:flex w-14 h-14 rounded-xl bg-zinc-900 border border-zinc-800 items-center justify-center flex-shrink-0">
+                  <div className="hidden sm:flex w-14 h-14 rounded-xl bg-zinc-900 border border-zinc-800 items-center justify-center shrink-0">
                     <Users size={26} className="text-rose-500" />
                   </div>
                 </div>
@@ -2146,7 +2146,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                       </li>
                     ) : (
                       <li key={feat} className="flex items-start gap-3 text-sm text-zinc-200">
-                        <Check size={18} className="text-emerald-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                        <Check size={18} className="text-emerald-400 mt-0.5 shrink-0" aria-hidden="true" />
                         <span>{feat}</span>
                       </li>
                     )
@@ -2176,7 +2176,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <p className="text-xs font-bold uppercase tracking-widest text-rose-400">Pulse Growth</p>
-                      <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-sm bg-zinc-800 text-zinc-400 border border-zinc-700">
                         For growing orgs
                       </span>
                     </div>
@@ -2190,7 +2190,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                         : `$${PULSE_GROWTH_PRICING.yearly.toLocaleString()}/yr · 2 months free · ${PULSE_GROWTH_PRICING.trialDays} days free`}
                     </p>
                   </div>
-                  <div className="hidden sm:flex w-14 h-14 rounded-xl bg-zinc-900 border border-zinc-800 items-center justify-center flex-shrink-0">
+                  <div className="hidden sm:flex w-14 h-14 rounded-xl bg-zinc-900 border border-zinc-800 items-center justify-center shrink-0">
                     <HeartPulse size={26} className="text-rose-500" />
                   </div>
                 </div>
@@ -2208,17 +2208,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
                       const label = feat.replace(/,?\s*coming soon/i, '');
                       return (
                         <li key={feat} className="flex items-start gap-3 text-sm text-zinc-500">
-                          <span className="mt-1 w-3.5 h-3.5 rounded-full border border-dashed border-zinc-600 flex-shrink-0" aria-hidden="true" />
+                          <span className="mt-1 w-3.5 h-3.5 rounded-full border border-dashed border-zinc-600 shrink-0" aria-hidden="true" />
                           <span>
                             {label}
-                            <span className="ml-2 align-middle text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">Soon</span>
+                            <span className="ml-2 align-middle text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-sm bg-zinc-800 text-zinc-400 border border-zinc-700">Soon</span>
                           </span>
                         </li>
                       );
                     }
                     return (
                       <li key={feat} className="flex items-start gap-3 text-sm text-zinc-200">
-                        <Check size={18} className="text-emerald-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                        <Check size={18} className="text-emerald-400 mt-0.5 shrink-0" aria-hidden="true" />
                         <span>{feat}</span>
                       </li>
                     );
@@ -2423,7 +2423,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
       {/* ── Studio band — Quantum Ecosystems, the studio behind Pulse ── */}
       <section aria-label="The studio behind Pulse" className="lp-dark bg-zinc-950 border-t border-zinc-800/60 py-12 px-6">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-x-6 gap-y-4 text-center sm:text-left">
-          <span className="inline-flex flex-shrink-0">
+          <span className="inline-flex shrink-0">
             <QuantumEcosMark size={52} />
           </span>
           <div className="flex-1">
@@ -2436,7 +2436,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
             href="https://qntmecos.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-zinc-700/60 bg-zinc-900/60 text-sm font-medium text-zinc-300 hover:text-white hover:border-rose-500/40 hover:bg-zinc-800/60 transition-all duration-200 flex-shrink-0"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-zinc-700/60 bg-zinc-900/60 text-sm font-medium text-zinc-300 hover:text-white hover:border-rose-500/40 hover:bg-zinc-800/60 transition-all duration-200 shrink-0"
           >
             Visit QntmEcos <ExternalLink className="text-[11px]" />
           </a>
@@ -2449,7 +2449,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn, varia
           <div className="grid md:grid-cols-4 gap-12 mb-12">
             <div className="col-span-2">
               <div className="flex items-center gap-3 mb-6">
-                <div className="lp-footer-mark w-8 h-8 rounded-lg bg-[var(--lp-hero-navy)] flex items-center justify-center border border-zinc-800" data-reveal>
+                <div className="lp-footer-mark w-8 h-8 rounded-lg bg-(--lp-hero-navy) flex items-center justify-center border border-zinc-800" data-reveal>
                   <svg viewBox="0 0 64 64" className="w-5 h-5">
                     <path d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32" stroke="url(#pulse-grad-nav)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                   </svg>
@@ -2570,7 +2570,7 @@ const DownloadButton = ({
         <div className="font-bold text-white group-hover:text-rose-400 transition">{platform}</div>
         <div className="text-xs text-zinc-500">{subtext}</div>
       </div>
-      {inactive && <span className="px-2 py-1 bg-zinc-800 rounded text-[10px] text-zinc-500 uppercase tracking-wide">Coming Soon</span>}
+      {inactive && <span className="px-2 py-1 bg-zinc-800 rounded-sm text-[10px] text-zinc-500 uppercase tracking-wide">Coming Soon</span>}
     </Component>
   );
 };

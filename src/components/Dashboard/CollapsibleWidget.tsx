@@ -36,10 +36,10 @@ const CollapsibleWidget: React.FC<CollapsibleWidgetProps> = ({
   className = '',
 }) => (
   <div
-    className={`bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-xl overflow-hidden transition-colors duration-150 ${className}`}
+    className={`bg-white dark:bg-white/3 border border-zinc-200 dark:border-white/6 rounded-xl overflow-hidden transition-colors duration-150 ${className}`}
   >
     <div
-      className="flex items-center justify-between p-4 cursor-pointer hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150"
+      className="flex items-center justify-between p-4 cursor-pointer hover:bg-zinc-50 dark:hover:bg-white/4 transition-colors duration-150"
       onClick={() => onToggle(id)}
     >
       <div className="flex items-center gap-3">
@@ -51,7 +51,7 @@ const CollapsibleWidget: React.FC<CollapsibleWidgetProps> = ({
         <button
           aria-expanded={isExpanded}
           aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${title}`}
-          className="w-6 h-6 flex items-center justify-center rounded focus:outline-none focus:ring-2 focus:ring-rose-500/40"
+          className="w-6 h-6 flex items-center justify-center rounded-sm focus:outline-hidden focus:ring-2 focus:ring-rose-500/40"
           tabIndex={-1}
         >
           <i
@@ -69,7 +69,7 @@ const CollapsibleWidget: React.FC<CollapsibleWidgetProps> = ({
       style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
     >
       <div className="overflow-hidden">
-        <div className="p-4 pt-0 border-t border-zinc-100 dark:border-white/[0.06]">
+        <div className="p-4 pt-0 border-t border-zinc-100 dark:border-white/6">
           {children}
         </div>
       </div>

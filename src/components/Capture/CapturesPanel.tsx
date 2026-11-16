@@ -80,10 +80,10 @@ const CapturesPanel: React.FC<CapturesPanelProps> = ({
             onClick={() => window.dispatchEvent(new CustomEvent('pulse:capture-open', {
               detail: sourceSection ? { sourceSection, sourceId } : undefined,
             }))}
-            className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded inline-flex items-center gap-1"
+            className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm inline-flex items-center gap-1"
           >
             + CAPTURE
-            <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-400 font-mono text-[10px]">⌘J</kbd>
+            <kbd className="px-1.5 py-0.5 rounded-sm bg-zinc-100 dark:bg-white/6 text-zinc-500 dark:text-zinc-400 font-mono text-[10px]">⌘J</kbd>
           </button>
         )}
       </div>
@@ -100,7 +100,7 @@ const CapturesPanel: React.FC<CapturesPanelProps> = ({
             const timeLabel = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             return (
               <li key={n.id}>
-                <div className="flex items-baseline gap-2.5 px-3 py-2 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150">
+                <div className="flex items-baseline gap-2.5 px-3 py-2 rounded-sm hover:bg-zinc-50 dark:hover:bg-white/4 transition-colors duration-150">
                   <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0 min-w-[46px]">
                     {dateLabel}
                   </span>

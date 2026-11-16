@@ -116,7 +116,7 @@ const HighlightedText: React.FC<{ text: string }> = ({ text }) => {
           // This is a highlighted match - render with highlight style
           const content = part.slice(2, -2);
           return (
-            <mark key={idx} className="bg-rose-200 dark:bg-rose-800 rounded px-0.5">
+            <mark key={idx} className="bg-rose-200 dark:bg-rose-800 rounded-sm px-0.5">
               {content}
             </mark>
           );
@@ -155,7 +155,7 @@ const MessageSearchResultItem: React.FC<MessageSearchResultItemProps> = ({ resul
       className="w-full text-left p-3 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-rose-300 dark:hover:border-rose-600 transition"
     >
       <div className="flex items-start gap-3">
-        <div className="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center flex-shrink-0">
+        <div className="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center shrink-0">
           <span className="text-rose-600 dark:text-rose-400 font-medium text-sm">
             {result.senderName?.charAt(0).toUpperCase() || '?'}
           </span>
@@ -165,7 +165,7 @@ const MessageSearchResultItem: React.FC<MessageSearchResultItemProps> = ({ resul
             <span className="text-sm font-medium text-zinc-900 dark:text-white truncate">
               {result.senderName || 'Unknown'}
             </span>
-            <span className="text-xs text-zinc-500 dark:text-zinc-400 flex-shrink-0">
+            <span className="text-xs text-zinc-500 dark:text-zinc-400 shrink-0">
               {formatDate(result.createdAt)}
             </span>
           </div>
@@ -264,7 +264,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
           {onClose && (
             <button
               onClick={onClose}
-              className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded transition"
+              className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-sm transition"
             >
               <X className="text-zinc-400" />
             </button>
@@ -279,7 +279,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search messages..."
-            className="w-full pl-9 pr-10 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+            className="w-full pl-9 pr-10 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm focus:outline-hidden focus:ring-2 focus:ring-rose-500 focus:border-transparent"
             autoFocus
           />
           {query && (
@@ -438,13 +438,13 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
       <div className="px-4 py-2 bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-700">
         <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
           <span>
-            <kbd className="px-1.5 py-0.5 bg-white dark:bg-zinc-800 rounded border border-zinc-300 dark:border-zinc-600 text-[10px]">
+            <kbd className="px-1.5 py-0.5 bg-white dark:bg-zinc-800 rounded-sm border border-zinc-300 dark:border-zinc-600 text-[10px]">
               Enter
             </kbd>
             {' '}to search
           </span>
           <span>
-            <kbd className="px-1.5 py-0.5 bg-white dark:bg-zinc-800 rounded border border-zinc-300 dark:border-zinc-600 text-[10px]">
+            <kbd className="px-1.5 py-0.5 bg-white dark:bg-zinc-800 rounded-sm border border-zinc-300 dark:border-zinc-600 text-[10px]">
               Esc
             </kbd>
             {' '}to close
@@ -468,7 +468,7 @@ export const QuickSearchButton: React.FC<QuickSearchButtonProps> = ({ onClick })
   >
     <Search className="text-zinc-500 text-sm" />
     <span className="text-sm text-zinc-500 dark:text-zinc-400">Search...</span>
-    <kbd className="hidden sm:inline-block px-1.5 py-0.5 bg-white dark:bg-zinc-900 rounded border border-zinc-300 dark:border-zinc-600 text-[10px] text-zinc-400">
+    <kbd className="hidden sm:inline-block px-1.5 py-0.5 bg-white dark:bg-zinc-900 rounded-sm border border-zinc-300 dark:border-zinc-600 text-[10px] text-zinc-400">
       Ctrl+/
     </kbd>
   </button>

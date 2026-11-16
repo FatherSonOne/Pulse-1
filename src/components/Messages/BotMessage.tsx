@@ -40,7 +40,7 @@ export const BotMessage: React.FC<BotMessageProps> = ({ message }) => {
     name: message.bot_app,
     emoji: '🤖',
     avatarBg: 'bg-zinc-500/15 ring-1 ring-zinc-500/30',
-    accentColor: 'ring-1 ring-zinc-500/30 bg-zinc-500/[0.06]',
+    accentColor: 'ring-1 ring-zinc-500/30 bg-zinc-500/6',
   };
 
   const handleAction = (action: BotAction) => {
@@ -108,9 +108,9 @@ export const BotMessage: React.FC<BotMessageProps> = ({ message }) => {
   };
 
   return (
-    <div className="group flex items-start gap-3 py-2 px-1 rounded-xl hover:bg-white/[0.02] transition-colors">
+    <div className="group flex items-start gap-3 py-2 px-1 rounded-xl hover:bg-white/2 transition-colors">
       {/* Bot Avatar */}
-      <div className={`w-9 h-9 rounded-lg ${bot.avatarBg} flex items-center justify-center flex-shrink-0`}>
+      <div className={`w-9 h-9 rounded-lg ${bot.avatarBg} flex items-center justify-center shrink-0`}>
         <span className="text-base leading-none">{bot.emoji}</span>
       </div>
 
@@ -167,18 +167,18 @@ export const BotMessage: React.FC<BotMessageProps> = ({ message }) => {
 
         {/* Export all status */}
         {exportAllState === 'exporting' && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-[var(--pulse-rose-text)] bg-[rgba(244,63,94,0.08)] ring-1 ring-[rgba(244,63,94,0.20)] rounded-lg px-3 py-2">
+          <div className="mt-2 flex items-center gap-2 text-xs text-(--pulse-rose-text) bg-[rgba(244,63,94,0.08)] ring-1 ring-[rgba(244,63,94,0.20)] rounded-lg px-3 py-2">
             <Loader2 className="w-3 h-3 animate-spin" />
             <span>Exporting recordings to Entomate...</span>
           </div>
         )}
         {exportAllState === 'done' && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-500/[0.08] ring-1 ring-emerald-500/30 rounded-lg px-3 py-2">
+          <div className="mt-2 flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-500/8 ring-1 ring-emerald-500/30 rounded-lg px-3 py-2">
             <span>All recordings exported to Entomate!</span>
           </div>
         )}
         {exportAllState === 'error' && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-rose-700 dark:text-rose-300 bg-rose-500/[0.08] ring-1 ring-rose-500/30 rounded-lg px-3 py-2">
+          <div className="mt-2 flex items-center gap-2 text-xs text-rose-700 dark:text-rose-300 bg-rose-500/8 ring-1 ring-rose-500/30 rounded-lg px-3 py-2">
             <span>Some recordings failed to export. Try again later.</span>
           </div>
         )}
@@ -211,7 +211,7 @@ function InlineRating({ rating, submitted, meetingId, onRate, onClose }: {
 
   if (submitted) {
     return (
-      <div className="mt-2 flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-500/[0.08] ring-1 ring-emerald-500/30 rounded-lg px-3 py-2">
+      <div className="mt-2 flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-500/8 ring-1 ring-emerald-500/30 rounded-lg px-3 py-2">
         <span>Thanks for your feedback!</span>
         <span className="text-rose-500/70 dark:text-rose-bright/70">
           {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
@@ -222,7 +222,7 @@ function InlineRating({ rating, submitted, meetingId, onRate, onClose }: {
   }
 
   return (
-    <div className="mt-2 flex items-center gap-3 bg-white/[0.03] border border-white/[0.08] rounded-lg px-3 py-2">
+    <div className="mt-2 flex items-center gap-3 bg-white/3 border border-white/8 rounded-lg px-3 py-2">
       <span className="text-xs text-zinc-400">Rate this summary:</span>
       <div className="flex items-center gap-0.5">
         {Array.from({ length: 5 }, (_, i) => (
@@ -262,10 +262,10 @@ function AlertCard({ content, actions, onAction }: CardProps) {
   const isSuccess = content.includes('✅') || content.toLowerCase().includes('success');
 
   const colors = isError
-    ? 'ring-1 ring-rose-500/30 bg-rose-500/[0.06]'
+    ? 'ring-1 ring-rose-500/30 bg-rose-500/6'
     : isSuccess
-    ? 'ring-1 ring-emerald-500/30 bg-emerald-500/[0.06]'
-    : 'ring-1 ring-amber-500/30 bg-amber-500/[0.06]';
+    ? 'ring-1 ring-emerald-500/30 bg-emerald-500/6'
+    : 'ring-1 ring-amber-500/30 bg-amber-500/6';
 
   return (
     <div className={`rounded-xl ${colors} overflow-hidden mt-1`}>
@@ -273,7 +273,7 @@ function AlertCard({ content, actions, onAction }: CardProps) {
         <SimpleMarkdown text={content} />
       </div>
       {actions.length > 0 && (
-        <div className="px-4 py-3 border-t border-white/[0.06] flex flex-wrap gap-2">
+        <div className="px-4 py-3 border-t border-white/6 flex flex-wrap gap-2">
           {actions.map((action, i) => (
             <ActionButton key={i} action={action} onAction={onAction} />
           ))}
@@ -311,8 +311,8 @@ function ActionButton({
 }) {
   const base = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition';
   const styles = variant === 'ghost'
-    ? 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05]'
-    : 'bg-white/[0.06] hover:bg-white/[0.10] text-zinc-300 border border-white/[0.08]';
+    ? 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
+    : 'bg-white/6 hover:bg-white/10 text-zinc-300 border border-white/8';
 
   return (
     <button

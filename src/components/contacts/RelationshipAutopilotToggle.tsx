@@ -49,7 +49,7 @@ export const RelationshipAutopilotToggle: React.FC<RelationshipAutopilotTogglePr
         : 'bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
     }`}>
       <div className="flex items-center gap-2 min-w-0">
-        <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
+        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
           localEnabled ? 'bg-rose-100 dark:bg-rose-900/40' : 'bg-zinc-200 dark:bg-zinc-700'
         }`}>
           <i className={`fa-solid fa-robot text-xs ${
@@ -73,7 +73,7 @@ export const RelationshipAutopilotToggle: React.FC<RelationshipAutopilotTogglePr
       <button
         onClick={handleToggle}
         disabled={isToggling}
-        className={`relative flex-shrink-0 rounded-full transition-colors ${
+        className={`relative shrink-0 rounded-full transition-colors ${
           localEnabled ? 'bg-rose-500' : 'bg-zinc-300 dark:bg-zinc-600'
         }`}
         style={{ width: '36px', height: '20px' }}

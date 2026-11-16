@@ -215,7 +215,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden animate-fade-in"
       >
         {/* Header */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-linear-to-r from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
@@ -247,12 +247,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleShare()}
                 placeholder="Enter email address..."
-                className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-rose-500 focus:outline-none text-gray-900 dark:text-white placeholder-gray-400"
+                className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-rose-500 focus:outline-hidden text-gray-900 dark:text-white placeholder-gray-400"
               />
             </div>
             <button
               onClick={handleShare}
-              className="px-4 py-2.5 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+              className="px-4 py-2.5 bg-linear-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white rounded-lg text-sm font-medium transition-all flex items-center gap-2"
             >
               <Send className="fa" />
               Share
@@ -328,7 +328,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Hey, I thought you'd find this useful..."
-                  className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-rose-500 focus:outline-none text-gray-900 dark:text-white resize-none"
+                  className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-rose-500 focus:outline-hidden text-gray-900 dark:text-white resize-none"
                   rows={2}
                 />
               </div>
@@ -354,7 +354,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 </span>
                 <button
                   onClick={handleCopyLink}
-                  className="px-3 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded text-xs transition-colors flex items-center gap-1"
+                  className="px-3 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-sm text-xs transition-colors flex items-center gap-1"
                 >
                   <Copy className="fa" />
                   Copy link
@@ -364,7 +364,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               <button
                 onClick={handleCreatePublicLink}
                 disabled={isCreatingLink}
-                className="px-3 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded text-xs transition-colors flex items-center gap-1 disabled:opacity-50"
+                className="px-3 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-sm text-xs transition-colors flex items-center gap-1 disabled:opacity-50"
               >
                 {isCreatingLink ? (
                   <Loader2 className="fa animate-spin" />
@@ -382,7 +382,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 type="text"
                 value={`${window.location.origin}/share/${type}/${publicLink}`}
                 readOnly
-                className="flex-1 px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded text-gray-500 dark:text-gray-400"
+                className="flex-1 px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-sm text-gray-500 dark:text-gray-400"
               />
             </div>
           )}
@@ -415,7 +415,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     key={share.id}
                     className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-400 to-pink-400 flex items-center justify-center text-white text-sm font-medium">
+                    <div className="w-8 h-8 rounded-full bg-linear-to-br from-rose-400 to-pink-400 flex items-center justify-center text-white text-sm font-medium">
                       {email.charAt(0).toUpperCase()}
                     </div>
 
@@ -438,7 +438,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
                     <button
                       onClick={() => handleRemoveShare(share.id)}
-                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-sm transition-colors"
                       title="Remove access"
                     >
                       <UserMinus className="fa text-xs" />

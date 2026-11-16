@@ -75,7 +75,7 @@ export const SmartCompose: React.FC<SmartComposeProps> = ({
                         </div>
                       </div>
                     </div>
-                    <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                    <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                   </div>
                 </button>
               ))}

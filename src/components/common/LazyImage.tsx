@@ -118,7 +118,7 @@ export const LazyAvatar: React.FC<LazyAvatarProps> = React.memo(({
     const initials = fallbackText?.charAt(0)?.toUpperCase() || '?';
     return (
       <div
-        className={`${sizeClasses[size]} rounded-full flex items-center justify-center text-white bg-gradient-to-br from-rose-500 to-pink-600 ${className}`}
+        className={`${sizeClasses[size]} rounded-full flex items-center justify-center text-white bg-linear-to-br from-rose-500 to-pink-600 ${className}`}
       >
         {initials}
       </div>

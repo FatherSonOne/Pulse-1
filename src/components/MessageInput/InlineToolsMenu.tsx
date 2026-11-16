@@ -69,7 +69,7 @@ export const InlineToolsMenu: React.FC<InlineToolsMenuProps> = ({ onClose, setAc
         <div className="header-content">
           <LayoutGrid />
           <span>Message tools</span>
-          <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 tabular-nums">
+          <span className="text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500 tabular-nums">
             · {allTools.length}
           </span>
         </div>

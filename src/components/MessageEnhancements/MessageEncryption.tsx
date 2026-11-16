@@ -219,10 +219,10 @@ export const MessageEncryption: React.FC<MessageEncryptionProps> = ({
   return (
     <div className="space-y-4">
       {/* Security Score Header */}
-      <div className="bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 dark:from-emerald-900/20 dark:to-cyan-900/20 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800">
+      <div className="bg-linear-to-r from-emerald-500/10 to-cyan-500/10 dark:from-emerald-900/20 dark:to-cyan-900/20 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-sm">
+            <div className="w-12 h-12 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-xs">
               <ShieldHalf className="text-emerald-500 text-xl" />
             </div>
             <div>
@@ -292,7 +292,7 @@ export const MessageEncryption: React.FC<MessageEncryptionProps> = ({
             onClick={() => setActiveTab(tab.id)}
             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition ${
               activeTab === tab.id
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
@@ -320,7 +320,7 @@ export const MessageEncryption: React.FC<MessageEncryptionProps> = ({
               onClick={() => updateEncryptionSetting('enabled', !encryptionSettings.enabled)}
               className={`w-12 h-6 rounded-full transition-colors ${encryptionSettings.enabled ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-600'}`}
             >
-              <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${encryptionSettings.enabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
+              <div className={`w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${encryptionSettings.enabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
             </button>
           </div>
 
@@ -360,7 +360,7 @@ export const MessageEncryption: React.FC<MessageEncryptionProps> = ({
                   onClick={() => updateEncryptionSetting(setting.key, !encryptionSettings[setting.key])}
                   className={`w-10 h-5 rounded-full transition-colors ${encryptionSettings[setting.key] ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-600'}`}
                 >
-                  <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform ${encryptionSettings[setting.key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${encryptionSettings[setting.key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </button>
               </div>
             ))}
@@ -417,7 +417,7 @@ export const MessageEncryption: React.FC<MessageEncryptionProps> = ({
                 onClick={() => updatePrivacySetting(setting.key, !privacySettings[setting.key])}
                 className={`w-10 h-5 rounded-full transition-colors ${privacySettings[setting.key] ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-600'}`}
               >
-                <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform ${privacySettings[setting.key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${privacySettings[setting.key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
               </button>
             </div>
           ))}
@@ -484,7 +484,7 @@ export const MessageEncryption: React.FC<MessageEncryptionProps> = ({
                     </span>
                   )}
                 </div>
-                <p className={`mt-2 text-sm ${msg.isDecrypted ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-400 italic blur-sm hover:blur-none transition-all cursor-pointer'}`}>
+                <p className={`mt-2 text-sm ${msg.isDecrypted ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-400 italic blur-xs hover:blur-none transition-all cursor-pointer'}`}>
                   {msg.preview}
                 </p>
                 {!msg.isDecrypted && (

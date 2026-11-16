@@ -135,7 +135,7 @@ const WeekCapturesStrip: React.FC<WeekCapturesStripProps> = ({
         </div>
         <p className="px-3 py-1.5 text-sm text-zinc-500 dark:text-zinc-400">
           Nothing captured in the last 7 days. Press{' '}
-          <kbd className="pulse-label px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-white/[0.06] text-zinc-600 dark:text-zinc-300">
+          <kbd className="pulse-label px-1.5 py-0.5 rounded-sm bg-zinc-100 dark:bg-white/6 text-zinc-600 dark:text-zinc-300">
             ⌘J
           </kbd>{' '}
           to capture anywhere.
@@ -164,7 +164,7 @@ const WeekCapturesStrip: React.FC<WeekCapturesStripProps> = ({
             sessionStorage.setItem('pulse_archives_tab', 'notes');
             setView(AppView.ARCHIVES);
           }}
-          className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+          className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
         >
           SEE ALL
         </button>
@@ -182,19 +182,19 @@ const WeekCapturesStrip: React.FC<WeekCapturesStripProps> = ({
                   sessionStorage.setItem('pulse_focus_note', r.id);
                   setView(AppView.ARCHIVES);
                 })}
-                className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
+                className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-sm hover:bg-zinc-50 dark:hover:bg-white/4 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
               >
                 <span
                   className={`w-1.5 h-1.5 rounded-full shrink-0 bg-zinc-400 dark:bg-zinc-500 ${isNew ? 'pulse-heartbeat-once' : ''}`}
                   aria-hidden="true"
                 />
                 <span className="flex items-baseline gap-2 min-w-0 flex-1">
-                  <span className={`pulse-label px-1.5 py-0.5 rounded shrink-0 ${t.pill}`}>{t.label}</span>
+                  <span className={`pulse-label px-1.5 py-0.5 rounded-sm shrink-0 ${t.pill}`}>{t.label}</span>
                   <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate">
                     {r.content || '(empty note)'}
                   </span>
                 </span>
-                <span className="pulse-label text-zinc-500 dark:text-zinc-400 shrink-0 min-w-[2.5rem] text-right">
+                <span className="pulse-label text-zinc-500 dark:text-zinc-400 shrink-0 min-w-10 text-right">
                   {daysAgo(r.created_at)}
                 </span>
                 <ChevronRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 group-hover:text-rose-500 dark:group-hover:text-rose-400 transition-colors shrink-0" />

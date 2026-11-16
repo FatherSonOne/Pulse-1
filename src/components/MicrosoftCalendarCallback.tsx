@@ -85,7 +85,7 @@ export const MicrosoftCalendarCallback: React.FC = () => {
               Connection failed
             </p>
             {errorMessage && (
-              <p className="text-zinc-500 dark:text-zinc-400 text-sm break-words">
+              <p className="text-zinc-500 dark:text-zinc-400 text-sm wrap-break-word">
                 {errorMessage}
               </p>
             )}

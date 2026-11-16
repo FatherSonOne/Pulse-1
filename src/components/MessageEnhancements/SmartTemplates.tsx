@@ -267,7 +267,7 @@ export const SmartTemplates: React.FC<SmartTemplatesProps> = ({
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
+      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-linear-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
@@ -362,7 +362,7 @@ export const SmartTemplates: React.FC<SmartTemplatesProps> = ({
                 onClick={() => handleQuickInsert(template)}
               >
                 <div className="flex items-start gap-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-${config.color}-100 dark:bg-${config.color}-900/40`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-${config.color}-100 dark:bg-${config.color}-900/40`}>
                     <i className={`fa-solid ${config.icon} text-${config.color}-500 text-sm`} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -371,7 +371,7 @@ export const SmartTemplates: React.FC<SmartTemplatesProps> = ({
                         {template.name}
                       </span>
                       {template.isAISuggested && (
-                        <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400">
+                        <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-sm bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400">
                           <Sparkles className="mr-0.5" />
                           Suggested
                         </span>
@@ -384,7 +384,7 @@ export const SmartTemplates: React.FC<SmartTemplatesProps> = ({
                       {template.tags.slice(0, 3).map(tag => (
                         <span
                           key={tag}
-                          className="px-1.5 py-0.5 text-[10px] rounded bg-zinc-100 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400"
+                          className="px-1.5 py-0.5 text-[10px] rounded-sm bg-zinc-100 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400"
                         >
                           {tag}
                         </span>
@@ -589,7 +589,7 @@ const TemplateEditor: React.FC<{
               <div className="flex items-center gap-1 mt-1 flex-wrap">
                 <span className="text-[10px] text-zinc-500">Variables:</span>
                 {variables.map(v => (
-                  <span key={v} className="px-1.5 py-0.5 text-[10px] rounded bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400">
+                  <span key={v} className="px-1.5 py-0.5 text-[10px] rounded-sm bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400">
                     {v}
                   </span>
                 ))}

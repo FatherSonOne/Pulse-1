@@ -109,7 +109,7 @@ export function CustomSelect<T extends string | number>({
         disabled={disabled}
         onClick={() => !disabled && setOpen((o) => !o)}
         onKeyDown={handleTriggerKey}
-        className={`w-full flex items-center justify-between text-left px-4 py-3 rounded-xl border ${tc.border} ${tc.inputBg} ${tc.text} cursor-pointer transition-[box-shadow,border-color] ease-pulse focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+        className={`w-full flex items-center justify-between text-left px-4 py-3 rounded-xl border ${tc.border} ${tc.inputBg} ${tc.text} cursor-pointer transition-[box-shadow,border-color] ease-pulse focus:outline-hidden focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed`}
         style={open ? { borderColor: accentColor, boxShadow: `0 0 0 2px ${accentColor}40` } : undefined}
       >
         <span className="truncate">{selected?.label}</span>

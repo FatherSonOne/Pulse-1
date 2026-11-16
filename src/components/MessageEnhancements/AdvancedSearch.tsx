@@ -52,7 +52,7 @@ const highlightText = (text: string, query: string): React.ReactNode => {
 
   return parts.map((part, i) =>
     part.toLowerCase() === query.toLowerCase()
-      ? <mark key={i} className="bg-yellow-200 dark:bg-yellow-900/60 text-inherit rounded px-0.5">{part}</mark>
+      ? <mark key={i} className="bg-yellow-200 dark:bg-yellow-900/60 text-inherit rounded-sm px-0.5">{part}</mark>
       : part
   );
 };
@@ -190,7 +190,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
               onChange={e => setQuery(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
               placeholder="Search messages, files, decisions..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-hidden"
             />
           </div>
           <button
@@ -233,7 +233,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                 <select
                   value={filters.type}
                   onChange={e => handleFilterChange('type', e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-zinc-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-zinc-800 dark:text-white outline-hidden focus:ring-2 focus:ring-blue-500"
                 >
                   {filterOptions.type.map(opt => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -247,7 +247,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                 <select
                   value={filters.dateRange}
                   onChange={e => handleFilterChange('dateRange', e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-zinc-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-zinc-800 dark:text-white outline-hidden focus:ring-2 focus:ring-blue-500"
                 >
                   {filterOptions.dateRange.map(opt => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -267,7 +267,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                     type="date"
                     value={filters.customDateFrom}
                     onChange={e => handleFilterChange('customDateFrom', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-zinc-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-zinc-800 dark:text-white outline-hidden focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
@@ -278,7 +278,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                     type="date"
                     value={filters.customDateTo}
                     onChange={e => handleFilterChange('customDateTo', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-zinc-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-zinc-800 dark:text-white outline-hidden focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -293,7 +293,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                 <select
                   value={filters.sender}
                   onChange={e => handleFilterChange('sender', e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-zinc-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-zinc-800 dark:text-white outline-hidden focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="all">Anyone</option>
                   <option value="me">Me</option>
@@ -309,7 +309,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                 <select
                   value={filters.sortBy}
                   onChange={e => handleFilterChange('sortBy', e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-zinc-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-zinc-800 dark:text-white outline-hidden focus:ring-2 focus:ring-blue-500"
                 >
                   {filterOptions.sortBy.map(opt => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -413,7 +413,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                 className="w-full p-3 text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition"
               >
                 <div className="flex items-start gap-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${getTypeColor(result.type)}`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${getTypeColor(result.type)}`}>
                     <i className={`fa-solid ${getTypeIcon(result.type)} text-xs`} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -463,7 +463,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                 value={saveSearchName}
                 onChange={e => setSaveSearchName(e.target.value)}
                 placeholder="Search name..."
-                className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-white outline-hidden focus:ring-2 focus:ring-blue-500"
                 autoFocus
               />
             </div>

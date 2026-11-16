@@ -63,7 +63,7 @@ export const ContactLocationPickerOverlay: React.FC<ContactLocationPickerOverlay
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by name…"
             aria-label="Search contacts by name"
-            className={`mt-3 w-full px-3 py-2 rounded-lg text-sm outline-none transition-colors ${
+            className={`mt-3 w-full px-3 py-2 rounded-lg text-sm outline-hidden transition-colors ${
               isDarkMode
                 ? 'bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-rose-500'
                 : 'bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-rose-500'
@@ -81,13 +81,13 @@ export const ContactLocationPickerOverlay: React.FC<ContactLocationPickerOverlay
                 key={c.id}
                 type="button"
                 onClick={() => onPick(c.id)}
-                className={`w-full flex items-center gap-3 px-5 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:bg-rose-500/10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-500 ${
+                className={`w-full flex items-center gap-3 px-5 py-2.5 text-left transition-colors focus-visible:outline-hidden focus-visible:bg-rose-500/10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-500 ${
                   isDarkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50'
                 }`}
               >
                 <div
                   aria-hidden="true"
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0"
                   style={{ backgroundColor: c.avatarColor || '#f43f5e' }}
                 >
                   {c.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}

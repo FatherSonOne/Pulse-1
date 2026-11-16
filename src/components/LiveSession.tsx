@@ -388,7 +388,7 @@ const LiveSession: React.FC<LiveSessionProps> = ({ apiKey: _deprecatedApiKey, on
       </div>
 
       <div className="flex-1 flex flex-col md:flex-row relative">
-        <div className="flex-1 flex flex-col p-6 items-center justify-center relative bg-gradient-to-br from-zinc-900 to-zinc-950">
+        <div className="flex-1 flex flex-col p-6 items-center justify-center relative bg-linear-to-br from-zinc-900 to-zinc-950">
             <div className="absolute top-6 left-6 text-xs font-mono text-zinc-500">
                 STATUS: {status} <br/>
                 MODEL: {GEMINI_MODEL}
@@ -398,7 +398,7 @@ const LiveSession: React.FC<LiveSessionProps> = ({ apiKey: _deprecatedApiKey, on
             <canvas ref={canvasRef} className="hidden" />
 
             <div className="w-full max-w-md aspect-video flex flex-col items-center justify-center gap-4 z-10">
-                <div className="w-full h-32 bg-zinc-950/50 backdrop-blur-sm rounded-xl border border-zinc-800 p-2 shadow-inner group hover:shadow-emerald-500/20 transition-all duration-500">
+                <div className="w-full h-32 bg-zinc-950/50 backdrop-blur-xs rounded-xl border border-zinc-800 p-2 shadow-inner group hover:shadow-emerald-500/20 transition-all duration-500">
                    <AudioVisualizer 
                       analyser={outputAnalyserRef.current} 
                       isActive={status === ConnectionState.CONNECTED}
@@ -406,7 +406,7 @@ const LiveSession: React.FC<LiveSessionProps> = ({ apiKey: _deprecatedApiKey, on
                       apiKey={apiKey}
                    />
                 </div>
-                <div className="w-full h-16 bg-zinc-950/50 backdrop-blur-sm rounded-xl border border-zinc-800 p-2 shadow-inner flex items-center justify-center group hover:shadow-blue-500/20 transition-all duration-500">
+                <div className="w-full h-16 bg-zinc-950/50 backdrop-blur-xs rounded-xl border border-zinc-800 p-2 shadow-inner flex items-center justify-center group hover:shadow-blue-500/20 transition-all duration-500">
                    <div className="text-zinc-500 text-xs font-mono absolute top-1 left-2">MIC INPUT</div>
                    <AudioVisualizer 
                       analyser={inputAnalyserRef.current} 

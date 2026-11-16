@@ -1,3 +1,5 @@
+@reference "../../index.css";
+
 /**
  * Sidebar Tabs Styles
  * Modern, responsive sidebar tabs with smooth animations
@@ -317,7 +319,11 @@
 .sidebar-mobile-tabs {
   @apply fixed bottom-0 left-0 right-0 z-50;
   @apply flex items-center justify-around;
-  @apply px-2 py-2 safe-area-padding-bottom;
+  @apply px-2 py-2;
+  /* Tailwind v4 cannot @apply a plain class: inline .safe-area-padding-bottom */
+  @supports (padding: env(safe-area-inset-bottom)) {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
   @apply bg-white dark:bg-zinc-900;
   @apply border-t border-zinc-200 dark:border-zinc-800;
   @apply shadow-lg;

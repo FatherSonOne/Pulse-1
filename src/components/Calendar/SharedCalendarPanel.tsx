@@ -52,9 +52,9 @@ const CreateCalendarModal: React.FC<CreateModalProps> = ({ onClose, onCreated })
   }
 
   return (
-    <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-2xl w-full max-w-sm shadow-2xl animate-scale-in">
-        <div className="p-5 border-b border-[var(--pulse-border)] flex items-center justify-between">
+    <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-(--pulse-surface) dark:bg-(--pulse-surface) border border-(--pulse-border) rounded-2xl w-full max-w-sm shadow-2xl animate-scale-in">
+        <div className="p-5 border-b border-(--pulse-border) flex items-center justify-between">
           <h3 className="text-base font-bold dark:text-white">New Team Calendar</h3>
           <button type="button" onClick={onClose} className="text-zinc-400 hover:text-zinc-600 transition">
             <X className="w-4 h-4" />
@@ -70,7 +70,7 @@ const CreateCalendarModal: React.FC<CreateModalProps> = ({ onClose, onCreated })
               onChange={e => setName(e.target.value)}
               placeholder="e.g., Marketing Calendar"
               required
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-[var(--pulse-rose)] transition"
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-(--pulse-border) rounded-lg px-3 py-2 text-sm dark:text-white outline-hidden focus:border-(--pulse-rose) transition"
             />
           </div>
           <div>
@@ -81,7 +81,7 @@ const CreateCalendarModal: React.FC<CreateModalProps> = ({ onClose, onCreated })
                   key={c}
                   type="button"
                   onClick={() => setColor(c)}
-                  className={`w-7 h-7 rounded-full transition ring-offset-2 ${color === c ? 'ring-2 ring-[var(--pulse-rose)]' : 'ring-transparent hover:scale-110'}`}
+                  className={`w-7 h-7 rounded-full transition ring-offset-2 ${color === c ? 'ring-2 ring-(--pulse-rose)' : 'ring-transparent hover:scale-110'}`}
                   style={{ backgroundColor: c }}
                   aria-label={c}
                 />
@@ -95,7 +95,7 @@ const CreateCalendarModal: React.FC<CreateModalProps> = ({ onClose, onCreated })
               value={description}
               onChange={e => setDesc(e.target.value)}
               placeholder="What's this calendar for?"
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-[var(--pulse-rose)] transition"
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-(--pulse-border) rounded-lg px-3 py-2 text-sm dark:text-white outline-hidden focus:border-(--pulse-rose) transition"
             />
           </div>
           <div className="flex gap-3 pt-2">
@@ -105,7 +105,7 @@ const CreateCalendarModal: React.FC<CreateModalProps> = ({ onClose, onCreated })
             <button
               type="submit"
               disabled={saving || !name.trim()}
-              className="flex-1 py-2 bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white text-sm font-semibold rounded-lg transition disabled:opacity-50"
+              className="flex-1 py-2 bg-(--pulse-rose) hover:bg-(--pulse-rose-deep) text-white text-sm font-semibold rounded-lg transition disabled:opacity-50"
             >
               {saving ? 'Creating…' : 'Create'}
             </button>
@@ -179,7 +179,7 @@ export const SharedCalendarPanel: React.FC<SharedCalendarPanelProps> = ({
           <h3 className="text-[10px] lg:text-xs font-bold text-zinc-400 uppercase tracking-widest">Team Calendars</h3>
           <button
             onClick={() => setShowCreate(true)}
-            className="text-[var(--pulse-rose-bright)] hover:text-[var(--pulse-rose)] transition flex-shrink-0"
+            className="text-(--pulse-rose-bright) hover:text-(--pulse-rose) transition shrink-0"
             title="Create Team Calendar"
           >
             <Plus className="w-3 h-3" />
@@ -201,7 +201,7 @@ export const SharedCalendarPanel: React.FC<SharedCalendarPanelProps> = ({
         <h3 className="text-[10px] lg:text-xs font-bold text-zinc-400 uppercase tracking-widest">Team Calendars</h3>
         <button
           onClick={() => setShowCreate(true)}
-          className="text-[var(--pulse-rose-bright)] hover:text-[var(--pulse-rose)] transition flex-shrink-0"
+          className="text-(--pulse-rose-bright) hover:text-(--pulse-rose) transition shrink-0"
           title="Create Team Calendar"
         >
           <Plus className="w-3 h-3" />
@@ -212,13 +212,13 @@ export const SharedCalendarPanel: React.FC<SharedCalendarPanelProps> = ({
         {calendars.map(cal => (
           <div key={cal.id} className="flex items-center gap-2 group py-0.5">
             {/* Color dot + visibility toggle */}
-            <label className="flex items-center gap-1.5 flex-1 min-w-0 text-xs lg:text-sm text-[var(--pulse-ink-2)] cursor-pointer">
-              <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: cal.color }} />
+            <label className="flex items-center gap-1.5 flex-1 min-w-0 text-xs lg:text-sm text-(--pulse-ink-2) cursor-pointer">
+              <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: cal.color }} />
               <input
                 type="checkbox"
                 checked={visibleCalendars.has(cal.id)}
                 onChange={() => toggleCalendarVisibility(cal.id)}
-                className="w-3.5 h-3.5 rounded border-zinc-300 dark:border-zinc-700 transition flex-shrink-0"
+                className="w-3.5 h-3.5 rounded-sm border-zinc-300 dark:border-zinc-700 transition shrink-0"
                 style={{ accentColor: cal.color }}
               />
               <span className="truncate group-hover:text-zinc-900 dark:group-hover:text-white transition">
@@ -228,7 +228,7 @@ export const SharedCalendarPanel: React.FC<SharedCalendarPanelProps> = ({
 
             {/* Role indicator */}
             {cal.my_role === 'viewer' && (
-              <span title="View only"><Lock className="w-3 h-3 text-zinc-300 flex-shrink-0" aria-hidden="true" /></span>
+              <span title="View only"><Lock className="w-3 h-3 text-zinc-300 shrink-0" aria-hidden="true" /></span>
             )}
 
             {/* Owner controls */}
@@ -237,7 +237,7 @@ export const SharedCalendarPanel: React.FC<SharedCalendarPanelProps> = ({
                 <button
                   type="button"
                   onClick={() => { setEditingCalId(cal.id); setEditName(cal.name); }}
-                  className="text-zinc-400 hover:text-[var(--pulse-ink-2)] transition"
+                  className="text-zinc-400 hover:text-(--pulse-ink-2) transition"
                   title="Manage calendar"
                 >
                   <Settings className="w-3 h-3" />
@@ -261,7 +261,7 @@ export const SharedCalendarPanel: React.FC<SharedCalendarPanelProps> = ({
 
       {/* Inline rename editor */}
       {editingCalId && (
-        <div className="mt-2 p-2 bg-[var(--pulse-surface-raised)] dark:bg-[var(--pulse-surface-raised)] rounded-lg">
+        <div className="mt-2 p-2 bg-(--pulse-surface-raised) dark:bg-(--pulse-surface-raised) rounded-lg">
           <label className="text-[10px] text-zinc-400 uppercase tracking-wider">Rename Calendar</label>
           <div className="flex gap-1.5 mt-1">
             <input
@@ -270,10 +270,10 @@ export const SharedCalendarPanel: React.FC<SharedCalendarPanelProps> = ({
               onChange={e => setEditName(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') setEditingCalId(null); }}
               placeholder="Calendar name"
-              className="flex-1 px-2 py-1 text-xs bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border-strong)] rounded"
+              className="flex-1 px-2 py-1 text-xs bg-(--pulse-surface) dark:bg-(--pulse-surface) border border-(--pulse-border-strong) rounded-sm"
               autoFocus
             />
-            <button type="button" onClick={handleSaveEdit} disabled={editSaving || !editName.trim()} className="px-2 py-1 text-xs bg-[var(--pulse-rose)] text-white rounded disabled:opacity-50">
+            <button type="button" onClick={handleSaveEdit} disabled={editSaving || !editName.trim()} className="px-2 py-1 text-xs bg-(--pulse-rose) text-white rounded-sm disabled:opacity-50">
               {editSaving ? '…' : 'Save'}
             </button>
             <button type="button" onClick={() => setEditingCalId(null)} title="Cancel rename" className="px-2 py-1 text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">

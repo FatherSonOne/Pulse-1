@@ -38,7 +38,7 @@ export function OnlineStatus() {
   return (
     <div
       className={`
-        fixed top-4 left-1/2 -translate-x-1/2 z-[9999]
+        fixed top-4 left-1/2 -translate-x-1/2 z-9999
         px-4 py-2 rounded-full
         flex items-center gap-2
         text-sm font-medium

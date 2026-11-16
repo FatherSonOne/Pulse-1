@@ -58,7 +58,7 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-950/70 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-9999 flex items-center justify-center bg-zinc-950/70 backdrop-blur-xs p-4"
       onClick={isLoading ? undefined : onCancel}
       role="dialog"
       aria-modal="true"

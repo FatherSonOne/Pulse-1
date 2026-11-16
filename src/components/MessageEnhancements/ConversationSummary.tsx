@@ -217,7 +217,7 @@ export const ConversationSummary: React.FC<ConversationSummaryProps> = ({
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
+      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-linear-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
@@ -265,7 +265,7 @@ export const ConversationSummary: React.FC<ConversationSummaryProps> = ({
                 onClick={() => setSummaryLength(length as typeof summaryLength)}
                 className={`px-2 py-1 rounded-md text-[10px] font-medium capitalize transition ${
                   summaryLength === length
-                    ? 'bg-white dark:bg-zinc-600 text-zinc-800 dark:text-white shadow-sm'
+                    ? 'bg-white dark:bg-zinc-600 text-zinc-800 dark:text-white shadow-xs'
                     : 'text-zinc-600 dark:text-zinc-400'
                 }`}
               >
@@ -332,7 +332,7 @@ export const ConversationSummary: React.FC<ConversationSummaryProps> = ({
                     key={idx}
                     className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300"
                   >
-                    <span className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold bg-${getSectionColor(activeContent.type)}-100 dark:bg-${getSectionColor(activeContent.type)}-900/40 text-${getSectionColor(activeContent.type)}-600 dark:text-${getSectionColor(activeContent.type)}-400`}>
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold bg-${getSectionColor(activeContent.type)}-100 dark:bg-${getSectionColor(activeContent.type)}-900/40 text-${getSectionColor(activeContent.type)}-600 dark:text-${getSectionColor(activeContent.type)}-400`}>
                       {idx + 1}
                     </span>
                     <span>{item}</span>
@@ -362,7 +362,7 @@ export const ConversationSummary: React.FC<ConversationSummaryProps> = ({
                   <button
                     key={format}
                     onClick={() => onExportSummary(format as 'text' | 'markdown' | 'pdf')}
-                    className="px-2 py-1 rounded text-[10px] font-medium bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-600 uppercase transition"
+                    className="px-2 py-1 rounded-sm text-[10px] font-medium bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-600 uppercase transition"
                   >
                     {format}
                   </button>
@@ -374,21 +374,21 @@ export const ConversationSummary: React.FC<ConversationSummaryProps> = ({
                 <span className="text-[10px] text-zinc-500 dark:text-zinc-400">Share:</span>
                 <button
                   onClick={() => onShareSummary('copy')}
-                  className="p-1.5 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition"
+                  className="p-1.5 rounded-sm text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition"
                   title="Copy to clipboard"
                 >
                   <Copy className="text-xs" />
                 </button>
                 <button
                   onClick={() => onShareSummary('email')}
-                  className="p-1.5 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition"
+                  className="p-1.5 rounded-sm text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition"
                   title="Send via email"
                 >
                   <Mail className="text-xs" />
                 </button>
                 <button
                   onClick={() => onShareSummary('slack')}
-                  className="p-1.5 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition"
+                  className="p-1.5 rounded-sm text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition"
                   title="Share to Slack"
                 >
                   <Hash className="text-xs" />

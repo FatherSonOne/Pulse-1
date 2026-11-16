@@ -1,13 +1,138 @@
 /* Import UI Audit Fixes - WCAG AA Compliance */
-@import './styles/audit-fixes.css';
+@import './styles/audit-fixes.css' layer(base);
 
 /* Pulse design system tokens — canonical brand + status palette */
-@import './styles/pulse-tokens.css';
+@import './styles/pulse-tokens.css' layer(base);
 
 /* Tailwind CSS */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: Inter, sans-serif;
+  --font-mono: JetBrains Mono, monospace;
+
+  --color-pulse-rose: #f43f5e;
+  --color-pulse-pink: #ec4899;
+  --color-pulse-coral: #fb7185;
+
+  --color-rose-50: #fff1f2;
+  --color-rose-100: #ffe4e6;
+  --color-rose-200: #fecdd3;
+  --color-rose-300: #fda4af;
+  --color-rose-400: #fb7185;
+  --color-rose-500: #f43f5e;
+  --color-rose-600: #e11d48;
+  --color-rose-700: #be123c;
+  --color-rose-800: #9f1239;
+  --color-rose-900: #881337;
+  --color-rose-950: #4c0519;
+
+  --color-coral-500: #fb7185;
+  --color-coral-600: #f43f5e;
+
+  --shadow-rose-sm: 0 0 10px rgba(244, 63, 94, 0.15);
+  --shadow-rose-md: 0 0 20px rgba(244, 63, 94, 0.2);
+  --shadow-rose-lg: 0 0 30px rgba(244, 63, 94, 0.25);
+
+  --ease-pulse: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-pulse-glow-rose: pulse-glow-rose 2s ease-in-out infinite;
+
+  @keyframes pulse-glow-rose {
+    0%,
+    100% {
+      box-shadow: 0 0 10px rgba(244, 63, 94, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(244, 63, 94, 0.6);
+    }
+  }
+}
+
+/* shadcn/ui semantic tokens for AI Elements (radix-vega, neutral).
+   Additive: no Pulse class used these names before. Left out on purpose:
+   shadcn's global base rules (`* { border-border }`, body bg) and its
+   --radius-* overrides, which would change every existing rounded-* class. */
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+}
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+}
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
 
 /* Mobile bottom-bar clearance token (see MobileBottomNav). fixed/sticky
    bottom-* surfaces add var(--pulse-bottom-bar) to their offset so they clear
@@ -109,10 +234,14 @@
   --ease-in-out: cubic-bezier(0.4, 0, 0.6, 1);
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* Tailwind v4: utilities sit in a cascade layer, so an unlayered reset
+   would beat every p-* / m-* class. Keep the reset in the base layer. */
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
 }
 
 body {

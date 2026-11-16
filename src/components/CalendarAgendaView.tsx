@@ -99,7 +99,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
         <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-white">
           {MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}
         </h2>
-        <p className="font-mono text-[10px] tracking-[0.1em] uppercase text-zinc-500 dark:text-zinc-400 mt-0.5" style={{ fontVariantNumeric: 'tabular-nums' }}>
+        <p className="font-mono text-[10px] tracking-widest uppercase text-zinc-500 dark:text-zinc-400 mt-0.5" style={{ fontVariantNumeric: 'tabular-nums' }}>
           {groupedEvents.size} days · with events
         </p>
       </div>
@@ -112,21 +112,21 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
           const isPast = date < today && !isToday;
 
           return (
-            <div key={dateKey} className={isToday ? 'bg-[var(--pulse-rose-softer)]' : ''}>
+            <div key={dateKey} className={isToday ? 'bg-(--pulse-rose-softer)' : ''}>
               {/* Date Header — today is signaled by the rose pill on the date number, not a side-stripe. */}
               <div
-                className="sticky top-[57px] z-[9] px-4 py-3 bg-zinc-50 dark:bg-zinc-900/95 border-b border-zinc-200 dark:border-zinc-800 backdrop-blur-sm cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                className="sticky top-[57px] z-9 px-4 py-3 bg-zinc-50 dark:bg-zinc-900/95 border-b border-zinc-200 dark:border-zinc-800 backdrop-blur-xs cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                 onClick={() => onDateClick?.(date)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`text-center ${isPast ? 'text-zinc-400' : 'text-zinc-900 dark:text-white'}`}>
-                      <div className={`font-mono text-[10px] tracking-[0.1em] uppercase font-semibold ${isToday ? 'text-[var(--pulse-rose-text)]' : ''}`}>
+                      <div className={`font-mono text-[10px] tracking-widest uppercase font-semibold ${isToday ? 'text-(--pulse-rose-text)' : ''}`}>
                         {WEEKDAYS[date.getDay()].slice(0, 3)}
                       </div>
                       <div
                         className={isToday
-                          ? 'text-2xl font-semibold bg-[var(--pulse-rose)] text-white rounded-full w-10 h-10 flex items-center justify-center mt-0.5'
+                          ? 'text-2xl font-semibold bg-(--pulse-rose) text-white rounded-full w-10 h-10 flex items-center justify-center mt-0.5'
                           : 'text-2xl font-semibold mt-0.5'}
                         style={{ fontVariantNumeric: 'tabular-nums' }}
                       >
@@ -134,10 +134,10 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
                       </div>
                     </div>
                     <div>
-                      <div className={`text-sm font-semibold ${isToday ? 'text-[var(--pulse-rose-text)]' : 'text-zinc-900 dark:text-white'}`}>
+                      <div className={`text-sm font-semibold ${isToday ? 'text-(--pulse-rose-text)' : 'text-zinc-900 dark:text-white'}`}>
                         {isToday ? 'Today' : WEEKDAYS[date.getDay()]}
                       </div>
-                      <div className="font-mono text-[10px] tracking-[0.05em] uppercase text-zinc-500 dark:text-zinc-400" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      <div className="font-mono text-[10px] tracking-wider uppercase text-zinc-500 dark:text-zinc-400" style={{ fontVariantNumeric: 'tabular-nums' }}>
                         {dayEvents.length} {dayEvents.length === 1 ? 'event' : 'events'}
                       </div>
                     </div>
@@ -159,7 +159,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
                         >
                           <div className="flex items-start gap-3">
                             {/* Time */}
-                            <div className="flex-shrink-0 w-16 text-right">
+                            <div className="shrink-0 w-16 text-right">
                               {event.allDay ? (
                                 <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
                                   All day
@@ -182,11 +182,11 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 mb-0.5">
                                 <i
-                                  className={`fa-solid ${getEventTypeIcon(event.type)} text-[10px] flex-shrink-0`}
+                                  className={`fa-solid ${getEventTypeIcon(event.type)} text-[10px] shrink-0`}
                                   style={{ color: getEventTypeColor(event.type) }}
                                 />
                                 <span
-                                  className="font-mono text-[10px] font-semibold tracking-[0.1em] uppercase"
+                                  className="font-mono text-[10px] font-semibold tracking-widest uppercase"
                                   style={{ color: getEventTypeColor(event.type) }}
                                 >
                                   {getEventTypeLabel(event.type)}
@@ -218,7 +218,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
                             </div>
 
                             {/* Chevron */}
-                            <ChevronRight className="text-xs text-zinc-300 dark:text-zinc-700 flex-shrink-0 mt-1" />
+                            <ChevronRight className="text-xs text-zinc-300 dark:text-zinc-700 shrink-0 mt-1" />
                           </div>
                         </div>
 
@@ -231,7 +231,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
                                 : 'bg-zinc-50 dark:bg-zinc-900/40 text-zinc-500 dark:text-zinc-400'
                             }`}
                           >
-                            <Car size={12} className="flex-shrink-0" />
+                            <Car size={12} className="shrink-0" />
                             <span className="font-medium">
                               Travel: {buffer.travelLabel} to next event
                             </span>
@@ -251,10 +251,10 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
                   onClick={() => onDateClick?.(date)}
                   className="w-full px-4 py-5 flex items-center gap-3 text-left hover:bg-zinc-50 dark:hover:bg-zinc-900/60 transition group"
                 >
-                  <div className="w-8 h-8 rounded-full border-2 border-dashed border-zinc-200 dark:border-zinc-700 flex items-center justify-center group-hover:border-[var(--pulse-rose-bright)] transition">
-                    <Plus className="w-3 h-3 text-zinc-300 dark:text-zinc-600 group-hover:text-[var(--pulse-rose)] transition" />
+                  <div className="w-8 h-8 rounded-full border-2 border-dashed border-zinc-200 dark:border-zinc-700 flex items-center justify-center group-hover:border-(--pulse-rose-bright) transition">
+                    <Plus className="w-3 h-3 text-zinc-300 dark:text-zinc-600 group-hover:text-(--pulse-rose) transition" />
                   </div>
-                  <span className="text-sm text-zinc-400 dark:text-zinc-600 group-hover:text-[var(--pulse-rose-text)] transition">
+                  <span className="text-sm text-zinc-400 dark:text-zinc-600 group-hover:text-(--pulse-rose-text) transition">
                     No events. Tap to add one.
                   </span>
                 </button>
@@ -268,7 +268,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
       {groupedEvents.size === 0 && (
         <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center select-none">
           {/* Illustration — neutral tinted surface, no gradient. */}
-          <div className="w-24 h-24 rounded-3xl bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] flex items-center justify-center mb-6">
+          <div className="w-24 h-24 rounded-3xl bg-zinc-100 dark:bg-white/4 border border-zinc-200 dark:border-white/8 flex items-center justify-center mb-6">
             <Calendar className="w-9 h-9 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
           </div>
 
@@ -282,7 +282,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
           {/* Primary CTA — coral, the only solid signal at rest */}
           <button
             onClick={() => onDateClick?.(new Date())}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white font-mono text-[11px] tracking-[0.1em] uppercase font-semibold rounded-xl shadow-[0_2px_12px_rgba(244,63,94,0.25)] transition active:scale-95"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-(--pulse-rose) hover:bg-(--pulse-rose-deep) text-white font-mono text-[11px] tracking-widest uppercase font-semibold rounded-xl shadow-[0_2px_12px_rgba(244,63,94,0.25)] transition active:scale-95"
           >
             <Plus className="w-3.5 h-3.5" />
             Add first event

@@ -124,14 +124,14 @@ export const DataRetentionCard: React.FC = () => {
           checked={enabled}
           onChange={(e) => setEnabled(e.target.checked)}
           disabled={isLoading}
-          className="w-4 h-4 text-rose-500 border-zinc-300 rounded focus:ring-rose-500"
+          className="w-4 h-4 text-rose-500 border-zinc-300 rounded-sm focus:ring-rose-500"
         />
         <span className="text-sm text-zinc-700 dark:text-zinc-300">Enable automatic retention</span>
       </label>
 
       {enabled && (
         <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/40 rounded-lg">
-          <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+          <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-700 dark:text-amber-300">
             Items older than the configured window are permanently removed. Restore is not possible after deletion.
           </p>
@@ -143,19 +143,19 @@ export const DataRetentionCard: React.FC = () => {
           const Icon = f.icon;
           return (
             <div key={f.key} className="flex items-start gap-3">
-              <Icon className="w-4 h-4 text-zinc-400 mt-2 flex-shrink-0" />
+              <Icon className="w-4 h-4 text-zinc-400 mt-2 shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-zinc-900 dark:text-white">{f.label}</p>
                 <p className="text-[11px] text-zinc-500 dark:text-zinc-400">{f.description}</p>
               </div>
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <label htmlFor={`retention-${f.key}`} className="sr-only">{f.label} retention window</label>
                 <select
                   id={`retention-${f.key}`}
                   value={values[f.key]}
                   onChange={(e) => handleChange(f.key, Number(e.target.value))}
                   disabled={!enabled || isLoading}
-                  className="px-3 py-1.5 text-xs border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+                  className="px-3 py-1.5 text-xs border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
                 >
                   {OPTIONS.map(o => (
                     <option key={o.value} value={o.value}>{o.label}</option>

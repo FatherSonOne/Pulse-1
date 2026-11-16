@@ -14,9 +14,9 @@ export function Skeleton({ className = '' }: SkeletonProps) {
   return (
     <div
       className={`
-        animate-pulse bg-gradient-to-r from-zinc-200 via-zinc-100 to-zinc-200
+        animate-pulse bg-linear-to-r from-zinc-200 via-zinc-100 to-zinc-200
         dark:from-zinc-800 dark:via-zinc-700 dark:to-zinc-800
-        bg-[length:200%_100%]
+        bg-size-[200%_100%]
         ${className}
       `}
       style={{
@@ -36,16 +36,16 @@ export function MessageSkeleton() {
       <div className="flex items-center gap-3">
         <Skeleton className="w-10 h-10 rounded-full" />
         <div className="space-y-2">
-          <Skeleton className="w-24 h-4 rounded" />
-          <Skeleton className="w-16 h-3 rounded" />
+          <Skeleton className="w-24 h-4 rounded-sm" />
+          <Skeleton className="w-16 h-3 rounded-sm" />
         </div>
       </div>
 
       {/* Message content */}
       <div className="space-y-2">
-        <Skeleton className="w-full h-4 rounded" />
-        <Skeleton className="w-4/5 h-4 rounded" />
-        <Skeleton className="w-3/5 h-4 rounded" />
+        <Skeleton className="w-full h-4 rounded-sm" />
+        <Skeleton className="w-4/5 h-4 rounded-sm" />
+        <Skeleton className="w-3/5 h-4 rounded-sm" />
       </div>
     </div>
   );
@@ -62,10 +62,10 @@ export function ConversationListSkeleton({ count = 5 }: { count?: number }) {
           <Skeleton className="w-12 h-12 rounded-full" />
           <div className="flex-1 space-y-2">
             <div className="flex items-center justify-between">
-              <Skeleton className="w-32 h-4 rounded" />
-              <Skeleton className="w-12 h-3 rounded" />
+              <Skeleton className="w-32 h-4 rounded-sm" />
+              <Skeleton className="w-12 h-3 rounded-sm" />
             </div>
-            <Skeleton className="w-full h-3 rounded" />
+            <Skeleton className="w-full h-3 rounded-sm" />
           </div>
         </div>
       ))}
@@ -81,8 +81,8 @@ export function SettingsSkeleton() {
     <div className="space-y-6 p-6">
       {/* Section header */}
       <div className="space-y-2">
-        <Skeleton className="w-40 h-6 rounded" />
-        <Skeleton className="w-64 h-4 rounded" />
+        <Skeleton className="w-40 h-6 rounded-sm" />
+        <Skeleton className="w-64 h-4 rounded-sm" />
       </div>
 
       {/* Settings items */}
@@ -90,8 +90,8 @@ export function SettingsSkeleton() {
         <div key={i} className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="space-y-2">
-              <Skeleton className="w-32 h-5 rounded" />
-              <Skeleton className="w-48 h-3 rounded" />
+              <Skeleton className="w-32 h-5 rounded-sm" />
+              <Skeleton className="w-48 h-3 rounded-sm" />
             </div>
             <Skeleton className="w-12 h-6 rounded-full" />
           </div>
@@ -109,13 +109,13 @@ export function DashboardCardSkeleton() {
   return (
     <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <Skeleton className="w-32 h-6 rounded" />
+        <Skeleton className="w-32 h-6 rounded-sm" />
         <Skeleton className="w-8 h-8 rounded-lg" />
       </div>
       <Skeleton className="w-full h-24 rounded-lg" />
       <div className="flex items-center justify-between">
-        <Skeleton className="w-20 h-4 rounded" />
-        <Skeleton className="w-16 h-4 rounded" />
+        <Skeleton className="w-20 h-4 rounded-sm" />
+        <Skeleton className="w-16 h-4 rounded-sm" />
       </div>
     </div>
   );
@@ -129,7 +129,7 @@ export function TableRowSkeleton({ columns = 4 }: { columns?: number }) {
     <tr>
       {Array.from({ length: columns }).map((_, i) => (
         <td key={i} className="px-4 py-3">
-          <Skeleton className="w-full h-4 rounded" />
+          <Skeleton className="w-full h-4 rounded-sm" />
         </td>
       ))}
     </tr>
@@ -149,8 +149,8 @@ export function ProfileCardSkeleton() {
       <div className="flex items-start gap-4">
         <Skeleton className="w-20 h-20 rounded-full -mt-10" />
         <div className="flex-1 space-y-2 mt-2">
-          <Skeleton className="w-40 h-6 rounded" />
-          <Skeleton className="w-32 h-4 rounded" />
+          <Skeleton className="w-40 h-6 rounded-sm" />
+          <Skeleton className="w-32 h-4 rounded-sm" />
         </div>
       </div>
 
@@ -158,16 +158,16 @@ export function ProfileCardSkeleton() {
       <div className="flex gap-4 mt-6">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="space-y-2">
-            <Skeleton className="w-16 h-6 rounded" />
-            <Skeleton className="w-20 h-3 rounded" />
+            <Skeleton className="w-16 h-6 rounded-sm" />
+            <Skeleton className="w-20 h-3 rounded-sm" />
           </div>
         ))}
       </div>
 
       {/* Bio */}
       <div className="space-y-2 mt-6">
-        <Skeleton className="w-full h-4 rounded" />
-        <Skeleton className="w-4/5 h-4 rounded" />
+        <Skeleton className="w-full h-4 rounded-sm" />
+        <Skeleton className="w-4/5 h-4 rounded-sm" />
       </div>
     </div>
   );
@@ -185,14 +185,14 @@ export function EmailListSkeleton({ count = 10 }: { count?: number }) {
             <div className="flex items-center gap-3">
               <Skeleton className="w-10 h-10 rounded-full" />
               <div className="space-y-2">
-                <Skeleton className="w-40 h-4 rounded" />
-                <Skeleton className="w-24 h-3 rounded" />
+                <Skeleton className="w-40 h-4 rounded-sm" />
+                <Skeleton className="w-24 h-3 rounded-sm" />
               </div>
             </div>
-            <Skeleton className="w-16 h-3 rounded" />
+            <Skeleton className="w-16 h-3 rounded-sm" />
           </div>
-          <Skeleton className="w-full h-4 rounded" />
-          <Skeleton className="w-3/4 h-3 rounded" />
+          <Skeleton className="w-full h-4 rounded-sm" />
+          <Skeleton className="w-3/4 h-3 rounded-sm" />
         </div>
       ))}
     </div>
@@ -207,24 +207,24 @@ export function CalendarSkeleton() {
     <div className="space-y-4 p-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <Skeleton className="w-32 h-6 rounded" />
+        <Skeleton className="w-32 h-6 rounded-sm" />
         <div className="flex gap-2">
-          <Skeleton className="w-8 h-8 rounded" />
-          <Skeleton className="w-8 h-8 rounded" />
+          <Skeleton className="w-8 h-8 rounded-sm" />
+          <Skeleton className="w-8 h-8 rounded-sm" />
         </div>
       </div>
 
       {/* Days header */}
       <div className="grid grid-cols-7 gap-2">
         {Array.from({ length: 7 }).map((_, i) => (
-          <Skeleton key={i} className="h-8 rounded" />
+          <Skeleton key={i} className="h-8 rounded-sm" />
         ))}
       </div>
 
       {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-2">
         {Array.from({ length: 35 }).map((_, i) => (
-          <Skeleton key={i} className="aspect-square rounded" />
+          <Skeleton key={i} className="aspect-square rounded-sm" />
         ))}
       </div>
     </div>

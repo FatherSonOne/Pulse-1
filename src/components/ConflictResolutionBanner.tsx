@@ -61,7 +61,7 @@ const ConflictCard: React.FC<{
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 px-4 py-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl text-sm">
       {/* Warning icon */}
-      <div className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
+      <div className="shrink-0 w-7 h-7 flex items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
         <AlertTriangle className="text-amber-500 text-xs" />
       </div>
 
@@ -87,7 +87,7 @@ const ConflictCard: React.FC<{
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-1.5 flex-shrink-0">
+      <div className="flex items-center gap-1.5 shrink-0">
         <button
           onClick={onKeepA}
           aria-label={`Keep ${sourceLabel(eventA)} version`}

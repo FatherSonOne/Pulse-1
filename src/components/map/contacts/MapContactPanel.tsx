@@ -190,7 +190,7 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
           <div className="flex items-center gap-3">
             <div className="relative">
               <div
-                className="w-14 h-14 rounded-full flex items-center justify-center text-white text-lg font-bold shadow"
+                className="w-14 h-14 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-sm"
                 style={{
                   backgroundColor: contact.avatarColor,
                   boxShadow: `0 0 0 2px ${MAP_STATUS_COLORS[contact.status]}, 0 2px 8px rgba(0,0,0,0.20)`,
@@ -228,7 +228,7 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
           </div>
           <button
             onClick={onClose}
-            className={`p-1 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
+            className={`p-1 rounded-lg transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 ${
               isDarkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-gray-100 text-gray-500'
             }`}
             aria-label="Close panel"
@@ -242,8 +242,8 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
         {/* Cockpit readout — mono uppercase dot-separated strip. The
             section's "instrument feeling" lives here. */}
         <div
-          className={`px-4 py-1.5 text-[10px] tracking-[0.1em] uppercase truncate ${
-            isDarkMode ? 'bg-white/[0.02] text-gray-400' : 'bg-gray-50 text-gray-500'
+          className={`px-4 py-1.5 text-[10px] tracking-widest uppercase truncate ${
+            isDarkMode ? 'bg-white/2 text-gray-400' : 'bg-gray-50 text-gray-500'
           }`}
           style={{ fontFamily: "'JetBrains Mono', monospace" }}
         >
@@ -263,7 +263,7 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
               <button
                 key={value}
                 onClick={() => setActiveLocType(value)}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-inset ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-inset ${
                   activeLocType === value
                     ? 'bg-rose-500 text-white'
                     : `${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`
@@ -309,7 +309,7 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
               onClick={handleToggleGeofence}
               disabled={geofenceSaving}
               aria-pressed={activeRadius != null}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 disabled:opacity-60 ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 disabled:opacity-60 ${
                 activeRadius != null
                   ? (isDarkMode
                       ? 'bg-rose-500/15 text-rose-200 border border-rose-500/30 hover:bg-rose-500/20'
@@ -325,7 +325,7 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
                   : <BellOff size={11} />}
                 Arrival alerts
               </span>
-              <span className={`text-[10px] uppercase tracking-[0.1em] ${
+              <span className={`text-[10px] uppercase tracking-widest ${
                 activeRadius != null ? 'text-rose-500' : sub
               }`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                 {activeRadius != null ? `ON · ${activeRadius}M` : 'OFF'}
@@ -335,7 +335,7 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
 
           <button
             onClick={() => setShowLocationEdit(true)}
-            className="w-full py-1.5 rounded-lg text-xs font-medium border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 text-rose-500 border-rose-500/30 hover:bg-rose-500/10 inline-flex items-center justify-center gap-1.5"
+            className="w-full py-1.5 rounded-lg text-xs font-medium border transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 text-rose-500 border-rose-500/30 hover:bg-rose-500/10 inline-flex items-center justify-center gap-1.5"
           >
             <MapPin size={11} />
             {address ? 'Edit Location' : 'Set Location'}
@@ -345,7 +345,7 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
           {hasAnyLocation && (
             <button
               onClick={() => setShowEtaShare(true)}
-              className="w-full py-1.5 rounded-lg text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 bg-rose-500 text-white hover:bg-rose-600 inline-flex items-center justify-center gap-1.5"
+              className="w-full py-1.5 rounded-lg text-xs font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 bg-rose-500 text-white hover:bg-rose-600 inline-flex items-center justify-center gap-1.5"
             >
               <Navigation size={11} />
               Share Live ETA
@@ -358,7 +358,7 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
           <>
             <div className={`border-t ${divider}`} />
             <div className="px-4 py-3">
-              <p className={`font-mono text-[11px] uppercase tracking-[0.1em] mb-2 ${sub}`}>Circles</p>
+              <p className={`font-mono text-[11px] uppercase tracking-widest mb-2 ${sub}`}>Circles</p>
               <div className="flex flex-wrap gap-1.5">
                 {memberCircles.map(c => (
                   <span
@@ -412,7 +412,7 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
         >
           <button
             onClick={() => onAction('message', contact.id)}
-            className={`flex-1 py-2 rounded-lg text-xs font-semibold bg-transparent border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 inline-flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-2 rounded-lg text-xs font-semibold bg-transparent border transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 inline-flex items-center justify-center gap-1.5 ${
               isDarkMode
                 ? 'border-white/15 text-gray-300 hover:border-rose-500/50 hover:text-white'
                 : 'border-gray-300 text-gray-700 hover:border-rose-500/50 hover:text-gray-900'
@@ -423,14 +423,14 @@ const MapContactPanel: React.FC<MapContactPanelProps> = ({
           </button>
           <button
             onClick={() => onAction('vox', contact.id)}
-            className="flex-1 py-2 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 inline-flex items-center justify-center gap-1.5"
+            className="flex-1 py-2 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 inline-flex items-center justify-center gap-1.5"
           >
             <Radio size={11} />
             Relay
           </button>
           <button
             onClick={() => onAction('meet', contact.id)}
-            className={`flex-1 py-2 rounded-lg text-xs font-semibold bg-transparent border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 inline-flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-2 rounded-lg text-xs font-semibold bg-transparent border transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 inline-flex items-center justify-center gap-1.5 ${
               isDarkMode
                 ? 'border-white/15 text-gray-300 hover:border-rose-500/50 hover:text-white'
                 : 'border-gray-300 text-gray-700 hover:border-rose-500/50 hover:text-gray-900'

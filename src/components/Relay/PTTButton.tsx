@@ -258,7 +258,7 @@ export const PTTButton: React.FC<PTTButtonProps> = ({
         className={`
           relative z-10 rounded-full flex items-center justify-center
           transition duration-200 ease-pulse
-          focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+          focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
           ${isRecording ? 'scale-110' : 'hover:scale-105 active:scale-95'}
         `}
@@ -361,7 +361,7 @@ export const MiniPTTButton: React.FC<MiniPTTButtonProps> = ({
       disabled={disabled}
       className={`
         w-10 h-10 rounded-xl flex items-center justify-center
-        transition-colors duration-200 ease-pulse focus:outline-none
+        transition-colors duration-200 ease-pulse focus:outline-hidden
         ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
       `}
       style={{

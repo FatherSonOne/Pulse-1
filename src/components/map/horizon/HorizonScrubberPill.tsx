@@ -58,7 +58,7 @@ export const HorizonScrubberPill: React.FC<HorizonScrubberPillProps> = ({
       <div className="flex items-center gap-1.5">
         <Clock size={11} aria-hidden="true" style={{ color: 'var(--pulse-ink-3)' }} />
         <span
-          className="text-[10px] tracking-[0.1em] uppercase"
+          className="text-[10px] tracking-widest uppercase"
           style={{ fontFamily: MONO, color: 'var(--pulse-ink-3)' }}
         >
           Horizon
@@ -72,12 +72,12 @@ export const HorizonScrubberPill: React.FC<HorizonScrubberPillProps> = ({
       <div role="group" aria-label="Time horizon" className="relative flex items-center h-5">
         <span
           aria-hidden="true"
-          className="absolute left-1.5 right-1.5 h-0.5 rounded"
+          className="absolute left-1.5 right-1.5 h-0.5 rounded-sm"
           style={{ background: 'var(--pulse-border-strong)' }}
         />
         <span
           aria-hidden="true"
-          className="absolute left-1.5 h-0.5 rounded transition-[width] duration-200 ease-out"
+          className="absolute left-1.5 h-0.5 rounded-sm transition-[width] duration-200 ease-out"
           style={{ background: 'var(--pulse-ink)', width: `calc((100% - 12px) * ${frac})` }}
         />
         <div className="relative flex items-center justify-between w-full">
@@ -92,7 +92,7 @@ export const HorizonScrubberPill: React.FC<HorizonScrubberPillProps> = ({
                 aria-keyshortcuts={hotkey}
                 onClick={() => onHorizonChange(id)}
                 title={`${label} · press ${hotkey}`}
-                className={`rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+                className={`rounded-full focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-1 ${
                   isDarkMode ? 'focus-visible:ring-zinc-400' : 'focus-visible:ring-zinc-500'
                 }`}
               >
@@ -121,7 +121,7 @@ export const HorizonScrubberPill: React.FC<HorizonScrubberPillProps> = ({
               type="button"
               tabIndex={-1}
               onClick={() => onHorizonChange(id)}
-              className="text-[10px] font-medium px-0.5 rounded transition-colors"
+              className="text-[10px] font-medium px-0.5 rounded-sm transition-colors"
               style={{ color: active ? 'var(--pulse-ink)' : 'var(--pulse-ink-3)' }}
             >
               {label}

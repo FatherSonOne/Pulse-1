@@ -123,11 +123,11 @@ export const AIContactSearch: React.FC<AIContactSearchProps> = ({
       `}>
         {/* Icon: spinner when searching, sparkle for AI, magnifying glass otherwise */}
         {isSearching ? (
-          <Loader2 className="animate-spin text-rose-500 text-sm flex-shrink-0" />
+          <Loader2 className="animate-spin text-rose-500 text-sm shrink-0" />
         ) : isAIMode ? (
-          <Wand2 className="text-rose-500 text-sm flex-shrink-0" />
+          <Wand2 className="text-rose-500 text-sm shrink-0" />
         ) : (
-          <Search className="text-zinc-400 text-sm flex-shrink-0" />
+          <Search className="text-zinc-400 text-sm shrink-0" />
         )}
 
         <input
@@ -138,12 +138,12 @@ export const AIContactSearch: React.FC<AIContactSearchProps> = ({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           data-contacts-search
-          className="flex-1 bg-transparent text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 outline-none min-w-0"
+          className="flex-1 bg-transparent text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 outline-hidden min-w-0"
         />
 
         {/* AI badge */}
         {isAIMode && !isSearching && (
-          <span className="flex-shrink-0 px-1.5 py-0.5 bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 text-xs font-medium rounded-full">
+          <span className="shrink-0 px-1.5 py-0.5 bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 text-xs font-medium rounded-full">
             AI
           </span>
         )}
@@ -152,7 +152,7 @@ export const AIContactSearch: React.FC<AIContactSearchProps> = ({
         {query && (
           <button
             onClick={handleClear}
-            className="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
           >
             <X className="text-xs" />
           </button>

@@ -151,7 +151,7 @@ const JumpToDate: React.FC<JumpToDateProps> = ({ isOpen, currentDate, onClose, o
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9997] flex items-start justify-center pt-[12vh]"
+      className="fixed inset-0 z-9997 flex items-start justify-center pt-[12vh]"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -172,7 +172,7 @@ const JumpToDate: React.FC<JumpToDateProps> = ({ isOpen, currentDate, onClose, o
           border border-zinc-200 dark:border-zinc-700
           overflow-hidden
           animate-[calScaleIn_140ms_ease-out]
-          focus:outline-none
+          focus:outline-hidden
         "
         onClick={e => e.stopPropagation()}
         onKeyDown={handleKeyDown}

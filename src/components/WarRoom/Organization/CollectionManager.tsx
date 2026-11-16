@@ -283,7 +283,7 @@ export const CollectionManager: React.FC<CollectionManagerProps> = ({
             value={formName}
             onChange={e => setFormName(e.target.value)}
             placeholder="Collection name..."
-            className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none text-gray-900 dark:text-white"
+            className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-blue-500 focus:outline-hidden text-gray-900 dark:text-white"
             autoFocus
           />
 
@@ -293,7 +293,7 @@ export const CollectionManager: React.FC<CollectionManagerProps> = ({
             value={formDescription}
             onChange={e => setFormDescription(e.target.value)}
             placeholder="Description (optional)..."
-            className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none text-gray-900 dark:text-white"
+            className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-blue-500 focus:outline-hidden text-gray-900 dark:text-white"
           />
 
           {/* Icon and Color row */}
@@ -363,7 +363,7 @@ export const CollectionManager: React.FC<CollectionManagerProps> = ({
                     keywords: e.target.value.split(',').map(k => k.trim()).filter(Boolean),
                   })}
                   placeholder="e.g., budget, finance, report"
-                  className="w-full px-2 py-1.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded focus:border-purple-500 focus:outline-none text-gray-900 dark:text-white"
+                  className="w-full px-2 py-1.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-sm focus:border-purple-500 focus:outline-hidden text-gray-900 dark:text-white"
                 />
               </div>
 
@@ -414,7 +414,7 @@ export const CollectionManager: React.FC<CollectionManagerProps> = ({
             <button
               onClick={editingCollection ? handleUpdateCollection : handleCreateCollection}
               disabled={!formName.trim()}
-              className="flex-1 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-all"
+              className="flex-1 py-2 bg-linear-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-all"
             >
               {editingCollection ? 'Update' : 'Create'}
             </button>
@@ -504,7 +504,7 @@ export const CollectionManager: React.FC<CollectionManagerProps> = ({
                           </div>
                         )}
                       </div>
-                      <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">
+                      <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-sm">
                         {docCount ?? 0}
                       </span>
                     </div>
@@ -527,13 +527,13 @@ export const CollectionManager: React.FC<CollectionManagerProps> = ({
                         </button>
                         <button
                           onClick={() => startEditing(collection)}
-                          className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                          className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-sm transition-colors"
                         >
                           <Pencil className="fa text-xs" />
                         </button>
                         <button
                           onClick={() => handleDeleteCollection(collection.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-sm transition-colors"
                         >
                           <Trash2 className="fa text-xs" />
                         </button>
@@ -551,7 +551,7 @@ export const CollectionManager: React.FC<CollectionManagerProps> = ({
                           {collectionDocs[collection.id].slice(0, 5).map(docId => (
                             <div
                               key={docId}
-                              className="text-xs text-gray-500 dark:text-gray-400 py-1 px-2 bg-white dark:bg-gray-800 rounded truncate cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                              className="text-xs text-gray-500 dark:text-gray-400 py-1 px-2 bg-white dark:bg-gray-800 rounded-sm truncate cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
                               onClick={() => onCollectionSelect?.(collection.id, [docId])}
                             >
                               <FileText className="fa mr-2" />

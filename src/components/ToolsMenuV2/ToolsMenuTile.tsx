@@ -70,7 +70,7 @@ export const ToolsMenuTile = React.forwardRef<HTMLButtonElement, ToolsMenuTilePr
         className={[
           'w-full text-left rounded-xl border px-4 py-3.5 flex items-start gap-3 relative',
           'transition-colors duration-150',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+          'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
           disabled ? 'opacity-60 cursor-not-allowed' : '',
           isDarkMode
             ? disabled

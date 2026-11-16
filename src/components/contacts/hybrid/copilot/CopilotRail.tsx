@@ -128,7 +128,7 @@ export const CopilotRail: React.FC<CopilotRailProps> = ({
     <div className="flex flex-col h-full">
       <div className="mb-3">
         <div
-          className="text-[10px] uppercase tracking-[0.1em] text-zinc-400 dark:text-zinc-500"
+          className="text-[10px] uppercase tracking-widest text-zinc-400 dark:text-zinc-500"
           style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
         >
           Pulse AI
@@ -160,7 +160,7 @@ export const CopilotRail: React.FC<CopilotRailProps> = ({
             {/* header: SUGGESTED · i of N + pager */}
             <div className="flex items-center justify-between mb-2">
               <span
-                className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.1em]"
+                className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest"
                 style={{ color: 'var(--pulse-coral-fg)', fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
               >
                 <Sparkles className="w-3 h-3" />
@@ -206,7 +206,7 @@ export const CopilotRail: React.FC<CopilotRailProps> = ({
               <div className="mt-3">
                 <div className="flex items-center justify-between mb-1">
                   <span
-                    className="text-[9px] uppercase tracking-[0.1em] text-zinc-400 dark:text-zinc-500"
+                    className="text-[9px] uppercase tracking-widest text-zinc-400 dark:text-zinc-500"
                     style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
                   >
                     Drafted opener · editable
@@ -224,7 +224,7 @@ export const CopilotRail: React.FC<CopilotRailProps> = ({
                   onChange={(e) => setDraft(e.target.value)}
                   aria-label="Drafted opener message"
                   rows={3}
-                  className="w-full text-xs rounded-lg p-2 resize-none outline-none border bg-transparent text-zinc-600 dark:text-zinc-300 focus:ring-1 focus:ring-rose-400"
+                  className="w-full text-xs rounded-lg p-2 resize-none outline-hidden border bg-transparent text-zinc-600 dark:text-zinc-300 focus:ring-1 focus:ring-rose-400"
                   style={{ borderColor: 'var(--pulse-border)' }}
                 />
               </div>

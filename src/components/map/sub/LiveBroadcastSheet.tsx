@@ -53,7 +53,7 @@ export const LiveBroadcastSheet: React.FC<LiveBroadcastSheetProps> = ({
             <Radio size={14} className="text-rose-500" aria-hidden="true" />
             <span
               id="live-broadcasters-title"
-              className="text-[11px] tracking-[0.1em] uppercase"
+              className="text-[11px] tracking-widest uppercase"
               style={{ fontFamily: "'JetBrains Mono', monospace" }}
             >
               Broadcasting now
@@ -64,7 +64,7 @@ export const LiveBroadcastSheet: React.FC<LiveBroadcastSheetProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className={`p-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
+            className={`p-1.5 rounded transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
               isDarkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-gray-100 text-gray-500'
             }`}
           >

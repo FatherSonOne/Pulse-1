@@ -393,7 +393,7 @@ export const ArchiveDetailView: React.FC = () => {
         <div className="max-w-3xl mx-auto space-y-6">
           {/* AI Summary — canonical PULSE AI · SUMMARY provenance pattern */}
           {selectedItem.aiSummary && (
-            <div className="bg-rose-500/[0.06] border border-rose-500/20 rounded-xl p-4">
+            <div className="bg-rose-500/6 border border-rose-500/20 rounded-xl p-4">
               <div className="inline-flex items-center gap-1.5 mb-2.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500" aria-hidden />
                 <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-rose-600 dark:text-rose-400">

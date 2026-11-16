@@ -138,7 +138,7 @@ export const RelayColdStartGuide: React.FC<RelayColdStartGuideProps> = ({
           Record your first message
         </button>
         <p
-          className="font-mono text-[10px] uppercase tracking-[0.1em] mt-3 text-center"
+          className="font-mono text-[10px] uppercase tracking-widest mt-3 text-center"
           style={{ color: 'var(--pulse-ink-3)' }}
         >
           Hold space to record · ? for shortcuts

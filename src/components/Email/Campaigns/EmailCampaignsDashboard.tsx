@@ -243,7 +243,7 @@ export const EmailCampaignsDashboard: React.FC<Props> = ({
         </div>
         <button
           onClick={onNewCampaign}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-rose-500 to-red-500 text-white text-sm font-medium shadow-sm hover:opacity-90 transition-opacity"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-linear-to-r from-rose-500 to-red-500 text-white text-sm font-medium shadow-xs hover:opacity-90 transition-opacity"
         >
           <Plus className="text-xs" />
           New Campaign
@@ -262,7 +262,7 @@ export const EmailCampaignsDashboard: React.FC<Props> = ({
             placeholder="Search campaigns…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-700 placeholder-stone-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+            className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-700 placeholder-stone-400 dark:placeholder-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
           />
         </div>
 
@@ -274,7 +274,7 @@ export const EmailCampaignsDashboard: React.FC<Props> = ({
               onClick={() => setStatusFilter(key)}
               className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
                 statusFilter === key
-                  ? 'bg-rose-500 text-white shadow-sm'
+                  ? 'bg-rose-500 text-white shadow-xs'
                   : 'text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100'
               }`}
             >
@@ -515,7 +515,7 @@ const EmptyState: React.FC<{ onNewCampaign: () => void }> = ({ onNewCampaign }) 
     </p>
     <button
       onClick={onNewCampaign}
-      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-rose-500 to-red-500 text-white text-sm font-medium hover:opacity-90 transition-opacity"
+      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-linear-to-r from-rose-500 to-red-500 text-white text-sm font-medium hover:opacity-90 transition-opacity"
     >
       Create your first campaign
       <ArrowRight className="text-xs" />

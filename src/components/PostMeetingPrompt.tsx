@@ -58,10 +58,10 @@ export const PostMeetingPrompt: React.FC<PostMeetingPromptProps> = ({
   return (
     <div className="bg-white dark:bg-zinc-900 border border-purple-200 dark:border-purple-800 rounded-2xl shadow-xl overflow-hidden animate-slide-in-up">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-4 text-white">
+      <div className="bg-linear-to-r from-purple-500 to-pink-500 px-6 py-4 text-white">
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-xs flex items-center justify-center">
               <CalendarCheck className="text-lg" />
             </div>
             <div>
@@ -91,7 +91,7 @@ export const PostMeetingPrompt: React.FC<PostMeetingPromptProps> = ({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Key decisions, action items, next steps..."
-            className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+            className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder-zinc-400 resize-none focus:outline-hidden focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
             rows={3}
           />
         </div>
@@ -116,7 +116,7 @@ export const PostMeetingPrompt: React.FC<PostMeetingPromptProps> = ({
                 <div className="flex items-start gap-3">
                   {/* Checkbox */}
                   <div
-                    className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition ${
+                    className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition ${
                       selectedSuggestions.has(index)
                         ? 'border-purple-500 bg-purple-500'
                         : 'border-zinc-300 dark:border-zinc-600'
@@ -129,7 +129,7 @@ export const PostMeetingPrompt: React.FC<PostMeetingPromptProps> = ({
 
                   {/* Icon */}
                   <div
-                    className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${getPriorityColor(
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${getPriorityColor(
                       suggestion.priority
                     )}`}
                   >
@@ -200,7 +200,7 @@ export const PostMeetingPrompt: React.FC<PostMeetingPromptProps> = ({
           <button
             onClick={handleCreateSelected}
             disabled={selectedSuggestions.size === 0}
-            className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-zinc-300 disabled:to-zinc-300 disabled:cursor-not-allowed text-white rounded-xl font-semibold transition flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-3 bg-linear-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-zinc-300 disabled:to-zinc-300 disabled:cursor-not-allowed text-white rounded-xl font-semibold transition flex items-center justify-center gap-2"
           >
             <Check />
             Create {selectedSuggestions.size > 0 ? `${selectedSuggestions.size} ` : ''}

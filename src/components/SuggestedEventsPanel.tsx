@@ -73,14 +73,14 @@ export const SuggestedEventsPanel: React.FC<SuggestedEventsPanelProps> = ({
   if (suggestions.length === 0) return null;
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-xs">
       {/* Header */}
       <div
-        className="px-4 py-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-b border-blue-200 dark:border-blue-800 flex items-center justify-between cursor-pointer"
+        className="px-4 py-3 bg-linear-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-b border-blue-200 dark:border-blue-800 flex items-center justify-between cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full bg-linear-to-r from-blue-500 to-purple-500 flex items-center justify-center">
             <Sparkles className="text-white text-sm" />
           </div>
           <div>
@@ -121,7 +121,7 @@ export const SuggestedEventsPanel: React.FC<SuggestedEventsPanelProps> = ({
             >
               {/* Event Info */}
               <div className="flex items-start gap-3 mb-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
                   <i className={`fa-solid ${getSourceIcon(suggestion.source)} text-blue-600 dark:text-blue-400`}></i>
                 </div>
 
@@ -150,7 +150,7 @@ export const SuggestedEventsPanel: React.FC<SuggestedEventsPanelProps> = ({
                 </div>
 
                 {/* Confidence Badge */}
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   <div className={`text-xs font-medium px-2 py-1 rounded ${
                     suggestion.confidence >= 80
                       ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'

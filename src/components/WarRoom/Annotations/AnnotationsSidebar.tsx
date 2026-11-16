@@ -111,7 +111,7 @@ export const AnnotationsSidebar: React.FC<AnnotationsSidebarProps> = ({
                 {highlight.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="px-1.5 py-0.5 bg-white/50 dark:bg-black/20 rounded text-[10px] text-gray-600 dark:text-gray-400"
+                    className="px-1.5 py-0.5 bg-white/50 dark:bg-black/20 rounded-sm text-[10px] text-gray-600 dark:text-gray-400"
                   >
                     {tag}
                   </span>
@@ -206,7 +206,7 @@ export const AnnotationsSidebar: React.FC<AnnotationsSidebarProps> = ({
                 {config.label}
               </span>
               {annotation.resolved && (
-                <span className="px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded text-[10px]">
+                <span className="px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-sm text-[10px]">
                   Resolved
                 </span>
               )}
@@ -229,7 +229,7 @@ export const AnnotationsSidebar: React.FC<AnnotationsSidebarProps> = ({
                 {annotation.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="px-1.5 py-0.5 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded text-[10px]"
+                    className="px-1.5 py-0.5 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-sm text-[10px]"
                   >
                     {tag}
                   </span>
@@ -331,7 +331,7 @@ export const AnnotationsSidebar: React.FC<AnnotationsSidebarProps> = ({
               onClick={() => setActiveTab(tab)}
               className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
                 activeTab === tab
-                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
             >

@@ -45,7 +45,7 @@ export const EventStatusBadge: React.FC<EventStatusBadgeProps> = ({ status, size
   const lineThrough = status === 'cancelled' ? ' line-through' : '';
   return (
     <span
-      className={`inline-flex items-center rounded-full font-mono font-semibold uppercase tracking-[0.1em] border${lineThrough} ${sizeClass}`}
+      className={`inline-flex items-center rounded-full font-mono font-semibold uppercase tracking-widest border${lineThrough} ${sizeClass}`}
       style={{
         backgroundColor: tokens.bg,
         color: tokens.fg,

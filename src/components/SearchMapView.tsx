@@ -147,7 +147,7 @@ const SearchMapView: React.FC<SearchMapViewProps> = ({
                   }
                 }}
                 aria-label={`${result.title}${distance !== undefined ? `, ${distance.toFixed(1)} miles away` : ''}`}
-                className="group relative cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 rounded-full"
+                className="group relative cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 rounded-full"
                 style={{ transform: 'translate(-50%, -100%)', border: 'none', padding: 0, background: 'transparent' }}
               >
                 <div
@@ -162,7 +162,7 @@ const SearchMapView: React.FC<SearchMapViewProps> = ({
                   <Icon size={14} color="#fff" strokeWidth={2.5} />
                 </div>
                 <div
-                  className="absolute top-full mt-1 left-1/2 -translate-x-1/2 pointer-events-none whitespace-nowrap text-xs font-semibold px-1.5 py-0.5 rounded shadow opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity"
+                  className="absolute top-full mt-1 left-1/2 -translate-x-1/2 pointer-events-none whitespace-nowrap text-xs font-semibold px-1.5 py-0.5 rounded-sm shadow-sm opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity"
                   style={{
                     backgroundColor: 'rgba(15, 15, 15, 0.85)',
                     color: '#fafafa',

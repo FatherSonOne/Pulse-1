@@ -271,7 +271,7 @@ export const MessageAIPanel: React.FC<MessageAIPanelProps> = ({
                   <ul className="space-y-2">
                     {summary.keyPoints.map((point, index) => (
                       <li key={index} className="flex items-start gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 bg-rose-500" />
+                        <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-rose-500" />
                         <span className="text-sm text-zinc-700 dark:text-zinc-300">{point}</span>
                       </li>
                     ))}
@@ -288,7 +288,7 @@ export const MessageAIPanel: React.FC<MessageAIPanelProps> = ({
                   <ul className="space-y-2">
                     {summary.actionItems.map((item, index) => (
                       <li key={index} className="flex items-start gap-2">
-                        <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-rose-500" />
+                        <CheckCircle className="w-4 h-4 mt-0.5 shrink-0 text-rose-500" />
                         <span className="text-sm text-zinc-700 dark:text-zinc-300">{item}</span>
                       </li>
                     ))}
@@ -402,7 +402,7 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
           <Icon className="w-3.5 h-3.5" />
           <span className="text-sm font-semibold">{title}</span>
           {count !== undefined && count > 0 && (
-            <span className="px-1.5 py-0.5 text-[10px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 rounded">
+            <span className="px-1.5 py-0.5 text-[10px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 rounded-sm">
               {count}
             </span>
           )}
@@ -430,19 +430,19 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
               coral, the rest stay neutral. */}
           <div className="flex gap-2 flex-wrap">
             <div
-              className={`px-2.5 py-1 rounded-full font-mono text-[10px] uppercase tracking-[0.1em] font-semibold ${sentimentConfig.bg} ${sentimentConfig.color}`}
+              className={`px-2.5 py-1 rounded-full font-mono text-[10px] uppercase tracking-widest font-semibold ${sentimentConfig.bg} ${sentimentConfig.color}`}
             >
               {sentimentConfig.label}
             </div>
             {analysis.urgency !== 'low' && (
               <div
-                className={`px-2.5 py-1 rounded-full font-mono text-[10px] uppercase tracking-[0.1em] font-semibold ${urgencyConfig.bg} ${urgencyConfig.color}`}
+                className={`px-2.5 py-1 rounded-full font-mono text-[10px] uppercase tracking-widest font-semibold ${urgencyConfig.bg} ${urgencyConfig.color}`}
               >
                 {urgencyConfig.label}
               </div>
             )}
             {analysis.emotion && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full font-mono text-[10px] uppercase tracking-[0.1em] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full font-mono text-[10px] uppercase tracking-widest font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
                 <HeartPulse className="w-3 h-3" />
                 {analysis.emotion}
               </div>
@@ -524,7 +524,7 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
                           </p>
                           <div className="flex items-center gap-2 mt-1">
                             <span
-                              className={`text-[9px] px-1.5 py-0.5 rounded capitalize ${getPriorityColor(item.priority)}`}
+                              className={`text-[9px] px-1.5 py-0.5 rounded-sm capitalize ${getPriorityColor(item.priority)}`}
                             >
                               {item.priority}
                             </span>
@@ -556,7 +556,7 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
                   <ul className="mt-2 pl-6 space-y-1.5">
                     {analysis.questions.map((question, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                        <HelpCircle className="w-3.5 h-3.5 text-zinc-400 mt-0.5 flex-shrink-0" />
+                        <HelpCircle className="w-3.5 h-3.5 text-zinc-400 mt-0.5 shrink-0" />
                         {question}
                       </li>
                     ))}
@@ -587,10 +587,10 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
                           "{response.text}"
                         </p>
                         <div className="flex items-center gap-2 mt-2">
-                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 capitalize">
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-sm bg-zinc-100 dark:bg-zinc-800 text-zinc-500 capitalize">
                             {response.tone}
                           </span>
-                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 capitalize">
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-sm bg-zinc-100 dark:bg-zinc-800 text-zinc-500 capitalize">
                             {response.intent}
                           </span>
                         </div>
@@ -636,7 +636,7 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
                     {analysis.topics.map((topic, i) => (
                       <span
                         key={i}
-                        className="px-2 py-1 text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded"
+                        className="px-2 py-1 text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-sm"
                       >
                         {topic}
                       </span>
@@ -660,7 +660,7 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
                         {analysis.mentions.people.map((person, i) => (
                           <span
                             key={i}
-                            className="px-2 py-0.5 text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded inline-flex items-center gap-1"
+                            className="px-2 py-0.5 text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-sm inline-flex items-center gap-1"
                           >
                             <User className="w-2.5 h-2.5 text-zinc-400" />
                             {person}
@@ -674,7 +674,7 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
                         {analysis.mentions.dates.map((date, i) => (
                           <span
                             key={i}
-                            className="px-2 py-0.5 text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded inline-flex items-center gap-1"
+                            className="px-2 py-0.5 text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-sm inline-flex items-center gap-1"
                           >
                             <Calendar className="w-2.5 h-2.5 text-zinc-400" />
                             {date.text}
@@ -688,7 +688,7 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
                         {analysis.mentions.locations.map((loc, i) => (
                           <span
                             key={i}
-                            className="px-2 py-0.5 text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded inline-flex items-center gap-1"
+                            className="px-2 py-0.5 text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-sm inline-flex items-center gap-1"
                           >
                             <MapPin className="w-2.5 h-2.5 text-zinc-400" />
                             {loc}
@@ -790,7 +790,7 @@ const ChaptersSection: React.FC<ChaptersSectionProps> = ({
                   <div className="flex items-start gap-3">
                     {/* Chapter Number */}
                     <div
-                      className="w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      className="w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold shrink-0"
                       style={{
                         background: isActive ? accentColor : `${accentColor}15`,
                         color: isActive ? 'white' : accentColor,
@@ -815,7 +815,7 @@ const ChaptersSection: React.FC<ChaptersSectionProps> = ({
                         >
                           {chapter.title}
                         </h5>
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <Clock className="w-3 h-3 text-zinc-500 dark:text-zinc-400" />
                           <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400">
                             {formatChapterTime(chapter.startTime)}
@@ -832,7 +832,7 @@ const ChaptersSection: React.FC<ChaptersSectionProps> = ({
                       <PlayCircle
                         className={`w-5 h-5 ${
                           isActive ? 'text-zinc-700 dark:text-white' : 'text-zinc-400'
-                        } flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity`}
+                        } shrink-0 opacity-0 group-hover:opacity-100 transition-opacity`}
                       />
                     )}
                   </div>
@@ -996,7 +996,7 @@ const MeetingNotesSection: React.FC<MeetingNotesSectionProps> = ({
                     className="flex items-start gap-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50"
                   >
                     <div
-                      className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold shrink-0"
                       style={{ background: `${accentColor}20`, color: accentColor }}
                     >
                       {index + 1}
@@ -1027,7 +1027,7 @@ const MeetingNotesSection: React.FC<MeetingNotesSectionProps> = ({
                   >
                     <div className="flex items-start gap-2">
                       <div
-                        className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5"
+                        className="w-5 h-5 rounded-sm border-2 flex items-center justify-center shrink-0 mt-0.5"
                         style={{ borderColor: accentColor }}
                       />
                       <div className="flex-1">
@@ -1069,7 +1069,7 @@ const MeetingNotesSection: React.FC<MeetingNotesSectionProps> = ({
                 {notes.nextSteps.map((step, index) => (
                   <li key={index} className="flex items-start gap-2">
                     <div
-                      className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
+                      className="w-2 h-2 rounded-full mt-1.5 shrink-0"
                       style={{ background: accentColor }}
                     />
                     <span className="text-sm text-zinc-700 dark:text-zinc-300">{step}</span>

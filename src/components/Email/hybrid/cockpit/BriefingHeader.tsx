@@ -66,7 +66,7 @@ export const BriefingHeader: React.FC<BriefingHeaderProps> = ({
             <Layers className="w-4 h-4" />
             <span>Start triage</span>
             {triageQueueSize != null && triageQueueSize > 0 && (
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono-pulse bg-white/20">
+              <span className="px-1.5 py-0.5 rounded-sm text-[10px] font-mono-pulse bg-white/20">
                 {triageQueueSize} TO CLEAR
               </span>
             )}

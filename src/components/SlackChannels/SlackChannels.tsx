@@ -73,7 +73,7 @@ function fmtRelDay(iso: string | null): string {
 // "via Slack" provenance chip — plum, reused verbatim from Messages.tsx. NOT coral.
 const ViaSlackChip: React.FC = () => (
   <span
-    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-500/10 dark:bg-purple-500/15 text-purple-600 dark:text-purple-300 normal-case tracking-normal text-xs"
+    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-purple-500/10 dark:bg-purple-500/15 text-purple-600 dark:text-purple-300 normal-case tracking-normal text-xs"
     title="Messages in this channel are mirrored from Slack"
   >
     via Slack
@@ -431,7 +431,7 @@ const SlackChannels: React.FC = () => {
           right={
             <button
               onClick={() => { void loadThreads(); loadNames(); }}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-colors bg-[var(--pulse-surface)] hover:bg-[var(--pulse-surface-raised)] active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-colors bg-(--pulse-surface) hover:bg-(--pulse-surface-raised) active:scale-[0.98]"
               style={{ color: 'var(--pulse-ink-2)', border: '1px solid var(--pulse-border)' }}
               title="Refresh"
             >
@@ -451,9 +451,9 @@ const SlackChannels: React.FC = () => {
             <div className="p-2 space-y-1" aria-hidden="true">
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-2.5 px-2 py-2.5 animate-pulse">
-                  <div className="w-4 h-4 rounded bg-zinc-100 dark:bg-zinc-800 shrink-0" />
-                  <div className="h-3.5 flex-1 rounded bg-zinc-100 dark:bg-zinc-800" />
-                  <div className="h-3 w-8 rounded bg-zinc-100 dark:bg-zinc-800 shrink-0" />
+                  <div className="w-4 h-4 rounded-sm bg-zinc-100 dark:bg-zinc-800 shrink-0" />
+                  <div className="h-3.5 flex-1 rounded-sm bg-zinc-100 dark:bg-zinc-800" />
+                  <div className="h-3 w-8 rounded-sm bg-zinc-100 dark:bg-zinc-800 shrink-0" />
                 </div>
               ))}
             </div>
@@ -464,7 +464,7 @@ const SlackChannels: React.FC = () => {
               </div>
               <button
                 onClick={() => { setLoadingThreads(true); void loadThreads(); }}
-                className="block rounded-md px-2.5 py-1.5 text-xs transition-colors hover:bg-[var(--pulse-surface-raised)]"
+                className="block rounded-md px-2.5 py-1.5 text-xs transition-colors hover:bg-(--pulse-surface-raised)"
                 style={{ color: 'var(--pulse-ink-2)', border: '1px solid var(--pulse-border)' }}
               >
                 Retry
@@ -485,8 +485,8 @@ const SlackChannels: React.FC = () => {
                   aria-label={isResolvingName(t) ? (t.is_private ? 'Private channel, loading name' : 'Channel, loading name') : channelLabel(t)}
                   className={`w-full text-left flex items-center gap-2.5 px-3.5 py-2.5 border-l-2 transition-colors ${
                     isActive
-                      ? 'border-[var(--pulse-rose)] bg-[var(--pulse-surface-raised)]'
-                      : 'border-transparent hover:bg-[var(--pulse-surface-raised)]'
+                      ? 'border-(--pulse-rose) bg-(--pulse-surface-raised)'
+                      : 'border-transparent hover:bg-(--pulse-surface-raised)'
                   }`}
                 >
                   {t.is_private ? (
@@ -495,7 +495,7 @@ const SlackChannels: React.FC = () => {
                     <Hash className="w-4 h-4 shrink-0" style={{ color: 'var(--pulse-ink-3)' }} />
                   )}
                   {isResolvingName(t) ? (
-                    <span className="flex-1 h-3.5 rounded bg-zinc-100 dark:bg-zinc-800 animate-pulse" aria-hidden="true" />
+                    <span className="flex-1 h-3.5 rounded-sm bg-zinc-100 dark:bg-zinc-800 animate-pulse" aria-hidden="true" />
                   ) : (
                     <span className="flex-1 min-w-0 truncate" style={{ color: 'var(--pulse-ink)', fontSize: 14, fontWeight: isActive ? 600 : 500 }}>
                       {channelLabel(t)}
@@ -531,7 +531,7 @@ const SlackChannels: React.FC = () => {
                   <Hash className="w-4 h-4" style={{ color: 'var(--pulse-ink-2)' }} />
                 )}
                 {isResolvingName(activeThread) ? (
-                  <span className="h-4 w-32 rounded bg-zinc-100 dark:bg-zinc-800 animate-pulse" aria-hidden="true" />
+                  <span className="h-4 w-32 rounded-sm bg-zinc-100 dark:bg-zinc-800 animate-pulse" aria-hidden="true" />
                 ) : (
                   <span title={activeThread.slack_channel_id} style={{ color: 'var(--pulse-ink)', fontWeight: 600, fontSize: 15 }}>{channelLabel(activeThread)}</span>
                 )}
@@ -540,7 +540,7 @@ const SlackChannels: React.FC = () => {
                   <button
                     onClick={() => void handleSummarize()}
                     disabled={summarizing || messages.length === 0}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-colors bg-[var(--pulse-coral-bg-08)] hover:bg-[var(--pulse-coral-bg-12)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[var(--pulse-coral-bg-08)]"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-colors bg-(--pulse-coral-bg-08) hover:bg-(--pulse-coral-bg-12) active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-(--pulse-coral-bg-08)"
                     style={{
                       color: 'var(--pulse-coral-fg)',
                       border: '1px solid var(--pulse-coral-bg-12)',
@@ -553,7 +553,7 @@ const SlackChannels: React.FC = () => {
                   <button
                     onClick={() => void handleBackfill()}
                     disabled={backfilling}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-colors bg-[var(--pulse-surface)] hover:bg-[var(--pulse-surface-raised)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[var(--pulse-surface)]"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-colors bg-(--pulse-surface) hover:bg-(--pulse-surface-raised) active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-(--pulse-surface)"
                     style={{
                       color: 'var(--pulse-ink-2)',
                       border: '1px solid var(--pulse-border)',
@@ -595,7 +595,7 @@ const SlackChannels: React.FC = () => {
                     <div className="inline-flex items-center gap-1.5" style={{ color: 'var(--pulse-coral-fg)', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em' }}>
                       <Sparkles className="w-3.5 h-3.5" /> AI SUMMARY · via Gemini
                     </div>
-                    <button onClick={() => setSummary(null)} title="Dismiss summary" className="rounded transition-colors text-[var(--pulse-ink-3)] hover:text-[var(--pulse-ink)]" style={{ lineHeight: 0 }}>
+                    <button onClick={() => setSummary(null)} title="Dismiss summary" className="rounded-sm transition-colors text-(--pulse-ink-3) hover:text-(--pulse-ink)" style={{ lineHeight: 0 }}>
                       <X className="w-4 h-4" />
                     </button>
                   </div>
@@ -613,9 +613,9 @@ const SlackChannels: React.FC = () => {
                       <div key={i} className={`flex items-start gap-2.5 animate-pulse ${i % 2 === 1 ? 'flex-row-reverse' : ''}`}>
                         <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 shrink-0" />
                         <div className="space-y-2" style={{ width: 320, maxWidth: '70%' }}>
-                          <div className="h-3 w-24 rounded bg-zinc-100 dark:bg-zinc-800" />
-                          <div className="h-3.5 w-full rounded bg-zinc-100 dark:bg-zinc-800" />
-                          <div className="h-3.5 w-3/5 rounded bg-zinc-100 dark:bg-zinc-800" />
+                          <div className="h-3 w-24 rounded-sm bg-zinc-100 dark:bg-zinc-800" />
+                          <div className="h-3.5 w-full rounded-sm bg-zinc-100 dark:bg-zinc-800" />
+                          <div className="h-3.5 w-3/5 rounded-sm bg-zinc-100 dark:bg-zinc-800" />
                         </div>
                       </div>
                     ))}
@@ -627,7 +627,7 @@ const SlackChannels: React.FC = () => {
                     </div>
                     <button
                       onClick={() => setReloadKey((k) => k + 1)}
-                      className="block rounded-md px-2.5 py-1.5 text-xs transition-colors hover:bg-[var(--pulse-surface-raised)]"
+                      className="block rounded-md px-2.5 py-1.5 text-xs transition-colors hover:bg-(--pulse-surface-raised)"
                       style={{ color: 'var(--pulse-ink-2)', border: '1px solid var(--pulse-border)' }}
                     >
                       Retry

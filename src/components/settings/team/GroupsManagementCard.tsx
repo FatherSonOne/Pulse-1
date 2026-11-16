@@ -297,14 +297,14 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Group name"
             maxLength={60}
-            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
           />
           <input
             type="text"
             value={newDesc}
             onChange={(e) => setNewDesc(e.target.value)}
             placeholder="Description (optional)"
-            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
           />
           <div className="flex items-center gap-2">
             <span className="text-xs text-zinc-500">Color:</span>
@@ -383,13 +383,13 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
                 <button
                   type="button"
                   onClick={() => handleToggleExpand(g.id)}
-                  className="flex-shrink-0 text-zinc-400"
+                  className="shrink-0 text-zinc-400"
                   aria-label={isExpanded ? 'Collapse' : 'Expand'}
                 >
                   {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </button>
                 <div
-                  className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                  className="w-2.5 h-2.5 rounded-full shrink-0"
                   style={{ backgroundColor: g.color || '#71717a' }}
                 />
 
@@ -411,14 +411,14 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
                       maxLength={60}
-                      className="w-full px-2 py-1 text-sm border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
+                      className="w-full px-2 py-1 text-sm border border-zinc-300 dark:border-zinc-700 rounded-sm bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
                     />
                     <input
                       type="text"
                       value={editDesc}
                       onChange={(e) => setEditDesc(e.target.value)}
                       placeholder="Description"
-                      className="w-full px-2 py-1 text-xs border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
+                      className="w-full px-2 py-1 text-xs border border-zinc-300 dark:border-zinc-700 rounded-sm bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
                     />
                     <div className="flex items-center gap-1.5">
                       {GROUP_COLORS.map(c => (
@@ -435,12 +435,12 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
                   </div>
                 )}
 
-                <span className="text-[11px] text-zinc-400 flex-shrink-0">
+                <span className="text-[11px] text-zinc-400 shrink-0">
                   {g.member_count ?? 0} member{(g.member_count ?? 0) === 1 ? '' : 's'}
                 </span>
 
                 {isAdmin && !isEditing && (
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); beginEdit(g); }}
@@ -463,7 +463,7 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
                 )}
 
                 {isAdmin && isEditing && (
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       type="button"
                       onClick={() => handleSaveEdit(g)}
@@ -493,8 +493,8 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
                     <p className="text-[11px] text-zinc-400 text-center py-2">No members in this group yet.</p>
                   )}
                   {groupMemberRecords.map(m => (
-                    <div key={m.user_id} className="flex items-center gap-2 px-2 py-1.5 bg-white dark:bg-zinc-900 rounded">
-                      <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-rose-500 to-pink-500 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+                    <div key={m.user_id} className="flex items-center gap-2 px-2 py-1.5 bg-white dark:bg-zinc-900 rounded-sm">
+                      <div className="w-6 h-6 rounded-full bg-linear-to-tr from-rose-500 to-pink-500 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
                         {m.avatar_url ? <img src={m.avatar_url} alt="" className="w-full h-full rounded-full object-cover" /> : (m.name || m.email || '?').charAt(0).toUpperCase()}
                       </div>
                       <span className="text-xs text-zinc-700 dark:text-zinc-300 flex-1 truncate">
@@ -522,7 +522,7 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
                             value={memberToAdd}
                             onChange={(e) => setMemberToAdd(e.target.value)}
                             aria-label="Member to add"
-                            className="flex-1 px-2 py-1 text-xs border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
+                            className="flex-1 px-2 py-1 text-xs border border-zinc-300 dark:border-zinc-700 rounded-sm bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
                           >
                             <option value="">Select a member...</option>
                             {availableToAdd.map(m => (
@@ -535,7 +535,7 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
                             type="button"
                             onClick={() => handleAddMember(g.id)}
                             disabled={!memberToAdd}
-                            className="px-2 py-1 text-xs font-semibold text-white bg-rose-500 rounded disabled:opacity-40"
+                            className="px-2 py-1 text-xs font-semibold text-white bg-rose-500 rounded-sm disabled:opacity-40"
                           >
                             Add
                           </button>
@@ -585,7 +585,7 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
                       return (
                         <div
                           key={grant.id}
-                          className="flex items-center gap-2 px-2 py-1.5 bg-white dark:bg-zinc-900 rounded border border-zinc-200/60 dark:border-zinc-800/60"
+                          className="flex items-center gap-2 px-2 py-1.5 bg-white dark:bg-zinc-900 rounded-sm border border-zinc-200/60 dark:border-zinc-800/60"
                         >
                           <div className="min-w-0 flex-1">
                             <p className="text-xs font-medium text-zinc-800 dark:text-zinc-200 truncate">
@@ -618,7 +618,7 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
                               value={keyToGrant}
                               onChange={(e) => setKeyToGrant(e.target.value)}
                               aria-label="Permission to grant"
-                              className="flex-1 px-2 py-1 text-xs border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
+                              className="flex-1 px-2 py-1 text-xs border border-zinc-300 dark:border-zinc-700 rounded-sm bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
                             >
                               <option value="">Select a permission...</option>
                               {Object.entries(
@@ -638,7 +638,7 @@ export const GroupsManagementCard: React.FC<Props> = ({ workspaceId, members, is
                               type="button"
                               onClick={() => handleGrant(g.id)}
                               disabled={!keyToGrant}
-                              className="px-2 py-1 text-xs font-semibold text-white bg-rose-500 rounded disabled:opacity-40"
+                              className="px-2 py-1 text-xs font-semibold text-white bg-rose-500 rounded-sm disabled:opacity-40"
                             >
                               Grant
                             </button>

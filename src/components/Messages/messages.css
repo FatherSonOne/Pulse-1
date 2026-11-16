@@ -687,7 +687,7 @@ button:focus-visible {
 }
 
 /* ============================================================
-   Shared container animations — moved from inline <style> in
+   Shared container animations — moved from inline \3c style> in
    MessageContainer.tsx so they're not re-injected per mount.
    ============================================================ */
 @keyframes msg-slideInRight {

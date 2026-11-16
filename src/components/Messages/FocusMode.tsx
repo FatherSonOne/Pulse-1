@@ -291,14 +291,14 @@ export const FocusMode: React.FC<FocusModeProps> = ({
             <button
               type="button"
               onClick={() => toast.dismiss(t.id)}
-              className="px-3 py-1.5 text-xs rounded-md text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)]"
+              className="px-3 py-1.5 text-xs rounded-md text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-rose)"
             >
               Stay
             </button>
             <button
               type="button"
               onClick={() => { toast.dismiss(t.id); handleStop(); onClose(); }}
-              className="px-3 py-1.5 text-xs rounded-md bg-[var(--pulse-rose)] text-white hover:bg-[var(--pulse-rose-deep)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)]"
+              className="px-3 py-1.5 text-xs rounded-md bg-(--pulse-rose) text-white hover:bg-(--pulse-rose-deep) focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-rose)"
             >
               Exit
             </button>
@@ -360,7 +360,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
     <AnimatePresence>
       {isActive && (
         <motion.div
-          className="fixed inset-0 z-50 bg-[var(--pulse-canvas)] dark:bg-[var(--pulse-bg-deep)] flex flex-col items-center justify-center"
+          className="fixed inset-0 z-50 bg-(--pulse-canvas) dark:bg-(--pulse-bg-deep) flex flex-col items-center justify-center"
           {...motionPreset.fade}
           role="dialog"
           aria-modal="true"
@@ -380,7 +380,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
           {/* Close Button */}
           <button
             onClick={handleClose}
-            className="absolute top-6 right-6 p-3 text-zinc-600 dark:text-[#b4b4b8] hover:text-zinc-900 dark:hover:text-white bg-zinc-100 dark:bg-[rgba(255,255,255,0.055)] hover:bg-zinc-200 dark:hover:bg-[rgba(255,255,255,0.10)] rounded-full transition-colors focus:outline-none focus:ring-4 focus:ring-zinc-300 dark:focus:ring-[rgba(255,255,255,0.20)]"
+            className="absolute top-6 right-6 p-3 text-zinc-600 dark:text-[#b4b4b8] hover:text-zinc-900 dark:hover:text-white bg-zinc-100 dark:bg-[rgba(255,255,255,0.055)] hover:bg-zinc-200 dark:hover:bg-[rgba(255,255,255,0.10)] rounded-full transition-colors focus:outline-hidden focus:ring-4 focus:ring-zinc-300 dark:focus:ring-[rgba(255,255,255,0.20)]"
             aria-label="Exit focus mode"
           >
             <svg
@@ -511,7 +511,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                           setPreferences(newPrefs);
                           focusModeService.savePreferences(newPrefs);
                         }}
-                        className="w-full px-3 py-2 bg-white dark:bg-[rgba(255,255,255,0.055)] border border-zinc-300 dark:border-[rgba(255,255,255,0.10)] text-zinc-900 dark:text-white rounded focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
+                        className="w-full px-3 py-2 bg-white dark:bg-[rgba(255,255,255,0.055)] border border-zinc-300 dark:border-[rgba(255,255,255,0.10)] text-zinc-900 dark:text-white rounded-sm focus:outline-hidden focus:ring-2 focus:ring-[#f43f5e]"
                       />
                     </div>
 
@@ -533,7 +533,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                           setPreferences(newPrefs);
                           focusModeService.savePreferences(newPrefs);
                         }}
-                        className="w-full px-3 py-2 bg-white dark:bg-[rgba(255,255,255,0.055)] border border-zinc-300 dark:border-[rgba(255,255,255,0.10)] text-zinc-900 dark:text-white rounded focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
+                        className="w-full px-3 py-2 bg-white dark:bg-[rgba(255,255,255,0.055)] border border-zinc-300 dark:border-[rgba(255,255,255,0.10)] text-zinc-900 dark:text-white rounded-sm focus:outline-hidden focus:ring-2 focus:ring-[#f43f5e]"
                       />
                     </div>
 

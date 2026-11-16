@@ -36,7 +36,7 @@ export const CadenceSpine: React.FC<{ contact: Contact; userId?: string }> = ({ 
     <div>
       <div className="flex items-center justify-between mb-3">
         <span
-          className="text-[10px] uppercase tracking-[0.1em] text-zinc-400 dark:text-zinc-500"
+          className="text-[10px] uppercase tracking-widest text-zinc-400 dark:text-zinc-500"
           style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
         >
           Keep-in-touch cadence

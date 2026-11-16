@@ -169,7 +169,7 @@ const AlertCard: React.FC<AlertCardProps> = ({
         onClick={onToggleExpand}
       >
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
           style={{ backgroundColor: `${severityColor}15`, color: severityColor }}
         >
           <i className={`${typeConfig.icon} text-lg`}></i>
@@ -253,7 +253,7 @@ const AlertCard: React.FC<AlertCardProps> = ({
                     <button
                       key={hours}
                       onClick={() => handleSnooze(hours)}
-                      className="w-full text-left px-3 py-1.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded transition"
+                      className="w-full text-left px-3 py-1.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-sm transition"
                     >
                       {hours < 24 ? `${hours} hour${hours > 1 ? 's' : ''}` : `${hours / 24} day${hours > 24 ? 's' : ''}`}
                     </button>

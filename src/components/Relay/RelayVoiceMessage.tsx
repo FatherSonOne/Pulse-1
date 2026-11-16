@@ -136,7 +136,7 @@ export const RelayVoiceMessage: React.FC<RelayVoiceMessageProps> = ({
 
   const bubbleClasses = isMe
     ? 'bg-rose-50 dark:bg-[rgba(244,63,94,0.08)] rounded-2xl rounded-br-md'
-    : 'bg-white dark:bg-white/[0.03] rounded-2xl rounded-bl-md border border-zinc-200/60 dark:border-white/[0.06]';
+    : 'bg-white dark:bg-white/3 rounded-2xl rounded-bl-md border border-zinc-200/60 dark:border-white/6';
   // Active = now-playing → coral ring. State, not decoration (Coral budget).
   const activeRing = isActive ? 'ring-2 ring-rose-500/35' : '';
 
@@ -157,7 +157,7 @@ export const RelayVoiceMessage: React.FC<RelayVoiceMessageProps> = ({
           className={`w-9 h-9 rounded-lg shrink-0 flex items-center justify-center text-sm font-medium ${
             isMe
               ? 'bg-rose-500 text-white'
-              : 'bg-zinc-100 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300'
+              : 'bg-zinc-100 dark:bg-white/4 text-zinc-700 dark:text-zinc-300'
           }`}
           aria-hidden="true"
         >
@@ -190,7 +190,7 @@ export const RelayVoiceMessage: React.FC<RelayVoiceMessageProps> = ({
                 className={`w-9 h-9 rounded-full shrink-0 flex items-center justify-center transition-colors ${
                   needsReply || isMe
                     ? 'bg-rose-500 text-white hover:bg-rose-600'
-                    : 'bg-zinc-100 dark:bg-white/[0.06] text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-white/[0.1]'
+                    : 'bg-zinc-100 dark:bg-white/6 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-white/10'
                 }`}
                 aria-label={isPlaying ? 'Pause' : 'Play'}
                 type="button"
@@ -221,7 +221,7 @@ export const RelayVoiceMessage: React.FC<RelayVoiceMessageProps> = ({
 
             {/* Transcript with provenance chip */}
             {transcript && (
-              <div className="mt-2.5 pt-2.5 border-t border-zinc-200/60 dark:border-white/[0.06]">
+              <div className="mt-2.5 pt-2.5 border-t border-zinc-200/60 dark:border-white/6">
                 <div className="flex items-center gap-2 mb-1.5">
                   <AIProvenanceChip vendor="WHISPER" type="TRANSCRIPT" />
                 </div>
@@ -238,7 +238,7 @@ export const RelayVoiceMessage: React.FC<RelayVoiceMessageProps> = ({
 
             {/* Analysis with provenance chip */}
             {analysis?.summary && (
-              <div className="mt-2.5 pt-2.5 border-t border-zinc-200/60 dark:border-white/[0.06]">
+              <div className="mt-2.5 pt-2.5 border-t border-zinc-200/60 dark:border-white/6">
                 <div className="flex items-center gap-2 mb-1.5">
                   <AIProvenanceChip vendor={analysis.vendor || 'PULSE AI'} type="SUMMARY" />
                 </div>
@@ -268,7 +268,7 @@ export const RelayVoiceMessage: React.FC<RelayVoiceMessageProps> = ({
                 className={`p-1 rounded transition-colors ${
                   starred
                     ? 'text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10'
-                    : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05]'
+                    : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/5'
                 }`}
                 aria-label={starred ? 'Unstar' : 'Star'}
                 type="button"
@@ -282,7 +282,7 @@ export const RelayVoiceMessage: React.FC<RelayVoiceMessageProps> = ({
                 className={`p-1 rounded transition-colors ${
                   bookmarked
                     ? 'text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10'
-                    : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05]'
+                    : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/5'
                 }`}
                 aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark'}
                 type="button"
@@ -293,7 +293,7 @@ export const RelayVoiceMessage: React.FC<RelayVoiceMessageProps> = ({
             {onReply && (
               <button
                 onClick={onReply}
-                className="p-1 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+                className="p-1 rounded-sm text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
                 aria-label="Reply"
                 type="button"
               >
@@ -303,7 +303,7 @@ export const RelayVoiceMessage: React.FC<RelayVoiceMessageProps> = ({
             {onReact && (
               <button
                 onClick={onReact}
-                className="p-1 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+                className="p-1 rounded-sm text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
                 aria-label="Add reaction"
                 type="button"
               >
@@ -313,7 +313,7 @@ export const RelayVoiceMessage: React.FC<RelayVoiceMessageProps> = ({
             {onMore && (
               <button
                 onClick={onMore}
-                className="p-1 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+                className="p-1 rounded-sm text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
                 aria-label="More actions"
                 type="button"
               >

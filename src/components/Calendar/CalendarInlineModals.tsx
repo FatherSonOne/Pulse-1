@@ -59,9 +59,9 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
     <>
       {/* Team Management Modal */}
       {showTeamModal && (
-        <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
-            <div className="p-6 border-b border-[var(--pulse-border)] flex items-center justify-between">
+        <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-xs flex items-center justify-center animate-fade-in p-4">
+          <div className="bg-(--pulse-surface) dark:bg-(--pulse-surface) border border-(--pulse-border) rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
+            <div className="p-6 border-b border-(--pulse-border) flex items-center justify-between">
               <h3 className="text-lg font-bold dark:text-white">
                 {editingTeam ? 'Edit Team' : 'Create New Team'}
               </h3>
@@ -71,31 +71,31 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="font-mono text-[10px] tracking-[0.1em] text-[var(--pulse-ink-3)] uppercase font-semibold mb-1.5 block">Team Name</label>
+                <label className="font-mono text-[10px] tracking-widest text-(--pulse-ink-3) uppercase font-semibold mb-1.5 block">Team Name</label>
                 <input
                   type="text"
                   value={newTeamName}
                   onChange={(e) => setNewTeamName(e.target.value)}
                   placeholder="e.g., Marketing Team"
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white outline-none"
+                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-(--pulse-border) rounded-lg p-3 dark:text-white outline-hidden"
                 />
               </div>
               <div>
-                <label className="font-mono text-[10px] tracking-[0.1em] text-[var(--pulse-ink-3)] uppercase font-semibold mb-2 block">Team Color</label>
+                <label className="font-mono text-[10px] tracking-widest text-(--pulse-ink-3) uppercase font-semibold mb-2 block">Team Color</label>
                 <div className="flex gap-2 flex-wrap">
                   {EVENT_COLORS.map(color => (
                     <button
                       key={color.id}
                       type="button"
                       onClick={() => setNewTeamColor(color.class)}
-                      className={`w-8 h-8 rounded-full ${color.class} transition ring-2 ring-offset-2 ${newTeamColor === color.class ? 'ring-[var(--pulse-rose)]' : 'ring-transparent'}`}
+                      className={`w-8 h-8 rounded-full ${color.class} transition ring-2 ring-offset-2 ${newTeamColor === color.class ? 'ring-(--pulse-rose)' : 'ring-transparent'}`}
                     />
                   ))}
                 </div>
               </div>
               <div>
-                <label className="font-mono text-[10px] tracking-[0.1em] text-[var(--pulse-ink-3)] uppercase font-semibold mb-2 block">Team Members</label>
-                <div className="max-h-48 overflow-y-auto space-y-2 border border-[var(--pulse-border)] rounded-lg p-2">
+                <label className="font-mono text-[10px] tracking-widest text-(--pulse-ink-3) uppercase font-semibold mb-2 block">Team Members</label>
+                <div className="max-h-48 overflow-y-auto space-y-2 border border-(--pulse-border) rounded-lg p-2">
                   {contacts.map(contact => (
                     <label key={contact.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer">
                       <input
@@ -108,7 +108,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                             setNewTeamMembers(prev => prev.filter(id => id !== contact.id));
                           }
                         }}
-                        className="w-4 h-4 rounded"
+                        className="w-4 h-4 rounded-sm"
                       />
                       <div className={`w-6 h-6 rounded-full ${contact.avatarColor} flex items-center justify-center text-white text-xs font-bold`}>
                         {contact.name.charAt(0)}
@@ -119,7 +119,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                 </div>
               </div>
             </div>
-            <div className="p-6 border-t border-[var(--pulse-border)] flex justify-between">
+            <div className="p-6 border-t border-(--pulse-border) flex justify-between">
               {editingTeam && teams.length > 1 && (
                 <button
                   onClick={() => {
@@ -133,7 +133,7 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
                 </button>
               )}
               <div className="flex gap-3 ml-auto">
-                <button onClick={() => { setShowTeamModal(false); resetTeamForm(); }} className="px-4 py-2 text-zinc-500 hover:text-[var(--pulse-ink)] transition">
+                <button onClick={() => { setShowTeamModal(false); resetTeamForm(); }} className="px-4 py-2 text-zinc-500 hover:text-(--pulse-ink) transition">
                   Cancel
                 </button>
                 <button
@@ -150,9 +150,9 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
 
       {/* Calendar Invite Modal */}
       {showInviteModal && inviteContact && (
-        <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
-            <div className="p-6 border-b border-[var(--pulse-border)]">
+        <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-xs flex items-center justify-center animate-fade-in p-4">
+          <div className="bg-(--pulse-surface) dark:bg-(--pulse-surface) border border-(--pulse-border) rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
+            <div className="p-6 border-b border-(--pulse-border)">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold dark:text-white">Schedule Meeting</h3>
                 <button onClick={() => { setShowInviteModal(false); setInviteContact(null); }} className="text-zinc-400 hover:text-zinc-600">
@@ -185,63 +185,63 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
               className="p-6 space-y-4"
             >
               <div>
-                <label className="font-mono text-[10px] tracking-[0.1em] text-[var(--pulse-ink-3)] uppercase font-semibold mb-1.5 block">Meeting Title</label>
+                <label className="font-mono text-[10px] tracking-widest text-(--pulse-ink-3) uppercase font-semibold mb-1.5 block">Meeting Title</label>
                 <input
                   type="text"
                   name="title"
                   required
                   placeholder="e.g., Project Discussion"
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white outline-none"
+                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-(--pulse-border) rounded-lg p-3 dark:text-white outline-hidden"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="font-mono text-[10px] tracking-[0.1em] text-[var(--pulse-ink-3)] uppercase font-semibold mb-1.5 block">Date</label>
+                  <label className="font-mono text-[10px] tracking-widest text-(--pulse-ink-3) uppercase font-semibold mb-1.5 block">Date</label>
                   <input
                     type="date"
                     name="date"
                     required
                     defaultValue={new Date().toISOString().split('T')[0]}
-                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white outline-none"
+                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-(--pulse-border) rounded-lg p-3 dark:text-white outline-hidden"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="font-mono text-[10px] tracking-[0.1em] text-[var(--pulse-ink-3)] uppercase font-semibold mb-1.5 block">Start</label>
+                    <label className="font-mono text-[10px] tracking-widest text-(--pulse-ink-3) uppercase font-semibold mb-1.5 block">Start</label>
                     <input
                       type="time"
                       name="startTime"
                       required
                       defaultValue="10:00"
-                      className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white outline-none"
+                      className="w-full bg-zinc-50 dark:bg-zinc-950 border border-(--pulse-border) rounded-lg p-3 dark:text-white outline-hidden"
                     />
                   </div>
                   <div>
-                    <label className="font-mono text-[10px] tracking-[0.1em] text-[var(--pulse-ink-3)] uppercase font-semibold mb-1.5 block">End</label>
+                    <label className="font-mono text-[10px] tracking-widest text-(--pulse-ink-3) uppercase font-semibold mb-1.5 block">End</label>
                     <input
                       type="time"
                       name="endTime"
                       required
                       defaultValue="11:00"
-                      className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white outline-none"
+                      className="w-full bg-zinc-50 dark:bg-zinc-950 border border-(--pulse-border) rounded-lg p-3 dark:text-white outline-hidden"
                     />
                   </div>
                 </div>
               </div>
               <div>
-                <label className="font-mono text-[10px] tracking-[0.1em] text-[var(--pulse-ink-3)] uppercase font-semibold mb-1.5 block">Description (Optional)</label>
+                <label className="font-mono text-[10px] tracking-widest text-(--pulse-ink-3) uppercase font-semibold mb-1.5 block">Description (Optional)</label>
                 <textarea
                   name="description"
                   rows={3}
                   placeholder="Add meeting details..."
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white outline-none resize-none"
+                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-(--pulse-border) rounded-lg p-3 dark:text-white outline-hidden resize-none"
                 />
               </div>
               <div className="pt-4 flex justify-end gap-3">
-                <button type="button" onClick={() => { setShowInviteModal(false); setInviteContact(null); }} className="px-4 py-2 text-zinc-500 hover:text-[var(--pulse-ink)] transition">
+                <button type="button" onClick={() => { setShowInviteModal(false); setInviteContact(null); }} className="px-4 py-2 text-zinc-500 hover:text-(--pulse-ink) transition">
                   Cancel
                 </button>
-                <button type="submit" className="px-5 py-2 bg-[var(--pulse-rose)] text-white rounded-lg text-sm font-bold hover:bg-[var(--pulse-rose-deep)] transition flex items-center gap-2">
+                <button type="submit" className="px-5 py-2 bg-(--pulse-rose) text-white rounded-lg text-sm font-bold hover:bg-(--pulse-rose-deep) transition flex items-center gap-2">
                   <Send />
                   Send Invite
                 </button>
@@ -253,9 +253,9 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
 
       {/* Create New Google Calendar Modal */}
       {showCreateCalendarModal && (
-        <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
-            <div className="p-6 border-b border-[var(--pulse-border)] flex items-center justify-between">
+        <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-xs flex items-center justify-center animate-fade-in p-4">
+          <div className="bg-(--pulse-surface) dark:bg-(--pulse-surface) border border-(--pulse-border) rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
+            <div className="p-6 border-b border-(--pulse-border) flex items-center justify-between">
               <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
                 <ExternalLink className="text-blue-500" />
                 Create New Calendar
@@ -266,34 +266,34 @@ export const CalendarInlineModals: React.FC<CalendarInlineModalsProps> = ({
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="font-mono text-[10px] tracking-[0.1em] text-[var(--pulse-ink-3)] uppercase font-semibold mb-1.5 block">Calendar Name</label>
+                <label className="font-mono text-[10px] tracking-widest text-(--pulse-ink-3) uppercase font-semibold mb-1.5 block">Calendar Name</label>
                 <input
                   type="text"
                   value={newCalendarName}
                   onChange={(e) => setNewCalendarName(e.target.value)}
                   placeholder="e.g., Work Projects"
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white outline-none"
+                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-(--pulse-border) rounded-lg p-3 dark:text-white outline-hidden"
                 />
               </div>
               <div>
-                <label className="font-mono text-[10px] tracking-[0.1em] text-[var(--pulse-ink-3)] uppercase font-semibold mb-1.5 block">Description (Optional)</label>
+                <label className="font-mono text-[10px] tracking-widest text-(--pulse-ink-3) uppercase font-semibold mb-1.5 block">Description (Optional)</label>
                 <textarea
                   value={newCalendarDescription}
                   onChange={(e) => setNewCalendarDescription(e.target.value)}
                   rows={3}
                   placeholder="What is this calendar for?"
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg p-3 dark:text-white outline-none resize-none"
+                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-(--pulse-border) rounded-lg p-3 dark:text-white outline-hidden resize-none"
                 />
               </div>
             </div>
-            <div className="p-6 border-t border-[var(--pulse-border)] flex justify-end gap-3">
-              <button onClick={() => setShowCreateCalendarModal(false)} className="px-4 py-2 text-zinc-500 hover:text-[var(--pulse-ink)] transition">
+            <div className="p-6 border-t border-(--pulse-border) flex justify-end gap-3">
+              <button onClick={() => setShowCreateCalendarModal(false)} className="px-4 py-2 text-zinc-500 hover:text-(--pulse-ink) transition">
                 Cancel
               </button>
               <button
                 onClick={handleCreateGoogleCalendar}
                 disabled={creatingCalendar || !newCalendarName.trim()}
-                className="px-5 py-2 bg-[var(--pulse-rose)] text-white rounded-lg text-sm font-bold hover:bg-[var(--pulse-rose-deep)] transition flex items-center gap-2 disabled:opacity-50"
+                className="px-5 py-2 bg-(--pulse-rose) text-white rounded-lg text-sm font-bold hover:bg-(--pulse-rose-deep) transition flex items-center gap-2 disabled:opacity-50"
               >
                 {creatingCalendar ? (
                   <>

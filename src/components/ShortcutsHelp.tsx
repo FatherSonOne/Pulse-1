@@ -71,7 +71,7 @@ const KeyBadge: React.FC<{ k: string }> = ({ k }) => (
   <kbd
     className="
       inline-flex items-center justify-center
-      min-w-[1.75rem] h-6 px-1.5
+      min-w-7 h-6 px-1.5
       font-mono text-[11px] font-semibold
       rounded-md
       bg-zinc-100 dark:bg-zinc-800
@@ -106,14 +106,14 @@ const ShortcutsHelp: React.FC<ShortcutsHelpProps> = ({ isOpen, onClose }) => {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9998] flex items-center justify-center p-4"
+      className="fixed inset-0 z-9998 flex items-center justify-center p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label="Keyboard shortcuts"
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-xs" aria-hidden="true" />
 
       {/* Sheet */}
       <div
@@ -168,7 +168,7 @@ const ShortcutsHelp: React.FC<ShortcutsHelpProps> = ({ isOpen, onClose }) => {
                     <span className="text-xs text-zinc-600 dark:text-zinc-300 min-w-0 leading-tight">
                       {item.label}
                     </span>
-                    <div className="flex items-center gap-1 flex-shrink-0">
+                    <div className="flex items-center gap-1 shrink-0">
                       {item.keys.map(k => <KeyBadge key={k} k={k} />)}
                     </div>
                   </div>

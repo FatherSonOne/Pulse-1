@@ -139,7 +139,7 @@ export const AttentionDashboard: React.FC<AttentionDashboardProps> = ({
             </span>
             <button
               onClick={handleEndFocus}
-              className="pulse-label px-2.5 py-1 rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-white/[0.05] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 shrink-0"
+              className="pulse-label px-2.5 py-1 rounded-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-white/5 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 shrink-0"
             >
               END
             </button>
@@ -158,14 +158,14 @@ export const AttentionDashboard: React.FC<AttentionDashboardProps> = ({
               {!showBatchedPanel && (
                 <button
                   onClick={() => setShowBatchedPanel(true)}
-                  className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+                  className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
                 >
                   EXPAND
                 </button>
               )}
               <button
                 onClick={handleClearBatched}
-                className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+                className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
               >
                 MARK ALL READ
               </button>
@@ -177,7 +177,7 @@ export const AttentionDashboard: React.FC<AttentionDashboardProps> = ({
                 <li key={n.id}>
                   <button
                     onClick={() => onNotificationClick?.(n)}
-                    className="w-full text-left flex items-baseline gap-3 px-3 py-2 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                    className="w-full text-left flex items-baseline gap-3 px-3 py-2 rounded-sm hover:bg-zinc-50 dark:hover:bg-white/4 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                   >
                     <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0 min-w-[44px]">{n.source.toUpperCase()}</span>
                     <span className="text-sm text-zinc-700 dark:text-zinc-300 truncate flex-1">{n.message}</span>
@@ -202,7 +202,7 @@ export const AttentionDashboard: React.FC<AttentionDashboardProps> = ({
               </h3>
               <button
                 onClick={() => setShowFocusSetup(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
               >
                 <Play size={13} fill="currentColor" />
                 Start deep work
@@ -218,17 +218,17 @@ export const AttentionDashboard: React.FC<AttentionDashboardProps> = ({
                 placeholder="What are you focusing on?"
                 value={focusTopic}
                 onChange={e => setFocusTopic(e.target.value)}
-                className="w-full px-3 py-2 bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.06] rounded-lg text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:border-rose-500/40 focus:ring-2 focus:ring-rose-500/20 focus:outline-none transition-colors duration-150"
+                className="w-full px-3 py-2 bg-zinc-50 dark:bg-white/4 border border-zinc-200 dark:border-white/6 rounded-lg text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:border-rose-500/40 focus:ring-2 focus:ring-rose-500/20 focus:outline-hidden transition-colors duration-150"
               />
               <div className="flex gap-1.5">
                 {[15, 30, 45, 60, 90].map(mins => (
                   <button
                     key={mins}
                     onClick={() => setFocusDuration(mins)}
-                    className={`flex-1 py-2 text-sm rounded-lg font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
+                    className={`flex-1 py-2 text-sm rounded-lg font-medium transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                       focusDuration === mins
                         ? 'bg-rose-500 text-white'
-                        : 'bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.06] text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100'
+                        : 'bg-zinc-50 dark:bg-white/4 border border-zinc-200 dark:border-white/6 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100'
                     }`}
                   >
                     {mins}m
@@ -238,14 +238,14 @@ export const AttentionDashboard: React.FC<AttentionDashboardProps> = ({
               <div className="flex gap-2">
                 <button
                   onClick={handleStartFocus}
-                  className="flex-1 inline-flex items-center justify-center gap-2 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                  className="flex-1 inline-flex items-center justify-center gap-2 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                 >
                   <Play size={13} fill="currentColor" />
                   Start {focusDuration}-min focus
                 </button>
                 <button
                   onClick={() => setShowFocusSetup(false)}
-                  className="pulse-label px-4 py-2 rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                  className="pulse-label px-4 py-2 rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                 >
                   CANCEL
                 </button>
@@ -282,7 +282,7 @@ export const AttentionDashboard: React.FC<AttentionDashboardProps> = ({
                   <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
                     <div className="flex-1 w-full flex items-end">
                       <div
-                        className="w-full bg-rose-500 rounded-sm min-h-[2px]"
+                        className="w-full bg-rose-500 rounded-xs min-h-[2px]"
                         style={{ height: `${(day.notifications / max) * 100}%` }}
                         title={`${day.date}: ${day.notifications} notifications`}
                       />
@@ -300,7 +300,7 @@ export const AttentionDashboard: React.FC<AttentionDashboardProps> = ({
 
       {/* Focus Hours indicator — quiet single line, no card */}
       <section aria-labelledby="attention-hours-heading">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-sm">
           {attentionService.isWithinFocusHours() ? (
             <>
               <Moon size={13} className="text-violet-500 dark:text-violet-400 shrink-0" />

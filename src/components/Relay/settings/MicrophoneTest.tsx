@@ -206,7 +206,7 @@ export const MicrophoneTest: React.FC<MicrophoneTestProps> = ({
               {bars.map((bar, i) => (
                 <div
                   key={i}
-                  className="flex-1 rounded-sm transition-[background-color,box-shadow,opacity] duration-75"
+                  className="flex-1 rounded-xs transition-[background-color,box-shadow,opacity] duration-75"
                   style={{
                     height: '100%',
                     background: bar.isLit

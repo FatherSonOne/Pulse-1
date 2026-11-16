@@ -427,7 +427,7 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
 
       {/* Advanced AI Panel */}
       {showAdvancedAI && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-6xl h-[85vh]">
             <AdvancedAIPanel
               documents={documents.filter(
@@ -476,7 +476,7 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
 
       {/* Knowledge Bank Modal - Full Document Browser */}
       {showKnowledgeBank && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
           <div className="rounded-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-scale-in" style={{ background: 'var(--pulse-surface-modal, var(--pulse-canvas))', border: '1px solid var(--pulse-border)' }}>
             {/* Header */}
             <div className="p-4 flex items-center justify-between shrink-0" style={{ borderBottom: '1px solid var(--pulse-border)' }}>
@@ -623,7 +623,7 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
                               setViewerHighlightText(undefined);
                               setViewerScrollOffset(undefined);
                             }}
-                            className="flex-1 text-xs py-1.5 rounded transition-colors inline-flex items-center justify-center"
+                            className="flex-1 text-xs py-1.5 rounded-sm transition-colors inline-flex items-center justify-center"
                             style={{ color: 'var(--pulse-ink-3)' }}
                           >
                             <Eye size={12} className="mr-1" /> View
@@ -633,14 +633,14 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
                               setOrganizingDocId(doc.id);
                               setShowOrganize(true);
                             }}
-                            className="flex-1 text-xs py-1.5 rounded transition-colors inline-flex items-center justify-center"
+                            className="flex-1 text-xs py-1.5 rounded-sm transition-colors inline-flex items-center justify-center"
                             style={{ color: 'var(--pulse-ink-3)' }}
                           >
                             <Tags size={12} className="mr-1" /> Organize
                           </button>
                           <button
                             onClick={() => handleDeleteDoc(doc.id)}
-                            className="text-xs py-1.5 px-2 rounded transition-colors"
+                            className="text-xs py-1.5 px-2 rounded-sm transition-colors"
                             style={{ color: '#ef4444' }}
                             aria-label="Delete document"
                           >

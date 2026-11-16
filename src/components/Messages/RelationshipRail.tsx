@@ -37,7 +37,7 @@ interface RelationshipRailProps {
 }
 
 const sectionLabel =
-  'font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-zinc-500 dark:text-zinc-400';
+  'font-mono uppercase tracking-widest text-[10px] font-medium text-zinc-500 dark:text-zinc-400';
 
 const decisionTone: Record<
   'open' | 'approved' | 'rejected',
@@ -78,7 +78,7 @@ export const RelationshipRail: React.FC<RelationshipRailProps> = ({
   if (collapsed) {
     return (
       <aside
-        className={`flex-shrink-0 w-11 border-l border-[var(--pulse-border)] bg-[var(--pulse-canvas)] flex flex-col items-center pt-4 gap-3 ${className}`}
+        className={`shrink-0 w-11 border-l border-(--pulse-border) bg-(--pulse-canvas) flex flex-col items-center pt-4 gap-3 ${className}`}
         aria-label="Relationship (collapsed)"
       >
         <button
@@ -87,7 +87,7 @@ export const RelationshipRail: React.FC<RelationshipRailProps> = ({
           title="Show relationship"
           aria-label="Show relationship panel"
           aria-expanded={false}
-          className="w-8 h-8 rounded-md inline-flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-white/[0.05] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+          className="w-8 h-8 rounded-md inline-flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-white/5 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
         >
           <PanelRightOpen className="w-4 h-4" aria-hidden="true" />
         </button>
@@ -110,7 +110,7 @@ export const RelationshipRail: React.FC<RelationshipRailProps> = ({
   // ── Expanded panel ──
   return (
     <aside
-      className={`flex-shrink-0 w-[280px] border-l border-[var(--pulse-border)] bg-[var(--pulse-canvas)] flex flex-col overflow-y-auto ${className}`}
+      className={`shrink-0 w-[280px] border-l border-(--pulse-border) bg-(--pulse-canvas) flex flex-col overflow-y-auto ${className}`}
       aria-label="Relationship"
     >
       {/* Header */}
@@ -122,7 +122,7 @@ export const RelationshipRail: React.FC<RelationshipRailProps> = ({
           title="Hide relationship"
           aria-label="Hide relationship panel"
           aria-expanded
-          className="w-7 h-7 rounded-md inline-flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-white/[0.05] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+          className="w-7 h-7 rounded-md inline-flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-white/5 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
         >
           <PanelRightClose className="w-4 h-4" aria-hidden="true" />
         </button>
@@ -159,19 +159,19 @@ export const RelationshipRail: React.FC<RelationshipRailProps> = ({
                       : {})}
                     className={`w-full flex items-start gap-2 text-left text-[13px] leading-snug text-zinc-800 dark:text-zinc-200 ${
                       interactive
-                        ? 'rounded-md px-1.5 py-1 -mx-1.5 hover:bg-zinc-200/40 dark:hover:bg-white/[0.04] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40'
+                        ? 'rounded-md px-1.5 py-1 -mx-1.5 hover:bg-zinc-200/40 dark:hover:bg-white/4 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40'
                         : ''
                     }`}
                   >
                     {interactive ? (
                       <Circle
-                        className="w-3.5 h-3.5 mt-0.5 flex-shrink-0"
+                        className="w-3.5 h-3.5 mt-0.5 shrink-0"
                         style={{ color: 'var(--pulse-tone-warning)' }}
                         aria-hidden="true"
                       />
                     ) : (
                       <CheckCircle2
-                        className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 opacity-60"
+                        className="w-3.5 h-3.5 mt-0.5 shrink-0 opacity-60"
                         style={{ color: 'var(--pulse-tone-warning)' }}
                         aria-hidden="true"
                       />
@@ -203,7 +203,7 @@ export const RelationshipRail: React.FC<RelationshipRailProps> = ({
               {lastDecision.text}
             </p>
             <span
-              className="mt-2 inline-flex items-center font-mono uppercase tracking-[0.1em] text-[10px] font-semibold"
+              className="mt-2 inline-flex items-center font-mono uppercase tracking-widest text-[10px] font-semibold"
               style={{ color: decisionTone[lastDecision.status].fg }}
             >
               {decisionTone[lastDecision.status].label}

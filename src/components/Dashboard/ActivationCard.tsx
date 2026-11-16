@@ -92,7 +92,7 @@ const ActivationCard: React.FC<ActivationCardProps> = ({ greeting, loadingBriefi
         Connect a source and Pulse starts working for you. Each one feeds your daily briefing.
       </p>
 
-      <ul className="flex flex-col gap-2 mb-6 max-w-[34rem]">
+      <ul className="flex flex-col gap-2 mb-6 max-w-136">
         {steps.map((step) => {
           const Icon = step.icon;
           return (
@@ -101,13 +101,13 @@ const ActivationCard: React.FC<ActivationCardProps> = ({ greeting, loadingBriefi
                 type="button"
                 onClick={step.action}
                 aria-label={step.done ? `${step.label} (connected)` : step.label}
-                className="group w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.03] hover:border-zinc-300 dark:hover:border-white/20 transition-colors duration-150 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                className="group w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/3 hover:border-zinc-300 dark:hover:border-white/20 transition-colors duration-150 text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
               >
                 <span
                   className={`flex items-center justify-center w-7 h-7 rounded-full shrink-0 transition-colors duration-150 ${
                     step.done
                       ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900'
-                      : 'bg-zinc-100 dark:bg-white/[0.06] text-zinc-400 dark:text-zinc-500'
+                      : 'bg-zinc-100 dark:bg-white/6 text-zinc-400 dark:text-zinc-500'
                   }`}
                 >
                   {step.done ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
@@ -137,7 +137,7 @@ const ActivationCard: React.FC<ActivationCardProps> = ({ greeting, loadingBriefi
           type="button"
           onClick={onGenerate}
           disabled={loadingBriefing}
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium transition-colors duration-150 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 shadow-sm shadow-rose-500/10"
+          className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium transition-colors duration-150 disabled:opacity-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 shadow-xs shadow-rose-500/10"
         >
           {loadingBriefing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Target className="w-4 h-4" />}
           {loadingBriefing ? 'Generating briefing' : 'Generate my first briefing'}
@@ -145,7 +145,7 @@ const ActivationCard: React.FC<ActivationCardProps> = ({ greeting, loadingBriefi
         <button
           type="button"
           onClick={onSkip}
-          className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors duration-150 focus-visible:outline-none focus-visible:underline"
+          className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors duration-150 focus-visible:outline-hidden focus-visible:underline"
         >
           Skip setup
         </button>

@@ -262,21 +262,21 @@ const PlacePicker: React.FC<PlacePickerProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(o => !o)}
-        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl border text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
+        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl border text-sm transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 ${
           isDarkMode
             ? 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'
             : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
         }`}
       >
         <span className="flex items-center gap-2 min-w-0">
-          <MapPin size={14} className="text-rose-500 flex-shrink-0" />
+          <MapPin size={14} className="text-rose-500 shrink-0" />
           <span className="truncate text-left">
             {attached
               ? (attached.name || attached.address || 'Saved place')
               : 'Add a location'}
           </span>
         </span>
-        <ChevronDown size={14} className="flex-shrink-0 opacity-70" />
+        <ChevronDown size={14} className="shrink-0 opacity-70" />
       </button>
 
       {/* Geofence controls — only meaningful once a place is attached. */}
@@ -284,7 +284,7 @@ const PlacePicker: React.FC<PlacePickerProps> = ({
         <div
           className={`mt-1.5 rounded-lg border px-3 py-2 ${
             isDarkMode
-              ? 'bg-white/[0.03] border-white/10'
+              ? 'bg-white/3 border-white/10'
               : 'bg-rose-50/40 border-rose-100/60'
           }`}
         >
@@ -370,7 +370,7 @@ const PlacePicker: React.FC<PlacePickerProps> = ({
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 autoFocus
-                className={`flex-1 text-sm bg-transparent outline-none ${
+                className={`flex-1 text-sm bg-transparent outline-hidden ${
                   isDarkMode ? 'text-white placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'
                 }`}
               />
@@ -380,9 +380,9 @@ const PlacePicker: React.FC<PlacePickerProps> = ({
                   // data-quality signal — coral is reserved for state and
                   // urgency (CTA, unread, active, focus). Earlier pass used
                   // rose here; that was coral-as-decoration. Pass-3 fix.
-                  className={`shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium tracking-[0.1em] uppercase ${
+                  className={`shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium tracking-widest uppercase ${
                     isDarkMode
-                      ? 'bg-white/[0.04] text-zinc-400 border border-white/5'
+                      ? 'bg-white/4 text-zinc-400 border border-white/5'
                       : 'bg-zinc-100 text-zinc-500 border border-zinc-200/60'
                   }`}
                   style={{ fontFamily: "'JetBrains Mono', monospace" }}
@@ -405,13 +405,13 @@ const PlacePicker: React.FC<PlacePickerProps> = ({
                     type="button"
                     onClick={() => handlePick(p)}
                     disabled={busy}
-                    className={`w-full flex items-start gap-2 px-3 py-2 text-left transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:bg-rose-500/10 ${
+                    className={`w-full flex items-start gap-2 px-3 py-2 text-left transition-colors disabled:opacity-50 focus-visible:outline-hidden focus-visible:bg-rose-500/10 ${
                       isDarkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50'
                     } ${isAttached ? (isDarkMode ? 'bg-rose-500/10' : 'bg-rose-50') : ''}`}
                   >
                     <MapPin
                       size={12}
-                      className={`mt-1 flex-shrink-0 ${isAttached ? 'text-rose-500' : (isDarkMode ? 'text-gray-500' : 'text-gray-400')}`}
+                      className={`mt-1 shrink-0 ${isAttached ? 'text-rose-500' : (isDarkMode ? 'text-gray-500' : 'text-gray-400')}`}
                     />
                     <div className="min-w-0 flex-1">
                       <p className={`text-sm font-medium truncate ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
@@ -435,7 +435,7 @@ const PlacePicker: React.FC<PlacePickerProps> = ({
 
           <div className={`p-2.5 border-t ${isDarkMode ? 'border-white/10' : 'border-gray-100'}`}>
             <label
-              className={`flex items-center gap-1 mb-1.5 text-[11px] uppercase tracking-[0.1em] font-medium ${
+              className={`flex items-center gap-1 mb-1.5 text-[11px] uppercase tracking-widest font-medium ${
                 isDarkMode ? 'text-gray-500' : 'text-gray-400'
               }`}
               style={{ fontFamily: "'JetBrains Mono', monospace" }}
@@ -457,7 +457,7 @@ const PlacePicker: React.FC<PlacePickerProps> = ({
                 <input
                   type="text"
                   placeholder="Search address or place…"
-                  className={`w-full text-sm px-2.5 py-1.5 rounded-lg border outline-none transition-colors ${
+                  className={`w-full text-sm px-2.5 py-1.5 rounded-lg border outline-hidden transition-colors ${
                     isDarkMode
                       ? 'bg-white/5 border-white/15 text-white placeholder-gray-500 focus:border-rose-500'
                       : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-rose-500'
@@ -476,7 +476,7 @@ const PlacePicker: React.FC<PlacePickerProps> = ({
               type="button"
               onClick={handleRemove}
               disabled={busy}
-              className={`flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium border-t transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:bg-red-500/10 ${
+              className={`flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium border-t transition-colors disabled:opacity-50 focus-visible:outline-hidden focus-visible:bg-red-500/10 ${
                 isDarkMode
                   ? 'text-red-400 hover:bg-red-500/10 border-white/10'
                   : 'text-red-500 hover:bg-red-50 border-gray-100'

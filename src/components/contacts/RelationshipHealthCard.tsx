@@ -65,7 +65,7 @@ export const RelationshipHealthCard: React.FC<RelationshipHealthCardProps> = ({
 
   return (
     <div
-      className={`bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-800/50 rounded-xl p-4 ${
+      className={`bg-linear-to-br from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-800/50 rounded-xl p-4 ${
         onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''
       }`}
       onClick={onClick}

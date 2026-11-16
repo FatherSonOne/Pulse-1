@@ -31,7 +31,7 @@ function AvatarFallback({ name }: { name: string | null | undefined }) {
     .toUpperCase() || '?';
   return (
     <div
-      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
+      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
       style={{ background: 'var(--pulse-tone-info-soft)', color: 'var(--pulse-tone-info)' }}
       aria-hidden="true"
     >
@@ -135,7 +135,7 @@ export function FindTeammatesSheet({ isOpen, onClose, workspaceId, onAdd }: Prop
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center p-4"
+      className="fixed inset-0 z-80 flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.70)', backdropFilter: 'blur(8px)' }}
       onClick={onClose}
       role="presentation"
@@ -149,7 +149,7 @@ export function FindTeammatesSheet({ isOpen, onClose, workspaceId, onAdd }: Prop
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b flex-shrink-0" style={{ borderColor: 'var(--pulse-border)' }}>
+        <div className="flex items-center justify-between p-5 border-b shrink-0" style={{ borderColor: 'var(--pulse-border)' }}>
           <div>
             <h2 id="find-teammates-title" className="text-lg font-semibold">Teammates on Pulse</h2>
             <p className="text-xs mt-0.5" style={{ color: 'var(--pulse-ink-3)' }}>In this workspace</p>
@@ -172,12 +172,12 @@ export function FindTeammatesSheet({ isOpen, onClose, workspaceId, onAdd }: Prop
             <ul aria-busy="true" aria-label="Loading teammates" className="p-3 space-y-1">
               {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
                 <li key={i} className="flex items-center gap-3 p-3 rounded-xl min-h-[48px]">
-                  <div className="w-8 h-8 rounded-full flex-shrink-0 animate-pulse" style={{ background: 'var(--pulse-tone-neutral-soft)' }} />
+                  <div className="w-8 h-8 rounded-full shrink-0 animate-pulse" style={{ background: 'var(--pulse-tone-neutral-soft)' }} />
                   <div className="flex-1 space-y-2">
-                    <div className="h-3 rounded w-2/3 animate-pulse" style={{ background: 'var(--pulse-tone-neutral-soft)' }} />
-                    <div className="h-2.5 rounded w-1/3 animate-pulse" style={{ background: 'var(--pulse-tone-neutral-soft)' }} />
+                    <div className="h-3 rounded-sm w-2/3 animate-pulse" style={{ background: 'var(--pulse-tone-neutral-soft)' }} />
+                    <div className="h-2.5 rounded-sm w-1/3 animate-pulse" style={{ background: 'var(--pulse-tone-neutral-soft)' }} />
                   </div>
-                  <div className="h-7 w-12 rounded-lg animate-pulse flex-shrink-0" style={{ background: 'var(--pulse-tone-neutral-soft)' }} />
+                  <div className="h-7 w-12 rounded-lg animate-pulse shrink-0" style={{ background: 'var(--pulse-tone-neutral-soft)' }} />
                 </li>
               ))}
             </ul>
@@ -191,7 +191,7 @@ export function FindTeammatesSheet({ isOpen, onClose, workspaceId, onAdd }: Prop
                 return (
                   <li key={user.user_id} className="flex items-center gap-3 p-3 rounded-xl min-h-[48px]">
                     {user.avatar_url ? (
-                      <img src={user.avatar_url} alt="" aria-hidden="true" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                      <img src={user.avatar_url} alt="" aria-hidden="true" className="w-8 h-8 rounded-full object-cover shrink-0" />
                     ) : (
                       <AvatarFallback name={user.display_name} />
                     )}
@@ -290,7 +290,7 @@ export function FindTeammatesSheet({ isOpen, onClose, workspaceId, onAdd }: Prop
         </div>
 
         {/* Cross-org find by exact @handle (#104) — public profiles only */}
-        <div className="border-t flex-shrink-0" style={{ borderColor: 'var(--pulse-border)' }}>
+        <div className="border-t shrink-0" style={{ borderColor: 'var(--pulse-border)' }}>
           <div className="px-4 py-2 flex items-center gap-1.5">
             <div className="flex-1 h-px" style={{ background: 'var(--pulse-border)' }} />
             <span className="text-[11px] uppercase tracking-wider" style={{ color: 'var(--pulse-ink-3)' }}>Find by @handle</span>
@@ -303,7 +303,7 @@ export function FindTeammatesSheet({ isOpen, onClose, workspaceId, onAdd }: Prop
                 onChange={(e) => { setHandleQuery(e.target.value); setHandleSearched(false); }}
                 aria-label="Find a Pulse user by exact handle"
                 placeholder="Search by @handle"
-                className="flex-1 rounded-lg border px-3 py-2 text-sm outline-none"
+                className="flex-1 rounded-lg border px-3 py-2 text-sm outline-hidden"
                 style={{ borderColor: 'var(--pulse-border)', background: 'var(--pulse-canvas)', color: 'var(--pulse-ink)' }}
               />
               <button

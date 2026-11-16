@@ -28,7 +28,7 @@ export const ComingSoonIntegrations: React.FC = () => {
             </div>
           </div>
           <div className="text-center py-4">
-            <span className="text-xs bg-[var(--pulse-surface-raised)] text-zinc-600 dark:text-zinc-400 px-3 py-1 rounded-full">Coming Soon</span>
+            <span className="text-xs bg-(--pulse-surface-raised) text-zinc-600 dark:text-zinc-400 px-3 py-1 rounded-full">Coming Soon</span>
           </div>
         </div>
 
@@ -45,14 +45,14 @@ export const ComingSoonIntegrations: React.FC = () => {
             </div>
           </div>
           <div className="text-center py-4">
-            <span className="text-xs bg-[var(--pulse-surface-raised)] text-zinc-600 dark:text-zinc-400 px-3 py-1 rounded-full">Coming Soon</span>
+            <span className="text-xs bg-(--pulse-surface-raised) text-zinc-600 dark:text-zinc-400 px-3 py-1 rounded-full">Coming Soon</span>
           </div>
         </div>
       </div>
 
       {/* Ecosystem Bridge moved to its own Settings section (Settings > Ecosystem Bridge) */}
-      <div className="mt-8 rounded-xl border border-rose-500/20 bg-rose-500/[0.04] px-5 py-4 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center flex-shrink-0">
+      <div className="mt-8 rounded-xl border border-rose-500/20 bg-rose-500/4 px-5 py-4 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center shrink-0">
           <i className="fa-solid fa-circle-nodes text-rose-500 text-sm" />
         </div>
         <div>

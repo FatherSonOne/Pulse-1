@@ -140,7 +140,7 @@ const CommandRow: React.FC<CommandRowProps> = ({ command, active, onHover, onAct
         className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors duration-100 ${
           active
             ? 'bg-rose-500/10'
-            : 'hover:bg-zinc-50 dark:hover:bg-white/[0.04]'
+            : 'hover:bg-zinc-50 dark:hover:bg-white/4'
         }`}
       >
         {isFontAwesome(command.icon) ? (
@@ -191,7 +191,7 @@ const CommandRow: React.FC<CommandRowProps> = ({ command, active, onHover, onAct
             {command.shortcut.split('+').map((key, i) => (
               <kbd
                 key={`${key}-${i}`}
-                className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded text-[10px] font-mono text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.08]"
+                className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-sm text-[10px] font-mono text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/6 border border-zinc-200 dark:border-white/8"
               >
                 {key.trim()}
               </kbd>
@@ -250,7 +250,7 @@ export const InlineCommandPalette: React.FC<InlineCommandPaletteProps> = ({
   const activeRowRef = useRef<HTMLLIElement>(null);
   // The dropdown is portal'd to <body> and positioned under the input via fixed
   // coords. It MUST escape the in-flow command bar: the bar lives in a header
-  // whose backdrop-blur forms a non-positioned stacking context that paints in
+  // whose backdrop-blur-sm forms a non-positioned stacking context that paints in
   // DOM order BELOW the page-content sibling, and section content is saturated
   // with z-50 (175+ uses) — so an absolutely-positioned in-flow dropdown gets
   // occluded by content. Portal + fixed sidesteps the entire z-index war while
@@ -357,26 +357,26 @@ export const InlineCommandPalette: React.FC<InlineCommandPaletteProps> = ({
           onBlur={() => setTimeout(() => { setOpen(false); onClose?.(); }, 150)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="w-full bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-xl pl-11 pr-32 py-3 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:border-rose-500/60 dark:focus:border-rose-500/40 focus:ring-2 focus:ring-rose-500/20 focus:outline-none transition-colors duration-150"
+          className="w-full bg-white dark:bg-white/3 border border-zinc-200 dark:border-white/6 rounded-xl pl-11 pr-32 py-3 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:border-rose-500/60 dark:focus:border-rose-500/40 focus:ring-2 focus:ring-rose-500/20 focus:outline-hidden transition-colors duration-150"
           aria-label="Command palette inline input"
           autoComplete="off"
           spellCheck={false}
         />
         {!query && (
           <span className="hidden sm:inline-flex absolute right-4 top-1/2 -translate-y-1/2 items-center gap-1 pointer-events-none">
-            <kbd className="inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded text-[10px] font-mono text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.06]">/</kbd>
-            <kbd className="inline-flex items-center justify-center h-5 px-1.5 rounded text-[10px] font-mono text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.06]">{SHORTCUT_HINT}</kbd>
+            <kbd className="inline-flex items-center justify-center min-w-6 h-5 px-1.5 rounded-sm text-[10px] font-mono text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/6">/</kbd>
+            <kbd className="inline-flex items-center justify-center h-5 px-1.5 rounded-sm text-[10px] font-mono text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/6">{SHORTCUT_HINT}</kbd>
           </span>
         )}
       </div>
 
       {/* Dropdown — portal'd to <body>, fixed under the input (see dropdownPos).
-          Escapes the command bar's backdrop-blur stacking context and the z-50
+          Escapes the command bar's backdrop-blur-sm stacking context and the z-50
           saturation of section content. */}
       {open && dropdownPos && flatCommands.length > 0 && ReactDOM.createPortal(
         <div
           style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width, zIndex: 9000 }}
-          className="bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-white/[0.08] shadow-xl overflow-hidden animate-fade-in"
+          className="bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-white/8 shadow-xl overflow-hidden animate-fade-in"
           // Suppress mousedown blur on the input so clicks register on rows.
           onMouseDown={e => e.preventDefault()}
         >
@@ -408,7 +408,7 @@ export const InlineCommandPalette: React.FC<InlineCommandPaletteProps> = ({
               </div>
             ))}
           </div>
-          <div className="flex items-center justify-between gap-3 px-4 py-2 border-t border-zinc-100 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02]">
+          <div className="flex items-center justify-between gap-3 px-4 py-2 border-t border-zinc-100 dark:border-white/6 bg-zinc-50 dark:bg-white/2">
             <div className="pulse-label inline-flex items-center gap-2 text-zinc-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">
               <ArrowRight size={10} /> ENTER TO RUN
             </div>
@@ -424,7 +424,7 @@ export const InlineCommandPalette: React.FC<InlineCommandPaletteProps> = ({
       {open && dropdownPos && query && flatCommands.length === 0 && ReactDOM.createPortal(
         <div
           style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width, zIndex: 9000 }}
-          className="bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-white/[0.08] shadow-xl px-4 py-6 text-center animate-fade-in"
+          className="bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-white/8 shadow-xl px-4 py-6 text-center animate-fade-in"
         >
           <p className="text-sm text-zinc-500 dark:text-zinc-400">No commands match "{query}".</p>
           <p className="pulse-label text-zinc-400 dark:text-zinc-500 mt-1 uppercase tracking-wider text-[10px]">TRY A SHORTER QUERY</p>
@@ -460,7 +460,7 @@ export const CommandBarHeader: React.FC = () => {
   }, []);
 
   return (
-    <div className="shrink-0 px-3 sm:px-4 md:px-6 py-2.5 border-b border-zinc-200 dark:border-white/[0.06] bg-white/80 dark:bg-zinc-950/60 backdrop-blur">
+    <div className="shrink-0 px-3 sm:px-4 md:px-6 py-2.5 border-b border-zinc-200 dark:border-white/6 bg-white/80 dark:bg-zinc-950/60 backdrop-blur-sm">
       {/* Inner max-width mirrors the content centering so the bar lines up with
           page content on wide screens. Not overflow-hidden, so the dropdown
           (absolute, z-50, below the input) overlays the content freely. */}

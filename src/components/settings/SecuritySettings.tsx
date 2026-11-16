@@ -190,7 +190,7 @@ export const SecuritySettings: React.FC = () => {
             type="checkbox"
             checked={enforce2FA}
             onChange={(e) => setEnforce2FA(e.target.checked)}
-            className="w-4 h-4 mt-0.5 text-rose-500 border-zinc-300 rounded focus:ring-rose-500"
+            className="w-4 h-4 mt-0.5 text-rose-500 border-zinc-300 rounded-sm focus:ring-rose-500"
           />
           <div className="flex-1">
             <div className="text-sm font-medium text-zinc-900 dark:text-white">
@@ -205,7 +205,7 @@ export const SecuritySettings: React.FC = () => {
 
         {enforce2FA && !currentWorkspace.enforce_2fa && (
           <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/40 rounded-lg">
-            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-700 dark:text-amber-300">
               Members who have not yet enrolled 2FA will be locked out until they do.
               Make sure your team is notified before saving.
@@ -221,7 +221,7 @@ export const SecuritySettings: React.FC = () => {
             id="session-timeout"
             value={sessionTimeout}
             onChange={(e) => setSessionTimeout(Number(e.target.value) as SessionTimeoutMinutes)}
-            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
           >
             {SESSION_TIMEOUT_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -266,7 +266,7 @@ export const SecuritySettings: React.FC = () => {
             rows={5}
             spellCheck={false}
             placeholder={'10.0.0.0/8\n192.168.1.0/24\n2001:db8::/32'}
-            className="w-full px-3 py-2 text-sm font-mono border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white resize-y focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+            className="w-full px-3 py-2 text-sm font-mono border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white resize-y focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
           />
           <p className="text-[11px] text-zinc-400 mt-1">
             IPv4 and IPv6 supported. Example: <code className="text-zinc-500">203.0.113.0/24</code>.
@@ -328,7 +328,7 @@ export const SecuritySettings: React.FC = () => {
                           <span className="text-[10px] text-zinc-400">revoked</span>
                         )}
                         {s.is_current && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-500 font-medium">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-rose-500/10 text-rose-500 font-medium">
                             this session
                           </span>
                         )}

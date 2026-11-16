@@ -105,7 +105,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
           {/* Backdrop */}
           {backdrop && (
             <motion.div
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+              className="fixed inset-0 bg-black/50 backdrop-blur-xs z-40"
               variants={backdropVariants}
               initial="hidden"
               animate="visible"
@@ -273,12 +273,12 @@ export const MobileDrawerHeader: React.FC<{
   showCloseButton?: boolean;
 }> = ({ title, onClose, showCloseButton = true }) => {
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[rgba(255,255,255,0.03)] flex-shrink-0">
+    <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[rgba(255,255,255,0.03)] shrink-0">
       <h2 className="text-lg font-bold text-zinc-900 dark:text-white">{title}</h2>
       {showCloseButton && (
         <button
           onClick={onClose}
-          className="w-12 h-12 flex items-center justify-center text-zinc-500 hover:bg-[var(--pulse-surface-raised)] rounded-lg transition"
+          className="w-12 h-12 flex items-center justify-center text-zinc-500 hover:bg-(--pulse-surface-raised) rounded-lg transition"
           aria-label="Close drawer"
         >
           <X className="text-lg" />

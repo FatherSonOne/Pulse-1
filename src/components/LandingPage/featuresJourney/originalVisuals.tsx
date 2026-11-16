@@ -292,11 +292,11 @@ const GlimpseOriginalVisual: React.FC = () => (
             {/* Video player mock */}
             <div
               data-reveal
-              className={`lp-glimpse mx-auto max-w-4xl rounded-2xl border overflow-hidden lp-card-hover${isDarkMode ? ' bg-zinc-950 border-zinc-800' : ' bg-white border-stone-200 shadow-sm'}`}
+              className={`lp-glimpse mx-auto max-w-4xl rounded-2xl border overflow-hidden lp-card-hover${isDarkMode ? ' bg-zinc-950 border-zinc-800' : ' bg-white border-stone-200 shadow-xs'}`}
             >
               {/* Player frame */}
               <div
-                className="relative aspect-[16/9] overflow-hidden"
+                className="relative aspect-video overflow-hidden"
                 style={{
                   background: 'linear-gradient(135deg, #1e1b4b 0%, #0f0f17 60%, #1c1117 100%)',
                 }}
@@ -311,18 +311,18 @@ const GlimpseOriginalVisual: React.FC = () => (
                   </div>
                   {/* Faux Figma frames */}
                   <div className="flex gap-3">
-                    <div className="w-1/3 h-12 rounded bg-white/[0.04] border border-white/[0.05]" />
-                    <div className="w-1/3 h-12 rounded bg-white/[0.04] border border-white/[0.05]" />
-                    <div className="w-1/3 h-12 rounded bg-rose-500/[0.10] border border-rose-500/25" />
+                    <div className="w-1/3 h-12 rounded-sm bg-white/4 border border-white/5" />
+                    <div className="w-1/3 h-12 rounded-sm bg-white/4 border border-white/5" />
+                    <div className="w-1/3 h-12 rounded-sm bg-rose-500/10 border border-rose-500/25" />
                   </div>
                   <div className="flex gap-3">
-                    <div className="w-1/4 h-20 rounded bg-white/[0.03] border border-white/[0.05]" />
-                    <div className="w-1/4 h-20 rounded bg-white/[0.03] border border-white/[0.05]" />
-                    <div className="w-1/4 h-20 rounded bg-rose-500/[0.08] border border-rose-500/20" />
-                    <div className="w-1/4 h-20 rounded bg-white/[0.03] border border-white/[0.05]" />
+                    <div className="w-1/4 h-20 rounded-sm bg-white/3 border border-white/5" />
+                    <div className="w-1/4 h-20 rounded-sm bg-white/3 border border-white/5" />
+                    <div className="w-1/4 h-20 rounded-sm bg-rose-500/8 border border-rose-500/20" />
+                    <div className="w-1/4 h-20 rounded-sm bg-white/3 border border-white/5" />
                   </div>
-                  <div className="mt-2 h-1 w-2/3 rounded-full bg-white/[0.05]" />
-                  <div className="h-1 w-1/2 rounded-full bg-white/[0.05]" />
+                  <div className="mt-2 h-1 w-2/3 rounded-full bg-white/5" />
+                  <div className="h-1 w-1/2 rounded-full bg-white/5" />
                 </div>
 
                 {/* Face-cam bubble (top-right corner) */}
@@ -333,13 +333,13 @@ const GlimpseOriginalVisual: React.FC = () => (
                 </div>
 
                 {/* Recording indicator (top-left) */}
-                <div className="absolute top-4 left-4 inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-zinc-950/50 backdrop-blur-sm border border-white/10">
+                <div className="absolute top-4 left-4 inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-zinc-950/50 backdrop-blur-xs border border-white/10">
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" aria-hidden="true" />
                   <span className="text-[10px] uppercase font-semibold text-white/90" style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.15em' }}>REC · Screen + Cam</span>
                 </div>
 
                 {/* Bottom scrubber */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-linear-to-t from-black/70 via-black/30 to-transparent">
                   <div className="flex items-center gap-3">
                     <button type="button" className="w-9 h-9 rounded-full bg-white/95 text-zinc-900 flex items-center justify-center shadow-md" aria-label="Play">
                       <i className="fa-solid fa-play text-[12px] translate-x-px" aria-hidden="true" />
@@ -361,7 +361,7 @@ const GlimpseOriginalVisual: React.FC = () => (
                 <div className="p-5 sm:p-6">
                   <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
                     <span
-                      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[9px] uppercase font-semibold${isDarkMode ? ' bg-rose-500/10 text-rose-400' : ' bg-rose-50 text-rose-600'}`}
+                      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-sm text-[9px] uppercase font-semibold${isDarkMode ? ' bg-rose-500/10 text-rose-400' : ' bg-rose-50 text-rose-600'}`}
                       style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.1em' }}
                     >
                       <Wand2 size={10} /> Pulse AI · Transcript
@@ -377,7 +377,7 @@ const GlimpseOriginalVisual: React.FC = () => (
                       <span className="tabular-nums shrink-0" style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>00:18</span>
                       <span>so I pulled in the variant you flagged last week,</span>
                     </div>
-                    <div className={`flex gap-3 -mx-2 px-2 py-1 rounded${isDarkMode ? ' bg-rose-500/[0.06] text-zinc-100' : ' bg-rose-50/60 text-zinc-900'}`}>
+                    <div className={`flex gap-3 -mx-2 px-2 py-1 rounded${isDarkMode ? ' bg-rose-500/6 text-zinc-100' : ' bg-rose-50/60 text-zinc-900'}`}>
                       <span className={`tabular-nums shrink-0 font-semibold${isDarkMode ? ' text-rose-400' : ' text-rose-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>00:31</span>
                       <span><mark className={`bg-transparent font-semibold${isDarkMode ? ' text-rose-300' : ' text-rose-700'}`}>Q3 deck</mark> picks up the rose accent and tightens the type pairing.</span>
                     </div>
@@ -392,7 +392,7 @@ const GlimpseOriginalVisual: React.FC = () => (
                 <div className={`p-5 sm:p-6${isDarkMode ? ' bg-zinc-900/40' : ' bg-stone-50/40'}`}>
                   <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
                     <span
-                      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[9px] uppercase font-semibold${isDarkMode ? ' bg-rose-500/10 text-rose-400' : ' bg-rose-50 text-rose-600'}`}
+                      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-sm text-[9px] uppercase font-semibold${isDarkMode ? ' bg-rose-500/10 text-rose-400' : ' bg-rose-50 text-rose-600'}`}
                       style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.1em' }}
                     >
                       <Wand2 size={10} /> Pulse AI · Reply draft
@@ -431,7 +431,7 @@ const MessagingOriginalVisual: React.FC = () => (
             {/* Channel mock — side rail + thread view with AI Summary pinned */}
             <div
               data-reveal
-              className={`lp-channel rounded-2xl border overflow-hidden lp-card-hover${isDarkMode ? ' bg-zinc-950 border-zinc-800' : ' bg-white border-stone-200 shadow-sm'}`}
+              className={`lp-channel rounded-2xl border overflow-hidden lp-card-hover${isDarkMode ? ' bg-zinc-950 border-zinc-800' : ' bg-white border-stone-200 shadow-xs'}`}
             >
               {/* Top bar: channel + focus + member presence */}
               <div className={`flex items-center justify-between px-5 py-3 border-b gap-3 flex-wrap${isDarkMode ? ' border-zinc-800/80 bg-zinc-950' : ' border-stone-200 bg-stone-50/60'}`}>
@@ -442,7 +442,7 @@ const MessagingOriginalVisual: React.FC = () => (
                   <span className={`text-[10px] uppercase tracking-widest${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>4 members</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] uppercase font-semibold${isDarkMode ? ' bg-rose-500/10 text-rose-400' : ' bg-rose-50 text-rose-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.1em' }}>
+                  <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-sm text-[10px] uppercase font-semibold${isDarkMode ? ' bg-rose-500/10 text-rose-400' : ' bg-rose-50 text-rose-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.1em' }}>
                     <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" /> Focus · 18:42
                   </span>
                   <div className="hidden sm:flex items-center -space-x-1.5">
@@ -463,9 +463,9 @@ const MessagingOriginalVisual: React.FC = () => (
                 <span className="inline-flex items-center gap-2 flex-wrap">
                   <span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>Channels</span>
                   <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded${isDarkMode ? ' bg-rose-500/10 text-rose-400' : ' bg-rose-50 text-rose-600'}`}><span className={isDarkMode ? 'text-rose-400/60' : 'text-rose-500/60'}>#</span>strategy</span>
-                  <span className="hidden sm:inline-flex items-center gap-1"><span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>#</span>launches <span className={`px-1 rounded tabular-nums normal-case${isDarkMode ? ' bg-zinc-800 text-zinc-300' : ' bg-zinc-200 text-zinc-700'}`}>3</span></span>
+                  <span className="hidden sm:inline-flex items-center gap-1"><span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>#</span>launches <span className={`px-1 rounded-sm tabular-nums normal-case${isDarkMode ? ' bg-zinc-800 text-zinc-300' : ' bg-zinc-200 text-zinc-700'}`}>3</span></span>
                   <span className="hidden md:inline-flex items-center gap-1"><span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>#</span>design</span>
-                  <span className="hidden md:inline-flex items-center gap-1"><span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>#</span>engineering <span className={`px-1 rounded tabular-nums normal-case${isDarkMode ? ' bg-zinc-800 text-zinc-300' : ' bg-zinc-200 text-zinc-700'}`}>12</span></span>
+                  <span className="hidden md:inline-flex items-center gap-1"><span className={isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}>#</span>engineering <span className={`px-1 rounded-sm tabular-nums normal-case${isDarkMode ? ' bg-zinc-800 text-zinc-300' : ' bg-zinc-200 text-zinc-700'}`}>12</span></span>
                 </span>
                 <span className={`hidden sm:inline ${isDarkMode ? 'text-zinc-700' : 'text-zinc-300'}`}>·</span>
                 <span className="hidden sm:inline-flex items-center gap-2 flex-wrap">
@@ -478,9 +478,9 @@ const MessagingOriginalVisual: React.FC = () => (
               {/* Thread pane — always full width */}
               <div className="p-5 sm:p-6">
                   {/* Pinned AI Summary */}
-                  <div className={`relative rounded-xl border p-4 mb-5${isDarkMode ? ' border-rose-500/25 bg-rose-500/[0.05]' : ' border-rose-200 bg-rose-50/50'}`}>
+                  <div className={`relative rounded-xl border p-4 mb-5${isDarkMode ? ' border-rose-500/25 bg-rose-500/5' : ' border-rose-200 bg-rose-50/50'}`}>
                     <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[9px] uppercase font-semibold${isDarkMode ? ' bg-rose-500/15 text-rose-300' : ' bg-rose-100 text-rose-700'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.1em' }}>
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-sm text-[9px] uppercase font-semibold${isDarkMode ? ' bg-rose-500/15 text-rose-300' : ' bg-rose-100 text-rose-700'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace", letterSpacing: '0.1em' }}>
                         <i className="fa-solid fa-thumbtack text-[9px]" aria-hidden="true" /> Pinned · Pulse AI Summary
                       </span>
                       <span className={`text-[10px] uppercase tracking-widest${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>32 msgs · 1h</span>
@@ -504,7 +504,7 @@ const MessagingOriginalVisual: React.FC = () => (
                       { name: 'Sarah Lin',   color: '#3b82f6', time: '10:44', body: 'Pulled together a `compare-segments.md` for the campaign rebuild. Anyone want to pair on it before EOD?', reactions: [['✅', 3]] as Array<[string, number]>, mentions: false, highlight: false, code: true },
                       { name: 'Marcus Webb', color: '#10b981', time: '10:46', body: '@you, I can take the contractor coverage answer if you handle the tooling line. Saves a round-trip.', reactions: [] as Array<[string, number]>, mentions: true, highlight: true },
                     ].map((m, i) => (
-                      <div key={i} className={`flex gap-3 ${m.highlight ? '-mx-2 px-2 py-2 rounded-lg ' + (isDarkMode ? 'bg-amber-500/[0.05]' : 'bg-amber-50/50') : ''}`}>
+                      <div key={i} className={`flex gap-3 ${m.highlight ? '-mx-2 px-2 py-2 rounded-lg ' + (isDarkMode ? 'bg-amber-500/5' : 'bg-amber-50/50') : ''}`}>
                         <span className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-[11px] font-semibold text-white" style={{ background: m.color }} aria-hidden="true">{m.name.split(' ').map(n => n[0]).join('')}</span>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-baseline gap-2 mb-1">
@@ -516,7 +516,7 @@ const MessagingOriginalVisual: React.FC = () => (
                           </div>
                           <p className={`text-[13px] leading-relaxed mb-1.5${isDarkMode ? ' text-zinc-300' : ' text-zinc-700'}`}>
                             {m.code ? (
-                              <>Pulled together a <code className={`px-1.5 py-0.5 rounded text-[12px]${isDarkMode ? ' bg-zinc-800 text-rose-300' : ' bg-stone-100 text-rose-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>compare-segments.md</code> for the campaign rebuild. Anyone want to pair on it before EOD?</>
+                              <>Pulled together a <code className={`px-1.5 py-0.5 rounded-sm text-[12px]${isDarkMode ? ' bg-zinc-800 text-rose-300' : ' bg-stone-100 text-rose-600'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>compare-segments.md</code> for the campaign rebuild. Anyone want to pair on it before EOD?</>
                             ) : (
                               m.body
                             )}
@@ -558,7 +558,7 @@ const WarRoomOriginalVisual: React.FC = () => (
             {/* Terminal mock */}
             <div
               data-reveal
-              className={`lp-warroom rounded-2xl border overflow-hidden lp-card-hover${isDarkMode ? ' bg-zinc-950 border-zinc-800' : ' bg-white border-stone-200 shadow-sm'}`}
+              className={`lp-warroom rounded-2xl border overflow-hidden lp-card-hover${isDarkMode ? ' bg-zinc-950 border-zinc-800' : ' bg-white border-stone-200 shadow-xs'}`}
               style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
             >
               {/* Top bar */}
@@ -722,7 +722,7 @@ const DecisionsOriginalVisual: React.FC = () => (
             {/* Kanban mock — 4 columns, sample decision cards */}
             <div
               data-reveal
-              className={`lp-kanban rounded-2xl border overflow-hidden lp-card-hover${isDarkMode ? ' bg-zinc-950 border-zinc-800' : ' bg-white border-stone-200 shadow-sm'}`}
+              className={`lp-kanban rounded-2xl border overflow-hidden lp-card-hover${isDarkMode ? ' bg-zinc-950 border-zinc-800' : ' bg-white border-stone-200 shadow-xs'}`}
             >
               {/* Top bar with team health */}
               <div className={`flex items-center justify-between px-5 py-3 border-b gap-3 flex-wrap${isDarkMode ? ' border-zinc-800/80 bg-zinc-950' : ' border-stone-200 bg-stone-50/60'}`}>
@@ -735,7 +735,7 @@ const DecisionsOriginalVisual: React.FC = () => (
                     <span className={`text-[9px] uppercase tracking-widest${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>Team Health</span>
                     <span className={`text-[13px] font-bold tabular-nums${isDarkMode ? ' text-emerald-400' : ' text-emerald-600'}`}>87</span>
                     <span className={`w-16 h-1 rounded-full overflow-hidden${isDarkMode ? ' bg-zinc-800' : ' bg-stone-200'}`}>
-                      <span className="block h-full bg-gradient-to-r from-emerald-500 to-emerald-400" style={{ width: '87%' }} />
+                      <span className="block h-full bg-linear-to-r from-emerald-500 to-emerald-400" style={{ width: '87%' }} />
                     </span>
                   </div>
                   <span className={`hidden sm:inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`} style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}>
@@ -859,7 +859,7 @@ const AnalyticsOriginalVisual: React.FC = () => (
               {/* Hero chart card */}
               <div
                 data-reveal
-                className={`lp-chart relative p-6 sm:p-8 rounded-2xl border lp-card-hover${isDarkMode ? ' bg-zinc-900/80 border-zinc-800' : ' bg-white border-stone-200 shadow-sm'}`}
+                className={`lp-chart relative p-6 sm:p-8 rounded-2xl border lp-card-hover${isDarkMode ? ' bg-zinc-900/80 border-zinc-800' : ' bg-white border-stone-200 shadow-xs'}`}
               >
               {/* Chart header */}
               <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
@@ -874,7 +874,7 @@ const AnalyticsOriginalVisual: React.FC = () => (
                 </div>
                 <div className={`inline-flex items-center rounded-full p-1 text-[11px] font-semibold tracking-wide${isDarkMode ? ' bg-zinc-800/80' : ' bg-stone-100'}`}>
                   <span className={`px-3 py-1 rounded-full${isDarkMode ? ' text-zinc-400' : ' text-zinc-500'}`}>7D</span>
-                  <span className={`px-3 py-1 rounded-full${isDarkMode ? ' bg-zinc-900 text-amber-400 shadow-inner' : ' bg-white text-amber-600 shadow-sm'}`}>30D</span>
+                  <span className={`px-3 py-1 rounded-full${isDarkMode ? ' bg-zinc-900 text-amber-400 shadow-inner' : ' bg-white text-amber-600 shadow-xs'}`}>30D</span>
                   <span className={`px-3 py-1 rounded-full${isDarkMode ? ' text-zinc-400' : ' text-zinc-500'}`}>90D</span>
                 </div>
               </div>
@@ -1105,7 +1105,7 @@ const CalendarOriginalVisual: React.FC = () => (
             {/* Flat agenda strip — no internal cards, hairline rows */}
             <div
               data-reveal
-              className={`lp-agenda rounded-2xl border overflow-hidden lp-card-hover max-w-5xl${isDarkMode ? ' bg-zinc-950 border-zinc-800' : ' bg-white border-stone-200 shadow-sm'}`}
+              className={`lp-agenda rounded-2xl border overflow-hidden lp-card-hover max-w-5xl${isDarkMode ? ' bg-zinc-950 border-zinc-800' : ' bg-white border-stone-200 shadow-xs'}`}
             >
               {/* Top bar */}
               <div className={`flex items-center justify-between px-5 py-3 border-b gap-3 flex-wrap${isDarkMode ? ' border-zinc-800/80 bg-zinc-950' : ' border-stone-200 bg-stone-50/60'}`}>
@@ -1149,9 +1149,9 @@ const CalendarOriginalVisual: React.FC = () => (
                       className={`relative px-5 py-4 border-b last:border-b-0 grid grid-cols-[68px_1fr_auto] sm:grid-cols-[80px_1fr_auto] gap-x-4 items-start transition-colors${
                         isDarkMode ? ' border-zinc-800/60' : ' border-stone-200/80'
                       }${
-                        isNow      ? (isDarkMode ? ' bg-rose-500/[0.04]'   : ' bg-rose-50/40')   :
-                        isConflict ? (isDarkMode ? ' bg-amber-500/[0.04]'  : ' bg-amber-50/40')  :
-                        isOpen     ? (isDarkMode ? ' bg-emerald-500/[0.04]': ' bg-emerald-50/30'): ''
+                        isNow      ? (isDarkMode ? ' bg-rose-500/4'   : ' bg-rose-50/40')   :
+                        isConflict ? (isDarkMode ? ' bg-amber-500/4'  : ' bg-amber-50/40')  :
+                        isOpen     ? (isDarkMode ? ' bg-emerald-500/4': ' bg-emerald-50/30'): ''
                       }`}
                     >
                       {isNow      && <span className="absolute left-0 top-0 bottom-0 w-px bg-rose-500" aria-hidden="true" />}
@@ -1233,7 +1233,7 @@ const MapsOriginalVisual: React.FC = () => (
           {/* Map fragment mock */}
           <div
             data-reveal
-            className={`lp-map rounded-2xl border overflow-hidden lp-card-hover${isDarkMode ? ' bg-zinc-950 border-zinc-800' : ' bg-white border-stone-200 shadow-sm'}`}
+            className={`lp-map rounded-2xl border overflow-hidden lp-card-hover${isDarkMode ? ' bg-zinc-950 border-zinc-800' : ' bg-white border-stone-200 shadow-xs'}`}
           >
             {/* Top bar */}
             <div className={`flex items-center justify-between px-5 py-3 border-b gap-3 flex-wrap${isDarkMode ? ' border-zinc-800/80 bg-zinc-950' : ' border-stone-200 bg-stone-50/60'}`}>

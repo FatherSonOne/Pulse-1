@@ -217,7 +217,7 @@ class TeamService {
 
           if (profile) {
             resolved.name = profile.display_name || profile.full_name || 'Pulse User';
-            resolved.avatarColor = 'bg-gradient-to-tr from-emerald-500 to-cyan-500';
+            resolved.avatarColor = 'bg-linear-to-tr from-emerald-500 to-cyan-500';
             resolved.status = 'online'; // TODO: Get real status from presence system
           }
         } else {

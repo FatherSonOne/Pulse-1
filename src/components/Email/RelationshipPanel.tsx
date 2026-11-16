@@ -214,7 +214,7 @@ export const RelationshipPanel: React.FC<RelationshipPanelProps> = ({
         <span className="font-mono-pulse tracking-wide-mono text-[11px] uppercase pulse-ink-3-color">Contact Info</span>
         <button
           onClick={onClose}
-          className="w-6 h-6 rounded hover:pulse-surface-raised flex items-center justify-center pulse-ink-3-color hover:pulse-ink-color transition"
+          className="w-6 h-6 rounded-sm hover:pulse-surface-raised flex items-center justify-center pulse-ink-3-color hover:pulse-ink-color transition"
         >
           <X className="w-3.5 h-3.5" />
         </button>
@@ -347,7 +347,7 @@ export const RelationshipPanel: React.FC<RelationshipPanelProps> = ({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Add notes about this contact..."
-                className="w-full pulse-surface border pulse-border-color rounded-lg p-2 text-sm pulse-ink-color placeholder:pulse-ink-3-color resize-none focus:outline-none focus:pulse-rose-border"
+                className="w-full pulse-surface border pulse-border-color rounded-lg p-2 text-sm pulse-ink-color placeholder:pulse-ink-3-color resize-none focus:outline-hidden focus:pulse-rose-border"
                 rows={3}
               />
               <div className="flex gap-2">

@@ -103,7 +103,7 @@ export const GmailIntegration: React.FC<GmailIntegrationProps> = () => {
       <div className="space-y-3">
         {/* (1) Email feature OFF — private, off by default. */}
         {!emailEnabled && (
-          <div className="bg-[var(--pulse-surface-raised)] border border-[var(--pulse-border)] rounded-xl p-4 text-center">
+          <div className="bg-(--pulse-surface-raised) border border-(--pulse-border) rounded-xl p-4 text-center">
             <Lock className="text-zinc-400 text-2xl mb-2" />
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
               Email is a private feature and is turned off. Turn it on in Settings → Features &amp; Labs to connect Gmail.
@@ -113,7 +113,7 @@ export const GmailIntegration: React.FC<GmailIntegrationProps> = () => {
 
         {/* (2) Email ON, probing the grant. */}
         {emailEnabled && grant === 'checking' && (
-          <div className="bg-[var(--pulse-surface-raised)] border border-[var(--pulse-border)] rounded-xl p-4 text-center">
+          <div className="bg-(--pulse-surface-raised) border border-(--pulse-border) rounded-xl p-4 text-center">
             <Loader2 className="spinner-icon" />
             <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2">Checking Gmail connection…</p>
           </div>
@@ -121,7 +121,7 @@ export const GmailIntegration: React.FC<GmailIntegrationProps> = () => {
 
         {/* (3) Email ON, no Gmail grant yet → connect (separate sign-in). */}
         {emailEnabled && grant === 'disconnected' && (
-          <div className="bg-[var(--pulse-surface-raised)] border border-[var(--pulse-border)] rounded-xl p-4">
+          <div className="bg-(--pulse-surface-raised) border border-(--pulse-border) rounded-xl p-4">
             <p className="text-sm text-zinc-700 dark:text-zinc-300">
               Email uses a separate Google sign-in for Gmail access. Connect your Gmail account to load your inbox.
             </p>

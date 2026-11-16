@@ -285,7 +285,7 @@ export const TranslationWidgetEnhanced: React.FC<TranslationWidgetEnhancedProps>
                     placeholder="Search languages..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 text-xs bg-zinc-100 dark:bg-zinc-700 rounded-lg border-0 outline-none text-zinc-800 dark:text-zinc-200 placeholder-zinc-400"
+                    className="w-full pl-8 pr-3 py-1.5 text-xs bg-zinc-100 dark:bg-zinc-700 rounded-lg border-0 outline-hidden text-zinc-800 dark:text-zinc-200 placeholder-zinc-400"
                   />
                 </div>
               </div>
@@ -347,7 +347,7 @@ export const TranslationIndicator: React.FC<{
   return (
     <button
       onClick={onClick}
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-[10px] font-medium hover:bg-blue-200 dark:hover:bg-blue-800/40 transition-colors"
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-[10px] font-medium hover:bg-blue-200 dark:hover:bg-blue-800/40 transition-colors"
     >
       <span>{lang.flag}</span>
       <span>Translate</span>

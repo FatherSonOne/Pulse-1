@@ -49,10 +49,10 @@ export const TodayEmptyState: React.FC<TodayEmptyStateProps> = ({
             <button
               type="button"
               onClick={onShowColdContacts}
-              className="group flex items-start gap-3 p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.03] hover:border-rose-300 dark:hover:border-rose-400/40 transition-colors"
+              className="group flex items-start gap-3 p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/3 hover:border-rose-300 dark:hover:border-rose-400/40 transition-colors"
             >
               <div
-                className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                 style={{ background: 'var(--pulse-tone-info-soft)' }}
               >
                 <Snowflake className="w-4 h-4" style={{ color: 'var(--pulse-tone-info)' }} aria-hidden="true" />
@@ -72,10 +72,10 @@ export const TodayEmptyState: React.FC<TodayEmptyStateProps> = ({
             <button
               type="button"
               onClick={onSetCheckInGoal}
-              className="group flex items-start gap-3 p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.03] hover:border-rose-300 dark:hover:border-rose-400/40 transition-colors"
+              className="group flex items-start gap-3 p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/3 hover:border-rose-300 dark:hover:border-rose-400/40 transition-colors"
             >
               <div
-                className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                 style={{ background: 'var(--pulse-rose-soft)' }}
               >
                 <Target className="w-4 h-4" style={{ color: 'var(--pulse-rose)' }} aria-hidden="true" />
@@ -96,7 +96,7 @@ export const TodayEmptyState: React.FC<TodayEmptyStateProps> = ({
           <button
             type="button"
             onClick={onRefresh}
-            className="mt-8 inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
+            className="mt-8 inline-flex items-center gap-1.5 text-xs uppercase tracking-widest text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
             style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
           >
             <RotateCw className="w-3 h-3" aria-hidden="true" />

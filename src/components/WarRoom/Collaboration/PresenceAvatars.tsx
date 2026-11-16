@@ -14,7 +14,7 @@ export const PresenceAvatars: React.FC = () => {
         {users.slice(0, 5).map((user) => (
           <div
             key={user.userId}
-            className="w-7 h-7 rounded-full border-2 border-gray-900 bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center text-white text-[10px] font-bold"
+            className="w-7 h-7 rounded-full border-2 border-gray-900 bg-linear-to-br from-rose-500 to-pink-500 flex items-center justify-center text-white text-[10px] font-bold"
             title={user.displayName}
           >
             {user.avatarUrl ? (

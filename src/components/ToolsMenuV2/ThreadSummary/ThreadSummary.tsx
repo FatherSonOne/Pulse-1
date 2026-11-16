@@ -124,7 +124,7 @@ export const ThreadSummary: React.FC<ThreadSummaryProps> = ({
                 aria-label={`Reading ${state.totalMessages} messages`}
                 className={[
                   'h-1.5 rounded-full overflow-hidden',
-                  isDarkMode ? 'bg-white/10' : 'bg-black/[0.06]',
+                  isDarkMode ? 'bg-white/10' : 'bg-black/6',
                 ].join(' ')}
               >
                 <div
@@ -161,7 +161,7 @@ export const ThreadSummary: React.FC<ThreadSummaryProps> = ({
               style={{ minHeight: TOUCH_TARGET_PX }}
               className={[
                 'inline-flex items-center gap-1.5 px-3 rounded-lg text-sm font-medium',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+                'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
                 isDarkMode
                   ? 'text-zinc-300 hover:bg-white/5'
                   : 'text-zinc-600 hover:bg-black/5',
@@ -191,7 +191,7 @@ export const ThreadSummary: React.FC<ThreadSummaryProps> = ({
           <div
             className={[
               'mt-4 pt-3 border-t flex items-center justify-between flex-wrap gap-2',
-              isDarkMode ? 'border-white/10' : 'border-black/[0.06]',
+              isDarkMode ? 'border-white/10' : 'border-black/6',
             ].join(' ')}
           >
             <p
@@ -210,7 +210,7 @@ export const ThreadSummary: React.FC<ThreadSummaryProps> = ({
                 style={{ minHeight: TOUCH_TARGET_PX }}
                 className={[
                   'inline-flex items-center gap-1.5 px-3 rounded-lg text-xs font-medium',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+                  'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
                   isDarkMode
                     ? 'text-zinc-200 hover:bg-white/5'
                     : 'text-zinc-700 hover:bg-black/5',
@@ -226,7 +226,7 @@ export const ThreadSummary: React.FC<ThreadSummaryProps> = ({
                 aria-label={copied ? 'Copied' : 'Copy summary'}
                 className={[
                   'inline-flex items-center gap-1.5 px-3 rounded-lg text-xs font-medium',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+                  'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
                   isDarkMode
                     ? 'text-zinc-200 hover:bg-white/5'
                     : 'text-zinc-700 hover:bg-black/5',
@@ -263,7 +263,7 @@ export const ThreadSummary: React.FC<ThreadSummaryProps> = ({
             <button
               type="button"
               onClick={generate}
-              className="font-semibold underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
+              className="font-semibold underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-xs"
             >
               Try again
             </button>

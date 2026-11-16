@@ -83,7 +83,7 @@ export const MapFilterControls: React.FC<MapFilterControlsProps> = ({
       {/* Search — flex shrinks first when the row gets tight; placeholder
           surfaces the `/` shortcut so power users don't need a tooltip. */}
       <div className={`flex items-center gap-1.5 flex-1 min-w-[120px] max-w-[240px] rounded-md px-2 py-1 ${
-        isDarkMode ? 'bg-white/[0.04]' : 'bg-gray-50'
+        isDarkMode ? 'bg-white/4' : 'bg-gray-50'
       }`}>
         <Search size={12} className={isDarkMode ? 'text-gray-400' : 'text-gray-500'} aria-hidden="true" />
         <input
@@ -92,14 +92,14 @@ export const MapFilterControls: React.FC<MapFilterControlsProps> = ({
           placeholder="Search · /"
           value={filter.searchQuery}
           onChange={e => onFilterChange({ ...filter, searchQuery: e.target.value })}
-          className={`text-xs outline-none bg-transparent ${text} w-full min-w-0`}
+          className={`text-xs outline-hidden bg-transparent ${text} w-full min-w-0`}
         />
         {filter.searchQuery && (
           <button
             type="button"
             onClick={() => onFilterChange({ ...filter, searchQuery: '' })}
             aria-label="Clear search"
-            className={`p-0.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 ${ringCls} ${
+            className={`p-0.5 rounded transition-colors focus-visible:outline-hidden focus-visible:ring-2 ${ringCls} ${
               isDarkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-gray-200 text-gray-500'
             }`}
           >
@@ -114,7 +114,7 @@ export const MapFilterControls: React.FC<MapFilterControlsProps> = ({
       <div
         role="group"
         aria-label="Location type filter"
-        className={`flex rounded-md overflow-hidden flex-shrink-0 ${isDarkMode ? 'bg-white/[0.04]' : 'bg-gray-50'}`}
+        className={`flex rounded-md overflow-hidden shrink-0 ${isDarkMode ? 'bg-white/4' : 'bg-gray-50'}`}
       >
         {LOCATION_OPTIONS.map(({ value, label, Icon }) => {
           const active = filter.locationType === value;
@@ -124,7 +124,7 @@ export const MapFilterControls: React.FC<MapFilterControlsProps> = ({
               onClick={() => onFilterChange({ ...filter, locationType: value })}
               aria-pressed={active}
               title={`Show ${label.toLowerCase()} locations`}
-              className={`flex items-center gap-1 px-2 py-1 text-[10px] tracking-[0.1em] uppercase transition-colors focus-visible:outline-none focus-visible:ring-2 ${ringCls} focus-visible:ring-inset ${
+              className={`flex items-center gap-1 px-2 py-1 text-[10px] tracking-widest uppercase transition-colors focus-visible:outline-hidden focus-visible:ring-2 ${ringCls} focus-visible:ring-inset ${
                 active
                   ? toggleActiveCls
                   : `${isDarkMode ? 'text-gray-300 hover:bg-white/10' : 'text-gray-600 hover:bg-gray-200'}`
@@ -154,11 +154,11 @@ export const MapFilterControls: React.FC<MapFilterControlsProps> = ({
             ? 'Open live team'
             : broadcast.liveOn ? 'Broadcast on · press B to stop' : 'Press B to broadcast your location'
         }
-        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] tracking-[0.1em] uppercase transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
+        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] tracking-widest uppercase transition-colors shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 ${
           broadcast.liveOn
             ? 'bg-rose-500 text-white'
             : isDarkMode
-              ? 'bg-white/[0.04] text-gray-300 hover:bg-white/10'
+              ? 'bg-white/4 text-gray-300 hover:bg-white/10'
               : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
         }`}
         style={monoStyle}
@@ -233,7 +233,7 @@ const MapFilterAccessories: React.FC<MapFilterAccessoriesProps> = ({
               type="button"
               onClick={onDismissGeoBanner}
               aria-label="Dismiss location banner"
-              className={`p-1 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 ${ringCls} ${
+              className={`p-1 rounded transition-colors focus-visible:outline-hidden focus-visible:ring-2 ${ringCls} ${
                 isDarkMode ? 'hover:bg-white/10' : 'hover:bg-amber-500/10'
               }`}
             >
@@ -255,7 +255,7 @@ const MapFilterAccessories: React.FC<MapFilterAccessoriesProps> = ({
               <button
                 key={c.id}
                 onClick={() => toggleCircle(c.id)}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-all flex-shrink-0 ${
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-all shrink-0 ${
                   active ? 'opacity-100' : 'opacity-40'
                 }`}
                 style={{ backgroundColor: c.color + '33', color: c.color, border: `1px solid ${c.color}66` }}

@@ -81,7 +81,7 @@ export const ThreadAudit: React.FC<ToolsMenuTileBodyProps> = ({
         onKeyDown={onTablistKeyDown}
         className={[
           'flex items-center gap-1 p-1 rounded-xl',
-          isDarkMode ? 'bg-white/5' : 'bg-black/[0.04]',
+          isDarkMode ? 'bg-white/5' : 'bg-black/4',
         ].join(' ')}
       >
         {TABS.map((tab) => {
@@ -99,11 +99,11 @@ export const ThreadAudit: React.FC<ToolsMenuTileBodyProps> = ({
               onClick={() => setActive(tab.id)}
               className={[
                 'flex-1 px-3 py-2 rounded-lg text-sm font-medium min-h-[40px]',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+                'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
                 isActive
                   ? isDarkMode
-                    ? 'bg-zinc-900 text-zinc-100 shadow-sm'
-                    : 'bg-white text-zinc-900 shadow-sm'
+                    ? 'bg-zinc-900 text-zinc-100 shadow-xs'
+                    : 'bg-white text-zinc-900 shadow-xs'
                   : isDarkMode
                     ? 'text-zinc-400 hover:text-zinc-200'
                     : 'text-zinc-500 hover:text-zinc-900',
@@ -125,7 +125,7 @@ export const ThreadAudit: React.FC<ToolsMenuTileBodyProps> = ({
             aria-labelledby={`audit-tab-${tab.id}`}
             hidden={!isActive}
             tabIndex={0}
-            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-lg"
+            className="focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-lg"
           >
             {isActive ? (
               isDisabled ? (
@@ -158,8 +158,8 @@ const DisabledState: React.FC<DisabledStateProps> = ({ isDarkMode }) => (
     className={[
       'rounded-xl border px-4 py-8 text-center',
       isDarkMode
-        ? 'border-white/10 bg-white/[0.02] text-zinc-400'
-        : 'border-black/10 bg-black/[0.02] text-zinc-500',
+        ? 'border-white/10 bg-white/2 text-zinc-400'
+        : 'border-black/10 bg-black/2 text-zinc-500',
     ].join(' ')}
   >
     <p className="text-sm font-semibold">

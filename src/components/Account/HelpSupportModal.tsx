@@ -137,12 +137,12 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-end z-[9999] animate-fadeIn p-0">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-end z-9999 animate-fadeIn p-0">
       <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl h-screen rounded-l-2xl shadow-2xl flex flex-col border-l border-zinc-200 dark:border-zinc-800 overflow-hidden animate-slideInFromRight">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-r from-rose-500/10 to-pink-500/10">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-linear-to-r from-rose-500/10 to-pink-500/10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-linear-to-br from-rose-500 to-pink-500 flex items-center justify-center">
               <HelpCircle className="text-white" />
             </div>
             <div>
@@ -165,7 +165,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
             onClick={() => setActiveTab('resources')}
             className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === 'resources'
-                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
+                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
@@ -176,7 +176,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
             onClick={() => setActiveTab('faq')}
             className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === 'faq'
-                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
+                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
@@ -187,7 +187,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
             onClick={() => setActiveTab('shortcuts')}
             className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === 'shortcuts'
-                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
+                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
@@ -198,7 +198,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
             onClick={() => setActiveTab('contact')}
             className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === 'contact'
-                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
+                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
@@ -221,7 +221,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
                       href={resource.link}
                       className="flex items-start gap-4 p-4 bg-white dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition group"
                     >
-                      <div className={`w-12 h-12 rounded-lg bg-${resource.color}-100 dark:bg-${resource.color}-900/20 flex items-center justify-center flex-shrink-0`}>
+                      <div className={`w-12 h-12 rounded-lg bg-${resource.color}-100 dark:bg-${resource.color}-900/20 flex items-center justify-center shrink-0`}>
                         <i className={`fa-solid ${resource.icon} text-${resource.color}-600 dark:text-${resource.color}-400 text-xl`}></i>
                       </div>
                       <div className="flex-1">
@@ -331,7 +331,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
                         <div className="flex items-center gap-1">
                           {shortcut.keys.map((key, keyIdx) => (
                             <React.Fragment key={keyIdx}>
-                              <kbd className="px-2 py-1 text-xs font-semibold bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded border border-zinc-300 dark:border-zinc-600">
+                              <kbd className="px-2 py-1 text-xs font-semibold bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-sm border border-zinc-300 dark:border-zinc-600">
                                 {key}
                               </kbd>
                               {keyIdx < shortcut.keys.length - 1 && (
@@ -362,7 +362,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
                     href="mailto:fm1@qntmecos.com"
                     className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition"
                   >
-                    <div className="w-12 h-12 rounded-lg bg-rose-100 dark:bg-rose-900/20 flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 rounded-lg bg-rose-100 dark:bg-rose-900/20 flex items-center justify-center shrink-0">
                       <Mail className="text-rose-600 dark:text-rose-400 text-xl" />
                     </div>
                     <div>
@@ -376,7 +376,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
                     href="#"
                     className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition"
                   >
-                    <div className="w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900/20 flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900/20 flex items-center justify-center shrink-0">
                       <MessagesSquare className="text-green-600 dark:text-green-400 text-xl" />
                     </div>
                     <div>
@@ -390,7 +390,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
                     href="#"
                     className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition"
                   >
-                    <div className="w-12 h-12 rounded-lg bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 rounded-lg bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center shrink-0">
                       <MessageCircle className="text-purple-600 dark:text-purple-400 text-xl" />
                     </div>
                     <div>
@@ -433,7 +433,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
             Close
           </button>
           <div className="text-xs text-zinc-500 dark:text-zinc-400">
-            Press <kbd className="px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-700 rounded text-zinc-700 dark:text-zinc-300">?</kbd> to open this anytime
+            Press <kbd className="px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-700 rounded-sm text-zinc-700 dark:text-zinc-300">?</kbd> to open this anytime
           </div>
         </div>
       </div>

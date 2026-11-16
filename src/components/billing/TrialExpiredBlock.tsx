@@ -50,10 +50,10 @@ export const TrialExpiredBlock: React.FC<TrialExpiredBlockProps> = ({
   const yearlyMonthlyEquiv = yearlyPrice / 12;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div role="dialog" aria-modal="true" aria-label="Trial expired" className="relative w-full max-w-xl bg-gradient-to-br from-zinc-950 to-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4">
+      <div role="dialog" aria-modal="true" aria-label="Trial expired" className="relative w-full max-w-xl bg-linear-to-br from-zinc-950 to-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl overflow-hidden">
         {/* Accent bar */}
-        <div className="h-1 bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-500" />
+        <div className="h-1 bg-linear-to-r from-fuchsia-500 via-pink-500 to-rose-500" />
 
         {onDevDismiss && (
           <button
@@ -68,7 +68,7 @@ export const TrialExpiredBlock: React.FC<TrialExpiredBlockProps> = ({
 
         <div className="p-8 space-y-6">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-fuchsia-500 to-pink-600 flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-linear-to-br from-fuchsia-500 to-pink-600 flex items-center justify-center shrink-0">
               <AlertTriangle className="text-white" />
             </div>
             <div>
@@ -131,7 +131,7 @@ export const TrialExpiredBlock: React.FC<TrialExpiredBlockProps> = ({
                   </li>
                 ) : (
                   <li key={feat} className="flex items-start gap-2 text-sm text-zinc-300">
-                    <Check className="text-emerald-400 mt-0.5 flex-shrink-0" size={16} />
+                    <Check className="text-emerald-400 mt-0.5 shrink-0" size={16} />
                     <span>{feat}</span>
                   </li>
                 )
@@ -142,7 +142,7 @@ export const TrialExpiredBlock: React.FC<TrialExpiredBlockProps> = ({
               type="button"
               onClick={handleUpgrade}
               disabled={loading || !canManageBilling}
-              className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 disabled:opacity-50 text-white rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
+              className="w-full mt-4 px-6 py-3 bg-linear-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 disabled:opacity-50 text-white rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
             >
               {loading ? (
                 <><Loader className="animate-spin" size={18} /> Redirecting to checkout...</>

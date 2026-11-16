@@ -307,7 +307,7 @@ export const ShareCardBundleModal: React.FC<ShareCardBundleModalProps> = ({
                 placeholder={
                   chips.length === 0 ? t('contacts.cards.shareBundle.recipients_placeholder') : ''
                 }
-                className="flex-1 bg-transparent text-sm outline-none"
+                className="flex-1 bg-transparent text-sm outline-hidden"
                 style={{ color: 'var(--pulse-ink)', minWidth: 160 }}
               />
             </div>
@@ -485,7 +485,7 @@ export const ShareCardBundleModal: React.FC<ShareCardBundleModalProps> = ({
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xs p-4"
           style={{ background: 'color-mix(in srgb, var(--pulse-ink) 70%, transparent)' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

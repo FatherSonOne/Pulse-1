@@ -147,10 +147,10 @@ export const DevicesSessionsCard: React.FC = () => {
                       active
                     </span>
                     {s.is_current && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-500 font-medium">this device</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-rose-500/10 text-rose-500 font-medium">this device</span>
                     )}
                     {s.mfa_verified && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium">2FA</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium">2FA</span>
                     )}
                   </div>
                   <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
@@ -166,7 +166,7 @@ export const DevicesSessionsCard: React.FC = () => {
                     type="button"
                     onClick={() => handleRevoke(s.id)}
                     disabled={revokingId === s.id}
-                    className="text-xs font-medium text-red-500 hover:text-red-600 disabled:opacity-40 flex-shrink-0"
+                    className="text-xs font-medium text-red-500 hover:text-red-600 disabled:opacity-40 shrink-0"
                   >
                     {revokingId === s.id ? 'Signing out...' : 'Sign out'}
                   </button>

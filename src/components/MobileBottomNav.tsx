@@ -36,7 +36,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         isDarkMode
           ? 'bg-zinc-950/95 border-zinc-800'
           : 'bg-white/95 border-zinc-200'
-      } backdrop-blur supports-[backdrop-filter]:bg-opacity-90 pb-[env(safe-area-inset-bottom)]`}
+      } backdrop-blur-sm supports-[backdrop-filter]:bg-opacity-90 pb-[env(safe-area-inset-bottom)]`}
     >
       <button
         type="button"
@@ -52,7 +52,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         onClick={onOpenNav}
         aria-label={`Current section: ${label}. Open navigation`}
         aria-haspopup="dialog"
-        className={`flex-1 min-w-0 min-h-[48px] flex items-center justify-center font-mono text-[11px] font-medium tracking-[0.1em] uppercase transition-colors ${
+        className={`flex-1 min-w-0 min-h-[48px] flex items-center justify-center font-mono text-[11px] font-medium tracking-widest uppercase transition-colors ${
           isDarkMode ? 'text-rose-400 active:bg-zinc-800' : 'text-rose-600 active:bg-zinc-100'
         }`}
       >

@@ -31,7 +31,7 @@ export const DesignPreview: React.FC<DesignPreviewProps> = ({ isOpen, onClose })
 
     switch (style) {
       case 'minimal':
-        return `${base} bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 ${isSelected ? 'shadow-lg transform -translate-y-1' : 'shadow-sm hover:shadow-md'}`;
+        return `${base} bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 ${isSelected ? 'shadow-lg transform -translate-y-1' : 'shadow-xs hover:shadow-md'}`;
       case 'glassmorphism':
         return `${base} bg-white/15 dark:bg-white/10 backdrop-blur-xl border border-white/25 ${isSelected ? 'bg-white/25 shadow-xl' : 'hover:bg-white/20'}`;
       case 'neumorphism':
@@ -39,7 +39,7 @@ export const DesignPreview: React.FC<DesignPreviewProps> = ({ isOpen, onClose })
           ? 'shadow-[6px_6px_12px_#b8b8b8,-6px_-6px_12px_#ffffff] dark:shadow-[6px_6px_12px_#1e1e2d,-6px_-6px_12px_#36364f] transform -translate-y-1'
           : 'shadow-[8px_8px_16px_#b8b8b8,-8px_-8px_16px_#ffffff] dark:shadow-[8px_8px_16px_#1e1e2d,-8px_-8px_16px_#36364f] hover:shadow-[6px_6px_12px_#b8b8b8,-6px_-6px_12px_#ffffff] dark:hover:shadow-[6px_6px_12px_#1e1e2d,-6px_-6px_12px_#36364f]'}`;
       case 'claymorphism':
-        return `${base} bg-gradient-to-br from-rose-400 to-pink-500 text-white rounded-[40px] ${isSelected
+        return `${base} bg-linear-to-br from-rose-400 to-pink-500 text-white rounded-[40px] ${isSelected
           ? 'shadow-[0_30px_50px_rgba(245,87,108,0.5),inset_-3px_-3px_10px_rgba(255,255,255,0.3),inset_3px_3px_10px_rgba(0,0,0,0.1)] transform -translate-y-2 scale-[1.02]'
           : 'shadow-[0_20px_40px_rgba(245,87,108,0.4),inset_-3px_-3px_10px_rgba(255,255,255,0.3),inset_3px_3px_10px_rgba(0,0,0,0.1)] hover:transform hover:-translate-y-1'}`;
       case 'brutalism':
@@ -66,7 +66,7 @@ export const DesignPreview: React.FC<DesignPreviewProps> = ({ isOpen, onClose })
       case 'claymorphism':
         return `${base} bg-white/25 text-white rounded-[20px] shadow-[0_8px_16px_rgba(0,0,0,0.2),inset_-2px_-2px_5px_rgba(255,255,255,0.2),inset_2px_2px_5px_rgba(0,0,0,0.1)] hover:transform hover:-translate-y-0.5 hover:scale-105`;
       case 'brutalism':
-        return `${base} bg-yellow-400 text-black border-3 border-black font-bold hover:bg-orange-500 hover:shadow-[2px_2px_0px_#000] active:shadow-none active:transform active:translate-x-[1px] active:translate-y-[1px]`;
+        return `${base} bg-yellow-400 text-black border-3 border-black font-bold hover:bg-orange-500 hover:shadow-[2px_2px_0px_#000] active:shadow-none active:transform active:translate-x-px active:translate-y-px`;
       case 'flat':
         return `${base} bg-orange-500 text-white hover:bg-orange-600 hover:scale-105`;
       default:
@@ -75,15 +75,15 @@ export const DesignPreview: React.FC<DesignPreviewProps> = ({ isOpen, onClose })
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+    <div className="fixed inset-0 z-100 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-xs"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-6xl max-h-[90vh] m-4 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-3xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-6xl max-h-[90vh] m-4 bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-3xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="p-6 text-center text-white">
           <h1 className="text-3xl font-bold mb-2 drop-shadow-lg">UI Design Styles Showcase</h1>
@@ -175,7 +175,7 @@ export const DesignPreview: React.FC<DesignPreviewProps> = ({ isOpen, onClose })
               {/* Claymorphic Dropdown */}
               <div className="flex flex-col items-center gap-4">
                 <label className="font-semibold text-gray-700 dark:text-gray-300">Claymorphic Dropdown</label>
-                <select className="px-4 py-3 border-none rounded-[20px] bg-gradient-to-r from-rose-400 to-pink-500 text-white cursor-pointer text-sm shadow-[0_8px_16px_rgba(245,87,108,0.3)] hover:shadow-[0_12px_20px_rgba(245,87,108,0.4)] hover:-translate-y-0.5 transition-all">
+                <select className="px-4 py-3 border-none rounded-[20px] bg-linear-to-r from-rose-400 to-pink-500 text-white cursor-pointer text-sm shadow-[0_8px_16px_rgba(245,87,108,0.3)] hover:shadow-[0_12px_20px_rgba(245,87,108,0.4)] hover:-translate-y-0.5 transition-all">
                   <option>Select Style</option>
                   <option>Minimal</option>
                   <option>Glassmorphism</option>
@@ -190,9 +190,9 @@ export const DesignPreview: React.FC<DesignPreviewProps> = ({ isOpen, onClose })
             <div className="mt-8 p-4 bg-gray-100 dark:bg-gray-800 border-l-4 border-indigo-500 rounded-r-lg">
               <p className="text-sm text-gray-700 dark:text-gray-300">
                 <strong>Pro Tip:</strong> Each style uses different CSS techniques.
-                <code className="mx-1 px-1 bg-gray-200 dark:bg-gray-700 rounded">Glassmorphism</code> uses <code className="px-1 bg-gray-200 dark:bg-gray-700 rounded">backdrop-filter: blur()</code>,
-                <code className="mx-1 px-1 bg-gray-200 dark:bg-gray-700 rounded">Neumorphism</code> uses layered <code className="px-1 bg-gray-200 dark:bg-gray-700 rounded">box-shadow</code>,
-                <code className="mx-1 px-1 bg-gray-200 dark:bg-gray-700 rounded">Brutalism</code> uses thick <code className="px-1 bg-gray-200 dark:bg-gray-700 rounded">border</code> and shadow offsets.
+                <code className="mx-1 px-1 bg-gray-200 dark:bg-gray-700 rounded-sm">Glassmorphism</code> uses <code className="px-1 bg-gray-200 dark:bg-gray-700 rounded-sm">backdrop-filter: blur()</code>,
+                <code className="mx-1 px-1 bg-gray-200 dark:bg-gray-700 rounded-sm">Neumorphism</code> uses layered <code className="px-1 bg-gray-200 dark:bg-gray-700 rounded-sm">box-shadow</code>,
+                <code className="mx-1 px-1 bg-gray-200 dark:bg-gray-700 rounded-sm">Brutalism</code> uses thick <code className="px-1 bg-gray-200 dark:bg-gray-700 rounded-sm">border</code> and shadow offsets.
               </p>
             </div>
           </div>

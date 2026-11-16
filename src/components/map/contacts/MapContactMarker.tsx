@@ -120,7 +120,7 @@ const MapContactMarkerBodyInner: React.FC<MapContactMarkerBodyProps> = ({
 
   return (
     <div
-      className={`group relative cursor-pointer select-none rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 ${animationClass}`}
+      className={`group relative cursor-pointer select-none rounded-full focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 ${animationClass}`}
       style={{
         // Offset (when supplied by useMarkerOffsets) fans same-coord
         // siblings apart in screen space so each is independently
@@ -228,7 +228,7 @@ const MapContactMarkerBodyInner: React.FC<MapContactMarkerBodyProps> = ({
         }`}
       >
         <div
-          className="whitespace-nowrap text-xs font-semibold px-1.5 py-0.5 rounded shadow"
+          className="whitespace-nowrap text-xs font-semibold px-1.5 py-0.5 rounded-sm shadow-sm"
           style={{
             backgroundColor: 'rgba(15, 15, 15, 0.75)',
             color: '#fafafa',

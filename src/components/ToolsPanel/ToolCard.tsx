@@ -79,12 +79,12 @@ export const ToolCard: React.FC<ToolCardProps> = ({
       {/* Badges */}
       <div className="absolute top-2 left-2 flex gap-1">
         {tool.isNew && (
-          <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded">
+          <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-sm">
             New
           </span>
         )}
         {tool.isPro && (
-          <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded">
+          <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-sm">
             Pro
           </span>
         )}

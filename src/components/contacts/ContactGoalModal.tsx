@@ -95,7 +95,7 @@ export const ContactGoalModal: React.FC<ContactGoalModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-60 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
       <div className="w-full sm:max-w-md bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden">
 
         {/* Header */}
@@ -184,7 +184,7 @@ export const ContactGoalModal: React.FC<ContactGoalModalProps> = ({
               onChange={e => setNotes(e.target.value)}
               placeholder={`e.g. "Ask about the product launch" or "Check in on the Q1 partnership"`}
               rows={2}
-              className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-rose-400 resize-none"
+              className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-rose-400 resize-none"
             />
           </div>
 
@@ -203,7 +203,7 @@ export const ContactGoalModal: React.FC<ContactGoalModalProps> = ({
             </div>
             <button
               onClick={() => setAutopilot(p => !p)}
-              className={`relative w-10 h-5.5 rounded-full transition-colors flex-shrink-0 mt-0.5 ${
+              className={`relative w-10 h-5.5 rounded-full transition-colors shrink-0 mt-0.5 ${
                 autopilot ? 'bg-rose-500' : 'bg-zinc-300 dark:bg-zinc-600'
               }`}
               style={{ height: '22px', width: '40px' }}

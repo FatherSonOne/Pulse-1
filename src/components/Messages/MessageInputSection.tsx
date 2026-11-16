@@ -191,9 +191,9 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
     >
        {/* View-Only Mode Banner for Non-Pulse Users on PC */}
        {isViewOnlyMode && (
-         <div className="mb-4 p-4 bg-amber-500/[0.06] dark:bg-amber-500/[0.08] ring-1 ring-amber-500/30 rounded-xl">
+         <div className="mb-4 p-4 bg-amber-500/6 dark:bg-amber-500/8 ring-1 ring-amber-500/30 rounded-xl">
            <div className="flex items-start gap-3">
-             <div className="w-10 h-10 bg-amber-500/15 ring-1 ring-amber-500/30 rounded-full flex items-center justify-center flex-shrink-0">
+             <div className="w-10 h-10 bg-amber-500/15 ring-1 ring-amber-500/30 rounded-full flex items-center justify-center shrink-0">
                <Smartphone className="text-amber-700 dark:text-amber-400" />
              </div>
              <div className="flex-1">
@@ -209,7 +209,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                      setShowInviteToPulseModal(true);
                    }
                  }}
-                 className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-amber-700 dark:text-amber-400 hover:underline inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 rounded"
+                 className="text-[10px] font-mono uppercase tracking-widest font-medium text-amber-700 dark:text-amber-400 hover:underline inline-flex items-center gap-1 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500/40 rounded-sm"
                >
                  <Rocket /> Invite to Pulse for free messaging
                </button>
@@ -264,7 +264,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
        {showEmojiPicker && !emojiPickerMessageId && (
          <div className="absolute bottom-full left-4 mb-2 bg-white dark:bg-[rgba(255,255,255,0.03)] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] rounded-xl shadow-xl p-3 animate-slide-up z-30 w-80">
            <div className="flex items-center justify-between mb-3">
-             <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-500 dark:text-zinc-400">Add Emoji</span>
+             <span className="text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-500 dark:text-zinc-400">Add Emoji</span>
              <button onClick={() => setShowEmojiPicker(false)} className="text-zinc-400 hover:text-zinc-600">
                <X className="text-xs" />
              </button>
@@ -278,7 +278,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                      <button
                        key={emoji}
                        onClick={() => { setInputText(prev => prev + emoji); setShowEmojiPicker(false); }}
-                       className="w-8 h-8 flex items-center justify-center hover:bg-[var(--pulse-surface-raised)] rounded text-lg"
+                       className="w-8 h-8 flex items-center justify-center hover:bg-(--pulse-surface-raised) rounded-sm text-lg"
                      >
                        {emoji}
                      </button>
@@ -332,14 +332,14 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                <div className="flex items-center gap-3 min-w-0">
                  {/* PR 4.4: migrated from hand-rolled coral text label
                      to the shared AIProvenanceTag chip. */}
-                 <AIProvenanceTag source="pulse-ai" kind={showQuickPhrases ? 'phrase' : 'draft'} className="flex-shrink-0" />
+                 <AIProvenanceTag source="pulse-ai" kind={showQuickPhrases ? 'phrase' : 'draft'} className="shrink-0" />
                  <nav role="tablist" aria-label="Compose mode" className="flex gap-0.5 ml-1">
                    <button
                      type="button"
                      role="tab"
                      aria-selected={!showQuickPhrases}
                      onClick={() => { setShowSmartCompose(true); setShowQuickPhrases(false); }}
-                     className={`px-2 py-1 rounded text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
+                     className={`px-2 py-1 rounded text-[10px] font-mono uppercase tracking-widest font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                        !showQuickPhrases
                          ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-700 dark:text-rose-bright'
                          : 'text-zinc-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-bright'
@@ -352,7 +352,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                      role="tab"
                      aria-selected={showQuickPhrases}
                      onClick={() => { setShowSmartCompose(false); setShowQuickPhrases(true); }}
-                     className={`px-2 py-1 rounded text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
+                     className={`px-2 py-1 rounded text-[10px] font-mono uppercase tracking-widest font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                        showQuickPhrases
                          ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-700 dark:text-rose-bright'
                          : 'text-zinc-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-bright'
@@ -366,7 +366,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                  type="button"
                  onClick={() => { setShowSmartCompose(false); setShowQuickPhrases(false); }}
                  aria-label="Dismiss Smart Compose"
-                 className="w-6 h-6 rounded-md text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright hover:bg-rose-500/[0.08] dark:hover:bg-rose-500/[0.10] flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 flex-shrink-0"
+                 className="w-6 h-6 rounded-md text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright hover:bg-rose-500/8 dark:hover:bg-rose-500/10 flex items-center justify-center transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 shrink-0"
                >
                  <X className="w-3.5 h-3.5" />
                </button>
@@ -461,20 +461,20 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
        )}
 
        {proposalModeEnabled && isProposalMode && (
-           <div className="absolute bottom-full left-4 right-4 mb-2 bg-amber-500/[0.06] dark:bg-amber-500/[0.08] ring-1 ring-amber-500/30 p-2 rounded-lg flex items-center justify-between text-xs text-amber-700 dark:text-amber-300 animate-slide-up">
-               <span className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium flex items-center gap-2"><Scale /> PROPOSAL MODE ACTIVE</span>
-               <button onClick={() => setIsProposalMode(false)} className="hover:text-amber-900 dark:hover:text-amber-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 rounded"><X /></button>
+           <div className="absolute bottom-full left-4 right-4 mb-2 bg-amber-500/6 dark:bg-amber-500/8 ring-1 ring-amber-500/30 p-2 rounded-lg flex items-center justify-between text-xs text-amber-700 dark:text-amber-300 animate-slide-up">
+               <span className="font-mono uppercase tracking-widest text-[10px] font-medium flex items-center gap-2"><Scale /> PROPOSAL MODE ACTIVE</span>
+               <button onClick={() => setIsProposalMode(false)} className="hover:text-amber-900 dark:hover:text-amber-200 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500/40 rounded-sm"><X /></button>
            </div>
        )}
 
        {/* Recording Indicator */}
        {isRecording && (
-         <div className="absolute bottom-full left-4 right-4 mb-2 bg-red-500/[0.06] dark:bg-red-500/[0.08] ring-1 ring-red-500/30 p-3 rounded-lg flex items-center justify-between animate-slide-up">
+         <div className="absolute bottom-full left-4 right-4 mb-2 bg-red-500/6 dark:bg-red-500/8 ring-1 ring-red-500/30 p-3 rounded-lg flex items-center justify-between animate-slide-up">
            <div className="flex items-center gap-3">
              <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
              <span className="text-sm text-red-700 dark:text-red-300 font-medium">Recording... {formatDuration(recordingDuration)}</span>
            </div>
-           <button onClick={stopRecording} className="px-3 py-1 bg-red-500 text-white rounded-lg text-[10px] font-mono uppercase tracking-[0.1em] font-medium hover:bg-red-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40">
+           <button onClick={stopRecording} className="px-3 py-1 bg-red-500 text-white rounded-lg text-[10px] font-mono uppercase tracking-widest font-medium hover:bg-red-600 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-red-500/40">
              Stop & Send
            </button>
          </div>
@@ -527,10 +527,10 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
              Proposal / Schedule / Voice Note / Smart Reply / Smart
              Compose / AI Coach / AI Mediator all moved behind the
              `/<cmd>` slash palette typed in the textarea. */}
-         <div className="flex gap-0.5 sm:gap-1 relative flex-shrink-0">
+         <div className="flex gap-0.5 sm:gap-1 relative shrink-0">
            <button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className={`w-12 h-12 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showEmojiPicker ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-[var(--pulse-surface-raised)]'}`}
+              className={`w-12 h-12 rounded-lg transition flex items-center justify-center shrink-0 ${showEmojiPicker ? 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400' : 'text-zinc-400 hover:bg-(--pulse-surface-raised)'}`}
               title="Add Emoji (Ctrl+Shift+E)"
            >
               <Smile className="text-xs sm:text-sm" />
@@ -540,7 +540,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
            <div className="relative" ref={attachmentMenuRef}>
              <button
                 onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
-                className={`w-12 h-12 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showAttachmentMenu ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-[var(--pulse-surface-raised)]'}`}
+                className={`w-12 h-12 rounded-lg transition flex items-center justify-center shrink-0 ${showAttachmentMenu ? 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400' : 'text-zinc-400 hover:bg-(--pulse-surface-raised)'}`}
                 title="Attach File, Image, Video, or Link"
              >
                 <Plus className="text-xs sm:text-sm" />
@@ -552,9 +552,9 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                  <div className="p-2">
                    <button
                      onClick={() => imageInputRef.current?.click()}
-                     className="w-full px-4 py-3 text-left hover:bg-[var(--pulse-surface-raised)] rounded-lg transition flex items-center gap-3 group"
+                     className="w-full px-4 py-3 text-left hover:bg-(--pulse-surface-raised) rounded-lg transition flex items-center gap-3 group"
                    >
-                     <div className="w-10 h-10 rounded-lg bg-[var(--pulse-surface-raised)] flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
+                     <div className="w-10 h-10 rounded-lg bg-(--pulse-surface-raised) flex items-center justify-center group-hover:bg-rose-500/10 dark:group-hover:bg-rose-500/15 transition">
                        <Image className="text-zinc-600 dark:text-zinc-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                      </div>
                      <div>
@@ -565,9 +565,9 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
 
                    <button
                      onClick={() => videoInputRef.current?.click()}
-                     className="w-full px-4 py-3 text-left hover:bg-[var(--pulse-surface-raised)] rounded-lg transition flex items-center gap-3 group"
+                     className="w-full px-4 py-3 text-left hover:bg-(--pulse-surface-raised) rounded-lg transition flex items-center gap-3 group"
                    >
-                     <div className="w-10 h-10 rounded-lg bg-[var(--pulse-surface-raised)] flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
+                     <div className="w-10 h-10 rounded-lg bg-(--pulse-surface-raised) flex items-center justify-center group-hover:bg-rose-500/10 dark:group-hover:bg-rose-500/15 transition">
                        <Video className="text-zinc-600 dark:text-zinc-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                      </div>
                      <div>
@@ -578,9 +578,9 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
 
                    <button
                      onClick={() => fileInputRef.current?.click()}
-                     className="w-full px-4 py-3 text-left hover:bg-[var(--pulse-surface-raised)] rounded-lg transition flex items-center gap-3 group"
+                     className="w-full px-4 py-3 text-left hover:bg-(--pulse-surface-raised) rounded-lg transition flex items-center gap-3 group"
                    >
-                     <div className="w-10 h-10 rounded-lg bg-[var(--pulse-surface-raised)] flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
+                     <div className="w-10 h-10 rounded-lg bg-(--pulse-surface-raised) flex items-center justify-center group-hover:bg-rose-500/10 dark:group-hover:bg-rose-500/15 transition">
                        <File className="text-zinc-600 dark:text-zinc-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                      </div>
                      <div>
@@ -601,9 +601,9 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                      <button
                        onClick={() => { setShowAttachmentMenu(false); if (!isRecording) startRecording(); }}
                        disabled={isRecording}
-                       className="w-full px-4 py-3 text-left hover:bg-[var(--pulse-surface-raised)] rounded-lg transition flex items-center gap-3 group disabled:opacity-40 disabled:cursor-not-allowed"
+                       className="w-full px-4 py-3 text-left hover:bg-(--pulse-surface-raised) rounded-lg transition flex items-center gap-3 group disabled:opacity-40 disabled:cursor-not-allowed"
                      >
-                       <div className="w-10 h-10 rounded-lg bg-[var(--pulse-surface-raised)] flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
+                       <div className="w-10 h-10 rounded-lg bg-(--pulse-surface-raised) flex items-center justify-center group-hover:bg-rose-500/10 dark:group-hover:bg-rose-500/15 transition">
                          <Mic className="text-zinc-600 dark:text-zinc-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                        </div>
                        <div>
@@ -615,9 +615,9 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
 
                    <button
                      onClick={handleAddLink}
-                     className="w-full px-4 py-3 text-left hover:bg-[var(--pulse-surface-raised)] rounded-lg transition flex items-center gap-3 group"
+                     className="w-full px-4 py-3 text-left hover:bg-(--pulse-surface-raised) rounded-lg transition flex items-center gap-3 group"
                    >
-                     <div className="w-10 h-10 rounded-lg bg-[var(--pulse-surface-raised)] flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
+                     <div className="w-10 h-10 rounded-lg bg-(--pulse-surface-raised) flex items-center justify-center group-hover:bg-rose-500/10 dark:group-hover:bg-rose-500/15 transition">
                        <Link className="text-zinc-600 dark:text-zinc-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                      </div>
                      <div>
@@ -707,7 +707,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
          ) : (
            <textarea
              aria-label="Type a message"
-             className="flex-1 bg-transparent dark:text-white text-zinc-900 placeholder-zinc-400 text-sm focus:outline-none resize-none py-2.5 max-h-32 scrollbar-hide font-light"
+             className="flex-1 bg-transparent dark:text-white text-zinc-900 placeholder-zinc-400 text-sm focus:outline-hidden resize-none py-2.5 max-h-32 scrollbar-hide font-light"
              placeholder={isProposalMode ? "State your proposal clearly..." : isRecording ? "Recording voice message..." : "Type a message — `/` for tools…"}
              rows={1}
              value={inputText}
@@ -732,13 +732,13 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
              Smart Reply (Wand2), and standalone voice-message (Mic)
              buttons all moved behind `/schedule`, `/voicenote`,
              `/reply`, and the Attach menu's Voice Message entry. */}
-         <div className="flex gap-0.5 sm:gap-1 flex-shrink-0">
+         <div className="flex gap-0.5 sm:gap-1 shrink-0">
            {!apiKey && (
              <VoiceTextButton
                onTranscript={(text) => setInputText(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + text)}
                size="sm"
                disabled={isRecording}
-               className="text-zinc-400 hover:bg-[var(--pulse-surface-raised)] w-12 h-12"
+               className="text-zinc-400 hover:bg-(--pulse-surface-raised) w-12 h-12"
              />
            )}
            {isNonPulseThread && canSendNativeSms ? (
@@ -746,7 +746,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
              <button
                onClick={() => handleSendSms(inputText)}
                disabled={!inputText.trim()}
-               className="w-12 h-12 rounded-lg bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center transition-colors shadow-[0_2px_8px_rgba(244,63,94,0.20)] hover:shadow-[0_4px_12px_rgba(244,63,94,0.30)] disabled:opacity-50 disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+               className="w-12 h-12 rounded-lg bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center transition-colors shadow-[0_2px_8px_rgba(244,63,94,0.20)] hover:shadow-[0_4px_12px_rgba(244,63,94,0.30)] disabled:opacity-50 disabled:shadow-none focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                title="Send SMS"
              >
                <MessageSquare className="text-xs sm:text-sm" />
@@ -765,7 +765,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
              <button
                onClick={() => handleSend()}
                disabled={isRecording || (!inputText.trim())}
-               className="w-12 h-12 rounded-lg bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center transition-colors shadow-[0_2px_8px_rgba(244,63,94,0.20)] hover:shadow-[0_4px_12px_rgba(244,63,94,0.30)] disabled:opacity-50 disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+               className="w-12 h-12 rounded-lg bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center transition-colors shadow-[0_2px_8px_rgba(244,63,94,0.20)] hover:shadow-[0_4px_12px_rgba(244,63,94,0.30)] disabled:opacity-50 disabled:shadow-none focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                title="Send (Enter)"
              >
                <ArrowUp className="text-xs sm:text-sm" />

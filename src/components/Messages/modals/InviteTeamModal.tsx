@@ -50,7 +50,7 @@ export const InviteTeamModal: React.FC<InviteTeamModalProps> = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+        className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
         onClick={handleClose}
       >
         <motion.div
@@ -73,7 +73,7 @@ export const InviteTeamModal: React.FC<InviteTeamModalProps> = ({
             </h3>
             <button
               onClick={handleClose}
-              className="w-8 h-8 rounded-lg hover:bg-[var(--pulse-surface-raised)] flex items-center justify-center transition"
+              className="w-8 h-8 rounded-lg hover:bg-(--pulse-surface-raised) flex items-center justify-center transition"
             >
               <X className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300" />
             </button>
@@ -87,7 +87,7 @@ export const InviteTeamModal: React.FC<InviteTeamModalProps> = ({
 
             {/* Email Input */}
             <div>
-              <label className="block text-xs font-mono font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.1em] mb-2">
+              <label className="block text-xs font-mono font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">
                 Email Address
               </label>
               <input
@@ -97,7 +97,7 @@ export const InviteTeamModal: React.FC<InviteTeamModalProps> = ({
                 onKeyDown={handleKeyDown}
                 placeholder="teammate@example.com"
                 disabled={inviteStatus === 'sending'}
-                className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-[rgba(255,255,255,0.10)] bg-white dark:bg-[rgba(255,255,255,0.055)] dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none transition disabled:opacity-50"
+                className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-[rgba(255,255,255,0.10)] bg-white dark:bg-[rgba(255,255,255,0.055)] dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-hidden transition disabled:opacity-50"
                 autoFocus
               />
             </div>
@@ -107,14 +107,14 @@ export const InviteTeamModal: React.FC<InviteTeamModalProps> = ({
               <div className={`p-3 rounded-xl text-sm flex items-center gap-2 ${
                 inviteStatus === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' :
                 inviteStatus === 'error' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
-                'bg-[var(--pulse-surface-raised)] text-zinc-600 dark:text-zinc-400'
+                'bg-(--pulse-surface-raised) text-zinc-600 dark:text-zinc-400'
               }`}>
                 {inviteStatus === 'success' ? (
-                  <Check className="w-4 h-4 flex-shrink-0" />
+                  <Check className="w-4 h-4 shrink-0" />
                 ) : inviteStatus === 'error' ? (
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <AlertCircle className="w-4 h-4 shrink-0" />
                 ) : (
-                  <Info className="w-4 h-4 flex-shrink-0" />
+                  <Info className="w-4 h-4 shrink-0" />
                 )}
                 {inviteMessage}
               </div>
@@ -122,7 +122,7 @@ export const InviteTeamModal: React.FC<InviteTeamModalProps> = ({
 
             {/* Features Preview */}
             <div className="bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)]/50 rounded-xl p-4 border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)]">
-              <div className="text-xs font-mono font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.1em] mb-3">
+              <div className="text-xs font-mono font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-3">
                 What they'll get
               </div>
               <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
@@ -157,7 +157,7 @@ export const InviteTeamModal: React.FC<InviteTeamModalProps> = ({
             <button
               onClick={onSendInvite}
               disabled={!inviteEmail.trim() || inviteStatus === 'sending'}
-              className="px-6 py-2 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-6 py-2 bg-linear-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {inviteStatus === 'sending' ? (
                 <>

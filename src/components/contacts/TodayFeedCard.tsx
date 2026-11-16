@@ -108,14 +108,14 @@ export const TodayFeedCard: React.FC<TodayFeedCardProps> = ({
         relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden
         transition-all duration-300 ease-in-out
         ${isExiting ? 'opacity-0 scale-95 -translate-y-1 max-h-0' : 'opacity-100 scale-100 max-h-96'}
-        shadow-sm hover:shadow-md
+        shadow-xs hover:shadow-md
       `}
     >
       {/* Main content row */}
       <div className="flex items-start gap-3 p-4">
 
         {/* Avatar with relationship ring */}
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <div
             className={`
               w-11 h-11 rounded-full flex items-center justify-center text-white font-semibold text-sm
@@ -137,7 +137,7 @@ export const TodayFeedCard: React.FC<TodayFeedCardProps> = ({
             </span>
             {item.metadata?.isAutopilot && (
               <span
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-[0.1em]"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-semibold uppercase tracking-widest"
                 style={{
                   background: 'var(--pulse-rose-soft)',
                   color: 'var(--pulse-rose-deep)',
@@ -176,7 +176,7 @@ export const TodayFeedCard: React.FC<TodayFeedCardProps> = ({
                   }}
                 >
                   <div
-                    className="text-[10px] uppercase tracking-[0.1em] font-semibold mb-1"
+                    className="text-[10px] uppercase tracking-widest font-semibold mb-1"
                     style={{
                       color: 'var(--pulse-rose-deep)',
                       fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
@@ -208,7 +208,7 @@ export const TodayFeedCard: React.FC<TodayFeedCardProps> = ({
         </div>
 
         {/* Right: Actions */}
-        <div className="flex-shrink-0 flex items-center gap-1">
+        <div className="shrink-0 flex items-center gap-1">
           {/* Primary action button */}
           <button
             onClick={handlePrimaryAction}
@@ -239,7 +239,7 @@ export const TodayFeedCard: React.FC<TodayFeedCardProps> = ({
                     <button
                       key={dur.label}
                       onClick={() => handleSnooze(dur.minutes)}
-                      className="w-full text-left text-xs py-1 px-1 rounded text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+                      className="w-full text-left text-xs py-1 px-1 rounded-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
                     >
                       {dur.label}
                     </button>

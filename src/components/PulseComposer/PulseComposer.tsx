@@ -581,7 +581,7 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
         role="toolbar"
         aria-label="Message composer"
         className={[
-          'relative w-full rounded-2xl px-2 py-2 shadow-sm',
+          'relative w-full rounded-2xl px-2 py-2 shadow-xs',
           surfaceClasses,
         ].join(' ')}
       >
@@ -607,7 +607,7 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
                     setAttachments((prev) => prev.filter((a) => a.id !== att.id))
                   }
                   className={[
-                    'text-xs leading-none px-1 rounded',
+                    'text-xs leading-none px-1 rounded-sm',
                     isDarkMode ? 'hover:bg-white/15' : 'hover:bg-black/10',
                   ].join(' ')}
                 >
@@ -631,7 +631,7 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
               disabled={disabled}
               className={[
                 'flex items-center justify-center rounded-xl',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+                'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
                 'disabled:opacity-40 disabled:cursor-not-allowed',
                 isDarkMode ? 'hover:bg-white/10 text-zinc-200' : 'hover:bg-black/5 text-zinc-700',
               ].join(' ')}
@@ -668,7 +668,7 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
               aria-label="Message text"
               aria-describedby={smart.suggestion ? 'pulse-composer-suggestion-hint' : undefined}
               className={[
-                'pulse-composer-textarea relative w-full bg-transparent border-0 outline-none',
+                'pulse-composer-textarea relative w-full bg-transparent border-0 outline-hidden',
                 'text-[15px] leading-[1.4] px-2.5 py-2',
                 'placeholder:opacity-50',
                 isDarkMode ? 'text-zinc-100' : 'text-zinc-900',
@@ -693,7 +693,7 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
               disabled={disabled}
               className={[
                 'flex items-center justify-center rounded-xl',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+                'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
                 'disabled:opacity-40 disabled:cursor-not-allowed',
                 isDarkMode ? 'hover:bg-white/10 text-zinc-200' : 'hover:bg-black/5 text-zinc-700',
               ].join(' ')}
@@ -711,7 +711,7 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
                 size="md"
                 className={[
                   'flex items-center justify-center rounded-xl',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+                  'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
                   isDarkMode ? 'hover:bg-white/10 text-zinc-200' : 'hover:bg-black/5 text-zinc-700',
                 ].join(' ')}
               />
@@ -726,7 +726,7 @@ export const PulseComposer: React.FC<PulseComposerProps> = ({
                 disabled={disabled || (!value.trim() && attachments.length === 0)}
                 className={[
                   'flex items-center justify-center rounded-xl pulse-btn-primary text-white',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+                  'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
                   'disabled:opacity-40 disabled:cursor-not-allowed',
                 ].join(' ')}
                 style={{ minWidth: TOUCH_TARGET_PX, minHeight: TOUCH_TARGET_PX }}

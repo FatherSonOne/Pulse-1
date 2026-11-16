@@ -229,7 +229,7 @@ export const ComparativeAnalysis: React.FC<ComparativeAnalysisProps> = ({
                 {tab.icon}
                 {tab.label}
                 {tab.count !== undefined && (
-                  <span className="px-1.5 py-0.5 rounded text-xs" style={{ background: 'var(--pulse-surface-raised)' }}>
+                  <span className="px-1.5 py-0.5 rounded-sm text-xs" style={{ background: 'var(--pulse-surface-raised)' }}>
                     {tab.count}
                   </span>
                 )}
@@ -370,7 +370,7 @@ const ComparisonPointCard: React.FC<ComparisonPointCardProps> = ({
           <div className="flex items-center gap-2 mb-2">
             {isAgreement ? <CheckCircle size={14} style={{ color: accent }} /> : <XCircle size={14} style={{ color: accent }} />}
             <h4 className="font-medium" style={{ color: 'var(--pulse-ink)' }}>{point.topic}</h4>
-            <span className="px-2 py-0.5 rounded text-xs" style={confidenceStyle}>
+            <span className="px-2 py-0.5 rounded-sm text-xs" style={confidenceStyle}>
               {Math.round(point.confidence * 100)}% confident
             </span>
           </div>
@@ -429,7 +429,7 @@ const UniquePointCard: React.FC<UniquePointCardProps> = ({ point }) => {
       <div className="flex items-center gap-2 mb-3">
         <span className="w-3 h-3 rounded-full" style={dotStyle} />
         <h4 className="font-medium" style={{ color: 'var(--pulse-ink)' }}>{point.doc_title}</h4>
-        <span className="px-2 py-0.5 rounded text-xs" style={sigStyle}>
+        <span className="px-2 py-0.5 rounded-sm text-xs" style={sigStyle}>
           {point.significance} significance
         </span>
       </div>
@@ -475,12 +475,12 @@ const ThemeCard: React.FC<ThemeCardProps> = ({ theme, documents }) => {
           return (
             <div
               key={coverage.docId}
-              className="flex items-center gap-1.5 px-2 py-1 rounded text-xs"
+              className="flex items-center gap-1.5 px-2 py-1 rounded-sm text-xs"
               style={{ background: 'var(--pulse-surface)' }}
             >
               <span className="w-2 h-2 rounded-full" style={dotStyle} />
               <span className="max-w-24 truncate" style={{ color: 'var(--pulse-ink-3)' }}>{doc?.title}</span>
-              <span className="px-1.5 rounded" style={covStyle}>
+              <span className="px-1.5 rounded-sm" style={covStyle}>
                 {coverage.coverage}
               </span>
             </div>
@@ -493,7 +493,7 @@ const ThemeCard: React.FC<ThemeCardProps> = ({ theme, documents }) => {
         {theme.key_concepts.map((concept, i) => (
           <span
             key={i}
-            className="px-2 py-0.5 rounded text-xs"
+            className="px-2 py-0.5 rounded-sm text-xs"
             style={{ background: 'var(--pulse-coral-bg-08)', color: 'var(--pulse-coral-fg)' }}
           >
             {concept}

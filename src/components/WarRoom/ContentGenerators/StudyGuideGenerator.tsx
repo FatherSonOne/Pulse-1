@@ -306,12 +306,12 @@ Requirements:
                     <p className="text-xs mb-2" style={{ ...monoLabel, color: 'var(--pulse-ink-3)' }}>Documents to include</p>
                     <div className="flex flex-wrap gap-2 justify-center max-w-lg mx-auto">
                       {docsToUse.slice(0, 5).map(doc => (
-                        <span key={doc.id} className="text-xs px-2 py-1 rounded" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
+                        <span key={doc.id} className="text-xs px-2 py-1 rounded-sm" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
                           {doc.title}
                         </span>
                       ))}
                       {docsToUse.length > 5 && (
-                        <span className="text-xs px-2 py-1 rounded" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
+                        <span className="text-xs px-2 py-1 rounded-sm" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
                           +{docsToUse.length - 5} more
                         </span>
                       )}
@@ -396,7 +396,7 @@ Requirements:
                         <p className="text-sm font-medium" style={{ color: 'var(--pulse-ink)' }}>
                           {i + 1}. {q.question}
                         </p>
-                        <span className="text-xs px-2 py-0.5 rounded" style={getDifficultyStyle(q.difficulty)}>
+                        <span className="text-xs px-2 py-0.5 rounded-sm" style={getDifficultyStyle(q.difficulty)}>
                           {q.difficulty}
                         </span>
                       </div>
@@ -413,7 +413,7 @@ Requirements:
                         <summary className="text-xs cursor-pointer" style={{ color: 'var(--pulse-coral-fg)' }}>
                           Show Answer
                         </summary>
-                        <p className="text-sm mt-2 p-2 rounded" style={{ background: 'var(--pulse-coral-bg-08)', color: 'var(--pulse-ink-2)' }}>
+                        <p className="text-sm mt-2 p-2 rounded-sm" style={{ background: 'var(--pulse-coral-bg-08)', color: 'var(--pulse-ink-2)' }}>
                           {q.answer}
                         </p>
                       </details>

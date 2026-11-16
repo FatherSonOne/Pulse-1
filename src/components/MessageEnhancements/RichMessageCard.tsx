@@ -15,7 +15,7 @@ const RichMessageCardComponentBase: React.FC<RichMessageCardProps> = ({ card, on
         return (
           <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-800 hover:border-blue-400 transition-colors">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-sm bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center shrink-0">
                 <ExternalLink className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="flex-1 min-w-0">
@@ -53,14 +53,14 @@ const RichMessageCardComponentBase: React.FC<RichMessageCardProps> = ({ card, on
               {card.metadata?.runnable && (
                 <button
                   onClick={() => onAction?.('run-code', card.metadata)}
-                  className="text-xs px-2 py-1 rounded bg-green-600 text-white hover:bg-green-700 flex items-center gap-1"
+                  className="text-xs px-2 py-1 rounded-sm bg-green-600 text-white hover:bg-green-700 flex items-center gap-1"
                 >
                   <Play className="w-3 h-3" />
                   Run
                 </button>
               )}
             </div>
-            <pre className="text-xs bg-gray-900 dark:bg-black text-gray-100 p-2 rounded overflow-x-auto max-h-40">
+            <pre className="text-xs bg-gray-900 dark:bg-black text-gray-100 p-2 rounded-sm overflow-x-auto max-h-40">
               <code>{card.metadata?.code as string}</code>
             </pre>
           </div>
@@ -70,7 +70,7 @@ const RichMessageCardComponentBase: React.FC<RichMessageCardProps> = ({ card, on
         return (
           <div className="border border-purple-200 dark:border-purple-800 rounded-lg p-3 bg-purple-50 dark:bg-purple-900/20">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-sm bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center shrink-0">
                 <Calendar className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div className="flex-1">
@@ -97,7 +97,7 @@ const RichMessageCardComponentBase: React.FC<RichMessageCardProps> = ({ card, on
         return (
           <div className="border border-green-200 dark:border-green-800 rounded-lg p-3 bg-green-50 dark:bg-green-900/20">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded bg-green-100 dark:bg-green-900/40 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-sm bg-green-100 dark:bg-green-900/40 flex items-center justify-center shrink-0">
                 <CheckSquare className="w-5 h-5 text-green-600 dark:text-green-400" />
               </div>
               <div className="flex-1">

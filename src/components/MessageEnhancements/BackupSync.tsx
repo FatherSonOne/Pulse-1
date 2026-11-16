@@ -334,10 +334,10 @@ export const BackupSync: React.FC<BackupSyncProps> = ({
   return (
     <div className="space-y-4">
       {/* Header Stats */}
-      <div className="bg-gradient-to-r from-cyan-500/10 to-teal-500/10 dark:from-cyan-900/20 dark:to-teal-900/20 rounded-xl p-4 border border-cyan-200 dark:border-cyan-800">
+      <div className="bg-linear-to-r from-cyan-500/10 to-teal-500/10 dark:from-cyan-900/20 dark:to-teal-900/20 rounded-xl p-4 border border-cyan-200 dark:border-cyan-800">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-xs">
               <CloudUpload className="text-cyan-500" />
             </div>
             <div>
@@ -399,7 +399,7 @@ export const BackupSync: React.FC<BackupSyncProps> = ({
             onClick={() => setActiveTab(tab.id)}
             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition ${
               activeTab === tab.id
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
@@ -454,13 +454,13 @@ export const BackupSync: React.FC<BackupSyncProps> = ({
                       <div className="flex gap-1">
                         <button
                           onClick={() => onBackupRestore?.(backup.id)}
-                          className="px-2 py-1 text-xs text-cyan-600 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 rounded"
+                          className="px-2 py-1 text-xs text-cyan-600 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 rounded-sm"
                         >
                           Restore
                         </button>
                         <button
                           onClick={() => handleDeleteBackup(backup.id)}
-                          className="px-2 py-1 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                          className="px-2 py-1 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-sm"
                         >
                           Delete
                         </button>
@@ -554,7 +554,7 @@ export const BackupSync: React.FC<BackupSyncProps> = ({
                   onClick={() => updateBackupSetting('autoBackup', !backupSettings.autoBackup)}
                   className={`w-10 h-5 rounded-full transition-colors ${backupSettings.autoBackup ? 'bg-cyan-500' : 'bg-zinc-300 dark:bg-zinc-600'}`}
                 >
-                  <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform ${backupSettings.autoBackup ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${backupSettings.autoBackup ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </button>
               </div>
 
@@ -565,7 +565,7 @@ export const BackupSync: React.FC<BackupSyncProps> = ({
                     <select
                       value={backupSettings.backupFrequency}
                       onChange={(e) => updateBackupSetting('backupFrequency', e.target.value as BackupSettings['backupFrequency'])}
-                      className="px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs"
+                      className="px-2 py-1 rounded-sm border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs"
                     >
                       <option value="daily">Daily</option>
                       <option value="weekly">Weekly</option>
@@ -579,7 +579,7 @@ export const BackupSync: React.FC<BackupSyncProps> = ({
                       type="time"
                       value={backupSettings.backupTime}
                       onChange={(e) => updateBackupSetting('backupTime', e.target.value)}
-                      className="px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs"
+                      className="px-2 py-1 rounded-sm border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs"
                     />
                   </div>
                 </>
@@ -591,7 +591,7 @@ export const BackupSync: React.FC<BackupSyncProps> = ({
                   onClick={() => updateBackupSetting('includeAttachments', !backupSettings.includeAttachments)}
                   className={`w-10 h-5 rounded-full transition-colors ${backupSettings.includeAttachments ? 'bg-cyan-500' : 'bg-zinc-300 dark:bg-zinc-600'}`}
                 >
-                  <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform ${backupSettings.includeAttachments ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${backupSettings.includeAttachments ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </button>
               </div>
 
@@ -601,7 +601,7 @@ export const BackupSync: React.FC<BackupSyncProps> = ({
                   onClick={() => updateBackupSetting('encryptBackups', !backupSettings.encryptBackups)}
                   className={`w-10 h-5 rounded-full transition-colors ${backupSettings.encryptBackups ? 'bg-cyan-500' : 'bg-zinc-300 dark:bg-zinc-600'}`}
                 >
-                  <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform ${backupSettings.encryptBackups ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${backupSettings.encryptBackups ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </button>
               </div>
             </div>
@@ -618,7 +618,7 @@ export const BackupSync: React.FC<BackupSyncProps> = ({
                   onClick={() => updateSyncSetting('syncEnabled', !syncSettings.syncEnabled)}
                   className={`w-10 h-5 rounded-full transition-colors ${syncSettings.syncEnabled ? 'bg-cyan-500' : 'bg-zinc-300 dark:bg-zinc-600'}`}
                 >
-                  <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform ${syncSettings.syncEnabled ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${syncSettings.syncEnabled ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </button>
               </div>
 
@@ -633,7 +633,7 @@ export const BackupSync: React.FC<BackupSyncProps> = ({
                         onClick={() => updateSyncSetting(key, !syncSettings[key])}
                         className={`w-10 h-5 rounded-full transition-colors ${syncSettings[key] ? 'bg-cyan-500' : 'bg-zinc-300 dark:bg-zinc-600'}`}
                       >
-                        <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform ${syncSettings[key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                        <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${syncSettings[key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
                       </button>
                     </div>
                   ))}
@@ -643,7 +643,7 @@ export const BackupSync: React.FC<BackupSyncProps> = ({
                     <select
                       value={syncSettings.conflictResolution}
                       onChange={(e) => updateSyncSetting('conflictResolution', e.target.value as SyncSettings['conflictResolution'])}
-                      className="px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs"
+                      className="px-2 py-1 rounded-sm border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs"
                     >
                       <option value="newest">Keep newest</option>
                       <option value="oldest">Keep oldest</option>

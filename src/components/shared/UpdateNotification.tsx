@@ -29,7 +29,7 @@ export function UpdateNotification({
     >
       <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-4">
         <div className="flex items-start gap-3">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
               <Download className="fa text-blue-400" />
             </div>
@@ -44,13 +44,13 @@ export function UpdateNotification({
             <div className="flex gap-2">
               <button
                 onClick={onUpdate}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded transition-colors"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-sm transition-colors"
               >
                 Update Now
               </button>
               <button
                 onClick={onDismiss}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm font-medium rounded transition-colors"
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm font-medium rounded-sm transition-colors"
               >
                 Later
               </button>
@@ -59,7 +59,7 @@ export function UpdateNotification({
 
           <button
             onClick={onDismiss}
-            className="flex-shrink-0 text-gray-500 hover:text-gray-400 p-1"
+            className="shrink-0 text-gray-500 hover:text-gray-400 p-1"
             aria-label="Dismiss"
           >
             <X className="fa" />

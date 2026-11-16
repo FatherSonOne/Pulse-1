@@ -53,7 +53,7 @@ export const LensEmptyState: React.FC<LensEmptyStateProps> = ({
               <button
                 type="button"
                 onClick={onAutoGeocode}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1"
               >
                 <Sparkles size={12} />
                 Auto-geocode contacts with addresses
@@ -62,7 +62,7 @@ export const LensEmptyState: React.FC<LensEmptyStateProps> = ({
             <button
               type="button"
               onClick={onPinWhereIAm}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium border transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 ${
                 isDarkMode ? 'border-white/10 text-gray-200 hover:border-rose-500/40 hover:text-rose-300' : 'border-gray-200 text-gray-700 hover:border-rose-500/40 hover:text-rose-600'
               }`}
             >
@@ -73,7 +73,7 @@ export const LensEmptyState: React.FC<LensEmptyStateProps> = ({
               type="button"
               onClick={onPickContact}
               disabled={!canAddLocation}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium border transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 disabled:opacity-50 disabled:cursor-not-allowed ${
                 isDarkMode ? 'border-white/10 text-gray-200 hover:border-rose-500/40 hover:text-rose-300' : 'border-gray-200 text-gray-700 hover:border-rose-500/40 hover:text-rose-600'
               }`}
             >
@@ -125,7 +125,7 @@ export const LensEmptyState: React.FC<LensEmptyStateProps> = ({
         <button
           type="button"
           onClick={onOpenAtlas}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 ${
             isDarkMode ? 'border-white/15 text-gray-200 hover:border-rose-500/40 hover:text-rose-300' : 'border-gray-200 text-gray-700 hover:border-rose-500/40 hover:text-rose-600'
           }`}
         >

@@ -287,12 +287,12 @@ Requirements:
                     <p className="text-xs mb-2" style={{ ...monoLabel, color: 'var(--pulse-ink-3)' }}>Documents to analyze</p>
                     <div className="flex flex-wrap gap-2 justify-center max-w-lg mx-auto">
                       {docsToUse.slice(0, 5).map(doc => (
-                        <span key={doc.id} className="text-xs px-2 py-1 rounded" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
+                        <span key={doc.id} className="text-xs px-2 py-1 rounded-sm" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
                           {doc.title}
                         </span>
                       ))}
                       {docsToUse.length > 5 && (
-                        <span className="text-xs px-2 py-1 rounded" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
+                        <span className="text-xs px-2 py-1 rounded-sm" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
                           +{docsToUse.length - 5} more
                         </span>
                       )}
@@ -330,7 +330,7 @@ Requirements:
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search questions..."
-                    className="w-full pl-10 pr-4 py-2 rounded-lg text-sm focus:outline-none"
+                    className="w-full pl-10 pr-4 py-2 rounded-lg text-sm focus:outline-hidden"
                     style={fieldStyle}
                   />
                 </div>
@@ -339,7 +339,7 @@ Requirements:
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="px-3 py-2 rounded-lg text-sm focus:outline-none"
+                  className="px-3 py-2 rounded-lg text-sm focus:outline-hidden"
                   style={fieldStyle}
                 >
                   <option value="all">All Categories</option>
@@ -398,7 +398,7 @@ Requirements:
                           />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium pr-4" style={{ color: 'var(--pulse-ink)' }}>{item.question}</p>
-                            <span className="inline-block text-xs px-2 py-0.5 rounded mt-2" style={{ background: 'var(--pulse-surface)', color: 'var(--pulse-ink-3)', border: '1px solid var(--pulse-border)' }}>
+                            <span className="inline-block text-xs px-2 py-0.5 rounded-sm mt-2" style={{ background: 'var(--pulse-surface)', color: 'var(--pulse-ink-3)', border: '1px solid var(--pulse-border)' }}>
                               {item.category}
                             </span>
                           </div>

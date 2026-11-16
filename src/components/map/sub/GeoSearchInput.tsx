@@ -185,7 +185,7 @@ const GeoSearchInput: React.FC<GeoSearchInputProps> = ({
           onChange={handleChange}
           onFocus={() => { if (results.length > 0 || value.trim().length >= 3) setOpen(true); }}
           onKeyDown={handleKeyDown}
-          className={inputClassName ?? `w-full text-sm px-2.5 py-1.5 rounded-lg border outline-none transition-colors ${baseInput}`}
+          className={inputClassName ?? `w-full text-sm px-2.5 py-1.5 rounded-lg border outline-hidden transition-colors ${baseInput}`}
         />
         {loading && (
           <Loader2
@@ -236,7 +236,7 @@ const GeoSearchInput: React.FC<GeoSearchInputProps> = ({
               >
                 <MapPin
                   size={12}
-                  className={`mt-0.5 flex-shrink-0 ${i === activeIndex ? 'text-rose-500' : (isDarkMode ? 'text-gray-500' : 'text-gray-400')}`}
+                  className={`mt-0.5 shrink-0 ${i === activeIndex ? 'text-rose-500' : (isDarkMode ? 'text-gray-500' : 'text-gray-400')}`}
                 />
                 <div className="min-w-0 flex-1">
                   <p className={`text-sm font-medium truncate ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>

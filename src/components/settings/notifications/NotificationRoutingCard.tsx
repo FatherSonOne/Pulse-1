@@ -145,7 +145,7 @@ export const NotificationRoutingCard: React.FC = () => {
                     <tr key={ch.key} className={idx > 0 ? 'border-t border-zinc-100 dark:border-zinc-800' : ''}>
                       <td className="py-2.5 pr-3 align-top">
                         <div className="flex items-start gap-2">
-                          <Icon className="w-3.5 h-3.5 text-zinc-400 mt-0.5 flex-shrink-0" />
+                          <Icon className="w-3.5 h-3.5 text-zinc-400 mt-0.5 shrink-0" />
                           <div className="min-w-0">
                             <p className="text-zinc-900 dark:text-white font-medium">{ch.label}</p>
                             <p className="text-[10px] text-zinc-400 mt-0.5">{ch.description}</p>
@@ -159,7 +159,7 @@ export const NotificationRoutingCard: React.FC = () => {
                             checked={route[m.key]}
                             onChange={() => toggle(ch.key, m.key)}
                             aria-label={`${ch.label} via ${m.label}`}
-                            className="w-4 h-4 text-rose-500 border-zinc-300 rounded focus:ring-rose-500"
+                            className="w-4 h-4 text-rose-500 border-zinc-300 rounded-sm focus:ring-rose-500"
                           />
                         </td>
                       ))}
@@ -181,7 +181,7 @@ export const NotificationRoutingCard: React.FC = () => {
                   className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 bg-white dark:bg-zinc-900"
                 >
                   <div className="flex items-start gap-2 mb-2.5">
-                    <Icon className="w-4 h-4 text-zinc-400 mt-0.5 flex-shrink-0" />
+                    <Icon className="w-4 h-4 text-zinc-400 mt-0.5 shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-zinc-900 dark:text-white font-medium leading-tight">{ch.label}</p>
                       <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">{ch.description}</p>

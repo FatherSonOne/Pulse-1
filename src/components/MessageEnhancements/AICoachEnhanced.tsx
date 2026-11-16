@@ -312,7 +312,7 @@ const AICoachEnhancedComponent: React.FC<AICoachEnhancedProps> = ({
           className={`border rounded-lg p-3 ${getSeverityColor(suggestion.severity)} animate-fade-in`}
         >
           <div className="flex items-start gap-3">
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
               suggestion.severity === 'critical' ? 'bg-red-200 dark:bg-red-800' :
               suggestion.severity === 'warning' ? 'bg-amber-200 dark:bg-amber-800' :
               'bg-blue-200 dark:bg-blue-800'
@@ -352,7 +352,7 @@ const AICoachEnhancedComponent: React.FC<AICoachEnhancedProps> = ({
                     {suggestion.quickFix || 'Apply fix'}
                   </button>
                 )}
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400">
+                <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400">
                   {suggestion.category}
                 </span>
               </div>

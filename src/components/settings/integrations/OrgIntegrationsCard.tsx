@@ -132,13 +132,13 @@ export const OrgIntegrationsCard: React.FC = () => {
                 </div>
 
                 {isAdmin && (
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                  <div className="flex items-center gap-1 shrink-0">
                     <select
                       value={scope}
                       onChange={(e) => updateRow(def.key, { scope: e.target.value as IntegrationScope })}
                       disabled={busyKey === def.key}
                       aria-label={`${def.label} scope`}
-                      className="text-[11px] px-2 py-1 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-rose-500/50"
+                      className="text-[11px] px-2 py-1 border border-zinc-300 dark:border-zinc-700 rounded-sm bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 focus:outline-hidden focus:ring-1 focus:ring-rose-500/50"
                     >
                       <option value="per_user">Per-user</option>
                       <option value="shared">Shared</option>

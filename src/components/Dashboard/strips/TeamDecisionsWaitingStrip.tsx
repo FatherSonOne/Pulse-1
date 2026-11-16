@@ -168,7 +168,7 @@ const TeamDecisionsWaitingStrip: React.FC<TeamDecisionsWaitingStripProps> = ({
         </h2>
         <button
           onClick={() => setView(AppView.DECISIONS_TASKS)}
-          className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+          className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
         >
           OPEN DECISIONS
         </button>
@@ -184,14 +184,14 @@ const TeamDecisionsWaitingStrip: React.FC<TeamDecisionsWaitingStripProps> = ({
                   sessionStorage.setItem('pulse_focus_decision', d.id);
                   setView(AppView.DECISIONS_TASKS);
                 })}
-                className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
+                className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-sm hover:bg-zinc-50 dark:hover:bg-white/4 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
               >
                 <span
                   className={`w-1.5 h-1.5 rounded-full shrink-0 bg-amber-500 ${isNew ? 'pulse-heartbeat-once' : ''}`}
                   aria-hidden="true"
                 />
                 <span className="flex items-baseline gap-2 min-w-0 flex-1">
-                  <span className="pulse-label px-1.5 py-0.5 rounded shrink-0 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                  <span className="pulse-label px-1.5 py-0.5 rounded-sm shrink-0 bg-amber-500/10 text-amber-700 dark:text-amber-300">
                     VOTE
                   </span>
                   <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate">{d.title}</span>
@@ -210,7 +210,7 @@ const TeamDecisionsWaitingStrip: React.FC<TeamDecisionsWaitingStripProps> = ({
                     </span>
                   );
                 })()}
-                <span className="pulse-label text-zinc-500 dark:text-zinc-400 shrink-0 min-w-[2.5rem] text-right">
+                <span className="pulse-label text-zinc-500 dark:text-zinc-400 shrink-0 min-w-10 text-right">
                   {daysOpen(d.created_at)}
                 </span>
                 <ChevronRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 group-hover:text-rose-500 dark:group-hover:text-rose-400 transition-colors shrink-0" />

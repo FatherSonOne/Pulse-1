@@ -257,7 +257,7 @@ export const ProactiveInsightsEnhanced: React.FC<ProactiveInsightsEnhancedProps>
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
+      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-linear-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
@@ -279,7 +279,7 @@ export const ProactiveInsightsEnhanced: React.FC<ProactiveInsightsEnhancedProps>
             className={`p-3 border-l-4 ${getPriorityIndicator(insight.priority)} transition-all hover:bg-zinc-50 dark:hover:bg-zinc-700/50`}
           >
             <div className="flex items-start gap-3">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${getTypeColor(insight.type)}`}>
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${getTypeColor(insight.type)}`}>
                 <i className={`fa-solid ${getTypeIcon(insight.type)} text-sm`} />
               </div>
               <div className="flex-1 min-w-0">
@@ -304,7 +304,7 @@ export const ProactiveInsightsEnhanced: React.FC<ProactiveInsightsEnhancedProps>
 
                 {/* Expanded reasoning */}
                 {expandedId === insight.id && (
-                  <div className="mt-2 p-2 bg-zinc-50 dark:bg-zinc-900 rounded text-[10px] text-zinc-600 dark:text-zinc-400">
+                  <div className="mt-2 p-2 bg-zinc-50 dark:bg-zinc-900 rounded-sm text-[10px] text-zinc-600 dark:text-zinc-400">
                     <Info className="mr-1" />
                     {insight.reasoning}
                   </div>

@@ -311,11 +311,11 @@ export const ConversationFlowViz: React.FC<ConversationFlowVizProps> = React.mem
             </div>
             <div className="flex justify-center gap-6 mt-3 text-[10px]">
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded bg-blue-500" />
+                <div className="w-3 h-3 rounded-sm bg-blue-500" />
                 <span className="text-zinc-500 dark:text-zinc-400">You</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded bg-green-500" />
+                <div className="w-3 h-3 rounded-sm bg-green-500" />
                 <span className="text-zinc-500 dark:text-zinc-400">{contactName}</span>
               </div>
             </div>

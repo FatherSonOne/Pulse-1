@@ -134,7 +134,7 @@ const RelayLiveComingSoon: React.FC<{ onBack: () => void }> = ({ onBack }) => (
     <button
       type="button"
       onClick={onBack}
-      className="mt-5 px-4 py-2 rounded-lg text-sm font-medium text-[#0f0f0f] dark:text-[#fafafa] bg-[#f2f2f2] hover:bg-[#e8e8e8] dark:bg-[rgba(255,255,255,0.055)] dark:hover:bg-[rgba(255,255,255,0.09)] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f43f5e]"
+      className="mt-5 px-4 py-2 rounded-lg text-sm font-medium text-[#0f0f0f] dark:text-[#fafafa] bg-[#f2f2f2] hover:bg-[#e8e8e8] dark:bg-[rgba(255,255,255,0.055)] dark:hover:bg-[rgba(255,255,255,0.09)] transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[#f43f5e]"
     >
       Back to Inbox
     </button>
@@ -361,7 +361,7 @@ const Relay: React.FC<RelayProps> = ({ apiKey = '', contacts, initialContactId, 
             <button
               type="button"
               onClick={() => setShowSettings(true)}
-              className="absolute top-2 right-3 z-10 p-1.5 rounded-md text-[#52525b] dark:text-[#b4b4b8] hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f43f5e]"
+              className="absolute top-2 right-3 z-10 p-1.5 rounded-md text-[#52525b] dark:text-[#b4b4b8] hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[#f43f5e]"
               aria-label="Open Relay settings"
               title="Relay settings"
             >

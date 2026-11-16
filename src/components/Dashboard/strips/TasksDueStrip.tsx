@@ -152,7 +152,7 @@ const TasksDueStrip: React.FC<TasksDueStripProps> = ({ workspaceId, setView }) =
     const isNew = highlight.has(t.id);
     return (
     <li key={t.id}>
-      <div className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 group">
+      <div className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-sm hover:bg-zinc-50 dark:hover:bg-white/4 transition-colors duration-150 group">
         <button
           aria-label={`Mark "${t.title}" complete`}
           onClick={() => handleComplete(t.id)}
@@ -163,7 +163,7 @@ const TasksDueStrip: React.FC<TasksDueStripProps> = ({ workspaceId, setView }) =
               ? 'border-red-300 dark:border-red-500/40 hover:bg-red-500 hover:border-red-500'
               : 'border-zinc-300 dark:border-zinc-600 hover:bg-emerald-500 hover:border-emerald-500'}
             ${isNew ? 'pulse-heartbeat-once' : ''}
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40
+            focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40
             disabled:opacity-50
           `}
         >
@@ -175,7 +175,7 @@ const TasksDueStrip: React.FC<TasksDueStripProps> = ({ workspaceId, setView }) =
             sessionStorage.setItem('pulse_focus_task', t.id);
             setView(AppView.DECISIONS_TASKS);
           })}
-          className="flex items-baseline gap-2 min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+          className="flex items-baseline gap-2 min-w-0 flex-1 text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
         >
           {t.bucket === 'overdue' && (
             <span className="pulse-label text-red-600 dark:text-red-400 shrink-0">OVERDUE</span>
@@ -188,7 +188,7 @@ const TasksDueStrip: React.FC<TasksDueStripProps> = ({ workspaceId, setView }) =
           )}
           <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate">{t.title}</span>
         </button>
-        <span className={`pulse-label shrink-0 min-w-[3rem] text-right ${
+        <span className={`pulse-label shrink-0 min-w-12 text-right ${
           t.bucket === 'overdue' ? 'text-red-600 dark:text-red-400' : 'text-zinc-500 dark:text-zinc-400'
         }`}>
           {formatDeadline(t.deadline, t.bucket)}
@@ -207,7 +207,7 @@ const TasksDueStrip: React.FC<TasksDueStripProps> = ({ workspaceId, setView }) =
         </h2>
         <button
           onClick={() => setView(AppView.DECISIONS_TASKS)}
-          className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+          className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
         >
           OPEN TASKS
         </button>

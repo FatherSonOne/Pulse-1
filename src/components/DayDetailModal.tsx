@@ -47,7 +47,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/70 backdrop-blur-sm p-4 cal-day-detail-backdrop-enter"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/70 backdrop-blur-xs p-4 cal-day-detail-backdrop-enter"
       onClick={onClose}
     >
       <div
@@ -62,7 +62,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
         <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-mono text-[10px] tracking-[0.1em] uppercase text-zinc-500 mb-1">
+              <p className="font-mono text-[10px] tracking-widest uppercase text-zinc-500 mb-1">
                 {WEEKDAYS[date.getDay()]}
               </p>
               <h2 className="text-2xl font-light tracking-tight text-zinc-900 dark:text-white" style={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -80,13 +80,13 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
 
           {/* Event count + Add */}
           <div className="mt-3 flex items-center gap-2">
-            <span className="font-mono text-[10px] tracking-[0.1em] uppercase font-semibold text-zinc-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            <span className="font-mono text-[10px] tracking-widest uppercase font-semibold text-zinc-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
               {events.length} {events.length === 1 ? 'event' : 'events'}
             </span>
             {onCreateEvent && (
               <button
                 onClick={onCreateEvent}
-                className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white font-mono text-[11px] tracking-[0.1em] uppercase font-semibold rounded-lg transition"
+                className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white font-mono text-[11px] tracking-widest uppercase font-semibold rounded-lg transition"
               >
                 <Plus className="w-3 h-3" />
                 Add
@@ -104,7 +104,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               {onCreateEvent && (
                 <button
                   onClick={onCreateEvent}
-                  className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-mono text-[11px] tracking-[0.1em] uppercase font-semibold rounded-lg transition"
+                  className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-mono text-[11px] tracking-widest uppercase font-semibold rounded-lg transition"
                 >
                   <Plus className="w-3 h-3" />
                   Create event
@@ -116,7 +116,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               {/* All-Day Events */}
               {allDayEvents.length > 0 && (
                 <div>
-                  <h3 className="font-mono text-[10px] font-semibold tracking-[0.1em] uppercase text-zinc-500 mb-2">
+                  <h3 className="font-mono text-[10px] font-semibold tracking-widest uppercase text-zinc-500 mb-2">
                     All Day
                   </h3>
                   <div className="space-y-2">
@@ -125,7 +125,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                         type="button"
                         key={event.id}
                         onClick={() => onEventClick(event)}
-                        className="w-full text-left p-3 rounded-xl bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] hover:bg-zinc-100 dark:hover:bg-white/[0.055] transition flex items-start gap-3"
+                        className="w-full text-left p-3 rounded-xl bg-zinc-50 dark:bg-white/3 border border-zinc-200 dark:border-white/6 hover:bg-zinc-100 dark:hover:bg-white/5.5 transition flex items-start gap-3"
                       >
                         {/* Coral side-bar removed — Step 10 polish. The
                             modal chrome already establishes signal, and
@@ -157,7 +157,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               {timedEvents.length > 0 && (
                 <div>
                   {allDayEvents.length > 0 && (
-                    <h3 className="font-mono text-[10px] font-semibold tracking-[0.1em] uppercase text-zinc-500 mb-2">
+                    <h3 className="font-mono text-[10px] font-semibold tracking-widest uppercase text-zinc-500 mb-2">
                       Scheduled
                     </h3>
                   )}
@@ -167,7 +167,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                         type="button"
                         key={event.id}
                         onClick={() => onEventClick(event)}
-                        className="w-full text-left p-3 rounded-xl bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] hover:bg-zinc-100 dark:hover:bg-white/[0.055] transition flex items-start gap-3"
+                        className="w-full text-left p-3 rounded-xl bg-zinc-50 dark:bg-white/3 border border-zinc-200 dark:border-white/6 hover:bg-zinc-100 dark:hover:bg-white/5.5 transition flex items-start gap-3"
                       >
                         <div className="shrink-0 w-16 text-right">
                           <span className="font-mono text-[11px] tracking-wide text-zinc-700 dark:text-zinc-300" style={{ fontVariantNumeric: 'tabular-nums' }}>

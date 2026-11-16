@@ -121,7 +121,7 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
       background: 'var(--pulse-surface)',
       border: '1px solid var(--pulse-border)',
     }}>
-      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: colors.gradient }}>
+      <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: colors.gradient }}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
         </svg>
@@ -138,7 +138,7 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
         type="button"
         onClick={handleViewPlans}
         disabled={loading}
-        className="px-3 py-1.5 text-xs font-semibold text-white rounded-lg flex-shrink-0 transition-all"
+        className="px-3 py-1.5 text-xs font-semibold text-white rounded-lg shrink-0 transition-all"
         style={{ background: colors.gradient }}
       >
         {loading ? '...' : 'Upgrade'}
@@ -147,7 +147,7 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
         <button
           type="button"
           onClick={onDismiss}
-          className="text-xs flex-shrink-0"
+          className="text-xs shrink-0"
           style={{ color: 'var(--pulse-ink-3)' }}
         >
           Dismiss

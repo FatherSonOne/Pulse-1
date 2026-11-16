@@ -40,7 +40,7 @@ export const HorizonScrubber: React.FC<HorizonScrubberProps> = ({
         isDarkMode ? 'bg-zinc-900/40 border-white/5' : 'bg-white border-gray-200'
       }`}
     >
-      <div className="flex items-center gap-1.5 flex-shrink-0">
+      <div className="flex items-center gap-1.5 shrink-0">
         <div
           role="group"
           aria-label="Time horizon"
@@ -65,13 +65,13 @@ export const HorizonScrubber: React.FC<HorizonScrubberProps> = ({
                 aria-keyshortcuts={hotkey}
                 onClick={() => onHorizonChange(id)}
                 title={`${label} · press ${hotkey}`}
-                className={`relative z-10 flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] tracking-[0.1em] uppercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+                className={`relative z-10 flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] tracking-widest uppercase transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-1 ${
                   isDarkMode ? 'focus-visible:ring-zinc-400' : 'focus-visible:ring-zinc-500'
                 } ${
                   active
                     ? isDarkMode
-                      ? 'bg-zinc-800 text-white shadow-sm'
-                      : 'bg-white text-gray-900 shadow-sm'
+                      ? 'bg-zinc-800 text-white shadow-xs'
+                      : 'bg-white text-gray-900 shadow-xs'
                     : isDarkMode
                       ? 'text-gray-400 hover:text-gray-200'
                       : 'text-gray-500 hover:text-gray-700'
