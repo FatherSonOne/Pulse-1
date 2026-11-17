@@ -42,7 +42,7 @@ declare global {
           prompt: (momentNotification?: (notification: { getNotDisplayedReason: () => string; getSkippedReason: () => string; getDismissedReason: () => string }) => void) => void;
           renderButton: (element: HTMLElement, config: {
             type?: 'standard' | 'icon';
-            theme?: 'outline-solid' | 'filled_blue' | 'filled_black';
+            theme?: 'outline' | 'filled_blue' | 'filled_black';
             size?: 'large' | 'medium' | 'small';
             text?: 'signin_with' | 'signup_with' | 'continue_with' | 'signin';
             shape?: 'rectangular' | 'pill' | 'circle' | 'square';
@@ -418,7 +418,7 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
       try {
         window.google.accounts.id.renderButton(buttonRef.current, {
           type: 'standard',
-          theme: document.documentElement.classList.contains('dark') ? 'filled_black' : 'outline-solid',
+          theme: document.documentElement.classList.contains('dark') ? 'filled_black' : 'outline',
           size: isSidebarCollapsed ? 'medium' : 'large',
           text: 'signin_with',
           width: isSidebarCollapsed ? '36' : '100%',

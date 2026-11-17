@@ -22,7 +22,7 @@ interface ActionButtonConfig {
   type: CRMActionType;
   label: string;
   icon: React.ReactNode;
-  variant: 'primary' | 'secondary' | 'outline-solid';
+  variant: 'primary' | 'secondary' | 'outline';
   getPayload: (messageContent?: string) => CRMActionPayload;
 }
 
