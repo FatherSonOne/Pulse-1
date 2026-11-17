@@ -80,10 +80,10 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   const dragOffset = isDragging ? Math.max(0, currentY - startY) : 0;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-end">
+    <div className="fixed inset-0 z-100 flex items-end">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
+        className="absolute inset-0 bg-black/50 backdrop-blur-xs animate-fade-in"
         onClick={onClose}
       />
 

@@ -277,7 +277,7 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                   value={editingFilter?.name || ''}
                   onChange={(e) => setEditingFilter({ ...editingFilter, name: e.target.value })}
                   placeholder="Auto-generated if empty"
-                  className="w-full px-4 py-2 pulse-surface border pulse-border-color rounded-lg pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border"
+                  className="w-full px-4 py-2 pulse-surface border pulse-border-color rounded-lg pulse-ink-color placeholder:pulse-ink-3-color focus:outline-hidden focus:pulse-rose-border"
                 />
               </div>
 
@@ -294,7 +294,7 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                       value={editingFilter?.from_contains || ''}
                       onChange={(e) => setEditingFilter({ ...editingFilter, from_contains: e.target.value })}
                       placeholder="Sender email or name"
-                      className="flex-1 px-3 py-2 pulse-surface border pulse-border-color rounded-lg text-sm pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border"
+                      className="flex-1 px-3 py-2 pulse-surface border pulse-border-color rounded-lg text-sm pulse-ink-color placeholder:pulse-ink-3-color focus:outline-hidden focus:pulse-rose-border"
                     />
                   </div>
                   <div className="flex items-center gap-3">
@@ -304,7 +304,7 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                       value={editingFilter?.subject_contains || ''}
                       onChange={(e) => setEditingFilter({ ...editingFilter, subject_contains: e.target.value })}
                       placeholder="Words in subject"
-                      className="flex-1 px-3 py-2 pulse-surface border pulse-border-color rounded-lg text-sm pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border"
+                      className="flex-1 px-3 py-2 pulse-surface border pulse-border-color rounded-lg text-sm pulse-ink-color placeholder:pulse-ink-3-color focus:outline-hidden focus:pulse-rose-border"
                     />
                   </div>
                   <div className="flex items-center gap-3">
@@ -314,7 +314,7 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                       value={editingFilter?.body_contains || ''}
                       onChange={(e) => setEditingFilter({ ...editingFilter, body_contains: e.target.value })}
                       placeholder="Words in body"
-                      className="flex-1 px-3 py-2 pulse-surface border pulse-border-color rounded-lg text-sm pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border"
+                      className="flex-1 px-3 py-2 pulse-surface border pulse-border-color rounded-lg text-sm pulse-ink-color placeholder:pulse-ink-3-color focus:outline-hidden focus:pulse-rose-border"
                     />
                   </div>
                   <label className="flex items-center gap-3 cursor-pointer">
@@ -322,7 +322,7 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                       type="checkbox"
                       checked={editingFilter?.has_attachment || false}
                       onChange={(e) => setEditingFilter({ ...editingFilter, has_attachment: e.target.checked || undefined })}
-                      className="w-4 h-4 rounded pulse-border-strong-color accent-[color:var(--pulse-rose)]"
+                      className="w-4 h-4 rounded-sm pulse-border-strong-color accent-(--pulse-rose)"
                     />
                     <span className="text-sm pulse-ink-color">Has attachment</span>
                   </label>
@@ -368,7 +368,7 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                         type="checkbox"
                         checked={editingFilter?.mark_as_read || false}
                         onChange={(e) => setEditingFilter({ ...editingFilter, mark_as_read: e.target.checked })}
-                        className="w-4 h-4 rounded pulse-border-strong-color accent-[color:var(--pulse-rose)]"
+                        className="w-4 h-4 rounded-sm pulse-border-strong-color accent-(--pulse-rose)"
                       />
                       <span className="text-sm pulse-ink-color">Mark as read</span>
                     </label>
@@ -377,7 +377,7 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                         type="checkbox"
                         checked={editingFilter?.archive || false}
                         onChange={(e) => setEditingFilter({ ...editingFilter, archive: e.target.checked })}
-                        className="w-4 h-4 rounded pulse-border-strong-color accent-[color:var(--pulse-rose)]"
+                        className="w-4 h-4 rounded-sm pulse-border-strong-color accent-(--pulse-rose)"
                       />
                       <span className="text-sm pulse-ink-color">Skip inbox (archive)</span>
                     </label>
@@ -386,7 +386,7 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                         type="checkbox"
                         checked={editingFilter?.star || false}
                         onChange={(e) => setEditingFilter({ ...editingFilter, star: e.target.checked })}
-                        className="w-4 h-4 rounded pulse-border-strong-color accent-[color:var(--pulse-rose)]"
+                        className="w-4 h-4 rounded-sm pulse-border-strong-color accent-(--pulse-rose)"
                       />
                       <span className="text-sm pulse-ink-color">Star it</span>
                     </label>
@@ -395,7 +395,7 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                         type="checkbox"
                         checked={editingFilter?.delete || false}
                         onChange={(e) => setEditingFilter({ ...editingFilter, delete: e.target.checked })}
-                        className="w-4 h-4 rounded accent-[var(--pulse-tone-overdue)]"
+                        className="w-4 h-4 rounded-sm accent-(--pulse-tone-overdue)"
                         style={{ borderColor: 'var(--pulse-tone-overdue)' }}
                       />
                       <span className="text-sm" style={{ color: 'var(--pulse-tone-overdue)' }}>Delete it</span>
@@ -454,7 +454,7 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                               {filter.name}
                             </h4>
                             {!filter.enabled && (
-                              <span className="font-mono-pulse text-[10px] uppercase tracking-wide-mono px-2 py-0.5 pulse-surface-raised pulse-ink-3-color rounded">
+                              <span className="font-mono-pulse text-[10px] uppercase tracking-wide-mono px-2 py-0.5 pulse-surface-raised pulse-ink-3-color rounded-sm">
                                 Disabled
                               </span>
                             )}
@@ -464,44 +464,44 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                           <div className="flex flex-wrap items-center gap-2 mt-2">
                             <span className="font-mono-pulse text-[9.5px] uppercase tracking-wide-mono pulse-ink-3-color">When</span>
                             {filter.from_contains && (
-                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 pulse-surface-raised pulse-ink-2-color rounded">
+                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 pulse-surface-raised pulse-ink-2-color rounded-sm">
                                 from: {filter.from_contains}
                               </span>
                             )}
                             {filter.subject_contains && (
-                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 pulse-surface-raised pulse-ink-2-color rounded">
+                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 pulse-surface-raised pulse-ink-2-color rounded-sm">
                                 subject: {filter.subject_contains}
                               </span>
                             )}
                             {filter.has_attachment && (
-                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 pulse-surface-raised pulse-ink-2-color rounded">
+                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 pulse-surface-raised pulse-ink-2-color rounded-sm">
                                 has: attachment
                               </span>
                             )}
                             <span className="pulse-ink-3-color text-sm">→</span>
                             <span className="font-mono-pulse text-[9.5px] uppercase tracking-wide-mono pulse-ink-3-color">Then</span>
                             {filter.apply_labels.map((label) => (
-                              <span key={label} className="font-mono-pulse text-[10.5px] px-2 py-0.5 pulse-surface-raised pulse-ink-color rounded">
+                              <span key={label} className="font-mono-pulse text-[10.5px] px-2 py-0.5 pulse-surface-raised pulse-ink-color rounded-sm">
                                 label: {label}
                               </span>
                             ))}
                             {filter.mark_as_read && (
-                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 rounded" style={{ background: 'var(--pulse-tone-positive-soft)', color: 'var(--pulse-tone-positive)' }}>
+                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 rounded-sm" style={{ background: 'var(--pulse-tone-positive-soft)', color: 'var(--pulse-tone-positive)' }}>
                                 mark read
                               </span>
                             )}
                             {filter.archive && (
-                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 rounded" style={{ background: 'var(--pulse-tone-warning-soft)', color: 'var(--pulse-tone-warning)' }}>
+                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 rounded-sm" style={{ background: 'var(--pulse-tone-warning-soft)', color: 'var(--pulse-tone-warning)' }}>
                                 archive
                               </span>
                             )}
                             {filter.star && (
-                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 rounded" style={{ background: 'var(--pulse-tone-info-soft)', color: 'var(--pulse-tone-info)' }}>
+                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 rounded-sm" style={{ background: 'var(--pulse-tone-info-soft)', color: 'var(--pulse-tone-info)' }}>
                                 star
                               </span>
                             )}
                             {filter.delete && (
-                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 rounded" style={{ background: 'var(--pulse-tone-overdue-soft)', color: 'var(--pulse-tone-overdue)' }}>
+                              <span className="font-mono-pulse text-[10.5px] px-2 py-0.5 rounded-sm" style={{ background: 'var(--pulse-tone-overdue-soft)', color: 'var(--pulse-tone-overdue)' }}>
                                 delete
                               </span>
                             )}
@@ -546,7 +546,7 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                           </button>
                           <button
                             onClick={() => handleDeleteFilter(filter.id)}
-                            className="w-8 h-8 rounded-lg hover:pulse-surface-raised flex items-center justify-center pulse-ink-3-color transition hover:text-[color:var(--pulse-tone-overdue)]"
+                            className="w-8 h-8 rounded-lg hover:pulse-surface-raised flex items-center justify-center pulse-ink-3-color transition hover:text-(--pulse-tone-overdue)"
                             title="Delete filter"
                           >
                             <Trash2 className="w-3.5 h-3.5" />

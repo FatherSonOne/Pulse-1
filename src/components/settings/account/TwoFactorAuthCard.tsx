@@ -75,7 +75,7 @@ export const TwoFactorAuthCard: React.FC = () => {
                   setBusy(false);
                 }
               }}
-              className="px-3 py-1 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 rounded transition"
+              className="px-3 py-1 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 rounded-sm transition"
             >
               Disable 2FA
             </button>
@@ -122,7 +122,7 @@ export const TwoFactorAuthCard: React.FC = () => {
           <MonoLabel>Two-factor authentication</MonoLabel>
         </div>
         {status?.enabled && (
-          <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium uppercase tracking-wide">
+          <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-sm bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium uppercase tracking-wide">
             <Check className="w-3 h-3" /> Enabled
           </span>
         )}
@@ -155,7 +155,7 @@ export const TwoFactorAuthCard: React.FC = () => {
                 <img
                   src={enrollment.qrCode}
                   alt="2FA QR code"
-                  className="w-44 h-44 border border-zinc-200 dark:border-zinc-800 rounded"
+                  className="w-44 h-44 border border-zinc-200 dark:border-zinc-800 rounded-sm"
                 />
               </div>
             )}
@@ -163,13 +163,13 @@ export const TwoFactorAuthCard: React.FC = () => {
               Or enter this secret manually:
             </p>
             <div className="flex items-center gap-2">
-              <code className="flex-1 text-xs font-mono break-all px-2 py-1.5 border border-zinc-200 dark:border-zinc-800 rounded text-zinc-700 dark:text-zinc-300">
+              <code className="flex-1 text-xs font-mono break-all px-2 py-1.5 border border-zinc-200 dark:border-zinc-800 rounded-sm text-zinc-700 dark:text-zinc-300">
                 {enrollment.secret}
               </code>
               <button
                 type="button"
                 onClick={copySecret}
-                className="p-1.5 rounded border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition"
+                className="p-1.5 rounded-sm border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition"
                 title="Copy secret"
               >
                 {secretCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 text-zinc-500" />}
@@ -190,7 +190,7 @@ export const TwoFactorAuthCard: React.FC = () => {
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
               placeholder="000000"
-              className="w-full px-3 py-2 text-lg font-mono tracking-widest text-center border border-zinc-200 dark:border-zinc-800 rounded-lg bg-transparent text-zinc-900 dark:text-white focus:outline-none focus:border-rose-500"
+              className="w-full px-3 py-2 text-lg font-mono tracking-widest text-center border border-zinc-200 dark:border-zinc-800 rounded-lg bg-transparent text-zinc-900 dark:text-white focus:outline-hidden focus:border-rose-500"
             />
           </div>
 
@@ -231,7 +231,7 @@ export const TwoFactorAuthCard: React.FC = () => {
           </div>
 
           <div className="flex items-start gap-2 pt-4 mt-1 border-t border-zinc-100 dark:border-zinc-800">
-            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
               Disabling 2FA reduces account security. Only do this if you've lost access to your authenticator and need to re-enroll, or if your organization no longer requires it.
             </p>

@@ -97,7 +97,7 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
             onClick={() => setActiveSection(section)}
             className={`flex-1 px-3 py-1.5 rounded-md text-sm font-medium transition ${
               activeSection === section
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
@@ -154,7 +154,7 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
                 {onAct && (
                   <button
                     onClick={onAct}
-                    className="flex-shrink-0 px-2.5 py-1 text-white text-xs font-medium rounded-lg transition"
+                    className="shrink-0 px-2.5 py-1 text-white text-xs font-medium rounded-lg transition"
                     style={{ background: 'var(--pulse-rose)' }}
                   >
                     Act
@@ -226,7 +226,7 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
                     key={idx}
                     className="flex items-start gap-3 p-3 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800"
                   >
-                    <span className="w-5 h-5 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="w-5 h-5 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 text-xs flex items-center justify-center shrink-0 mt-0.5">
                       {idx + 1}
                     </span>
                     <span className="text-sm text-zinc-700 dark:text-zinc-300">

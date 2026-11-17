@@ -37,7 +37,7 @@ const About: React.FC<AboutProps> = ({ onBack }) => {
                   <path d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32" stroke="url(#pulse-grad-about)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                 </svg>
               </div>
-              <span className="text-lg font-bold bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">Pulse</span>
+              <span className="text-lg font-bold bg-linear-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">Pulse</span>
             </a>
           </div>
           <a
@@ -51,7 +51,7 @@ const About: React.FC<AboutProps> = ({ onBack }) => {
 
       {/* Content */}
       <main className="max-w-4xl mx-auto px-4 py-12">
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-8 md:p-12 shadow-sm">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-8 md:p-12 shadow-xs">
           <h1 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white mb-2">
             About Pulse
           </h1>

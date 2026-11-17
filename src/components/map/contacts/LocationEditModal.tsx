@@ -163,7 +163,7 @@ const LocationField: React.FC<LocationFieldProps> = ({
         {currentAddress && (
           <button
             onClick={onClear}
-            className="text-xs text-rose-400 hover:text-rose-500 transition-colors focus-visible:outline-none focus-visible:underline"
+            className="text-xs text-rose-400 hover:text-rose-500 transition-colors focus-visible:outline-hidden focus-visible:underline"
           >
             Clear
           </button>
@@ -179,7 +179,7 @@ const LocationField: React.FC<LocationFieldProps> = ({
           isDarkMode={isDarkMode}
           placeholder={`Search for ${label.toLowerCase()} address…`}
           onSelect={onGeoSelect}
-          inputClassName={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${inputCls}`}
+          inputClassName={`w-full px-3 py-2 rounded-lg border text-sm outline-hidden transition-colors ${inputCls}`}
         />
       ) : isLoaded ? (
         <Autocomplete
@@ -191,7 +191,7 @@ const LocationField: React.FC<LocationFieldProps> = ({
             ref={inputRef}
             type="text"
             placeholder={`Search for ${label.toLowerCase()} address...`}
-            className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${inputCls}`}
+            className={`w-full px-3 py-2 rounded-lg border text-sm outline-hidden transition-colors ${inputCls}`}
           />
         </Autocomplete>
       ) : (
@@ -200,7 +200,7 @@ const LocationField: React.FC<LocationFieldProps> = ({
           type="text"
           disabled
           placeholder={loadError ? 'Address search unavailable' : 'Loading address search…'}
-          className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors opacity-70 ${inputCls}`}
+          className={`w-full px-3 py-2 rounded-lg border text-sm outline-hidden transition-colors opacity-70 ${inputCls}`}
         />
       )}
     </div>
@@ -346,7 +346,7 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+    <div className="fixed inset-0 z-80 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
       <div className={`w-full max-w-md rounded-2xl border shadow-2xl ${bg}`}>
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
@@ -426,7 +426,7 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
         <div className={`flex gap-2 px-5 pb-5`}>
           <button
             onClick={onClose}
-            className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
+            className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 ${
               isDarkMode ? 'bg-white/5 text-gray-300 hover:bg-white/10' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -435,7 +435,7 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
           <button
             onClick={handleSave}
             disabled={saving || (!homePending && !workPending)}
-            className="flex-1 py-2 rounded-xl text-sm font-semibold bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 inline-flex items-center justify-center gap-1.5"
+            className="flex-1 py-2 rounded-xl text-sm font-semibold bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 inline-flex items-center justify-center gap-1.5"
           >
             {saving && <Loader2 size={12} className="animate-spin" />}
             Save Locations

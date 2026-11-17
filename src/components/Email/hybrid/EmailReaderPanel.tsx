@@ -109,7 +109,7 @@ export const EmailReaderPanel: React.FC = () => {
         role="dialog"
         aria-label={`Email from ${row.from}: ${row.subject}`}
       >
-        <div className="absolute top-3 right-3 z-[2] flex items-center gap-1.5">
+        <div className="absolute top-3 right-3 z-2 flex items-center gap-1.5">
           {maximized && (
             <button
               type="button"

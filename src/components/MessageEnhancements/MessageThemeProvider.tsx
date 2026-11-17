@@ -359,7 +359,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ onSelect, compact 
           >
             {/* Preview bubble */}
             <div
-              className="w-full h-8 rounded-lg shadow-sm"
+              className="w-full h-8 rounded-lg shadow-xs"
               style={{
                 background: theme.bubbleGradient || theme.bubbleColor,
                 borderRadius: theme.borderRadius
@@ -547,7 +547,7 @@ export const StandaloneThemePicker: React.FC<{
               <div className="flex gap-2 mb-2">
                 {/* User color swatch */}
                 <div
-                  className="w-8 h-8 rounded-lg shadow-sm flex items-center justify-center text-[8px] font-bold"
+                  className="w-8 h-8 rounded-lg shadow-xs flex items-center justify-center text-[8px] font-bold"
                   style={{
                     background: pair.userGradient || pair.userColor,
                     color: pair.userTextColor,
@@ -558,7 +558,7 @@ export const StandaloneThemePicker: React.FC<{
                 </div>
                 {/* Other person color swatch */}
                 <div
-                  className="w-8 h-8 rounded-lg shadow-sm flex items-center justify-center text-[8px] font-bold"
+                  className="w-8 h-8 rounded-lg shadow-xs flex items-center justify-center text-[8px] font-bold"
                   style={{
                     background: pair.otherGradient || pair.otherColor,
                     color: pair.otherTextColor,

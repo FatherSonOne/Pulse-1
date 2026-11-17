@@ -197,7 +197,7 @@ export const ShareCardModal: React.FC<ShareCardModalProps> = ({
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xs p-4"
           style={{ background: 'rgba(0, 0, 0, 0.6)' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

@@ -116,7 +116,7 @@ export const MemberConnectionsCard: React.FC = () => {
               const hasNone = m.providers.length === 0;
               return (
                 <div key={m.user_id} className="py-3 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-rose-500/10 dark:bg-rose-500/15 border border-rose-500/20 flex items-center justify-center text-rose-500 dark:text-rose-400 text-xs font-semibold flex-shrink-0 overflow-hidden">
+                  <div className="w-8 h-8 rounded-full bg-rose-500/10 dark:bg-rose-500/15 border border-rose-500/20 flex items-center justify-center text-rose-500 dark:text-rose-400 text-xs font-semibold shrink-0 overflow-hidden">
                     {m.user_avatar_url
                       ? <img src={m.user_avatar_url} alt="" className="w-full h-full object-cover" />
                       : (m.user_name || m.user_email || '?').charAt(0).toUpperCase()}
@@ -135,7 +135,7 @@ export const MemberConnectionsCard: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     {hasNone ? (
                       <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium">
                         <MailWarning className="w-3 h-3" />

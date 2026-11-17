@@ -46,7 +46,7 @@ const AICoachBase: React.FC<AICoachProps> = ({
           className={`border rounded-lg p-3 ${getColorClasses(suggestion.severity)}`}
         >
           <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 mt-0.5">
+            <div className="shrink-0 mt-0.5">
               {getIcon(suggestion.severity)}
             </div>
             <div className="flex-1 min-w-0">

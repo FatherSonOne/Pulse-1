@@ -103,7 +103,7 @@ export const PaceTab: React.FC<PaceTabProps> = ({
         <div
           className={[
             'flex items-center justify-between mb-1.5',
-            'text-[11px] font-mono uppercase tracking-[0.1em]',
+            'text-[11px] font-mono uppercase tracking-widest',
             isDarkMode ? 'text-zinc-500' : 'text-zinc-500',
           ].join(' ')}
         >
@@ -126,7 +126,7 @@ const Stat: React.FC<StatProps> = ({ term, value, isDarkMode }) => (
   <div className="flex flex-col">
     <dt
       className={[
-        'text-[11px] font-mono uppercase tracking-[0.1em]',
+        'text-[11px] font-mono uppercase tracking-widest',
         isDarkMode ? 'text-zinc-400' : 'text-zinc-500',
       ].join(' ')}
     >

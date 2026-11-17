@@ -56,7 +56,7 @@ const SectionToggle: React.FC<{ label: string; open: boolean; onToggle: () => vo
     onClick={onToggle}
     aria-expanded={open}
     aria-label={`Toggle ${label} section`}
-    className="w-full flex items-center justify-between px-1 pb-1.5 text-[10px] uppercase tracking-[0.1em] text-zinc-400 dark:text-zinc-500"
+    className="w-full flex items-center justify-between px-1 pb-1.5 text-[10px] uppercase tracking-widest text-zinc-400 dark:text-zinc-500"
     style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
   >
     <span>{label}</span>
@@ -112,8 +112,8 @@ export const FiltersDrawer: React.FC<FiltersDrawerProps> = ({
                   onClick={() => onSmartListChange(active ? null : list.id)}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-sm border transition-colors ${
                     active
-                      ? 'bg-[var(--pulse-rose-soft)] border-[var(--pulse-rose-soft)] text-[var(--pulse-rose)]'
-                      : 'border-transparent text-zinc-600 dark:text-zinc-300 hover:bg-[var(--pulse-surface-raised)]'
+                      ? 'bg-(--pulse-rose-soft) border-(--pulse-rose-soft) text-(--pulse-rose)'
+                      : 'border-transparent text-zinc-600 dark:text-zinc-300 hover:bg-(--pulse-surface-raised)'
                   }`}
                 >
                   <Icon size={14} className="shrink-0" />
@@ -146,8 +146,8 @@ export const FiltersDrawer: React.FC<FiltersDrawerProps> = ({
                     onClick={() => onCircleChange(active ? null : circle.id)}
                     className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-sm border transition-colors ${
                       active
-                        ? 'bg-[var(--pulse-rose-soft)] border-[var(--pulse-rose-soft)] text-[var(--pulse-rose)]'
-                        : 'border-transparent text-zinc-600 dark:text-zinc-300 hover:bg-[var(--pulse-surface-raised)]'
+                        ? 'bg-(--pulse-rose-soft) border-(--pulse-rose-soft) text-(--pulse-rose)'
+                        : 'border-transparent text-zinc-600 dark:text-zinc-300 hover:bg-(--pulse-surface-raised)'
                     }`}
                   >
                     <span

@@ -195,7 +195,7 @@ export const ComplianceSettings: React.FC = () => {
         {dpaAvailable === false && (
           <div className="space-y-3">
             <div className="flex items-start gap-2 p-3 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-lg">
-              <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
               <p className="text-xs text-zinc-600 dark:text-zinc-300">
                 DPA is not yet published. Use the request button below and we'll send you a copy by email.
               </p>
@@ -277,7 +277,7 @@ export const ComplianceSettings: React.FC = () => {
 
           {legalHold && (
             <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/40 rounded-lg">
-              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <p className="text-xs text-amber-700 dark:text-amber-300">
                 Legal hold is <strong>active</strong>. Permanent deletion is currently blocked at the database level.
               </p>
@@ -290,7 +290,7 @@ export const ComplianceSettings: React.FC = () => {
               checked={legalHold}
               onChange={handleToggleLegalHold}
               disabled={isTogglingHold}
-              className="w-4 h-4 mt-0.5 text-rose-500 border-zinc-300 rounded focus:ring-rose-500"
+              className="w-4 h-4 mt-0.5 text-rose-500 border-zinc-300 rounded-sm focus:ring-rose-500"
             />
             <div className="flex-1">
               <div className="text-sm font-medium text-zinc-900 dark:text-white">

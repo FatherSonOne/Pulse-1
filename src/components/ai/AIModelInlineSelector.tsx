@@ -126,7 +126,7 @@ export const AIModelInlineSelector: React.FC<AIModelInlineSelectorProps> = ({
                       </p>
                     )}
                   </div>
-                  {!isOverride && <Check className="w-3.5 h-3.5 text-rose-500 flex-shrink-0" />}
+                  {!isOverride && <Check className="w-3.5 h-3.5 text-rose-500 shrink-0" />}
                 </div>
               </button>
             </li>
@@ -159,7 +159,7 @@ export const AIModelInlineSelector: React.FC<AIModelInlineSelectorProps> = ({
                           {m.tagline}
                         </p>
                       </div>
-                      {selected && <Check className="w-3.5 h-3.5 text-rose-500 flex-shrink-0" />}
+                      {selected && <Check className="w-3.5 h-3.5 text-rose-500 shrink-0" />}
                     </div>
                   </button>
                 </li>

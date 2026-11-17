@@ -200,7 +200,7 @@ export function searchTools(query: string): Tool[] {
  */
 export function getCategoryColor(_category: string): { bg: string; text: string; border: string; dot: string } {
   return {
-    bg: 'bg-rose-500/[0.08] dark:bg-rose-500/[0.12]',
+    bg: 'bg-rose-500/8 dark:bg-rose-500/12',
     text: 'text-rose-600 dark:text-rose-bright',
     border: 'border-rose-500/30',
     dot: 'bg-rose-500',

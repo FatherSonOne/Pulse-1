@@ -156,7 +156,7 @@ export const ExportSharing: React.FC<ExportSharingProps> = ({
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20">
+      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-linear-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-cyan-100 dark:bg-cyan-900/40 flex items-center justify-center">
@@ -200,7 +200,7 @@ export const ExportSharing: React.FC<ExportSharingProps> = ({
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
               className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition ${
                 activeTab === tab.id
-                  ? 'bg-white dark:bg-zinc-600 text-zinc-800 dark:text-white shadow-sm'
+                  ? 'bg-white dark:bg-zinc-600 text-zinc-800 dark:text-white shadow-xs'
                   : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white'
               }`}
             >
@@ -251,7 +251,7 @@ export const ExportSharing: React.FC<ExportSharingProps> = ({
                   type="checkbox"
                   checked={includeMetadata}
                   onChange={(e) => setIncludeMetadata(e.target.checked)}
-                  className="rounded border-zinc-300 text-cyan-500 focus:ring-cyan-500"
+                  className="rounded-sm border-zinc-300 text-cyan-500 focus:ring-cyan-500"
                 />
                 Include timestamps & metadata
               </label>
@@ -260,7 +260,7 @@ export const ExportSharing: React.FC<ExportSharingProps> = ({
                   type="checkbox"
                   checked={includeAttachments}
                   onChange={(e) => setIncludeAttachments(e.target.checked)}
-                  className="rounded border-zinc-300 text-cyan-500 focus:ring-cyan-500"
+                  className="rounded-sm border-zinc-300 text-cyan-500 focus:ring-cyan-500"
                 />
                 Include attachments
               </label>
@@ -269,7 +269,7 @@ export const ExportSharing: React.FC<ExportSharingProps> = ({
                   type="checkbox"
                   checked={useDateRange}
                   onChange={(e) => setUseDateRange(e.target.checked)}
-                  className="rounded border-zinc-300 text-cyan-500 focus:ring-cyan-500"
+                  className="rounded-sm border-zinc-300 text-cyan-500 focus:ring-cyan-500"
                 />
                 Limit to date range
               </label>
@@ -407,7 +407,7 @@ export const ExportSharing: React.FC<ExportSharingProps> = ({
                   <select
                     value={expiresIn}
                     onChange={(e) => setExpiresIn(e.target.value as ShareOptions['expiresIn'])}
-                    className="px-2 py-1 text-xs rounded border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-800 dark:text-white"
+                    className="px-2 py-1 text-xs rounded-sm border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-800 dark:text-white"
                   >
                     <option value="1h">1 hour</option>
                     <option value="24h">24 hours</option>
@@ -422,7 +422,7 @@ export const ExportSharing: React.FC<ExportSharingProps> = ({
                     type="checkbox"
                     checked={allowDownload}
                     onChange={(e) => setAllowDownload(e.target.checked)}
-                    className="rounded border-zinc-300 text-indigo-500 focus:ring-indigo-500"
+                    className="rounded-sm border-zinc-300 text-indigo-500 focus:ring-indigo-500"
                   />
                 </label>
                 <label className="flex items-center justify-between">
@@ -431,7 +431,7 @@ export const ExportSharing: React.FC<ExportSharingProps> = ({
                     type="checkbox"
                     checked={requireAuth}
                     onChange={(e) => setRequireAuth(e.target.checked)}
-                    className="rounded border-zinc-300 text-indigo-500 focus:ring-indigo-500"
+                    className="rounded-sm border-zinc-300 text-indigo-500 focus:ring-indigo-500"
                   />
                 </label>
               </div>
@@ -470,7 +470,7 @@ export const ExportSharing: React.FC<ExportSharingProps> = ({
                     type="text"
                     value={shareResult.shareUrl}
                     readOnly
-                    className="flex-1 px-2 py-1 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-600 rounded"
+                    className="flex-1 px-2 py-1 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-600 rounded-sm"
                   />
                   <button
                     onClick={() => navigator.clipboard.writeText(shareResult.shareUrl!)}
@@ -537,7 +537,7 @@ export const QuickExportButton: React.FC<{
   return (
     <button
       onClick={onClick}
-      className="p-1.5 rounded text-zinc-400 hover:text-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition"
+      className="p-1.5 rounded-sm text-zinc-400 hover:text-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition"
       title="Export conversation"
     >
       <Download className="text-sm" />
@@ -552,7 +552,7 @@ export const QuickShareButton: React.FC<{
   return (
     <button
       onClick={onClick}
-      className="p-1.5 rounded text-zinc-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition"
+      className="p-1.5 rounded-sm text-zinc-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition"
       title="Share conversation"
     >
       <Share2 className="text-sm" />

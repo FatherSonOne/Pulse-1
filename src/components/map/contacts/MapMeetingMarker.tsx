@@ -104,7 +104,7 @@ const MapMeetingMarkerBodyInner: React.FC<MapMeetingMarkerBodyProps> = ({
 
   return (
     <div
-      className={`group relative cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 ${animationClass}`}
+      className={`group relative cursor-pointer select-none focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 ${animationClass}`}
       style={{
         transform: `translate(calc(-50% + ${offsetX}px), calc(-100% + ${offsetY}px))`,
         transition: 'transform 200ms cubic-bezier(0.16, 1, 0.3, 1)',
@@ -183,7 +183,7 @@ const MapMeetingMarkerBodyInner: React.FC<MapMeetingMarkerBodyProps> = ({
         }`}
       >
         <div
-          className="whitespace-nowrap text-[11px] font-semibold px-1.5 py-0.5 rounded shadow"
+          className="whitespace-nowrap text-[11px] font-semibold px-1.5 py-0.5 rounded-sm shadow-sm"
           style={{
             backgroundColor: 'rgba(15, 15, 15, 0.75)',
             color: '#fafafa',

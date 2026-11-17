@@ -233,30 +233,30 @@ const QuickAddContact: React.FC<QuickAddContactProps> = ({ onAddContact, onConta
       </div>
       <div className="space-y-3">
         <div>
-          <label className="block text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-500 dark:text-zinc-500 mb-1">Name</label>
+          <label className="block text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-500 dark:text-zinc-500 mb-1">Name</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="John Doe"
-            className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] dark:text-white focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/40 outline-none transition-colors"
+            className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/8 bg-white dark:bg-white/3 dark:text-white focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/40 outline-hidden transition-colors"
             autoFocus
           />
         </div>
         <div>
-          <label className="block text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-500 dark:text-zinc-500 mb-1">Email</label>
+          <label className="block text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-500 dark:text-zinc-500 mb-1">Email</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="john@example.com"
-            className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] dark:text-white focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/40 outline-none transition-colors"
+            className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/8 bg-white dark:bg-white/3 dark:text-white focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/40 outline-hidden transition-colors"
           />
         </div>
         <button
           onClick={handleSubmit}
           disabled={!name.trim() || !email.trim() || isAdding || !onAddContact}
-          className="w-full px-4 py-2 rounded-lg text-sm font-medium bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+          className="w-full px-4 py-2 rounded-lg text-sm font-medium bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
         >
           {isAdding ? (
             <>
@@ -307,7 +307,7 @@ const renderTextWithLinks = (text: string): React.ReactNode => {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-[#e11d48] dark:text-[#fb7185] hover:text-[#f43f5e] underline break-all"
+        className="text-rose-600 dark:text-[#fb7185] hover:text-[#f43f5e] underline break-all"
         onClick={(e) => e.stopPropagation()}
       >
         {match}
@@ -3643,9 +3643,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
   const getSourceIcon = (source?: string) => {
       switch(source) {
-          case 'slack': return <Hash className="text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/[0.04] ring-1 ring-zinc-200 dark:ring-white/[0.06] rounded p-0.5 text-[8px]" />;
-          case 'email': return <Mail className="text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/[0.04] ring-1 ring-zinc-200 dark:ring-white/[0.06] rounded p-0.5 text-[8px]" />;
-          case 'sms': return <MessageSquare className="text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/[0.04] ring-1 ring-zinc-200 dark:ring-white/[0.06] rounded p-0.5 text-[8px]" />;
+          case 'slack': return <Hash className="text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/4 ring-1 ring-zinc-200 dark:ring-white/6 rounded-sm p-0.5 text-[8px]" />;
+          case 'email': return <Mail className="text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/4 ring-1 ring-zinc-200 dark:ring-white/6 rounded-sm p-0.5 text-[8px]" />;
+          case 'sms': return <MessageSquare className="text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/4 ring-1 ring-zinc-200 dark:ring-white/6 rounded-sm p-0.5 text-[8px]" />;
           default: return null;
       }
   };
@@ -3924,7 +3924,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       {activePulseConv && !activeThread && (
         <div className={`flex-1 flex flex-col min-w-0 bg-[#f8f8f8] dark:bg-black ${mobileView === 'list' ? 'max-md:hidden' : ''}`}>
           {/* Pulse Chat Header - Fixed at top */}
-          <div className="min-h-16 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex items-center justify-between px-4 py-2 z-10 bg-[#f8f8f8]/95 dark:bg-black/95 flex-shrink-0 mobile-header-safe">
+          <div className="min-h-16 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex items-center justify-between px-4 py-2 z-10 bg-[#f8f8f8]/95 dark:bg-black/95 shrink-0 mobile-header-safe">
             <div className="flex items-center gap-3 min-w-0">
               {/* Mobile Menu Button (visible only on mobile) */}
               <button onClick={openDrawer} className="md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition" title="Show conversations">
@@ -3943,7 +3943,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     setShowContactPanel(true);
                   }
                 }}
-                className="w-10 h-10 rounded-full bg-rose-500/15 dark:bg-rose-500/15 flex items-center justify-center text-rose-700 dark:text-rose-300 text-sm font-medium flex-shrink-0 relative hover:bg-rose-500/20 dark:hover:bg-rose-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                className="w-10 h-10 rounded-full bg-rose-500/15 dark:bg-rose-500/15 flex items-center justify-center text-rose-700 dark:text-rose-300 text-sm font-medium shrink-0 relative hover:bg-rose-500/20 dark:hover:bg-rose-500/20 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                 title="View contact details"
               >
                 {activePulseConv.other_user?.avatar_url ? (
@@ -3965,12 +3965,12 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   {activePulseConv.other_user?.display_name || activePulseConv.other_user?.full_name || 'Unknown'}
                   {activePulseConv.other_user?.is_verified && (
                     <>
-                      <CheckCircle2 className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 flex-shrink-0" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" />
                       <UserBadge role="member" size="sm" showIcon={false} showLabel={true} />
                     </>
                   )}
                 </span>
-                <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">
+                <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500">
                   {!isSlackConv && activePulseConv.other_user?.handle && (
                     <span>@{activePulseConv.other_user.handle}</span>
                   )}
@@ -3979,7 +3979,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   )}
                   {isSlackConv && (
                     <span
-                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-500/10 dark:bg-purple-500/15 text-purple-600 dark:text-purple-300 normal-case tracking-normal"
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-purple-500/10 dark:bg-purple-500/15 text-purple-600 dark:text-purple-300 normal-case tracking-normal"
                       title="Messages in this thread are delivered through Slack"
                     >
                       via Slack
@@ -3987,10 +3987,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   )}
                   {activeConvGoal && (
                     <span
-                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-300 normal-case tracking-normal max-w-[180px] truncate"
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-300 normal-case tracking-normal max-w-[180px] truncate"
                       title={`Goal: ${activeConvGoal.title}`}
                     >
-                      <Target className="w-2.5 h-2.5 flex-shrink-0" />
+                      <Target className="w-2.5 h-2.5 shrink-0" />
                       <span className="truncate">{activeConvGoal.title}</span>
                     </span>
                   )}
@@ -4009,7 +4009,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   onFocus={() => setIsSearchOpen(true)}
-                  className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-transparent rounded-lg px-3 py-2 text-sm pl-9 outline-none focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/40 dark:text-white transition"
+                  className="w-full bg-zinc-50 dark:bg-white/3 border border-transparent rounded-lg px-3 py-2 text-sm pl-9 outline-hidden focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/40 dark:text-white transition"
                 />
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500 text-xs" />
                 {searchQuery && (
@@ -4027,7 +4027,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               <button
                 type="button"
                 onClick={() => setRailSheetOpen(true)}
-                className="xl:hidden relative w-12 h-12 flex items-center justify-center rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                className="xl:hidden relative w-12 h-12 flex items-center justify-center rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                 title="Relationship"
                 aria-label="Show relationship panel"
               >
@@ -4067,7 +4067,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               {!isSlackConv && activePulseConv?.other_user?.id && (
                 <button
                   onClick={() => setShowScheduleModal(true)}
-                  className="w-12 h-12 flex items-center justify-center rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                  className="w-12 h-12 flex items-center justify-center rounded-lg hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                   title="Schedule a message"
                   aria-label="Schedule a message"
                 >
@@ -4092,8 +4092,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               flips the thread to native (presence/typing/receipts re-enable). This is a
               relationship nudge, NOT an AI surface — emerald accent, never coral. */}
           {slackGroundingEnabled && isSlackConv && graduationCandidateId && activePulseConversation && !dismissedGraduations.has(activePulseConversation) && (
-            <div role="status" aria-live="polite" className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-emerald-500/20 bg-emerald-500/[0.07] dark:bg-emerald-500/[0.10]">
-              <GraduationCap className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+            <div role="status" aria-live="polite" className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-emerald-500/20 bg-emerald-500/[0.07] dark:bg-emerald-500/10">
+              <GraduationCap className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span className="text-sm text-emerald-900 dark:text-emerald-100 flex-1 min-w-0">
                 <span className="font-medium">{activePulseConv?.other_user?.display_name || 'This person'}</span>
                 {' is on Pulse — switch this thread to native messaging?'}
@@ -4102,7 +4102,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 type="button"
                 onClick={handleGraduateConversation}
                 disabled={isGraduating}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 flex-shrink-0"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors disabled:opacity-60 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/40 shrink-0"
               >
                 {isGraduating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                 {isGraduating ? 'Switching…' : 'Switch to native'}
@@ -4111,7 +4111,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 type="button"
                 onClick={() => { if (activePulseConversation) setDismissedGraduations(prev => new Set(prev).add(activePulseConversation)); }}
                 disabled={isGraduating}
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-emerald-700/70 dark:text-emerald-300/70 hover:bg-emerald-500/15 transition-colors flex-shrink-0 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-emerald-700/70 dark:text-emerald-300/70 hover:bg-emerald-500/15 transition-colors shrink-0 disabled:opacity-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500/40"
                 title="Dismiss"
                 aria-label="Dismiss graduation prompt"
               >
@@ -4122,7 +4122,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
           {/* Pulse Message Search Panel */}
           {isSearchOpen && (
-            <div className="border-b border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] p-3 animate-slide-down">
+            <div className="border-b border-zinc-200 dark:border-white/6 bg-zinc-50 dark:bg-white/2 p-3 animate-slide-down">
               <div className="flex items-center gap-2">
                 <div className="flex-1 relative">
                   <input
@@ -4131,7 +4131,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     placeholder="Search messages in this conversation..."
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    className="w-full bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-lg px-3 py-2 text-sm pl-9 outline-none focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/40"
+                    className="w-full bg-white dark:bg-white/3 border border-zinc-200 dark:border-white/6 rounded-lg px-3 py-2 text-sm pl-9 outline-hidden focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/40"
                   />
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500 text-xs" />
                   {searchQuery && (
@@ -4169,7 +4169,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                         <div className="text-xs text-zinc-700 dark:text-zinc-300 line-clamp-2">
                           {msg.content.split(new RegExp(`(${searchQuery})`, 'gi')).map((part, i) =>
                             part.toLowerCase() === searchQuery.toLowerCase()
-                              ? <mark key={i} className="bg-rose-500/20 dark:bg-rose-500/25 text-rose-700 dark:text-rose-200 px-0.5 rounded">{part}</mark>
+                              ? <mark key={i} className="bg-rose-500/20 dark:bg-rose-500/25 text-rose-700 dark:text-rose-200 px-0.5 rounded-sm">{part}</mark>
                               : part
                           )}
                         </div>
@@ -4294,9 +4294,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 },
               ];
 
-              const sectionLabel = "px-2 pt-4 pb-1.5 text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500";
-              const rowClass = "w-full flex items-start gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 hover:text-rose-600 dark:hover:text-rose-bright transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40";
-              const iconClass = "w-4 h-4 mt-0.5 text-zinc-400 dark:text-zinc-500 group-hover:text-rose-500 dark:group-hover:text-rose-bright flex-shrink-0";
+              const sectionLabel = "px-2 pt-4 pb-1.5 text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500";
+              const rowClass = "w-full flex items-start gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/4 text-zinc-700 dark:text-zinc-300 hover:text-rose-600 dark:hover:text-rose-bright transition-colors group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40";
+              const iconClass = "w-4 h-4 mt-0.5 text-zinc-400 dark:text-zinc-500 group-hover:text-rose-500 dark:group-hover:text-rose-bright shrink-0";
 
               const renderRow = (row: DrawerRow) => (
                 <button key={row.id} type="button" onClick={row.onActivate} className={rowClass}>
@@ -4318,7 +4318,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[90]"
+                  className="fixed inset-0 bg-black/40 backdrop-blur-xs z-90"
                   onClick={() => setShowToolsDrawer(false)}
                 />
                 {/* Drawer Panel */}
@@ -4327,19 +4327,19 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   animate={{ x: 0 }}
                   exit={{ x: '100%' }}
                   transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                  className="fixed right-0 top-0 bottom-0 w-80 bg-white dark:bg-black border-l border-zinc-200/60 dark:border-white/[0.06] shadow-2xl z-[91] flex flex-col"
+                  className="fixed right-0 top-0 bottom-0 w-80 bg-white dark:bg-black border-l border-zinc-200/60 dark:border-white/6 shadow-2xl z-91 flex flex-col"
                   role="dialog"
                   aria-label="Tools menu"
                 >
                   {/* Drawer Header */}
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200/60 dark:border-white/[0.06]">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200/60 dark:border-white/6">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-[11px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-700 dark:text-zinc-200">MESSAGE TOOLS</span>
-                      <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 tabular-nums">· {totalTools}</span>
+                      <span className="text-[11px] font-mono uppercase tracking-widest font-medium text-zinc-700 dark:text-zinc-200">MESSAGE TOOLS</span>
+                      <span className="text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500 tabular-nums">· {totalTools}</span>
                     </div>
                     <button
                       onClick={() => setShowToolsDrawer(false)}
-                      className="w-7 h-7 rounded-lg text-zinc-500 hover:text-rose-500 dark:hover:text-rose-bright hover:bg-zinc-100 dark:hover:bg-white/[0.04] flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                      className="w-7 h-7 rounded-lg text-zinc-500 hover:text-rose-500 dark:hover:text-rose-bright hover:bg-zinc-100 dark:hover:bg-white/4 flex items-center justify-center transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                       aria-label="Close tools"
                     >
                       <X className="w-4 h-4" />
@@ -4359,9 +4359,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   </div>
 
                   {/* Footer */}
-                  <div className="px-4 py-2.5 border-t border-zinc-200/60 dark:border-white/[0.06]">
-                    <p className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 text-center">
-                      <kbd className="px-1.5 py-0.5 bg-zinc-100 dark:bg-white/[0.06] rounded text-[9px] font-mono">Esc</kbd>{' '}to close
+                  <div className="px-4 py-2.5 border-t border-zinc-200/60 dark:border-white/6">
+                    <p className="text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500 text-center">
+                      <kbd className="px-1.5 py-0.5 bg-zinc-100 dark:bg-white/6 rounded-sm text-[9px] font-mono">Esc</kbd>{' '}to close
                     </p>
                   </div>
                 </motion.div>
@@ -4392,11 +4392,11 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             <>
               {/* Backdrop */}
               <div
-                className="fixed inset-0 z-[100]"
+                className="fixed inset-0 z-100"
                 onClick={() => setShowThemeSelector(false)}
               />
               {/* Picker positioned in top-right area */}
-              <div className="fixed top-20 right-4 z-[101]">
+              <div className="fixed top-20 right-4 z-101">
                 <StandaloneThemePicker
                   onClose={() => setShowThemeSelector(false)}
                   onColorPairChange={(pair) => setSelectedColorPair(pair)}
@@ -4436,7 +4436,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
           {/* Pulse Messages - Scrollable area */}
           {/* min-h-0: without it a flex-1 child defaults to min-height:auto and
-              grows to its content instead of scrolling, pushing the flex-shrink-0
+              grows to its content instead of scrolling, pushing the shrink-0
               composer below the column box — under the mobile bottom bar. */}
           <div className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6">
             {/* Load More button for pagination */}
@@ -4524,7 +4524,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     >
                       {!isMe && showAvatar && (
                         <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-xs mr-2 mt-auto flex-shrink-0 bg-rose-500/15 ring-1 ring-rose-500/30 text-rose-700 dark:text-rose-300 font-medium"
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-xs mr-2 mt-auto shrink-0 bg-rose-500/15 ring-1 ring-rose-500/30 text-rose-700 dark:text-rose-300 font-medium"
                         >
                           {activePulseConv.other_user?.avatar_url ? (
                             <img src={activePulseConv.other_user.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
@@ -4787,7 +4787,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                     if (e.key === 'Enter') saveEditPulseMessage();
                                     if (e.key === 'Escape') cancelEditPulseMessage();
                                   }}
-                                  className="w-full px-2 py-1 rounded bg-white/20 dark:bg-black/20 border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] text-sm focus:outline-none focus:ring-1 focus:ring-[#f43f5e]"
+                                  className="w-full px-2 py-1 rounded-sm bg-white/20 dark:bg-black/20 border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] text-sm focus:outline-hidden focus:ring-1 focus:ring-[#f43f5e]"
                                   autoFocus
                                 />
                                 <div className="flex gap-2 text-[10px]">
@@ -4797,7 +4797,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                               </div>
                             ) : (
                             <p
-                              className="whitespace-pre-wrap break-words"
+                              className="whitespace-pre-wrap wrap-break-word"
                               style={{
                                 fontSize: 'var(--font-size-message)',
                                 fontWeight: 'var(--font-weight-message)',
@@ -4875,22 +4875,22 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
           {/* Pulse Conversation Stats Modal */}
           {showStatsPanel && (
-            <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-              <div className="bg-white dark:bg-black w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-white/[0.06]">
-                <div className="p-4 border-b border-zinc-200 dark:border-white/[0.06] flex justify-between items-center">
+            <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center animate-fade-in p-4">
+              <div className="bg-white dark:bg-black w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-white/6">
+                <div className="p-4 border-b border-zinc-200 dark:border-white/6 flex justify-between items-center">
                   <h3 className="font-medium text-zinc-900 dark:text-white flex items-center gap-2">
                     <BarChart className="w-4 h-4 text-zinc-400 dark:text-zinc-500" /> Pulse Conversation Stats
                   </h3>
-                  <button onClick={() => setShowStatsPanel(false)} className="text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded" aria-label="Close stats"><X className="w-4 h-4" /></button>
+                  <button onClick={() => setShowStatsPanel(false)} className="text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm" aria-label="Close stats"><X className="w-4 h-4" /></button>
                 </div>
                 <div className="p-4 space-y-4">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200/60 dark:border-white/[0.06] p-3 rounded-lg flex flex-col gap-1">
-                      <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">Total Messages</span>
+                    <div className="bg-zinc-50 dark:bg-white/3 border border-zinc-200/60 dark:border-white/6 p-3 rounded-lg flex flex-col gap-1">
+                      <span className="text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500">Total Messages</span>
                       <span className="text-xl font-medium tabular-nums text-zinc-900 dark:text-white">{pulseMessages.length}</span>
                     </div>
-                    <div className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200/60 dark:border-white/[0.06] p-3 rounded-lg flex flex-col gap-1">
-                      <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">Last Activity</span>
+                    <div className="bg-zinc-50 dark:bg-white/3 border border-zinc-200/60 dark:border-white/6 p-3 rounded-lg flex flex-col gap-1">
+                      <span className="text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500">Last Activity</span>
                       <span className="text-sm font-medium tabular-nums text-zinc-900 dark:text-white">
                         {pulseMessages.length > 0 ? new Date(pulseMessages[pulseMessages.length - 1].created_at).toLocaleDateString() : 'N/A'}
                       </span>
@@ -4898,26 +4898,26 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   </div>
                   <div className="grid grid-cols-3 gap-3 text-xs">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">Sent</span>
+                      <span className="text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500">Sent</span>
                       <span className="font-medium tabular-nums text-zinc-900 dark:text-white">
                         {pulseMessages.filter(m => m.sender_id !== activePulseConv?.other_user?.id).length}
                       </span>
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">Received</span>
+                      <span className="text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500">Received</span>
                       <span className="font-medium tabular-nums text-zinc-900 dark:text-white">
                         {pulseMessages.filter(m => m.sender_id === activePulseConv?.other_user?.id).length}
                       </span>
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">Days Active</span>
+                      <span className="text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500">Days Active</span>
                       <span className="font-medium tabular-nums text-zinc-900 dark:text-white">
                         {pulseMessages.length > 0 ? Math.round((new Date().getTime() - new Date(pulseMessages[0].created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0}
                       </span>
                     </div>
                   </div>
-                  <div className="border-t border-zinc-200/60 dark:border-white/[0.06] pt-3 flex flex-col gap-1">
-                    <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">Conversation Started</span>
+                  <div className="border-t border-zinc-200/60 dark:border-white/6 pt-3 flex flex-col gap-1">
+                    <span className="text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500">Conversation Started</span>
                     <span className="text-sm text-zinc-700 dark:text-zinc-300">
                       {pulseMessages.length > 0 ? new Date(pulseMessages[0].created_at).toLocaleString() : 'No messages yet'}
                     </span>
@@ -4929,26 +4929,26 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
           {/* Pulse Outcome Setup Modal */}
           {showOutcomeSetup && (
-            <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-              <div className="bg-white dark:bg-black w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-white/[0.06]">
-                <div className="p-4 border-b border-zinc-200 dark:border-white/[0.06] flex justify-between items-center">
+            <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center animate-fade-in p-4">
+              <div className="bg-white dark:bg-black w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-white/6">
+                <div className="p-4 border-b border-zinc-200 dark:border-white/6 flex justify-between items-center">
                   <h3 className="font-medium text-zinc-900 dark:text-white flex items-center gap-2">
                     <Target className="w-4 h-4 text-rose-500" /> Set Conversation Goal
                   </h3>
-                  <button onClick={() => setShowOutcomeSetup(false)} className="text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded" aria-label="Close goal setup"><X className="w-4 h-4" /></button>
+                  <button onClick={() => setShowOutcomeSetup(false)} className="text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm" aria-label="Close goal setup"><X className="w-4 h-4" /></button>
                 </div>
                 <div className="p-4 space-y-4">
                   <p className="text-sm text-zinc-500 dark:text-zinc-400">
                     Define a goal for this conversation to track progress and stay focused.
                   </p>
                   <div>
-                    <label className="block text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 mb-2">Goal Type</label>
+                    <label className="block text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500 mb-2">Goal Type</label>
                     <div className="grid grid-cols-2 gap-2">
                       {['Close Deal', 'Schedule Meeting', 'Get Approval', 'Resolve Issue'].map(goal => (
                         <button
                           key={goal}
                           onClick={() => { void handleSetConversationGoal(goal); }}
-                          className="p-3 rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-transparent hover:border-rose-500/40 hover:bg-rose-500/5 dark:hover:bg-rose-500/[0.06] text-sm text-zinc-700 dark:text-zinc-300 hover:text-rose-600 dark:hover:text-rose-bright transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                          className="p-3 rounded-lg border border-zinc-200 dark:border-white/8 bg-transparent hover:border-rose-500/40 hover:bg-rose-500/5 dark:hover:bg-rose-500/6 text-sm text-zinc-700 dark:text-zinc-300 hover:text-rose-600 dark:hover:text-rose-bright transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                         >
                           {goal}
                         </button>
@@ -4956,11 +4956,11 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 mb-2">Custom Goal</label>
+                    <label className="block text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500 mb-2">Custom Goal</label>
                     <input
                       type="text"
                       placeholder="Enter your custom goal..."
-                      className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/40 outline-none transition-colors"
+                      className="w-full bg-zinc-50 dark:bg-white/3 border border-zinc-200 dark:border-white/8 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/40 outline-hidden transition-colors"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && (e.target as HTMLInputElement).value.trim()) {
                           void handleSetConversationGoal((e.target as HTMLInputElement).value);
@@ -4975,17 +4975,17 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
           {/* Pulse Handoff Card */}
           {showHandoffCard && (
-            <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-              <div className="bg-white dark:bg-black w-full max-w-lg rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-white/[0.06]">
-                <div className="p-4 border-b border-zinc-200 dark:border-white/[0.06] flex justify-between items-center">
+            <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center animate-fade-in p-4">
+              <div className="bg-white dark:bg-black w-full max-w-lg rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-white/6">
+                <div className="p-4 border-b border-zinc-200 dark:border-white/6 flex justify-between items-center">
                   <h3 className="font-medium text-zinc-900 dark:text-white flex items-center gap-2">
                     <LogOut className="w-4 h-4 text-zinc-400 dark:text-zinc-500" /> Conversation Handoff
                   </h3>
-                  <button onClick={() => setShowHandoffCard(false)} className="text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded" aria-label="Close handoff"><X className="w-4 h-4" /></button>
+                  <button onClick={() => setShowHandoffCard(false)} className="text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm" aria-label="Close handoff"><X className="w-4 h-4" /></button>
                 </div>
                 <div className="p-4 space-y-4">
-                  <div className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200/60 dark:border-white/[0.06] rounded-lg p-4">
-                    <div className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 mb-2 flex items-center gap-1.5">
+                  <div className="bg-zinc-50 dark:bg-white/3 border border-zinc-200/60 dark:border-white/6 rounded-lg p-4">
+                    <div className="text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500 mb-2 flex items-center gap-1.5">
                       <Handshake className="w-3 h-3" />Context Summary
                     </div>
                     <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-3">
@@ -4993,11 +4993,11 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     </p>
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">Total Messages</span>
+                        <span className="text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500">Total Messages</span>
                         <span className="font-medium tabular-nums text-zinc-900 dark:text-zinc-100">{pulseMessages.length}</span>
                       </div>
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">Started</span>
+                        <span className="text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500">Started</span>
                         <span className="font-medium tabular-nums text-zinc-900 dark:text-zinc-100">
                           {pulseMessages.length > 0 ? new Date(pulseMessages[0].created_at).toLocaleDateString() : 'N/A'}
                         </span>
@@ -5005,7 +5005,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     </div>
                   </div>
                   <div>
-                    <div className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 mb-2">Recent Topics</div>
+                    <div className="text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500 mb-2">Recent Topics</div>
                     <div className="space-y-1 max-h-32 overflow-y-auto">
                       {pulseMessages.slice(-5).map((m, i) => (
                         <div key={i} className="text-xs text-zinc-600 dark:text-zinc-400 truncate">
@@ -5021,13 +5021,13 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                         navigator.clipboard.writeText(handoffText);
                         setShowHandoffCard(false);
                       }}
-                      className="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-medium py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                      className="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-medium py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-2 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                     >
                       <Copy className="w-3.5 h-3.5" /> Copy to Clipboard
                     </button>
                     <button
                       onClick={() => setShowHandoffCard(false)}
-                      className="px-4 py-2 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+                      className="px-4 py-2 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 text-xs transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
                     >
                       Close
                     </button>
@@ -5122,7 +5122,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             <div
               role="status"
               aria-live="polite"
-              className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-3 py-2 rounded-full text-xs font-mono uppercase tracking-[0.1em] bg-zinc-900/90 dark:bg-white/10 text-white dark:text-zinc-100 shadow-lg backdrop-blur"
+              className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-3 py-2 rounded-full text-xs font-mono uppercase tracking-widest bg-zinc-900/90 dark:bg-white/10 text-white dark:text-zinc-100 shadow-lg backdrop-blur-sm"
             >
               {pulseEditToast}
             </div>
@@ -5198,29 +5198,29 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       <div className={`flex-1 flex flex-col relative min-w-0 bg-[#f8f8f8] dark:bg-black ${mobileView === 'list' ? 'max-md:hidden' : ''}`}>
 
         {/* Header - Mobile Optimized - Fixed at top */}
-        <div className="min-h-[56px] md:h-16 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex items-center justify-between px-2 sm:px-4 z-10 bg-[#f8f8f8]/95 dark:bg-black/95 flex-shrink-0 gap-2 mobile-header-safe">
-          <div className="flex items-center gap-2 min-w-0 flex-shrink">
+        <div className="min-h-[56px] md:h-16 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex items-center justify-between px-2 sm:px-4 z-10 bg-[#f8f8f8]/95 dark:bg-black/95 shrink-0 gap-2 mobile-header-safe">
+          <div className="flex items-center gap-2 min-w-0 shrink">
              {/* Mobile Menu Button (visible only on mobile) */}
-             <button onClick={openDrawer} className="md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition flex-shrink-0" title="Show conversations">
+             <button onClick={openDrawer} className="md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition shrink-0" title="Show conversations">
                <PanelLeftOpen />
              </button>
              {/* Desktop Back Button (visible only on mobile when chat is active) */}
-             <button onClick={handleBackToList} className="max-md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition flex-shrink-0" title="Back to messages"><ArrowLeft /></button>
+             <button onClick={handleBackToList} className="max-md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[rgba(255,255,255,0.055)] rounded-lg transition shrink-0" title="Back to messages"><ArrowLeft /></button>
              <div className="flex flex-col min-w-0">
                  <span className="font-medium text-zinc-900 dark:text-white leading-tight flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base truncate">
                      <span className="truncate max-w-[120px] sm:max-w-none">{activeThread.contactName}</span>
-                     {activeThread.outcome && <span className="hidden sm:inline px-1.5 py-0.5 rounded bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-300 text-[10px] uppercase font-mono font-medium tracking-[0.1em] flex-shrink-0">Goal Active</span>}
+                     {activeThread.outcome && <span className="hidden sm:inline px-1.5 py-0.5 rounded-sm bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-300 text-[10px] uppercase font-mono font-medium tracking-widest shrink-0">Goal Active</span>}
                  </span>
                  {activeThread.outcome ? (
-                     <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">
+                     <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500">
                          <span className="hidden sm:inline">Progress</span>
-                         <div className="w-12 sm:w-16 h-1 bg-zinc-200 dark:bg-white/[0.06] rounded-full overflow-hidden">
+                         <div className="w-12 sm:w-16 h-1 bg-zinc-200 dark:bg-white/6 rounded-full overflow-hidden">
                              <div className={`h-full rounded-full ${activeThread.outcome.status === 'blocked' ? 'bg-rose-500' : 'bg-emerald-500'}`} style={{width: `${activeThread.outcome.progress}%`}}></div>
                          </div>
                          <span className="tabular-nums">{activeThread.outcome.progress}%</span>
                      </div>
                  ) : (
-                     <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">
+                     <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500">
                          <span className="flex items-center gap-1">
                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
                              Online
@@ -5238,9 +5238,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           {/* AI Coach Tip - Hidden on mobile, visible on md+ */}
           {nudge && showCoachTip && (
             <div className={`hidden md:flex flex-1 max-w-md mx-4 transition-opacity duration-300 ${coachTipFading ? 'opacity-0' : 'opacity-100'}`}>
-              <div className={`flex items-center gap-2 px-3 py-1.5 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200/60 dark:border-white/[0.06] rounded-lg group transition-colors ${nudgeFocused ? 'ring-1 ring-rose-500/30 bg-rose-500/5 dark:bg-rose-500/[0.06]' : ''}`}>
-                <Wand2 className="w-3 h-3 text-zinc-400 dark:text-zinc-500 flex-shrink-0" />
-                <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 flex-shrink-0">Pulse AI</span>
+              <div className={`flex items-center gap-2 px-3 py-1.5 bg-zinc-50 dark:bg-white/3 border border-zinc-200/60 dark:border-white/6 rounded-lg group transition-colors ${nudgeFocused ? 'ring-1 ring-rose-500/30 bg-rose-500/5 dark:bg-rose-500/6' : ''}`}>
+                <Wand2 className="w-3 h-3 text-zinc-400 dark:text-zinc-500 shrink-0" />
+                <span className="text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500 shrink-0">Pulse AI</span>
                 <div className="flex-1 overflow-hidden relative">
                   <div className="ticker-container whitespace-nowrap motion-reduce:overflow-visible">
                     <span className="text-xs text-zinc-600 dark:text-zinc-300 inline-block ticker-text motion-reduce:animate-none">
@@ -5251,7 +5251,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     </span>
                   </div>
                 </div>
-                <button onClick={dismissCoachTip} className="text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright transition p-0.5 flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded">
+                <button onClick={dismissCoachTip} className="text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright transition p-0.5 shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm">
                   <X className="text-[10px]" />
                 </button>
               </div>
@@ -5259,14 +5259,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           )}
 
           {/* Header Actions - Clean with Tools Drawer */}
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {/* Path D: relationship rail trigger — mobile/tablet only (the docked
                 rail is hidden below xl). Opens the rail as a sheet; badges open
                 items. */}
             <button
               type="button"
               onClick={() => setRailSheetOpen(true)}
-              className="xl:hidden relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors border border-zinc-200 dark:border-white/[0.06] bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+              className="xl:hidden relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors border border-zinc-200 dark:border-white/6 bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/4 hover:text-rose-500 dark:hover:text-rose-bright shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
               title="Relationship"
               aria-label="Show relationship panel"
             >
@@ -5292,7 +5292,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   setShowToolsDrawer(true);
                 }
               }}
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors border border-zinc-200 dark:border-white/[0.06] bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors border border-zinc-200 dark:border-white/6 bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/4 hover:text-rose-500 dark:hover:text-rose-bright shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
               title="Open Tools Menu"
               aria-label="Open Tools menu"
             >
@@ -5303,7 +5303,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Command Palette - Always visible */}
             <button
               onClick={() => openCommandPalette()}
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors border border-zinc-200 dark:border-white/[0.06] bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors border border-zinc-200 dark:border-white/6 bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/4 hover:text-rose-500 dark:hover:text-rose-bright shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
               title="Quick Actions (Ctrl+K)"
               aria-label="Open command palette"
             >
@@ -5313,7 +5313,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Focus Mode - Always visible */}
             <button
               onClick={toggleFocusMode}
-              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors border flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${focusThreadId ? 'bg-rose-500/10 dark:bg-rose-500/15 border-rose-500/30 text-rose-600 dark:text-rose-bright' : 'border-zinc-200 dark:border-white/[0.06] bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright'}`}
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors border shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 ${focusThreadId ? 'bg-rose-500/10 dark:bg-rose-500/15 border-rose-500/30 text-rose-600 dark:text-rose-bright' : 'border-zinc-200 dark:border-white/6 bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/4 hover:text-rose-500 dark:hover:text-rose-bright'}`}
               title="Focus Mode"
               aria-pressed={!!focusThreadId}
             >
@@ -5324,7 +5324,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {showAchievements && messageEnhancements.getAllAchievements().length > 0 && (
               <button
                 onClick={() => setShowAnalyticsDashboard(true)}
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors border border-zinc-200 dark:border-white/[0.06] bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors border border-zinc-200 dark:border-white/6 bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/4 hover:text-rose-500 dark:hover:text-rose-bright shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                 title="View Achievements"
                 aria-label="View achievements"
               >
@@ -5336,12 +5336,12 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
         {/* Outcome Setup Modal */}
         {showOutcomeSetup && (
-            <div className="absolute top-16 left-0 right-0 z-30 bg-white dark:bg-black border-b border-zinc-200/60 dark:border-white/[0.06] p-4 shadow-lg animate-slide-up">
-                <h4 className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 mb-2">Define Desired Outcome</h4>
+            <div className="absolute top-16 left-0 right-0 z-30 bg-white dark:bg-black border-b border-zinc-200/60 dark:border-white/6 p-4 shadow-lg animate-slide-up">
+                <h4 className="text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500 mb-2">Define Desired Outcome</h4>
                 <div className="flex gap-2">
-                    <input type="text" value={outcomeGoal} onChange={e => setOutcomeGoal(e.target.value)} placeholder="e.g., Ship v2.0 by Friday" className="flex-1 border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm bg-zinc-50 dark:bg-white/[0.03] dark:text-white outline-none focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/40 transition-colors" />
-                    <button onClick={handleSetOutcome} className="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40">Set</button>
-                    <button onClick={() => setShowOutcomeSetup(false)} className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded">Cancel</button>
+                    <input type="text" value={outcomeGoal} onChange={e => setOutcomeGoal(e.target.value)} placeholder="e.g., Ship v2.0 by Friday" className="flex-1 border border-zinc-200 dark:border-white/8 rounded-lg px-3 py-2 text-sm bg-zinc-50 dark:bg-white/3 dark:text-white outline-hidden focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/40 transition-colors" />
+                    <button onClick={handleSetOutcome} className="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40">Set</button>
+                    <button onClick={() => setShowOutcomeSetup(false)} className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 px-3 text-sm transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm">Cancel</button>
                 </div>
             </div>
         )}
@@ -5411,9 +5411,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
           {activeThread.outcome && (
               <div className="flex justify-center mb-4">
-                  <div className="bg-zinc-100 dark:bg-white/[0.04] text-rose-600 dark:text-rose-bright text-xs px-3 py-1 rounded-full border border-zinc-200 dark:border-white/[0.06] flex items-center gap-2">
+                  <div className="bg-zinc-100 dark:bg-white/4 text-rose-600 dark:text-rose-bright text-xs px-3 py-1 rounded-full border border-zinc-200 dark:border-white/6 flex items-center gap-2">
                       <Flag className="w-3 h-3" />
-                      <span className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-zinc-400 dark:text-zinc-500">PULSE AI · OUTCOME GOAL</span>
+                      <span className="font-mono uppercase tracking-widest text-[10px] font-medium text-zinc-400 dark:text-zinc-500">PULSE AI · OUTCOME GOAL</span>
                       <span className="text-zinc-300 dark:text-zinc-600">·</span>
                       <span className="text-rose-600 dark:text-rose-bright">{activeThread.outcome.goal}</span>
                   </div>
@@ -5422,16 +5422,16 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
           {/* Handoff Card */}
           {showHandoffCard && (
-              <div className="mx-auto max-w-lg bg-zinc-50 dark:bg-white/[0.03] ring-1 ring-zinc-200 dark:ring-white/[0.06] rounded-xl p-6 mb-6 animate-scale-in relative">
-                  <button onClick={() => setShowHandoffCard(false)} className="absolute top-2 right-2 text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"><X /></button>
-                  <div className="flex items-center gap-2 mb-4 text-zinc-500 dark:text-zinc-400 font-mono uppercase tracking-[0.1em] text-[10px] font-medium">
+              <div className="mx-auto max-w-lg bg-zinc-50 dark:bg-white/3 ring-1 ring-zinc-200 dark:ring-white/6 rounded-xl p-6 mb-6 animate-scale-in relative">
+                  <button onClick={() => setShowHandoffCard(false)} className="absolute top-2 right-2 text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"><X /></button>
+                  <div className="flex items-center gap-2 mb-4 text-zinc-500 dark:text-zinc-400 font-mono uppercase tracking-widest text-[10px] font-medium">
                       <i className={`fa-solid ${loadingHandoff ? 'fa-circle-notch fa-spin' : 'fa-handshake'}`}></i>
                       {loadingHandoff ? 'PULSE AI · GENERATING HANDOFF…' : 'PULSE AI · CONTEXT HANDOFF'}
                   </div>
 
                   {loadingHandoff ? (
                       <div className="py-8 flex flex-col items-center gap-3">
-                          <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-white/[0.04] flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-white/4 flex items-center justify-center">
                               <Wand2 className="text-zinc-500 dark:text-zinc-400 animate-pulse" />
                           </div>
                           <p className="text-sm text-zinc-500 dark:text-zinc-400">Analyzing conversation history...</p>
@@ -5441,7 +5441,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                           <p className="text-sm text-zinc-800 dark:text-zinc-200 mb-4">{handoffContent.context}</p>
                           <div className="grid grid-cols-2 gap-4">
                               <div>
-                                  <div className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-zinc-500 dark:text-zinc-400 mb-2">Key Decisions</div>
+                                  <div className="font-mono uppercase tracking-widest text-[10px] font-medium text-zinc-500 dark:text-zinc-400 mb-2">Key Decisions</div>
                                   {handoffContent.keyDecisions.length > 0 ? (
                                       <ul className="list-disc list-inside text-xs text-zinc-700 dark:text-zinc-300 space-y-1">
                                           {handoffContent.keyDecisions.map((d: string, i: number) => <li key={i}>{d}</li>)}
@@ -5451,7 +5451,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                   )}
                               </div>
                               <div>
-                                  <div className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-zinc-500 dark:text-zinc-400 mb-2">Pending Actions</div>
+                                  <div className="font-mono uppercase tracking-widest text-[10px] font-medium text-zinc-500 dark:text-zinc-400 mb-2">Pending Actions</div>
                                   {handoffContent.pendingActions.length > 0 ? (
                                       <ul className="list-disc list-inside text-xs text-zinc-700 dark:text-zinc-300 space-y-1">
                                           {handoffContent.pendingActions.map((a: string, i: number) => <li key={i}>{a}</li>)}
@@ -5464,7 +5464,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                           <div className="flex gap-2 mt-4">
                               <button
                                   onClick={() => handleSend(`Here is a context summary for new team members:\n\n${handoffContent.context}\n\nKey Decisions:\n${handoffContent.keyDecisions.map((d: string) => '• ' + d).join('\n') || 'None yet'}\n\nPending Actions:\n${handoffContent.pendingActions.map((a: string) => '• ' + a).join('\n') || 'None'}`)}
-                                  className="flex-1 bg-transparent border border-zinc-200 dark:border-white/[0.08] text-zinc-600 dark:text-zinc-300 hover:bg-rose-500/10 dark:hover:bg-rose-500/[0.12] hover:text-rose-600 dark:hover:text-rose-bright hover:border-rose-500/30 font-mono uppercase tracking-[0.1em] font-medium py-2 rounded-lg text-[10px] transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                                  className="flex-1 bg-transparent border border-zinc-200 dark:border-white/8 text-zinc-600 dark:text-zinc-300 hover:bg-rose-500/10 dark:hover:bg-rose-500/12 hover:text-rose-600 dark:hover:text-rose-bright hover:border-rose-500/30 font-mono uppercase tracking-widest font-medium py-2 rounded-lg text-[10px] transition-colors flex items-center justify-center gap-2 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                               >
                                   <Send className="w-3 h-3" /> Share to Thread
                               </button>
@@ -5473,7 +5473,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                       navigator.clipboard.writeText(`Context Handoff Summary\n\n${handoffContent.context}\n\nKey Decisions:\n${handoffContent.keyDecisions.map((d: string) => '• ' + d).join('\n') || 'None'}\n\nPending Actions:\n${handoffContent.pendingActions.map((a: string) => '• ' + a).join('\n') || 'None'}`);
                                       alert('Copied to clipboard!');
                                   }}
-                                  className="px-4 py-2 bg-transparent border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/[0.04] text-zinc-500 dark:text-zinc-400 rounded-lg text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                                  className="px-4 py-2 bg-transparent border border-zinc-200 dark:border-white/8 hover:bg-zinc-100 dark:hover:bg-white/4 text-zinc-500 dark:text-zinc-400 rounded-lg text-xs transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                                   title="Copy to clipboard"
                               >
                                   <Copy />
@@ -5531,7 +5531,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   />
                   <div className={`flex-1 min-w-0 flex ${isMe ? 'justify-end' : 'justify-start'} group relative ${showAvatar ? 'mb-6' : 'mb-1'} animate-slide-up`}>
                     {!isMe && showAvatar && (
-                        <div className={`w-8 h-8 rounded-full ${activeThread.avatarColor} flex items-center justify-center text-xs text-white mr-2 mt-auto flex-shrink-0 shadow-sm`}>
+                        <div className={`w-8 h-8 rounded-full ${activeThread.avatarColor} flex items-center justify-center text-xs text-white mr-2 mt-auto shrink-0 shadow-xs`}>
                             {activeThread.contactName.charAt(0)}
                         </div>
                     )}
@@ -5540,16 +5540,16 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     <div className="max-w-[85%] md:max-w-[70%] relative">
                         {/* Source Indicator for Unified Inbox */}
                         {msg.source && msg.source !== 'pulse' && (
-                            <div className="absolute -top-3 right-0 bg-white dark:bg-[rgba(255,255,255,0.055)] px-1.5 py-0.5 rounded-full border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] shadow-sm z-10">
+                            <div className="absolute -top-3 right-0 bg-white dark:bg-[rgba(255,255,255,0.055)] px-1.5 py-0.5 rounded-full border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] shadow-xs z-10">
                                 {getSourceIcon(msg.source)}
                             </div>
                         )}
 
                         <div className={`rounded-2xl px-4 py-3 md:px-5 md:py-4 text-sm transition-colors relative ${
                             isProposal && !isApproved
-                              ? `bg-amber-500/5 dark:bg-amber-500/[0.08] ring-1 ring-amber-500/30 text-zinc-800 dark:text-zinc-200 ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'}`
+                              ? `bg-amber-500/5 dark:bg-amber-500/8 ring-1 ring-amber-500/30 text-zinc-800 dark:text-zinc-200 ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'}`
                               : isApproved
-                              ? `bg-emerald-500/5 dark:bg-emerald-500/[0.08] ring-1 ring-emerald-500/30 text-zinc-800 dark:text-zinc-200 ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'}`
+                              ? `bg-emerald-500/5 dark:bg-emerald-500/8 ring-1 ring-emerald-500/30 text-zinc-800 dark:text-zinc-200 ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'}`
                               : isMe
                               ? 'bg-[#0f0f0f] dark:bg-white text-white dark:text-[#0f0f0f] rounded-br-sm'
                               : 'bg-white dark:bg-[rgba(255,255,255,0.055)] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] text-zinc-800 dark:text-zinc-200 rounded-bl-sm'
@@ -5557,9 +5557,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
                             {/* Proposal Header */}
                             {isProposal && (
-                                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-zinc-200/60 dark:border-white/[0.06]">
+                                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-zinc-200/60 dark:border-white/6">
                                     <i className={`fa-solid ${isApproved ? 'fa-gavel text-emerald-500 dark:text-emerald-400' : 'fa-scale-balanced text-amber-500 dark:text-amber-400'} text-[10px] opacity-80`}></i>
-                                    <span className={`font-mono uppercase tracking-[0.1em] text-[10px] font-medium ${isApproved ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>{isApproved ? 'PULSE AI · DECISION APPROVED' : 'PULSE AI · FORMAL PROPOSAL'}</span>
+                                    <span className={`font-mono uppercase tracking-widest text-[10px] font-medium ${isApproved ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>{isApproved ? 'PULSE AI · DECISION APPROVED' : 'PULSE AI · FORMAL PROPOSAL'}</span>
                                 </div>
                             )}
 
@@ -5632,7 +5632,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                                     const audio = new Audio(msg.attachment?.url);
                                                     audio.play();
                                                 }}
-                                                className="w-10 h-10 rounded-full bg-rose-500 text-white flex items-center justify-center hover:bg-rose-600 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                                                className="w-10 h-10 rounded-full bg-rose-500 text-white flex items-center justify-center hover:bg-rose-600 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                                             >
                                                 <Play className="text-sm" />
                                             </button>
@@ -5666,7 +5666,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                 <div className="mt-3">
                                     {msg.voiceAnalysis ? (
                                         <div className="bg-black/5 dark:bg-white/5 rounded-xl p-3 text-xs">
-                                            <div className="flex items-center gap-2 mb-2 text-rose-500 dark:text-rose-bright font-mono font-medium uppercase tracking-[0.1em] text-[10px]">
+                                            <div className="flex items-center gap-2 mb-2 text-rose-500 dark:text-rose-bright font-mono font-medium uppercase tracking-widest text-[10px]">
                                                 <Wand2 className="w-3 h-3" /> PULSE AI · DEEP AUDIO
                                             </div>
                                             <p className="mb-2 italic">"{msg.voiceAnalysis.transcription}"</p>
@@ -5683,7 +5683,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                     ) : (
                                         <button 
                                             onClick={() => msg.attachment?.url && handleAnalyzeVoice(msg.id, msg.attachment.url)}
-                                            className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium flex items-center gap-2 text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+                                            className="text-[10px] font-mono uppercase tracking-widest font-medium flex items-center gap-2 text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
                                         >
                                             {analyzingAudioId === msg.id ? <><Loader2 className="animate-spin" /> Analyzing...</> : <><Wand2 /> Deep Analyze Voice</>}
                                         </button>
@@ -5693,22 +5693,22 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
                             {/* Voting Interface */}
                             {isProposal && msg.decisionData && (
-                                <div className="mt-3 pt-2 border-t border-zinc-200/60 dark:border-white/[0.06]">
+                                <div className="mt-3 pt-2 border-t border-zinc-200/60 dark:border-white/6">
                                     <div className="flex gap-2 mb-2">
                                         <button
                                             onClick={() => handleVote(msg.id, 'me', 'approve')}
-                                            className={`flex-1 py-2 px-3 rounded-lg text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${msg.decisionData.votes.some(v => v.userId === 'me' && v.choice === 'approve') ? 'bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' : 'bg-transparent border border-zinc-200 dark:border-white/[0.08] text-zinc-600 dark:text-zinc-300 hover:bg-emerald-500/10 dark:hover:bg-emerald-500/[0.12] hover:text-emerald-700 dark:hover:text-emerald-400 hover:border-emerald-500/30'}`}
+                                            className={`flex-1 py-2 px-3 rounded-lg text-[10px] font-mono uppercase tracking-widest font-medium transition-colors flex items-center justify-center gap-2 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 ${msg.decisionData.votes.some(v => v.userId === 'me' && v.choice === 'approve') ? 'bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' : 'bg-transparent border border-zinc-200 dark:border-white/8 text-zinc-600 dark:text-zinc-300 hover:bg-emerald-500/10 dark:hover:bg-emerald-500/12 hover:text-emerald-700 dark:hover:text-emerald-400 hover:border-emerald-500/30'}`}
                                         >
                                             <ThumbsUp className="w-3.5 h-3.5" /> Approve <span className="tabular-nums opacity-70">({msg.decisionData.votes.filter(v => v.choice === 'approve').length})</span>
                                         </button>
                                         <button
                                             onClick={() => handleVote(msg.id, 'me', 'reject')}
-                                            className={`flex-1 py-2 px-3 rounded-lg text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${msg.decisionData.votes.some(v => v.userId === 'me' && v.choice === 'reject') ? 'bg-red-500/15 dark:bg-red-500/20 text-red-700 dark:text-red-400 border border-red-500/30' : 'bg-transparent border border-zinc-200 dark:border-white/[0.08] text-zinc-600 dark:text-zinc-300 hover:bg-red-500/10 dark:hover:bg-red-500/[0.12] hover:text-red-700 dark:hover:text-red-400 hover:border-red-500/30'}`}
+                                            className={`flex-1 py-2 px-3 rounded-lg text-[10px] font-mono uppercase tracking-widest font-medium transition-colors flex items-center justify-center gap-2 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 ${msg.decisionData.votes.some(v => v.userId === 'me' && v.choice === 'reject') ? 'bg-red-500/15 dark:bg-red-500/20 text-red-700 dark:text-red-400 border border-red-500/30' : 'bg-transparent border border-zinc-200 dark:border-white/8 text-zinc-600 dark:text-zinc-300 hover:bg-red-500/10 dark:hover:bg-red-500/12 hover:text-red-700 dark:hover:text-red-400 hover:border-red-500/30'}`}
                                         >
                                             <ThumbsDown className="w-3.5 h-3.5" /> Reject <span className="tabular-nums opacity-70">({msg.decisionData.votes.filter(v => v.choice === 'reject').length})</span>
                                         </button>
                                     </div>
-                                    <div className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-500 dark:text-zinc-400 text-center tabular-nums">Threshold: {msg.decisionData.threshold} approvals required</div>
+                                    <div className="text-[10px] font-mono uppercase tracking-widest font-medium text-zinc-500 dark:text-zinc-400 text-center tabular-nums">Threshold: {msg.decisionData.threshold} approvals required</div>
                                 </div>
                             )}
 
@@ -5857,7 +5857,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           aria-label="Relationship"
         >
           <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/40 backdrop-blur-xs"
             onClick={() => setRailSheetOpen(false)}
             aria-hidden="true"
           />

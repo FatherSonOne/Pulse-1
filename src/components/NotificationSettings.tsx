@@ -209,7 +209,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
       )}
 
       {/* Main Toggles */}
-      <div className="bg-white dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 space-y-4 shadow-sm">
+      <div className="bg-white dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 space-y-4 shadow-xs">
         <ToggleItem
           label="Desktop Notifications"
           desc="Show pop-up notifications on your desktop"
@@ -238,7 +238,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
           a subscription. This card always shows status + a reliable Enable
           button that prompts and subscribes. */}
       {pushSupported && (
-        <div className="bg-white dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
+        <div className="bg-white dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 shadow-xs">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <h4 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
@@ -287,7 +287,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
 
       {/* Sound Settings */}
       {notifSound && (
-        <div className="bg-white dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
+        <div className="bg-white dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 shadow-xs">
           <h4 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-4 flex items-center gap-2">
             <Volume2 className="text-rose-500" />
             Sound Settings
@@ -354,7 +354,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
       )}
 
       {/* Quiet Hours */}
-      <div className="bg-white dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
+      <div className="bg-white dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 shadow-xs">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h4 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
@@ -410,7 +410,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
       </div>
 
       {/* VIP Contacts */}
-      <div className="bg-white dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
+      <div className="bg-white dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 shadow-xs">
         <h4 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 flex items-center gap-2">
           <Star className="text-amber-500" />
           VIP Contacts
@@ -461,7 +461,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
       </div>
 
       {/* Batching */}
-      <div className="bg-white dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
+      <div className="bg-white dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 shadow-xs">
         <ToggleItem
           label="Batch Low-Priority Notifications"
           desc="Group routine notifications and deliver them in periodic digests instead of immediately"
@@ -492,7 +492,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
       </div>
 
       {/* Per-Category Settings */}
-      <div className="bg-white dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
+      <div className="bg-white dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-xs">
         <button
           onClick={() => setShowCategorySettings(!showCategorySettings)}
           className="w-full p-4 flex items-center justify-between hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition"
@@ -565,7 +565,7 @@ const CategorySettingsRow: React.FC<{
                 settings.enabled ? 'bg-blue-500' : 'bg-zinc-300 dark:bg-zinc-700'
               }`}
             >
-              <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform ${
+              <div className={`w-4 h-4 rounded-full bg-white shadow-xs transform transition-transform ${
                 settings.enabled ? 'translate-x-5' : 'translate-x-0'
               }`} />
             </button>
@@ -597,7 +597,7 @@ const CategorySettingsRow: React.FC<{
           <select
             value={settings.priority}
             onChange={(e) => onUpdate({ priority: e.target.value as NotificationPriority })}
-            className="px-2 py-1 text-[10px] bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-400"
+            className="px-2 py-1 text-[10px] bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-sm text-zinc-600 dark:text-zinc-400"
           >
             <option value="low">Min: Low</option>
             <option value="medium">Min: Medium</option>

@@ -134,7 +134,7 @@ const RoleSelector: React.FC<RoleSelectorProps> = ({ value, onChange, disabled }
                     selected ? 'bg-rose-50/60 dark:bg-rose-500/10' : ''
                   }`}
                 >
-                  <Check className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${selected ? 'text-rose-500' : 'text-transparent'}`} />
+                  <Check className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${selected ? 'text-rose-500' : 'text-transparent'}`} />
                   <div className="min-w-0">
                     <p className={`text-sm font-medium ${meta.tone}`}>{meta.label}</p>
                     <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-tight">{meta.hint}</p>
@@ -356,7 +356,7 @@ export const InviteCard: React.FC<InviteCardProps> = ({
               onClick={() => setMode('single')}
               className={`px-2.5 py-1 rounded-md transition ${
                 mode === 'single'
-                  ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm'
+                  ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-xs'
                   : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
               }`}
             >
@@ -369,7 +369,7 @@ export const InviteCard: React.FC<InviteCardProps> = ({
               onClick={() => setMode('bulk')}
               className={`px-2.5 py-1 rounded-md transition ${
                 mode === 'bulk'
-                  ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm'
+                  ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-xs'
                   : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
               }`}
             >
@@ -393,7 +393,7 @@ export const InviteCard: React.FC<InviteCardProps> = ({
                 placeholder="colleague@company.com"
                 autoComplete="email"
                 spellCheck={false}
-                className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg pl-9 pr-3 py-2.5 text-sm dark:text-white text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500 transition"
+                className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg pl-9 pr-3 py-2.5 text-sm dark:text-white text-zinc-900 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500 transition"
                 onKeyDown={(e) => { if (e.key === 'Enter') handleSingleInvite(); }}
               />
             </div>
@@ -408,7 +408,7 @@ export const InviteCard: React.FC<InviteCardProps> = ({
                 type="button"
                 onClick={handleSingleInvite}
                 disabled={!inviteEmail || isInviting}
-                className="ml-auto inline-flex items-center gap-2 px-5 py-2.5 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-semibold rounded-lg shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="ml-auto inline-flex items-center gap-2 px-5 py-2.5 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-semibold rounded-lg shadow-xs transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isInviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 Send invite
@@ -477,7 +477,7 @@ export const InviteCard: React.FC<InviteCardProps> = ({
                 placeholder={'alice@acme.com,admin\nbob@acme.com,member\ncarol@acme.com'}
                 rows={6}
                 spellCheck={false}
-                className="w-full px-3 py-2 text-sm font-mono border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white resize-y focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+                className="w-full px-3 py-2 text-sm font-mono border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white resize-y focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
               />
               {isDragging && (
                 <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-rose-50/90 dark:bg-rose-500/10 pointer-events-none">

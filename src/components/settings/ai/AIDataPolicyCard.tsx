@@ -104,7 +104,7 @@ export const AIDataPolicyCard: React.FC = () => {
       }`}>
         {effectiveMasking ? (
           <>
-            <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+            <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <p className="text-xs text-emerald-700 dark:text-emerald-300">
               <strong>PII masking is active</strong> — emails, phone numbers, and other identifiers
               are scrubbed from your prompts before being sent to AI providers.
@@ -113,7 +113,7 @@ export const AIDataPolicyCard: React.FC = () => {
           </>
         ) : (
           <>
-            <Eye className="w-4 h-4 text-zinc-500 flex-shrink-0" />
+            <Eye className="w-4 h-4 text-zinc-500 shrink-0" />
             <p className="text-xs text-zinc-600 dark:text-zinc-400">
               PII masking is off. Prompts are sent to AI providers as-is.
             </p>
@@ -128,7 +128,7 @@ export const AIDataPolicyCard: React.FC = () => {
           checked={userPiiOn || orgEnforced}
           onChange={(e) => handleUserPiiToggle(e.target.checked)}
           disabled={isLoadingUser || isSavingUser || orgEnforced}
-          className="w-4 h-4 mt-0.5 text-rose-500 border-zinc-300 rounded focus:ring-rose-500 disabled:opacity-50"
+          className="w-4 h-4 mt-0.5 text-rose-500 border-zinc-300 rounded-sm focus:ring-rose-500 disabled:opacity-50"
         />
         <div className="flex-1">
           <div className="text-sm font-medium text-zinc-900 dark:text-white">
@@ -158,7 +158,7 @@ export const AIDataPolicyCard: React.FC = () => {
               type="checkbox"
               checked={orgEnforced}
               onChange={(e) => setOrgEnforced(e.target.checked)}
-              className="w-4 h-4 mt-0.5 text-rose-500 border-zinc-300 rounded focus:ring-rose-500"
+              className="w-4 h-4 mt-0.5 text-rose-500 border-zinc-300 rounded-sm focus:ring-rose-500"
             />
             <div className="flex-1">
               <div className="text-sm font-medium text-zinc-900 dark:text-white">
@@ -179,7 +179,7 @@ export const AIDataPolicyCard: React.FC = () => {
               id="ai-retention"
               value={orgRetention}
               onChange={(e) => setOrgRetention(Number(e.target.value) as Retention)}
-              className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+              className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
             >
               {RETENTION_OPTIONS.map(o => (
                 <option key={o.value} value={o.value}>{o.label}</option>

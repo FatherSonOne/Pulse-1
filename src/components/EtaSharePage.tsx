@@ -149,7 +149,7 @@ const EtaSharePage: React.FC<EtaSharePageProps> = ({ token }) => {
               <p className="text-2xl font-bold text-zinc-900 truncate">{headline}</p>
               <p className="text-sm text-zinc-500 truncate">to {subhead}</p>
             </div>
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <span
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                   status === 'active'
@@ -180,7 +180,7 @@ const EtaSharePage: React.FC<EtaSharePageProps> = ({ token }) => {
 
       {/* Footer disclaimer */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-center">
-        <p className="text-[10px] text-zinc-500 bg-white/80 backdrop-blur px-2 py-1 rounded-md">
+        <p className="text-[10px] text-zinc-500 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-md">
           Shared via Pulse · Auto-refreshing every 8s
         </p>
       </div>

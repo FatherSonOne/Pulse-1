@@ -119,7 +119,7 @@ export const NaturalLanguageEventInput: React.FC<NaturalLanguageEventInputProps>
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            className="w-full px-4 py-3 pr-12 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            className="w-full px-4 py-3 pr-12 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
           />
 
           {/* Loading Spinner */}
@@ -214,7 +214,7 @@ export const NaturalLanguageEventInput: React.FC<NaturalLanguageEventInputProps>
             {/* Tip */}
             <div className="px-4 py-2 bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-700 text-xs text-zinc-500">
               <Lightbulb className="mr-1" />
-              Press <kbd className="px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-800 rounded">Enter</kbd> to create or <kbd className="px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-800 rounded">Esc</kbd> to cancel
+              Press <kbd className="px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-800 rounded-sm">Enter</kbd> to create or <kbd className="px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-800 rounded-sm">Esc</kbd> to cancel
             </div>
           </div>
         )}
@@ -242,7 +242,7 @@ export const NaturalLanguageEventInput: React.FC<NaturalLanguageEventInputProps>
                 key={example}
                 type="button"
                 onClick={() => setInput(example)}
-                className="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded text-zinc-600 dark:text-zinc-400 transition"
+                className="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-sm text-zinc-600 dark:text-zinc-400 transition"
               >
                 {example}
               </button>

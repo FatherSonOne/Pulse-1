@@ -174,7 +174,7 @@ export const SourcesRail: React.FC<SourcesRailProps> = ({
                   </span>
                   {obTotal > 0 ? (
                     <span
-                      className={`ml-auto inline-flex items-center justify-center min-w-[1.25rem] px-1.5 py-0.5 rounded-full text-[10px] font-mono font-semibold ${
+                      className={`ml-auto inline-flex items-center justify-center min-w-5 px-1.5 py-0.5 rounded-full text-[10px] font-mono font-semibold ${
                         obFailed > 0
                           ? 'bg-red-500/15 text-red-600 dark:text-red-400'
                           : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'

@@ -115,7 +115,7 @@ const Section: React.FC<{ label: string; action?: React.ReactNode; children: Rea
   <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/60">
     <div className="flex items-center justify-between mb-3">
       <span
-        className="text-[10px] uppercase tracking-[0.1em] text-zinc-400 dark:text-zinc-500"
+        className="text-[10px] uppercase tracking-widest text-zinc-400 dark:text-zinc-500"
         style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
       >
         {label}
@@ -406,8 +406,8 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
                 <span
                   className={`shrink-0 px-1.5 py-0.5 rounded text-[9px] uppercase tracking-[0.08em] font-semibold ${
                     contact.pulseUserId
-                      ? 'bg-[var(--pulse-rose-soft)] text-[var(--pulse-rose)]'
-                      : 'bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-400'
+                      ? 'bg-(--pulse-rose-soft) text-(--pulse-rose)'
+                      : 'bg-zinc-100 dark:bg-white/6 text-zinc-500 dark:text-zinc-400'
                   }`}
                   style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
                 >
@@ -610,7 +610,7 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
                       style={{ background: 'var(--pulse-coral-bg-08)', borderColor: 'var(--pulse-rose-soft)' }}
                     >
                       <div
-                        className="flex items-center gap-1.5 mb-2 text-[10px] uppercase tracking-[0.1em]"
+                        className="flex items-center gap-1.5 mb-2 text-[10px] uppercase tracking-widest"
                         style={{ color: 'var(--pulse-coral-fg)', fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
                       >
                         <Sparkles className="w-3 h-3" />
@@ -625,7 +625,7 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
                               {s.field} <span style={{ color: 'var(--pulse-ink-3)' }}>· {Math.round(s.confidence * 100)}%</span>
                               {s.isReplace && (
                                 <span
-                                  className="ml-1.5 px-1 py-0.5 rounded text-[9px] uppercase tracking-wide font-semibold align-middle"
+                                  className="ml-1.5 px-1 py-0.5 rounded-sm text-[9px] uppercase tracking-wide font-semibold align-middle"
                                   style={{ background: 'var(--pulse-tone-negative-bg, rgba(239,68,68,0.12))', color: 'var(--pulse-tone-negative, #ef4444)' }}
                                   title="This overwrites an existing Logos value — review carefully"
                                 >
@@ -746,7 +746,7 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
                     placeholder={`Message ${contact.name} on Slack…`}
                     disabled={slackBusy}
                     onChange={() => slackErr && setSlackErr(null)}
-                    className="w-full text-sm bg-transparent resize-none focus:outline-none"
+                    className="w-full text-sm bg-transparent resize-none focus:outline-hidden"
                     style={{ color: 'var(--pulse-ink)' }}
                   />
                   <div
@@ -798,7 +798,7 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
             }}
           >
             <div
-              className="flex items-center gap-1.5 mb-1.5 text-[10px] uppercase tracking-[0.1em]"
+              className="flex items-center gap-1.5 mb-1.5 text-[10px] uppercase tracking-widest"
               style={{ color: 'var(--pulse-coral-fg)', fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
             >
               <Sparkles className="w-3 h-3" />
@@ -835,7 +835,7 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
         <div className="space-y-2.5">
           {contact.email && (
             <div className="flex items-center gap-3 text-sm">
-              <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 flex-shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 shrink-0">
                 <Mail className="w-3.5 h-3.5" />
               </div>
               <span className="text-zinc-700 dark:text-zinc-300 select-all truncate">{contact.email}</span>
@@ -843,7 +843,7 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
           )}
           {contact.phone && (
             <div className="flex items-center gap-3 text-sm">
-              <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 flex-shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 shrink-0">
                 <Phone className="w-3.5 h-3.5" />
               </div>
               <span className="text-zinc-700 dark:text-zinc-300 select-all">{contact.phone}</span>
@@ -851,7 +851,7 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
           )}
           {contact.address && (
             <div className="flex items-center gap-3 text-sm">
-              <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 flex-shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 shrink-0">
                 <MapPin className="w-3.5 h-3.5" />
               </div>
               <span className="text-zinc-700 dark:text-zinc-300">{contact.address}</span>
@@ -878,7 +878,7 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
           ) : null}
           {contact.website && (
             <div className="flex items-center gap-3 text-sm">
-              <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 flex-shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 shrink-0">
                 <Globe className="w-3.5 h-3.5" />
               </div>
               <a
@@ -893,7 +893,7 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
           )}
           {contact.birthday && (
             <div className="flex items-center gap-3 text-sm">
-              <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 flex-shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 shrink-0">
                 <Cake className="w-3.5 h-3.5" />
               </div>
               <span className="text-zinc-700 dark:text-zinc-300">{contact.birthday}</span>
@@ -935,7 +935,7 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
           <textarea
             ref={notesRef}
             defaultValue={contact.notes ?? ''}
-            className="w-full min-h-[80px] text-sm text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl p-3 resize-none focus:outline-none focus:ring-2 focus:ring-rose-500"
+            className="w-full min-h-[80px] text-sm text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl p-3 resize-none focus:outline-hidden focus:ring-2 focus:ring-rose-500"
             placeholder="Add notes about this contact..."
           />
         ) : (
@@ -979,7 +979,7 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
           role="presentation"
         >
           <div
-            className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-zinc-200 dark:border-white/[0.06] max-w-sm w-full overflow-hidden"
+            className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-zinc-200 dark:border-white/6 max-w-sm w-full overflow-hidden"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
@@ -1003,16 +1003,16 @@ export const FocusColumn: React.FC<FocusColumnProps> = ({
                   onChange={(e) => setDeleteConfirmText(e.target.value)}
                   autoFocus
                   disabled={isDeleting}
-                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 disabled:opacity-50"
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/8 bg-white dark:bg-white/3 text-zinc-900 dark:text-white text-sm focus:outline-hidden focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 disabled:opacity-50"
                 />
               </label>
             </div>
-            <div className="flex items-center justify-end gap-2 px-6 py-4 bg-zinc-50 dark:bg-white/[0.02] border-t border-zinc-200 dark:border-white/[0.06]">
+            <div className="flex items-center justify-end gap-2 px-6 py-4 bg-zinc-50 dark:bg-white/2 border-t border-zinc-200 dark:border-white/6">
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={isDeleting}
-                className="px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] rounded-lg transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>

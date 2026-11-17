@@ -84,7 +84,7 @@ export const PasskeysCard: React.FC = () => {
                   setBusy(false);
                 }
               }}
-              className="px-3 py-1 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 rounded transition"
+              className="px-3 py-1 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 rounded-sm transition"
             >
               Remove
             </button>
@@ -110,7 +110,7 @@ export const PasskeysCard: React.FC = () => {
           <MonoLabel>Passkeys</MonoLabel>
         </div>
         {passkeys.length > 0 && (
-          <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium uppercase tracking-wide">
+          <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-sm bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium uppercase tracking-wide">
             <Check className="w-3 h-3" /> {passkeys.length} active
           </span>
         )}
@@ -123,7 +123,7 @@ export const PasskeysCard: React.FC = () => {
 
       {supported === false && (
         <div className="flex items-start gap-2 rounded-lg bg-amber-500/5 border border-amber-500/20 px-3 py-2">
-          <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+          <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
             This device or browser doesn't support passkeys. Try a recent Chrome, Safari, or Edge on a
             device with a fingerprint reader, Face ID, or Windows Hello.
@@ -139,7 +139,7 @@ export const PasskeysCard: React.FC = () => {
                 <p className="text-sm font-medium text-zinc-900 dark:text-white truncate flex items-center gap-2">
                   {pk.device_label || 'Passkey'}
                   {pk.backed_up && (
-                    <span className="text-[9px] uppercase tracking-wide font-semibold text-zinc-400 border border-zinc-200 dark:border-zinc-700 rounded px-1 py-0.5">
+                    <span className="text-[9px] uppercase tracking-wide font-semibold text-zinc-400 border border-zinc-200 dark:border-zinc-700 rounded-sm px-1 py-0.5">
                       Synced
                     </span>
                   )}
@@ -153,7 +153,7 @@ export const PasskeysCard: React.FC = () => {
                 type="button"
                 onClick={() => handleRemove(pk)}
                 disabled={busy}
-                className="p-1.5 rounded text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition disabled:opacity-40"
+                className="p-1.5 rounded-sm text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition disabled:opacity-40"
                 title="Remove passkey"
               >
                 <Trash2 className="w-4 h-4" />

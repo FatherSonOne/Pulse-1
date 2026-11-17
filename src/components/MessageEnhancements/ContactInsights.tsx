@@ -179,9 +179,9 @@ export const ContactInsights: React.FC<ContactInsightsProps> = ({
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20">
+      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-linear-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20">
         <div className="flex items-start gap-3">
-          <div className={`w-14 h-14 rounded-xl flex items-center justify-center bg-${healthColor}-100 dark:bg-${healthColor}-900/40 flex-shrink-0`}>
+          <div className={`w-14 h-14 rounded-xl flex items-center justify-center bg-${healthColor}-100 dark:bg-${healthColor}-900/40 shrink-0`}>
             {contact.avatar ? (
               <img src={contact.avatar} alt={contact.name} className="w-full h-full rounded-xl object-cover" />
             ) : (
@@ -335,7 +335,7 @@ export const ContactInsights: React.FC<ContactInsightsProps> = ({
                       value={newTag}
                       onChange={(e) => setNewTag(e.target.value)}
                       placeholder="Add tag..."
-                      className="w-16 px-1.5 py-0.5 text-[10px] rounded border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-800 dark:text-white"
+                      className="w-16 px-1.5 py-0.5 text-[10px] rounded-sm border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-800 dark:text-white"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && newTag.trim()) {
                           onUpdateTags([...contact.tags, newTag.trim()]);

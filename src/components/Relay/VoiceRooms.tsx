@@ -450,7 +450,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
   const inDetail = !!activeRoom || selectedIsSolo || !!selectedRoom;
 
   return (
-    <div className="h-full flex bg-[var(--pulse-canvas-soft)]">
+    <div className="h-full flex bg-(--pulse-canvas-soft)">
       {/* BROWSE — Path C "Voice rooms": a shared masthead + an auto-fitting
           grid of room studio-cards. No inner rail — the grid IS the
           navigation, and a card's Join opens the pre-join sheet → joinRoom →
@@ -494,7 +494,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
             <div className="text-zinc-500 text-sm py-10 text-center">Loading rooms…</div>
           ) : loadError ? (
             <div className="px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 max-w-md">
-              <p className="text-xs text-[var(--pulse-ink-2)] mb-2">{loadError}</p>
+              <p className="text-xs text-(--pulse-ink-2) mb-2">{loadError}</p>
               <button
                 type="button"
                 onClick={() => {
@@ -510,17 +510,17 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                     })));
                   }).catch(() => setLoadError("Still can't reach rooms.")).finally(() => setIsLoadingRooms(false));
                 }}
-                className="text-xs text-[var(--pulse-rose)] underline transition"
+                className="text-xs text-(--pulse-rose) underline transition"
               >
                 Retry
               </button>
             </div>
           ) : rooms.length === 0 ? (
             <div className="flex flex-col items-center text-center py-16 text-zinc-500">
-              <div className="w-16 h-16 rounded-full bg-[var(--pulse-surface)] border border-[var(--pulse-border)] flex items-center justify-center mb-4">
+              <div className="w-16 h-16 rounded-full bg-(--pulse-surface) border border-(--pulse-border) flex items-center justify-center mb-4">
                 <Radio className="w-7 h-7 text-zinc-500" aria-hidden />
               </div>
-              <p className="text-sm text-[var(--pulse-ink-2)]">No rooms yet</p>
+              <p className="text-sm text-(--pulse-ink-2)">No rooms yet</p>
               <button
                 type="button"
                 onClick={() => setShowCreateRoom(true)}
@@ -548,16 +548,16 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                         aria-hidden
                       />
                       <span
-                        className="text-[10px] font-mono uppercase tracking-[0.1em]"
+                        className="text-[10px] font-mono uppercase tracking-widest"
                         style={{ color: live ? 'var(--pulse-rose)' : 'var(--pulse-ink-3)' }}
                       >
                         {live ? 'Live' : 'Empty'}
                       </span>
-                      <span className="ml-auto text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500">
+                      <span className="ml-auto text-[10px] font-mono uppercase tracking-widest text-zinc-500">
                         {present} present
                       </span>
                     </div>
-                    <div className="text-xl font-semibold text-[var(--pulse-ink)] flex items-center gap-2 min-w-0">
+                    <div className="text-xl font-semibold text-(--pulse-ink) flex items-center gap-2 min-w-0">
                       {room.isPrivate && <Lock className="w-3.5 h-3.5 text-zinc-500 shrink-0" aria-hidden />}
                       <span className="truncate">{room.name}</span>
                     </div>
@@ -585,7 +585,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); deleteRoom(room.id); }}
-                      className="absolute right-3 top-3 w-6 h-6 rounded-md flex items-center justify-center text-[var(--pulse-ink-2)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-red-600 dark:hover:text-red-300 hover:bg-[var(--pulse-surface-raised)] transition"
+                      className="absolute right-3 top-3 w-6 h-6 rounded-md flex items-center justify-center text-(--pulse-ink-2) opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-red-600 dark:hover:text-red-300 hover:bg-(--pulse-surface-raised) transition"
                       aria-label={`Delete ${room.name}`}
                       title="Delete room"
                     >
@@ -603,11 +603,11 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
          grid, except mid-call where Leave is the exit. */
       <main className="flex-1 flex flex-col min-w-0">
         {!activeRoom && (
-          <div className="shrink-0 px-3 py-2 border-b border-[var(--pulse-border)]">
+          <div className="shrink-0 px-3 py-2 border-b border-(--pulse-border)">
             <button
               type="button"
               onClick={() => setSelectedChannelId(null)}
-              className="inline-flex items-center gap-1.5 text-sm text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] transition"
+              className="inline-flex items-center gap-1.5 text-sm text-(--pulse-ink-2) hover:text-(--pulse-ink) transition"
               aria-label="Back to rooms"
             >
               <ChevronLeft className="w-4 h-4" /> Rooms
@@ -617,15 +617,15 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
         {activeRoom ? (
           <>
             {/* Room Header */}
-            <div className="px-6 py-4 border-b border-[var(--pulse-border)] bg-[rgba(255,255,255,0.03)]">
+            <div className="px-6 py-4 border-b border-(--pulse-border) bg-[rgba(255,255,255,0.03)]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className={`w-14 h-14 rounded-xl ${activeRoom.color} flex items-center justify-center text-[var(--pulse-ink)]`}>
+                  <div className={`w-14 h-14 rounded-xl ${activeRoom.color} flex items-center justify-center text-(--pulse-ink)`}>
                     <RoomIcon name={activeRoom.icon} className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-[var(--pulse-ink)]">{activeRoom.name}</h3>
-                    <p className="text-sm text-[var(--pulse-ink-2)]">{activeRoom.description}</p>
+                    <h3 className="text-xl font-bold text-(--pulse-ink)">{activeRoom.name}</h3>
+                    <p className="text-sm text-(--pulse-ink-2)">{activeRoom.description}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -633,10 +633,10 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                       transcribe yet, so it must not claim to be "listening". */}
                   <button
                     onClick={() => setShowAISidecar(v => !v)}
-                    className={`px-3 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-[0.1em] transition flex items-center gap-2 ${
+                    className={`px-3 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-widest transition flex items-center gap-2 ${
                       showAISidecar
-                        ? 'bg-rose-500/15 text-[var(--pulse-rose)] border border-rose-500/30'
-                        : 'text-[var(--pulse-ink-2)] hover:bg-[var(--pulse-surface-raised)] border border-transparent'
+                        ? 'bg-rose-500/15 text-(--pulse-rose) border border-rose-500/30'
+                        : 'text-(--pulse-ink-2) hover:bg-(--pulse-surface-raised) border border-transparent'
                     }`}
                     aria-pressed={showAISidecar}
                     title={showAISidecar ? 'Hide AI sidecar' : 'Show AI sidecar'}
@@ -651,8 +651,8 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
             {/* Honest disclosure — local media works (your mic + speaking
                 ring), but there's no peer-audio transport yet, so others can't
                 actually hear you. Remove once WebRTC transport lands. */}
-            <div className="shrink-0 px-6 py-2 border-b border-[var(--pulse-border)] bg-rose-500/[0.06]">
-              <p className="text-[11px] text-[var(--pulse-ink-2)]">
+            <div className="shrink-0 px-6 py-2 border-b border-(--pulse-border) bg-rose-500/6">
+              <p className="text-[11px] text-(--pulse-ink-2)">
                 Local preview — your mic and speaking indicator are live, but peer audio isn't connected yet.
               </p>
             </div>
@@ -663,10 +663,10 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                 {activeRoom.participants.map(participant => (
                   <div
                     key={participant.userId}
-                    className={`p-4 rounded-xl bg-[var(--pulse-surface)] border transition ${
+                    className={`p-4 rounded-xl bg-(--pulse-surface) border transition ${
                       speakingUsers.has(participant.userId)
                         ? 'border-rose-500 shadow-lg shadow-rose-500/20'
-                        : 'border-[var(--pulse-border)]'
+                        : 'border-(--pulse-border)'
                     }`}
                   >
                     <div className="flex flex-col items-center text-center">
@@ -674,11 +674,11 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                         {participant.name.charAt(0)}
                         {participant.isScreenSharing && (
                           <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
-                            <Monitor className="text-[10px] text-[var(--pulse-ink)]" />
+                            <Monitor className="text-[10px] text-(--pulse-ink)" />
                           </div>
                         )}
                       </div>
-                      <span className="font-medium text-[var(--pulse-ink)] text-sm">{participant.name}</span>
+                      <span className="font-medium text-(--pulse-ink) text-sm">{participant.name}</span>
                       <div className="flex items-center gap-2 mt-2">
                         {participant.isMuted && (
                           <span className="w-6 h-6 rounded-full bg-red-500/15 flex items-center justify-center">
@@ -697,7 +697,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
 
                 {/* Empty slots */}
                 {Array.from({ length: Math.max(0, 4 - activeRoom.participants.length) }).map((_, i) => (
-                  <div key={`empty-${i}`} className="p-4 rounded-xl border border-dashed border-[var(--pulse-border)] flex items-center justify-center min-h-[150px]">
+                  <div key={`empty-${i}`} className="p-4 rounded-xl border border-dashed border-(--pulse-border) flex items-center justify-center min-h-[150px]">
                     <div className="text-center text-zinc-600">
                       <UserPlus className="w-6 h-6 mb-2 mx-auto" aria-hidden />
                       <p className="text-xs">Open seat</p>
@@ -708,7 +708,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
             </div>
 
             {/* Controls */}
-            <div className="px-6 py-4 border-t border-[var(--pulse-border)] bg-[rgba(255,255,255,0.03)]">
+            <div className="px-6 py-4 border-t border-(--pulse-border) bg-[rgba(255,255,255,0.03)]">
               <div className="flex items-center justify-center gap-4">
                 {/* Mute / Deafen — active state uses the soft-red tint pattern
                     (bg-red-500/15 + border + lifted text) instead of solid red.
@@ -720,7 +720,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                   className={`w-14 h-14 rounded-full flex items-center justify-center transition border ${
                     isMuted
                       ? 'bg-red-500/15 hover:bg-red-500/25 text-red-600 dark:text-red-300 border-red-500/30'
-                      : 'bg-[var(--pulse-surface-raised)] hover:bg-[var(--pulse-surface-raised)] text-[var(--pulse-ink)] border-transparent'
+                      : 'bg-(--pulse-surface-raised) hover:bg-(--pulse-surface-raised) text-(--pulse-ink) border-transparent'
                   }`}
                   title={isMuted ? 'Unmute' : 'Mute'}
                 >
@@ -732,7 +732,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                   className={`w-14 h-14 rounded-full flex items-center justify-center transition border ${
                     isDeafened
                       ? 'bg-red-500/15 hover:bg-red-500/25 text-red-600 dark:text-red-300 border-red-500/30'
-                      : 'bg-[var(--pulse-surface-raised)] hover:bg-[var(--pulse-surface-raised)] text-[var(--pulse-ink)] border-transparent'
+                      : 'bg-(--pulse-surface-raised) hover:bg-(--pulse-surface-raised) text-(--pulse-ink) border-transparent'
                   }`}
                   title={isDeafened ? 'Unmute speakers' : 'Mute speakers'}
                 >
@@ -754,12 +754,12 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
           // recording flow (getUserMedia → MediaRecorder → upload → Pulse note).
           <div className="flex-1 flex items-center justify-center px-6">
             <div className="text-center max-w-md">
-              <div className="w-20 h-20 rounded-full bg-[var(--pulse-surface)] border border-[var(--pulse-border)] flex items-center justify-center mx-auto mb-5">
+              <div className="w-20 h-20 rounded-full bg-(--pulse-surface) border border-(--pulse-border) flex items-center justify-center mx-auto mb-5">
                 <Mic className="w-8 h-8 text-zinc-500" />
               </div>
-              <p className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 mb-2">LIVE · SOLO</p>
-              <h3 className="text-lg font-semibold text-[var(--pulse-ink)] mb-2">Talk to yourself, get a Pulse note</h3>
-              <p className="text-sm text-[var(--pulse-ink-2)] leading-relaxed mb-6">
+              <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-2">LIVE · SOLO</p>
+              <h3 className="text-lg font-semibold text-(--pulse-ink) mb-2">Talk to yourself, get a Pulse note</h3>
+              <p className="text-sm text-(--pulse-ink-2) leading-relaxed mb-6">
                 Record 30 seconds to 5 minutes. Pulse transcribes and lands it in Notes.
               </p>
               <button
@@ -777,19 +777,19 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
           // Channel-idle — ad-hoc room is selected but the user hasn't joined.
           // Single Go Live CTA opens the pre-join sheet.
           <div className="flex-1 flex flex-col">
-            <div className="px-6 py-4 border-b border-[var(--pulse-border)]">
-              <p className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500">LIVE · AD-HOC</p>
+            <div className="px-6 py-4 border-b border-(--pulse-border)">
+              <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">LIVE · AD-HOC</p>
             </div>
             <div className="flex-1 flex items-center justify-center px-6">
               <div className="text-center max-w-md">
-                <div className={`w-20 h-20 rounded-2xl ${selectedRoom.color} flex items-center justify-center text-[var(--pulse-ink)] mx-auto mb-5`}>
+                <div className={`w-20 h-20 rounded-2xl ${selectedRoom.color} flex items-center justify-center text-(--pulse-ink) mx-auto mb-5`}>
                   <RoomIcon name={selectedRoom.icon} className="w-9 h-9" />
                 </div>
-                <h3 className="text-xl font-semibold text-[var(--pulse-ink)] mb-1">{selectedRoom.name}</h3>
+                <h3 className="text-xl font-semibold text-(--pulse-ink) mb-1">{selectedRoom.name}</h3>
                 {selectedRoom.description && (
-                  <p className="text-sm text-[var(--pulse-ink-2)] leading-relaxed mb-5">{selectedRoom.description}</p>
+                  <p className="text-sm text-(--pulse-ink-2) leading-relaxed mb-5">{selectedRoom.description}</p>
                 )}
-                <div className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 mb-6">
+                <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-6">
                   {selectedRoom.participants.length}/{selectedRoom.maxParticipants} · {selectedRoom.isPrivate ? 'PRIVATE' : 'OPEN'}
                 </div>
                 <button
@@ -823,21 +823,21 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
           Always mounted (Phase 2d streams the live transcript here); width
           animates from 0 → 320px so the right-pane reflows smoothly. */}
       <aside
-        className={`shrink-0 border-l border-[var(--pulse-border)] bg-[var(--pulse-surface)] overflow-hidden transition-[width] duration-[220ms] ease-out ${
+        className={`shrink-0 border-l border-(--pulse-border) bg-(--pulse-surface) overflow-hidden transition-[width] duration-220 ease-out ${
           showAISidecar && !studio.singlePane ? 'w-80' : 'w-0'
         }`}
         aria-hidden={!showAISidecar}
       >
         {showAISidecar && (
           <div className="h-full flex flex-col">
-            <div className="px-4 py-3 border-b border-[var(--pulse-border)] flex items-center justify-between">
-              <span className="text-[10px] font-mono uppercase tracking-[0.1em] text-[var(--pulse-ink-2)] flex items-center gap-2">
+            <div className="px-4 py-3 border-b border-(--pulse-border) flex items-center justify-between">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-(--pulse-ink-2) flex items-center gap-2">
                 <Radio className="w-3 h-3" aria-hidden />
                 AI SIDECAR
               </span>
               <button
                 onClick={() => setShowAISidecar(false)}
-                className="text-zinc-500 hover:text-[var(--pulse-ink)] transition"
+                className="text-zinc-500 hover:text-(--pulse-ink) transition"
                 aria-label="Close AI sidecar"
               >
                 <X className="w-4 h-4" />
@@ -1064,23 +1064,23 @@ const PreJoinSheet: React.FC<PreJoinSheetProps> = ({ roomName, onCancel, onConfi
   };
 
   return (
-    <div className="fixed inset-0 pulse-modal-scrim flex items-center justify-center z-[60] animate-fadeIn">
-      <div className="bg-[var(--pulse-canvas-soft)] rounded-2xl w-full max-w-sm mx-4 border border-[var(--pulse-border)] animate-scaleIn">
+    <div className="fixed inset-0 pulse-modal-scrim flex items-center justify-center z-60 animate-fadeIn">
+      <div className="bg-(--pulse-canvas-soft) rounded-2xl w-full max-w-sm mx-4 border border-(--pulse-border) animate-scaleIn">
         <div className="p-5">
-          <p className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 mb-2">{roomName.toUpperCase()}</p>
-          <h3 className="text-base font-semibold text-[var(--pulse-ink)] mb-4">Go live in {roomName}?</h3>
+          <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-2">{roomName.toUpperCase()}</p>
+          <h3 className="text-base font-semibold text-(--pulse-ink) mb-4">Go live in {roomName}?</h3>
 
           {permission === 'requesting' && (
-            <p className="text-sm text-[var(--pulse-ink-2)] leading-relaxed">Requesting mic access…</p>
+            <p className="text-sm text-(--pulse-ink-2) leading-relaxed">Requesting mic access…</p>
           )}
 
           {permission === 'denied' && (
             <div className="text-sm leading-relaxed">
-              <p className="text-[var(--pulse-ink)] mb-2">Pulse needs mic access to go live.</p>
-              <p className="text-[var(--pulse-ink-2)]">Open your browser site settings, allow microphone, then retry.</p>
+              <p className="text-(--pulse-ink) mb-2">Pulse needs mic access to go live.</p>
+              <p className="text-(--pulse-ink-2)">Open your browser site settings, allow microphone, then retry.</p>
               <button
                 onClick={() => void acquireStream(selectedDeviceId || undefined)}
-                className="mt-3 text-xs font-mono uppercase tracking-[0.1em] text-[var(--pulse-rose)] hover:text-[var(--pulse-rose)] transition"
+                className="mt-3 text-xs font-mono uppercase tracking-widest text-(--pulse-rose) hover:text-(--pulse-rose) transition"
               >
                 Retry
               </button>
@@ -1088,15 +1088,15 @@ const PreJoinSheet: React.FC<PreJoinSheetProps> = ({ roomName, onCancel, onConfi
           )}
 
           {permission === 'no-mic' && (
-            <p className="text-sm text-[var(--pulse-ink)] leading-relaxed">No microphone detected. Plug one in and retry.</p>
+            <p className="text-sm text-(--pulse-ink) leading-relaxed">No microphone detected. Plug one in and retry.</p>
           )}
 
           {permission === 'error' && (
             <div className="text-sm leading-relaxed">
-              <p className="text-[var(--pulse-ink)] mb-2">{errorMessage}</p>
+              <p className="text-(--pulse-ink) mb-2">{errorMessage}</p>
               <button
                 onClick={() => void acquireStream(selectedDeviceId || undefined)}
-                className="mt-1 text-xs font-mono uppercase tracking-[0.1em] text-[var(--pulse-rose)] hover:text-[var(--pulse-rose)] transition"
+                className="mt-1 text-xs font-mono uppercase tracking-widest text-(--pulse-rose) hover:text-(--pulse-rose) transition"
               >
                 Retry
               </button>
@@ -1107,13 +1107,13 @@ const PreJoinSheet: React.FC<PreJoinSheetProps> = ({ roomName, onCancel, onConfi
             <div className="space-y-4">
               {/* Device picker — labels are only populated post-permission. */}
               <div>
-                <label className="block text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 mb-1">
+                <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-1">
                   Microphone
                 </label>
                 <select
                   value={selectedDeviceId}
                   onChange={(e) => handleDeviceChange(e.target.value)}
-                  className="w-full px-3 py-2 bg-[var(--pulse-surface-raised)] rounded-lg text-sm text-[var(--pulse-ink)] border border-[var(--pulse-border-strong)] focus:border-rose-500 focus:outline-none"
+                  className="w-full px-3 py-2 bg-(--pulse-surface-raised) rounded-lg text-sm text-(--pulse-ink) border border-(--pulse-border-strong) focus:border-rose-500 focus:outline-hidden"
                 >
                   {devices.map(d => (
                     <option key={d.deviceId} value={d.deviceId}>
@@ -1126,7 +1126,7 @@ const PreJoinSheet: React.FC<PreJoinSheetProps> = ({ roomName, onCancel, onConfi
               {/* Input level meter — 24 segments give granular feedback. The
                   last 6 segments tint red as a clip-zone cue. */}
               <div>
-                <p className="block text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 mb-1.5">
+                <p className="block text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-1.5">
                   Input level
                 </p>
                 <div
@@ -1144,12 +1144,12 @@ const PreJoinSheet: React.FC<PreJoinSheetProps> = ({ roomName, onCancel, onConfi
                     return (
                       <span
                         key={i}
-                        className={`flex-1 rounded-sm ${
+                        className={`flex-1 rounded-xs ${
                           lit
                             ? hotZone
                               ? 'bg-red-400'
                               : 'bg-rose-400'
-                            : 'bg-[var(--pulse-surface-raised)]'
+                            : 'bg-(--pulse-surface-raised)'
                         } ${i < 12 ? 'h-2' : 'h-3'}`}
                       />
                     );
@@ -1158,7 +1158,7 @@ const PreJoinSheet: React.FC<PreJoinSheetProps> = ({ roomName, onCancel, onConfi
               </div>
 
               {/* Mute-on-join — for landing silent in a noisy call. */}
-              <label className="flex items-center gap-2 text-sm text-[var(--pulse-ink)] cursor-pointer select-none">
+              <label className="flex items-center gap-2 text-sm text-(--pulse-ink) cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={muteOnJoin}
@@ -1171,10 +1171,10 @@ const PreJoinSheet: React.FC<PreJoinSheetProps> = ({ roomName, onCancel, onConfi
           )}
         </div>
 
-        <div className="px-5 py-4 border-t border-[var(--pulse-border)] flex gap-3">
+        <div className="px-5 py-4 border-t border-(--pulse-border) flex gap-3">
           <button
             onClick={handleCancel}
-            className="flex-1 py-2 bg-[var(--pulse-surface-raised)] text-[var(--pulse-ink)] rounded-lg text-sm font-medium hover:bg-[var(--pulse-surface-raised)] transition"
+            className="flex-1 py-2 bg-(--pulse-surface-raised) text-(--pulse-ink) rounded-lg text-sm font-medium hover:bg-(--pulse-surface-raised) transition"
           >
             Cancel
           </button>
@@ -1255,11 +1255,11 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onClose, onCreate, ex
   };
 
   return (
-    <div className="fixed inset-0 pulse-modal-scrim flex items-center justify-center z-[60] animate-fadeIn">
-      <div className="bg-[var(--pulse-canvas-soft)] rounded-2xl w-full max-w-md mx-4 border border-[var(--pulse-border)] animate-scaleIn">
-        <div className="p-4 border-b border-[var(--pulse-border)] flex items-center justify-between">
-          <h3 className="font-bold text-[var(--pulse-ink)]">Create ad-hoc room</h3>
-          <button onClick={onClose} className="text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] transition">
+    <div className="fixed inset-0 pulse-modal-scrim flex items-center justify-center z-60 animate-fadeIn">
+      <div className="bg-(--pulse-canvas-soft) rounded-2xl w-full max-w-md mx-4 border border-(--pulse-border) animate-scaleIn">
+        <div className="p-4 border-b border-(--pulse-border) flex items-center justify-between">
+          <h3 className="font-bold text-(--pulse-ink)">Create ad-hoc room</h3>
+          <button onClick={onClose} className="text-(--pulse-ink-2) hover:text-(--pulse-ink) transition">
             <X />
           </button>
         </div>
@@ -1267,7 +1267,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onClose, onCreate, ex
         <div className="p-4 space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-xs text-[var(--pulse-ink-2)] mb-1">Name</label>
+            <label className="block text-xs text-(--pulse-ink-2) mb-1">Name</label>
             <input
               type="text"
               value={name}
@@ -1275,8 +1275,8 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onClose, onCreate, ex
               placeholder="Friday briefing"
               maxLength={60}
               aria-invalid={isDuplicate}
-              className={`w-full px-3 py-2 bg-[var(--pulse-surface-raised)] rounded-lg text-[var(--pulse-ink)] border focus:outline-none ${
-                isDuplicate ? 'border-red-500/60 focus:border-red-500' : 'border-[var(--pulse-border-strong)] focus:border-rose-500'
+              className={`w-full px-3 py-2 bg-(--pulse-surface-raised) rounded-lg text-(--pulse-ink) border focus:outline-hidden ${
+                isDuplicate ? 'border-red-500/60 focus:border-red-500' : 'border-(--pulse-border-strong) focus:border-rose-500'
               }`}
             />
             {isDuplicate && (
@@ -1286,23 +1286,23 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onClose, onCreate, ex
 
           {/* Description */}
           <div>
-            <label className="block text-xs text-[var(--pulse-ink-2)] mb-1">Description (optional)</label>
+            <label className="block text-xs text-(--pulse-ink-2) mb-1">Description (optional)</label>
             <input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What's this for?"
-              className="w-full px-3 py-2 bg-[var(--pulse-surface-raised)] rounded-lg text-[var(--pulse-ink)] border border-[var(--pulse-border-strong)] focus:border-rose-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-(--pulse-surface-raised) rounded-lg text-(--pulse-ink) border border-(--pulse-border-strong) focus:border-rose-500 focus:outline-hidden"
             />
           </div>
 
           {/* Category */}
           <div>
-            <label className="block text-xs text-[var(--pulse-ink-2)] mb-1">Category</label>
+            <label className="block text-xs text-(--pulse-ink-2) mb-1">Category</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 bg-[var(--pulse-surface-raised)] rounded-lg text-[var(--pulse-ink)] border border-[var(--pulse-border-strong)] focus:border-rose-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-(--pulse-surface-raised) rounded-lg text-(--pulse-ink) border border-(--pulse-border-strong) focus:border-rose-500 focus:outline-hidden"
             >
               <option value="General">General</option>
               <option value="Meetings">Meetings</option>
@@ -1314,7 +1314,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onClose, onCreate, ex
 
           {/* Icon Selection */}
           <div>
-            <label className="block text-xs text-[var(--pulse-ink-2)] mb-2">Icon</label>
+            <label className="block text-xs text-(--pulse-ink-2) mb-2">Icon</label>
             <div className="flex flex-wrap gap-2">
               {icons.map(icon => (
                 <button
@@ -1322,8 +1322,8 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onClose, onCreate, ex
                   onClick={() => setSelectedIcon(icon)}
                   className={`w-10 h-10 rounded-lg flex items-center justify-center transition border ${
                     selectedIcon === icon
-                      ? 'bg-rose-500/15 text-[var(--pulse-rose)] border-rose-500/30'
-                      : 'bg-[var(--pulse-surface-raised)] text-[var(--pulse-ink-2)] hover:bg-[var(--pulse-surface-raised)] border-transparent'
+                      ? 'bg-rose-500/15 text-(--pulse-rose) border-rose-500/30'
+                      : 'bg-(--pulse-surface-raised) text-(--pulse-ink-2) hover:bg-(--pulse-surface-raised) border-transparent'
                   }`}
                 >
                   <RoomIcon name={icon} className="w-4 h-4" />
@@ -1334,14 +1334,14 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onClose, onCreate, ex
 
           {/* Color Selection */}
           <div>
-            <label className="block text-xs text-[var(--pulse-ink-2)] mb-2">Color</label>
+            <label className="block text-xs text-(--pulse-ink-2) mb-2">Color</label>
             <div className="flex flex-wrap gap-2">
               {colors.map(color => (
                 <button
                   key={color}
                   onClick={() => setSelectedColor(color)}
                   className={`w-8 h-8 rounded-full ${color} transition transform ${
-                    selectedColor === color ? 'ring-2 ring-[var(--pulse-ink)] ring-offset-2 ring-offset-[var(--pulse-canvas-soft)] scale-110' : ''
+                    selectedColor === color ? 'ring-2 ring-(--pulse-ink) ring-offset-2 ring-offset-(--pulse-canvas-soft) scale-110' : ''
                   }`}
                 />
               ))}
@@ -1350,7 +1350,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onClose, onCreate, ex
 
           {/* Max Participants */}
           <div>
-            <label className="block text-xs text-[var(--pulse-ink-2)] mb-1">Max people: {maxParticipants}</label>
+            <label className="block text-xs text-(--pulse-ink-2) mb-1">Max people: {maxParticipants}</label>
             <input
               type="range"
               min={2}
@@ -1363,20 +1363,20 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onClose, onCreate, ex
 
           {/* Private Toggle */}
           <div className="flex items-center justify-between">
-            <span className="text-sm text-[var(--pulse-ink)]">Private</span>
+            <span className="text-sm text-(--pulse-ink)">Private</span>
             <button
               onClick={() => setIsPrivate(!isPrivate)}
-              className={`w-12 h-6 rounded-full transition ${isPrivate ? 'bg-rose-500' : 'bg-[var(--pulse-surface-raised)]'}`}
+              className={`w-12 h-6 rounded-full transition ${isPrivate ? 'bg-rose-500' : 'bg-(--pulse-surface-raised)'}`}
             >
               <div className={`w-5 h-5 rounded-full bg-white transform transition ${isPrivate ? 'translate-x-6' : 'translate-x-0.5'}`} />
             </button>
           </div>
         </div>
 
-        <div className="p-4 border-t border-[var(--pulse-border)] flex gap-3">
+        <div className="p-4 border-t border-(--pulse-border) flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 bg-[var(--pulse-surface-raised)] text-[var(--pulse-ink)] rounded-lg font-medium hover:bg-[var(--pulse-surface-raised)] transition"
+            className="flex-1 py-2.5 bg-(--pulse-surface-raised) text-(--pulse-ink) rounded-lg font-medium hover:bg-(--pulse-surface-raised) transition"
           >
             Cancel
           </button>

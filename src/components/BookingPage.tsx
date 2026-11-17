@@ -117,7 +117,7 @@ export const BookingPage: React.FC = () => {
       <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="mb-8 text-center">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-rose-500/30">
+          <div className="w-14 h-14 rounded-full bg-linear-to-br from-rose-500 to-pink-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-rose-500/30">
             <Calendar className="w-7 h-7 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-1">{page!.title}</h1>
@@ -186,7 +186,7 @@ export const BookingPage: React.FC = () => {
                         type="button"
                         disabled={isPast}
                         onClick={() => setSelectedDate(dateStr)}
-                        className={`aspect-square rounded-xl text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
+                        className={`aspect-square rounded-xl text-sm font-medium transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 ${
                           isSel   ? 'bg-rose-500 text-white shadow-md shadow-rose-500/30' :
                           isToday ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 ring-1 ring-rose-300 dark:ring-rose-800' :
                           isPast  ? 'text-zinc-300 dark:text-zinc-700 cursor-not-allowed' :
@@ -221,7 +221,7 @@ export const BookingPage: React.FC = () => {
                         key={i}
                         type="button"
                         onClick={() => { setSelectedSlot(slot); setStep('form'); }}
-                        className="py-3 px-4 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:border-rose-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+                        className="py-3 px-4 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:border-rose-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500"
                       >
                         {fmtTime(slot.start)}
                       </button>
@@ -244,19 +244,19 @@ export const BookingPage: React.FC = () => {
                 <div>
                   <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Your name</label>
                   <input type="text" required value={name} onChange={e => setName(e.target.value)} placeholder="Jane Smith"
-                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 text-sm dark:text-white outline-none focus:border-rose-400 transition" />
+                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 text-sm dark:text-white outline-hidden focus:border-rose-400 transition" />
                 </div>
                 <div>
                   <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Email address</label>
                   <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="jane@example.com"
-                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 text-sm dark:text-white outline-none focus:border-rose-400 transition" />
+                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 text-sm dark:text-white outline-hidden focus:border-rose-400 transition" />
                 </div>
                 <div>
                   <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Notes (optional)</label>
                   <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="Anything you'd like to share beforehand…"
-                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 text-sm dark:text-white outline-none focus:border-rose-400 resize-none transition" />
+                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 text-sm dark:text-white outline-hidden focus:border-rose-400 resize-none transition" />
                 </div>
-                <button type="submit" disabled={submitting} className="w-full py-3 bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold rounded-xl hover:opacity-90 transition disabled:opacity-50 shadow-md shadow-rose-500/25">
+                <button type="submit" disabled={submitting} className="w-full py-3 bg-linear-to-r from-rose-500 to-pink-500 text-white font-semibold rounded-xl hover:opacity-90 transition disabled:opacity-50 shadow-md shadow-rose-500/25">
                   {submitting ? 'Confirming…' : 'Confirm booking'}
                 </button>
               </form>

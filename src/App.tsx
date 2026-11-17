@@ -1783,7 +1783,7 @@ const App: React.FC = () => {
       />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden relative flex flex-col transition-colors duration-500 w-full pb-[var(--pulse-bottom-bar)]">
+      <main className="flex-1 overflow-hidden relative flex flex-col transition-colors duration-500 w-full pb-(--pulse-bottom-bar)">
         {/* Persistent global command bar (Phase 6) — pinned above the per-view
             scroll area on every view, so it's outside the overflow-hidden
             Messages/Calendar panes and its dropdown is never clipped. */}

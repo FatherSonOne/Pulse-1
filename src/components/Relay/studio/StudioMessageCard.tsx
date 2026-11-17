@@ -159,7 +159,7 @@ export const StudioMessageCard: React.FC<StudioMessageCardProps> = ({
             </span>
             {pills}
             {active && isPlaying && showNowPlaying && (
-              <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.1em] text-rose-600 dark:text-rose-400">
+              <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest text-rose-600 dark:text-rose-400">
                 <span className="w-1 h-1 rounded-full bg-rose-500 pulse-dot-anim" aria-hidden="true" />
                 Now playing
               </span>
@@ -191,7 +191,7 @@ export const StudioMessageCard: React.FC<StudioMessageCardProps> = ({
               e.stopPropagation();
               onPlay();
             }}
-            className={`shrink-0 ${PLAY_SIZE[playSize]} rounded-full flex items-center justify-center transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
+            className={`shrink-0 ${PLAY_SIZE[playSize]} rounded-full flex items-center justify-center transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-400 ${
               active
                 ? 'bg-rose-500 text-white'
                 : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-rose-500 hover:text-white'

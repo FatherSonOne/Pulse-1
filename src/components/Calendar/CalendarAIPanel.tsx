@@ -127,7 +127,7 @@ export interface CalendarAIPanelProps {
  * chip (#129).
  */
 const RuleBadge: React.FC<{ label: string }> = ({ label }) => (
-  <span className="inline-flex items-center px-2 py-1 rounded font-mono text-[11px] font-medium uppercase tracking-[0.1em] bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-400">
+  <span className="inline-flex items-center px-2 py-1 rounded-sm font-mono text-[11px] font-medium uppercase tracking-widest bg-zinc-100 dark:bg-white/6 text-zinc-500 dark:text-zinc-400">
     {label}
   </span>
 );
@@ -138,9 +138,9 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
   return (
     <>
       {/* ── AI Side Panel ────────────────────────────────────────────── */}
-      <div className="cal-ai-panel absolute right-0 top-0 bottom-0 w-[420px] bg-[var(--pulse-surface)] dark:bg-[var(--pulse-canvas)] border-l border-[var(--pulse-border)] shadow-2xl z-50 flex flex-col animate-slide-in-right">
+      <div className="cal-ai-panel absolute right-0 top-0 bottom-0 w-[420px] bg-(--pulse-surface) dark:bg-(--pulse-canvas) border-l border-(--pulse-border) shadow-2xl z-50 flex flex-col animate-slide-in-right">
         {/* AI Panel Header */}
-        <div className="p-4 border-b border-[var(--pulse-border)] bg-zinc-50 dark:bg-white/[0.02]">
+        <div className="p-4 border-b border-(--pulse-border) bg-zinc-50 dark:bg-white/2">
           <div className="flex items-center justify-between mb-3">
             <div className="flex flex-col gap-1.5">
               <AIProvenanceChip vendor="CLAUDE" type="ASSISTANT" />
@@ -165,13 +165,13 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
               onChange={(e) => props.onNaturalLanguageChange(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && props.onNaturalLanguageSubmit()}
               placeholder="Try: 'Schedule a call with John tomorrow at 2pm'"
-              className="w-full bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border-strong)] rounded-xl px-4 py-3 pr-12 text-sm outline-none focus:ring-2 focus:ring-[var(--pulse-rose)]"
+              className="w-full bg-(--pulse-surface) dark:bg-(--pulse-surface) border border-(--pulse-border-strong) rounded-xl px-4 py-3 pr-12 text-sm outline-hidden focus:ring-2 focus:ring-(--pulse-rose)"
             />
             <button
               onClick={props.onNaturalLanguageSubmit}
               disabled={props.aiLoading || !props.naturalLanguageInput.trim()}
               aria-label="Submit"
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-[var(--pulse-rose)] text-white rounded-lg hover:bg-[var(--pulse-rose-deep)] disabled:opacity-50 transition"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-(--pulse-rose) text-white rounded-lg hover:bg-(--pulse-rose-deep) disabled:opacity-50 transition"
             >
               {props.aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
             </button>
@@ -179,7 +179,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
         </div>
 
         {/* AI Panel Tabs */}
-        <div className="flex border-b border-[var(--pulse-border)]">
+        <div className="flex border-b border-(--pulse-border)">
           {[
             { id: 'assistant', label: 'Assistant', icon: 'fa-robot' },
             { id: 'insights',  label: 'Insights',  icon: 'fa-lightbulb' },
@@ -189,7 +189,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
             <button
               key={tab.id}
               onClick={() => props.onTabChange(tab.id as typeof props.aiPanelTab)}
-              className={`flex-1 px-3 py-3 font-mono text-[10px] tracking-[0.1em] uppercase flex items-center justify-center gap-1.5 transition ${props.aiPanelTab === tab.id ? 'text-[var(--pulse-rose-text)] border-b-2 border-[var(--pulse-rose)] bg-[var(--pulse-rose-softer)]' : 'text-zinc-500 hover:text-[var(--pulse-ink)] border-b-2 border-transparent'}`}
+              className={`flex-1 px-3 py-3 font-mono text-[10px] tracking-widest uppercase flex items-center justify-center gap-1.5 transition ${props.aiPanelTab === tab.id ? 'text-(--pulse-rose-text) border-b-2 border-(--pulse-rose) bg-(--pulse-rose-softer)' : 'text-zinc-500 hover:text-(--pulse-ink) border-b-2 border-transparent'}`}
             >
               <i className={`fa-solid ${tab.icon}`}></i>
               {tab.label}
@@ -201,9 +201,9 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {props.aiLoading && (
             <div className="flex items-center justify-center py-8">
-              <div className="flex items-center gap-3 text-[var(--pulse-rose)]">
+              <div className="flex items-center gap-3 text-(--pulse-rose)">
                 <Loader2 className="animate-spin text-xl" />
-                <span className="font-mono text-[11px] tracking-[0.1em] uppercase">Analyzing calendar</span>
+                <span className="font-mono text-[11px] tracking-widest uppercase">Analyzing calendar</span>
               </div>
             </div>
           )}
@@ -230,12 +230,12 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                   antipattern). Rail compresses to a single row that scrolls on
                   narrow widths and reads as a toolbar, not a card stack. */}
               <div>
-                <h4 className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 mb-2">Quick actions</h4>
+                <h4 className="font-mono text-[11px] tracking-widest uppercase text-zinc-500 mb-2">Quick actions</h4>
                 <div className="flex gap-1.5 overflow-x-auto pb-1">
                   <button
                     onClick={() => props.onGetSuggestions(30)}
                     title="Find a 30-minute meeting slot"
-                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--pulse-canvas-soft)] dark:bg-white/[0.03] hover:bg-[var(--pulse-surface-raised)] dark:hover:bg-white/[0.055] text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] font-mono text-[10px] font-semibold uppercase tracking-[0.1em] border border-transparent hover:border-[var(--pulse-border)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] transition whitespace-nowrap"
+                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-(--pulse-canvas-soft) dark:bg-white/3 hover:bg-(--pulse-surface-raised) dark:hover:bg-white/5.5 text-(--pulse-ink-2) hover:text-(--pulse-ink) font-mono text-[10px] font-semibold uppercase tracking-widest border border-transparent hover:border-(--pulse-border) outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-rose) transition whitespace-nowrap"
                   >
                     <Clock className="w-3.5 h-3.5" aria-hidden="true" />
                     Find time
@@ -243,7 +243,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                   <button
                     onClick={props.onSuggestFocusBlocks}
                     title="Suggest deep-work focus blocks"
-                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--pulse-canvas-soft)] dark:bg-white/[0.03] hover:bg-[var(--pulse-surface-raised)] dark:hover:bg-white/[0.055] text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] font-mono text-[10px] font-semibold uppercase tracking-[0.1em] border border-transparent hover:border-[var(--pulse-border)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] transition whitespace-nowrap"
+                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-(--pulse-canvas-soft) dark:bg-white/3 hover:bg-(--pulse-surface-raised) dark:hover:bg-white/5.5 text-(--pulse-ink-2) hover:text-(--pulse-ink) font-mono text-[10px] font-semibold uppercase tracking-widest border border-transparent hover:border-(--pulse-border) outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-rose) transition whitespace-nowrap"
                   >
                     <Brain className="w-3.5 h-3.5" aria-hidden="true" />
                     Focus
@@ -251,7 +251,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                   <button
                     onClick={props.onDetectConflicts}
                     title="Detect schedule conflicts"
-                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--pulse-canvas-soft)] dark:bg-white/[0.03] hover:bg-[var(--pulse-surface-raised)] dark:hover:bg-white/[0.055] text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] font-mono text-[10px] font-semibold uppercase tracking-[0.1em] border border-transparent hover:border-[var(--pulse-border)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] transition whitespace-nowrap"
+                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-(--pulse-canvas-soft) dark:bg-white/3 hover:bg-(--pulse-surface-raised) dark:hover:bg-white/5.5 text-(--pulse-ink-2) hover:text-(--pulse-ink) font-mono text-[10px] font-semibold uppercase tracking-widest border border-transparent hover:border-(--pulse-border) outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-rose) transition whitespace-nowrap"
                   >
                     <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />
                     Conflicts
@@ -259,7 +259,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                   <button
                     onClick={props.onAnalyzeTravelBuffers}
                     title="Analyze travel buffers between events"
-                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--pulse-canvas-soft)] dark:bg-white/[0.03] hover:bg-[var(--pulse-surface-raised)] dark:hover:bg-white/[0.055] text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] font-mono text-[10px] font-semibold uppercase tracking-[0.1em] border border-transparent hover:border-[var(--pulse-border)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] transition whitespace-nowrap"
+                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-(--pulse-canvas-soft) dark:bg-white/3 hover:bg-(--pulse-surface-raised) dark:hover:bg-white/5.5 text-(--pulse-ink-2) hover:text-(--pulse-ink) font-mono text-[10px] font-semibold uppercase tracking-widest border border-transparent hover:border-(--pulse-border) outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-rose) transition whitespace-nowrap"
                   >
                     <Car className="w-3.5 h-3.5" aria-hidden="true" />
                     Travel
@@ -272,7 +272,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <RuleBadge label="SUGGESTIONS" />
-                    <span className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500">{props.schedulingSuggestions.length} times</span>
+                    <span className="font-mono text-[11px] tracking-widest uppercase text-zinc-500">{props.schedulingSuggestions.length} times</span>
                   </div>
                   <div className="space-y-2">
                     {props.schedulingSuggestions.slice(0, 5).map((suggestion, i) => (
@@ -284,20 +284,20 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                           props.onSetNewEventEndTime(suggestion.endTime);
                           props.onOpenEventModal();
                         }}
-                        className="w-full p-3 bg-zinc-50 dark:bg-white/[0.03] rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-white/[0.055] transition flex items-center justify-between group border border-transparent hover:border-zinc-200 dark:hover:border-white/10"
+                        className="w-full p-3 bg-zinc-50 dark:bg-white/3 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-white/5.5 transition flex items-center justify-between group border border-transparent hover:border-zinc-200 dark:hover:border-white/10"
                       >
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-[var(--pulse-ink)]">
+                          <p className="text-sm font-semibold text-(--pulse-ink)">
                             {suggestion.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                           </p>
                           <p className="font-mono text-[11px] tracking-wide text-zinc-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
                             {suggestion.startTime}–{suggestion.endTime}
                           </p>
-                          <p className="text-[10px] text-[var(--pulse-ink-3)] mt-1 truncate">{suggestion.reason}</p>
+                          <p className="text-[10px] text-(--pulse-ink-3) mt-1 truncate">{suggestion.reason}</p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="font-mono text-[11px] tracking-wider font-semibold text-[var(--pulse-tone-positive)]" style={{ fontVariantNumeric: 'tabular-nums' }}>{suggestion.score}%</span>
-                          <Plus className="w-4 h-4 text-zinc-400 group-hover:text-[var(--pulse-rose)] transition" />
+                          <span className="font-mono text-[11px] tracking-wider font-semibold text-(--pulse-tone-positive)" style={{ fontVariantNumeric: 'tabular-nums' }}>{suggestion.score}%</span>
+                          <Plus className="w-4 h-4 text-zinc-400 group-hover:text-(--pulse-rose) transition" />
                         </div>
                       </button>
                     ))}
@@ -310,23 +310,23 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <RuleBadge label="FOCUS BLOCKS" />
-                    <span className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500">{props.focusBlocks.length} suggested</span>
+                    <span className="font-mono text-[11px] tracking-widest uppercase text-zinc-500">{props.focusBlocks.length} suggested</span>
                   </div>
                   <div className="space-y-2">
                     {props.focusBlocks.slice(0, 4).map((block) => (
-                      <div key={block.id} className="p-3 bg-zinc-50 dark:bg-white/[0.03] rounded-xl flex items-center justify-between border border-zinc-200 dark:border-white/[0.06]">
+                      <div key={block.id} className="p-3 bg-zinc-50 dark:bg-white/3 rounded-xl flex items-center justify-between border border-zinc-200 dark:border-white/6">
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-[var(--pulse-ink)]">
+                          <p className="text-sm font-semibold text-(--pulse-ink)">
                             {block.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                           </p>
                           <p className="font-mono text-[11px] tracking-wide text-zinc-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
                             {block.startTime}–{block.endTime}
                           </p>
-                          <p className="font-mono text-[10px] tracking-[0.1em] uppercase text-[var(--pulse-ink-3)] mt-1">{block.type.replace('_', ' ')}</p>
+                          <p className="font-mono text-[10px] tracking-widest uppercase text-(--pulse-ink-3) mt-1">{block.type.replace('_', ' ')}</p>
                         </div>
                         <button
                           onClick={() => props.onAddFocusBlock(block)}
-                          className="px-3 py-1.5 bg-[var(--pulse-rose)] text-white font-mono text-[11px] tracking-[0.1em] uppercase rounded-lg hover:bg-[var(--pulse-rose-deep)] transition"
+                          className="px-3 py-1.5 bg-(--pulse-rose) text-white font-mono text-[11px] tracking-widest uppercase rounded-lg hover:bg-(--pulse-rose-deep) transition"
                         >
                           Add
                         </button>
@@ -341,26 +341,26 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <RuleBadge label="CONFLICTS" />
-                    <span className="font-mono text-[11px] tracking-[0.1em] uppercase text-[var(--pulse-tone-warning)]">{props.conflicts.length} detected</span>
+                    <span className="font-mono text-[11px] tracking-widest uppercase text-(--pulse-tone-warning)">{props.conflicts.length} detected</span>
                   </div>
                   <div className="space-y-2">
                     {props.conflicts.map((conflict, i) => (
-                      <div key={i} className="p-3 bg-[var(--pulse-tone-warning-soft)] rounded-xl border border-[var(--pulse-tone-warning-soft)]">
+                      <div key={i} className="p-3 bg-(--pulse-tone-warning-soft) rounded-xl border border-(--pulse-tone-warning-soft)">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className={`px-2 py-0.5 rounded font-mono text-[10px] tracking-[0.1em] uppercase font-semibold ${
-                            conflict.priority === 'high'   ? 'bg-[var(--pulse-tone-overdue-soft)] text-[var(--pulse-tone-overdue)]' :
-                            conflict.priority === 'medium' ? 'bg-[var(--pulse-tone-warning-soft)] text-[var(--pulse-tone-warning)]' :
-                                                              'bg-[var(--pulse-tone-neutral-soft)] text-[var(--pulse-ink-2)]'
+                          <span className={`px-2 py-0.5 rounded font-mono text-[10px] tracking-widest uppercase font-semibold ${
+                            conflict.priority === 'high'   ? 'bg-(--pulse-tone-overdue-soft) text-(--pulse-tone-overdue)' :
+                            conflict.priority === 'medium' ? 'bg-(--pulse-tone-warning-soft) text-(--pulse-tone-warning)' :
+                                                              'bg-(--pulse-tone-neutral-soft) text-(--pulse-ink-2)'
                           }`}>
                             {conflict.priority}
                           </span>
                         </div>
-                        <p className="text-sm font-semibold text-[var(--pulse-ink)]">{conflict.conflictingEvents[0].title}</p>
+                        <p className="text-sm font-semibold text-(--pulse-ink)">{conflict.conflictingEvents[0].title}</p>
                         <p className="text-xs text-zinc-500 mb-2">conflicts with {conflict.conflictingEvents[1].title}</p>
                         {conflict.suggestedResolutions[0] && (
                           <button
                             onClick={() => props.onSmartReschedule(conflict.conflictingEvents[0])}
-                            className="font-mono text-[11px] tracking-[0.05em] text-[var(--pulse-rose-text)] hover:text-[var(--pulse-rose-deep)] font-semibold"
+                            className="font-mono text-[11px] tracking-wider text-(--pulse-rose-text) hover:text-(--pulse-rose-deep) font-semibold"
                           >
                             {conflict.suggestedResolutions[0].description} →
                           </button>
@@ -376,13 +376,13 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <RuleBadge label="TRAVEL" />
-                    <span className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500">{props.travelBuffers.length} alerts</span>
+                    <span className="font-mono text-[11px] tracking-widest uppercase text-zinc-500">{props.travelBuffers.length} alerts</span>
                   </div>
                   <div className="space-y-2">
                     {props.travelBuffers.map((buffer, i) => (
-                      <div key={i} className="p-3 bg-zinc-50 dark:bg-white/[0.03] rounded-xl border border-zinc-200 dark:border-white/[0.06]">
-                        <p className="text-sm font-semibold text-[var(--pulse-ink)]">{buffer.fromEvent.title} → {buffer.toEvent.title}</p>
-                        <p className="text-xs text-[var(--pulse-ink-3)] mt-1">{buffer.recommendation}</p>
+                      <div key={i} className="p-3 bg-zinc-50 dark:bg-white/3 rounded-xl border border-zinc-200 dark:border-white/6">
+                        <p className="text-sm font-semibold text-(--pulse-ink)">{buffer.fromEvent.title} → {buffer.toEvent.title}</p>
+                        <p className="text-xs text-(--pulse-ink-3) mt-1">{buffer.recommendation}</p>
                       </div>
                     ))}
                   </div>
@@ -398,7 +398,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                 <RuleBadge label="INSIGHTS" />
                 <button
                   onClick={props.onAnalyzeRelationships}
-                  className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 hover:text-[var(--pulse-rose)] transition flex items-center gap-1.5"
+                  className="font-mono text-[11px] tracking-widest uppercase text-zinc-500 hover:text-(--pulse-rose) transition flex items-center gap-1.5"
                 >
                   <RefreshCw className="w-3 h-3" />
                   Refresh
@@ -408,20 +408,20 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
               {props.relationshipInsights.length > 0 && (
                 <div className="space-y-2.5">
                   {props.relationshipInsights.slice(0, 8).map((insight) => (
-                    <div key={insight.contact.id} className="p-3 bg-zinc-50 dark:bg-white/[0.03] rounded-xl border border-zinc-200 dark:border-white/[0.06]">
+                    <div key={insight.contact.id} className="p-3 bg-zinc-50 dark:bg-white/3 rounded-xl border border-zinc-200 dark:border-white/6">
                       <div className="flex items-center gap-3 mb-2">
                         <div className={`w-8 h-8 rounded-full ${insight.contact.avatarColor} flex items-center justify-center text-white text-xs font-bold`}>
                           {insight.contact.name.charAt(0)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-[var(--pulse-ink)] truncate">{insight.contact.name}</p>
+                          <p className="text-sm font-semibold text-(--pulse-ink) truncate">{insight.contact.name}</p>
                           <p className="text-[10px] text-zinc-500 truncate">{insight.contact.email}</p>
                         </div>
-                        <span className={`px-2 py-0.5 rounded font-mono text-[10px] tracking-[0.1em] uppercase font-semibold border ${
-                          insight.relationshipHealth === 'strong'          ? 'bg-[var(--pulse-tone-positive-soft)] border-[var(--pulse-tone-positive-glow)] text-[var(--pulse-tone-positive)]' :
-                          insight.relationshipHealth === 'healthy'         ? 'bg-[var(--pulse-tone-info-soft)] border-[var(--pulse-tone-info-glow)] text-[var(--pulse-tone-info)]' :
-                          insight.relationshipHealth === 'needs_attention' ? 'bg-[var(--pulse-tone-warning-soft)] border-[var(--pulse-tone-warning-glow)] text-[var(--pulse-tone-warning)]' :
-                                                                              'bg-[var(--pulse-tone-overdue-soft)] border-[var(--pulse-tone-overdue-glow)] text-[var(--pulse-tone-overdue)]'
+                        <span className={`px-2 py-0.5 rounded font-mono text-[10px] tracking-widest uppercase font-semibold border ${
+                          insight.relationshipHealth === 'strong'          ? 'bg-(--pulse-tone-positive-soft) border-(--pulse-tone-positive-glow) text-(--pulse-tone-positive)' :
+                          insight.relationshipHealth === 'healthy'         ? 'bg-(--pulse-tone-info-soft) border-(--pulse-tone-info-glow) text-(--pulse-tone-info)' :
+                          insight.relationshipHealth === 'needs_attention' ? 'bg-(--pulse-tone-warning-soft) border-(--pulse-tone-warning-glow) text-(--pulse-tone-warning)' :
+                                                                              'bg-(--pulse-tone-overdue-soft) border-(--pulse-tone-overdue-glow) text-(--pulse-tone-overdue)'
                         }`}>
                           {insight.relationshipHealth.replace('_', ' ')}
                         </span>
@@ -430,13 +430,13 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                         <p className="flex items-center gap-1.5"><CalendarIcon className="w-3 h-3 shrink-0" /> Last met: {insight.lastMeeting ? insight.lastMeeting.toLocaleDateString() : 'Never'}</p>
                         <p className="flex items-center gap-1.5"><Clock className="w-3 h-3 shrink-0" /> {insight.daysSinceLastContact} days since last contact</p>
                         {insight.upcomingMilestones.length > 0 && (
-                          <p className="flex items-center gap-1.5 text-[var(--pulse-tone-warning)]"><Star className="w-3 h-3 shrink-0" /> {insight.upcomingMilestones[0].description} in {insight.upcomingMilestones[0].daysUntil} days</p>
+                          <p className="flex items-center gap-1.5 text-(--pulse-tone-warning)"><Star className="w-3 h-3 shrink-0" /> {insight.upcomingMilestones[0].description} in {insight.upcomingMilestones[0].daysUntil} days</p>
                         )}
                       </div>
                       {insight.suggestedActions.length > 0 && (
                         <button
                           onClick={() => props.onOpenInviteModal(insight.contact)}
-                          className="mt-2 font-mono text-[11px] tracking-[0.05em] text-[var(--pulse-rose-text)] hover:text-[var(--pulse-rose-deep)] font-semibold flex items-center gap-1.5"
+                          className="mt-2 font-mono text-[11px] tracking-wider text-(--pulse-rose-text) hover:text-(--pulse-rose-deep) font-semibold flex items-center gap-1.5"
                         >
                           <CalendarPlus className="w-3 h-3" />
                           Schedule catch-up →
@@ -456,7 +456,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                 <RuleBadge label="ANALYTICS" />
                 <button
                   onClick={props.onGenerateAnalytics}
-                  className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 hover:text-[var(--pulse-rose)] transition flex items-center gap-1.5"
+                  className="font-mono text-[11px] tracking-widest uppercase text-zinc-500 hover:text-(--pulse-rose) transition flex items-center gap-1.5"
                 >
                   <RefreshCw className="w-3 h-3" />
                   Refresh
@@ -470,15 +470,15 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                       one thought, not two interchangeable cards.
                       TODO(impeccable): when calendarAIService starts returning
                       prior-week deltas, add a "vs last week" mono line below. */}
-                  <p className="text-base leading-relaxed text-[var(--pulse-ink)]">
+                  <p className="text-base leading-relaxed text-(--pulse-ink)">
                     <span className="font-semibold tabular-nums">{props.analytics.totalMeetingHours}h</span> in meetings,{' '}
                     <span className="font-semibold tabular-nums">{props.analytics.focusTimeHours}h</span> in focus.
                   </p>
 
                   {/* Meeting Overload Warning — kept as a legitimate warning state */}
                   {props.analytics.meetingOverload && (
-                    <div className="p-3 bg-[var(--pulse-tone-overdue-soft)] rounded-xl border border-[var(--pulse-tone-overdue-soft)]">
-                      <p className="text-sm font-semibold text-[var(--pulse-tone-overdue)] flex items-center gap-2">
+                    <div className="p-3 bg-(--pulse-tone-overdue-soft) rounded-xl border border-(--pulse-tone-overdue-soft)">
+                      <p className="text-sm font-semibold text-(--pulse-tone-overdue) flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
                         Over 50% of your time is in meetings.
                       </p>
@@ -487,12 +487,12 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
 
                   {/* Time by Category — quiet two-column table */}
                   <div>
-                    <h4 className="font-mono text-[11px] tracking-[0.1em] uppercase text-[var(--pulse-ink-3)] mb-2">By event type</h4>
+                    <h4 className="font-mono text-[11px] tracking-widest uppercase text-(--pulse-ink-3) mb-2">By event type</h4>
                     <div className="space-y-1.5">
                       {Object.entries(props.analytics.timeByCategory).map(([type, hours]) => (
                         <div key={type} className="flex items-center justify-between text-sm">
-                          <span className="capitalize text-[var(--pulse-ink-2)]">{type}</span>
-                          <span className="font-mono text-xs font-semibold text-[var(--pulse-ink)] tabular-nums">{typeof hours === 'number' ? hours.toFixed(1) : hours}h</span>
+                          <span className="capitalize text-(--pulse-ink-2)">{type}</span>
+                          <span className="font-mono text-xs font-semibold text-(--pulse-ink) tabular-nums">{typeof hours === 'number' ? hours.toFixed(1) : hours}h</span>
                         </div>
                       ))}
                     </div>
@@ -509,8 +509,8 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                       </div>
                       <ul className="space-y-2.5">
                         {props.analytics.recommendations.map((rec, i) => (
-                          <li key={i} className="text-sm text-[var(--pulse-ink-2)] flex items-start gap-2">
-                            <Lightbulb className="w-3.5 h-3.5 shrink-0 text-[var(--pulse-tone-warning)] mt-0.5" aria-hidden="true" />
+                          <li key={i} className="text-sm text-(--pulse-ink-2) flex items-start gap-2">
+                            <Lightbulb className="w-3.5 h-3.5 shrink-0 text-(--pulse-tone-warning) mt-0.5" aria-hidden="true" />
                             <span>{rec}</span>
                           </li>
                         ))}
@@ -526,10 +526,10 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
           {props.aiPanelTab === 'goals' && !props.aiLoading && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500">Your Goals</h4>
+                <h4 className="font-mono text-[11px] tracking-widest uppercase text-zinc-500">Your Goals</h4>
                 <button
                   onClick={() => props.onOpenGoalModal(null)}
-                  className="font-mono text-[11px] tracking-[0.1em] uppercase text-[var(--pulse-rose-text)] hover:text-[var(--pulse-rose-deep)] font-semibold flex items-center gap-1"
+                  className="font-mono text-[11px] tracking-widest uppercase text-(--pulse-rose-text) hover:text-(--pulse-rose-deep) font-semibold flex items-center gap-1"
                 >
                   <Plus className="w-3 h-3" /> Add Goal
                 </button>
@@ -538,11 +538,11 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
               {/* Goals List */}
               <div className="space-y-2">
                 {props.goals.map(goal => (
-                  <div key={goal.id} className="p-3 bg-zinc-50 dark:bg-white/[0.03] rounded-xl border border-zinc-200 dark:border-white/[0.06]">
+                  <div key={goal.id} className="p-3 bg-zinc-50 dark:bg-white/3 rounded-xl border border-zinc-200 dark:border-white/6">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <div className={`w-2.5 h-2.5 rounded-full ${goal.color} shrink-0`}></div>
-                        <span className="text-sm font-semibold text-[var(--pulse-ink)] truncate">{goal.title}</span>
+                        <span className="text-sm font-semibold text-(--pulse-ink) truncate">{goal.title}</span>
                       </div>
                       <button
                         onClick={() => props.onOpenGoalModal(goal)}
@@ -552,17 +552,17 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                         <Pen className="w-3 h-3" />
                       </button>
                     </div>
-                    <p className="font-mono text-[10px] tracking-[0.05em] uppercase text-zinc-500" style={{ fontVariantNumeric: 'tabular-nums' }}>{goal.category} · {goal.targetHoursPerWeek}h/week</p>
+                    <p className="font-mono text-[10px] tracking-wider uppercase text-zinc-500" style={{ fontVariantNumeric: 'tabular-nums' }}>{goal.category} · {goal.targetHoursPerWeek}h/week</p>
                   </div>
                 ))}
               </div>
 
               <button
                 onClick={props.onAnalyzeGoalAlignment}
-                className="w-full p-3 bg-zinc-50 dark:bg-white/[0.03] rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-white/[0.055] transition border border-zinc-200 dark:border-white/[0.06] flex items-center gap-2"
+                className="w-full p-3 bg-zinc-50 dark:bg-white/3 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-white/5.5 transition border border-zinc-200 dark:border-white/6 flex items-center gap-2"
               >
-                <PieChart className="w-4 h-4 text-[var(--pulse-ink-3)]" />
-                <span className="text-sm font-semibold text-[var(--pulse-ink)]">Analyze Goal Alignment</span>
+                <PieChart className="w-4 h-4 text-(--pulse-ink-3)" />
+                <span className="text-sm font-semibold text-(--pulse-ink)">Analyze Goal Alignment</span>
               </button>
 
               {/* Goal Alignments */}
@@ -570,13 +570,13 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                 <div className="space-y-3">
                   <RuleBadge label="ALIGNMENT" />
                   {props.goalAlignments.map(alignment => (
-                    <div key={alignment.goal.id} className="p-3 bg-zinc-50 dark:bg-white/[0.03] rounded-xl border border-zinc-200 dark:border-white/[0.06]">
+                    <div key={alignment.goal.id} className="p-3 bg-zinc-50 dark:bg-white/3 rounded-xl border border-zinc-200 dark:border-white/6">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <div className={`w-2.5 h-2.5 rounded-full ${alignment.goal.color} shrink-0`}></div>
-                          <span className="text-sm font-semibold text-[var(--pulse-ink)] truncate">{alignment.goal.title}</span>
+                          <span className="text-sm font-semibold text-(--pulse-ink) truncate">{alignment.goal.title}</span>
                         </div>
-                        <span className="font-mono text-[11px] font-semibold text-[var(--pulse-ink-2)] shrink-0" style={{ fontVariantNumeric: 'tabular-nums' }}>{Math.round(alignment.allocatedTime / 60)}h / {alignment.goal.targetHoursPerWeek}h</span>
+                        <span className="font-mono text-[11px] font-semibold text-(--pulse-ink-2) shrink-0" style={{ fontVariantNumeric: 'tabular-nums' }}>{Math.round(alignment.allocatedTime / 60)}h / {alignment.goal.targetHoursPerWeek}h</span>
                       </div>
                       <div className="h-1.5 bg-zinc-200 dark:bg-white/10 rounded-full overflow-hidden mb-2">
                         <div
@@ -584,7 +584,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                           style={{ width: `${Math.min(100, (alignment.allocatedTime / (alignment.targetTime || 1)) * 100)}%` }}
                         />
                       </div>
-                      <p className="text-[11px] text-[var(--pulse-ink-3)] leading-relaxed">{alignment.recommendation}</p>
+                      <p className="text-[11px] text-(--pulse-ink-3) leading-relaxed">{alignment.recommendation}</p>
                     </div>
                   ))}
                 </div>
@@ -596,14 +596,14 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
 
       {/* ── Meeting Prep Modal ───────────────────────────────────────── */}
       {props.showMeetingPrepModal && props.meetingPrep && props.prepEvent && (
-        <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-2xl w-full max-w-lg shadow-2xl animate-scale-in max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-[var(--pulse-border)] flex items-center justify-between">
+        <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-xs flex items-center justify-center animate-fade-in p-4">
+          <div className="bg-(--pulse-surface) dark:bg-(--pulse-surface) border border-(--pulse-border) rounded-2xl w-full max-w-lg shadow-2xl animate-scale-in max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-(--pulse-border) flex items-center justify-between">
               <div className="flex flex-col gap-1.5">
                 {props.meetingPrep.failed ? (
                   // AI failed → static default checklist. No Claude chip: this is
                   // not a generated briefing (#129).
-                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded font-mono text-[11px] font-medium uppercase tracking-[0.1em] bg-[var(--pulse-tone-warning-soft)] text-[var(--pulse-tone-warning)] self-start">
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm font-mono text-[11px] font-medium uppercase tracking-widest bg-(--pulse-tone-warning-soft) text-(--pulse-tone-warning) self-start">
                     <AlertTriangle className="w-3 h-3" aria-hidden="true" />
                     Briefing Unavailable
                   </span>
@@ -619,9 +619,9 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {/* AI-failure notice — distinguishes the default checklist from a real briefing (#129) */}
               {props.meetingPrep.failed && (
-                <div className="p-3 rounded-xl bg-[var(--pulse-tone-warning-soft)] border border-[var(--pulse-tone-warning-soft)] flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 shrink-0 text-[var(--pulse-tone-warning)] mt-0.5" aria-hidden="true" />
-                  <p className="text-sm text-[var(--pulse-ink-2)] leading-relaxed">
+                <div className="p-3 rounded-xl bg-(--pulse-tone-warning-soft) border border-(--pulse-tone-warning-soft) flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-(--pulse-tone-warning) mt-0.5" aria-hidden="true" />
+                  <p className="text-sm text-(--pulse-ink-2) leading-relaxed">
                     Couldn't generate an AI briefing right now — showing a default prep checklist. The meeting details below are unchanged.
                   </p>
                 </div>
@@ -652,10 +652,10 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
               {/* Suggested Agenda */}
               {props.meetingPrep.suggestedAgenda.length > 0 && (
                 <div>
-                  <h4 className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 mb-3">Suggested Agenda</h4>
+                  <h4 className="font-mono text-[11px] tracking-widest uppercase text-zinc-500 mb-3">Suggested Agenda</h4>
                   <ol className="list-decimal list-inside space-y-1.5 marker:text-zinc-400">
                     {props.meetingPrep.suggestedAgenda.map((item, i) => (
-                      <li key={i} className="text-sm text-[var(--pulse-ink-2)] leading-relaxed">{item}</li>
+                      <li key={i} className="text-sm text-(--pulse-ink-2) leading-relaxed">{item}</li>
                     ))}
                   </ol>
                 </div>
@@ -664,12 +664,12 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
               {/* Talking Points */}
               {props.meetingPrep.talkingPoints.length > 0 && (
                 <div>
-                  <h4 className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 mb-3">Talking Points</h4>
+                  <h4 className="font-mono text-[11px] tracking-widest uppercase text-zinc-500 mb-3">Talking Points</h4>
                   <ul className="space-y-2">
                     {props.meetingPrep.talkingPoints.map((point, i) => (
                       <li key={i} className="flex items-start gap-2">
-                        <Check className="w-3.5 h-3.5 text-[var(--pulse-tone-positive)] mt-1 shrink-0" />
-                        <span className="text-sm text-[var(--pulse-ink-2)] leading-relaxed">{point}</span>
+                        <Check className="w-3.5 h-3.5 text-(--pulse-tone-positive) mt-1 shrink-0" />
+                        <span className="text-sm text-(--pulse-ink-2) leading-relaxed">{point}</span>
                       </li>
                     ))}
                   </ul>
@@ -679,12 +679,12 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
               {/* Questions to Ask */}
               {props.meetingPrep.questionsToAsk.length > 0 && (
                 <div>
-                  <h4 className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 mb-3">Questions to Ask</h4>
+                  <h4 className="font-mono text-[11px] tracking-widest uppercase text-zinc-500 mb-3">Questions to Ask</h4>
                   <ul className="space-y-2">
                     {props.meetingPrep.questionsToAsk.map((q, i) => (
                       <li key={i} className="flex items-start gap-2">
-                        <HelpCircle className="w-3.5 h-3.5 text-[var(--pulse-ink-3)] mt-1 shrink-0" />
-                        <span className="text-sm text-[var(--pulse-ink-2)] leading-relaxed">{q}</span>
+                        <HelpCircle className="w-3.5 h-3.5 text-(--pulse-ink-3) mt-1 shrink-0" />
+                        <span className="text-sm text-(--pulse-ink-2) leading-relaxed">{q}</span>
                       </li>
                     ))}
                   </ul>
@@ -694,13 +694,13 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
               {/* Context Notes */}
               {props.meetingPrep.contextNotes && (
                 <div>
-                  <h4 className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 mb-3">Context</h4>
-                  <p className="text-sm text-[var(--pulse-ink-2)] bg-zinc-50 dark:bg-white/[0.03] p-3 rounded-lg border border-zinc-200 dark:border-white/[0.06] leading-relaxed">{props.meetingPrep.contextNotes}</p>
+                  <h4 className="font-mono text-[11px] tracking-widest uppercase text-zinc-500 mb-3">Context</h4>
+                  <p className="text-sm text-(--pulse-ink-2) bg-zinc-50 dark:bg-white/3 p-3 rounded-lg border border-zinc-200 dark:border-white/6 leading-relaxed">{props.meetingPrep.contextNotes}</p>
                 </div>
               )}
             </div>
-            <div className="p-4 border-t border-[var(--pulse-border)]">
-              <button onClick={props.onCloseMeetingPrep} className="w-full py-2.5 bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white rounded-lg font-mono text-[11px] tracking-[0.1em] uppercase font-semibold transition">
+            <div className="p-4 border-t border-(--pulse-border)">
+              <button onClick={props.onCloseMeetingPrep} className="w-full py-2.5 bg-(--pulse-rose) hover:bg-(--pulse-rose-deep) text-white rounded-lg font-mono text-[11px] tracking-widest uppercase font-semibold transition">
                 Done
               </button>
             </div>
@@ -710,9 +710,9 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
 
       {/* ── Smart Reschedule Modal ───────────────────────────────────── */}
       {props.showRescheduleModal && props.rescheduleEvent && (
-        <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
-            <div className="p-6 border-b border-[var(--pulse-border)]">
+        <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-xs flex items-center justify-center animate-fade-in p-4">
+          <div className="bg-(--pulse-surface) dark:bg-(--pulse-surface) border border-(--pulse-border) rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
+            <div className="p-6 border-b border-(--pulse-border)">
               <div className="flex items-start justify-between">
                 <div className="flex flex-col gap-1.5">
                   <RuleBadge label="RESCHEDULE" />
@@ -731,21 +731,21 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                   <button
                     key={i}
                     onClick={() => props.onApplyReschedule(option)}
-                    className="w-full p-3 bg-zinc-50 dark:bg-white/[0.03] rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-white/[0.055] transition group border border-transparent hover:border-zinc-200 dark:hover:border-white/10"
+                    className="w-full p-3 bg-zinc-50 dark:bg-white/3 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-white/5.5 transition group border border-transparent hover:border-zinc-200 dark:hover:border-white/10"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-[var(--pulse-ink)]">
+                        <p className="text-sm font-semibold text-(--pulse-ink)">
                           {option.newStart.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                         </p>
                         <p className="font-mono text-[11px] tracking-wide text-zinc-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
                           {option.newStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}–{option.newEnd.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
-                        <p className="text-[10px] text-[var(--pulse-ink-3)] mt-1 truncate">{option.reason}</p>
+                        <p className="text-[10px] text-(--pulse-ink-3) mt-1 truncate">{option.reason}</p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="font-mono text-[11px] tracking-wider font-semibold text-[var(--pulse-tone-positive)]" style={{ fontVariantNumeric: 'tabular-nums' }}>{option.availabilityScore}%</span>
-                        <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:text-[var(--pulse-rose)] transition" />
+                        <span className="font-mono text-[11px] tracking-wider font-semibold text-(--pulse-tone-positive)" style={{ fontVariantNumeric: 'tabular-nums' }}>{option.availabilityScore}%</span>
+                        <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:text-(--pulse-rose) transition" />
                       </div>
                     </div>
                   </button>
@@ -758,9 +758,9 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
 
       {/* ── Goal Editor Modal ────────────────────────────────────────── */}
       {props.showGoalModal && (
-        <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-[var(--pulse-surface)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
-            <div className="p-6 border-b border-[var(--pulse-border)] flex items-center justify-between">
+        <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-xs flex items-center justify-center animate-fade-in p-4">
+          <div className="bg-(--pulse-surface) dark:bg-(--pulse-surface) border border-(--pulse-border) rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
+            <div className="p-6 border-b border-(--pulse-border) flex items-center justify-between">
               <h3 className="text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
                 {props.editingGoal ? 'Edit Goal' : 'New Goal'}
               </h3>
@@ -786,30 +786,30 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
               className="p-6 space-y-4"
             >
               <div>
-                <label className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 font-semibold mb-1.5 block">Goal Title</label>
+                <label className="font-mono text-[11px] tracking-widest uppercase text-zinc-500 font-semibold mb-1.5 block">Goal Title</label>
                 <input
                   type="text"
                   name="title"
                   defaultValue={props.editingGoal?.title}
                   required
                   placeholder="e.g., Deep Work"
-                  className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-lg p-3 text-sm text-[var(--pulse-ink)] outline-none focus:ring-2 focus:ring-[var(--pulse-rose)] focus:border-transparent transition"
+                  className="w-full bg-zinc-50 dark:bg-white/3 border border-zinc-200 dark:border-white/6 rounded-lg p-3 text-sm text-(--pulse-ink) outline-hidden focus:ring-2 focus:ring-(--pulse-rose) focus:border-transparent transition"
                 />
               </div>
               <div>
-                <label className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 font-semibold mb-1.5 block">Category</label>
+                <label className="font-mono text-[11px] tracking-widest uppercase text-zinc-500 font-semibold mb-1.5 block">Category</label>
                 <input
                   type="text"
                   name="category"
                   defaultValue={props.editingGoal?.category}
                   required
                   placeholder="e.g., focus, meetings, client"
-                  className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-lg p-3 text-sm text-[var(--pulse-ink)] outline-none focus:ring-2 focus:ring-[var(--pulse-rose)] focus:border-transparent transition"
+                  className="w-full bg-zinc-50 dark:bg-white/3 border border-zinc-200 dark:border-white/6 rounded-lg p-3 text-sm text-(--pulse-ink) outline-hidden focus:ring-2 focus:ring-(--pulse-rose) focus:border-transparent transition"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 font-semibold mb-1.5 block">Hours/Week</label>
+                  <label className="font-mono text-[11px] tracking-widest uppercase text-zinc-500 font-semibold mb-1.5 block">Hours/Week</label>
                   <input
                     type="number"
                     name="hours"
@@ -817,16 +817,16 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                     required
                     min="1"
                     max="40"
-                    className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-lg p-3 text-sm text-[var(--pulse-ink)] outline-none focus:ring-2 focus:ring-[var(--pulse-rose)] focus:border-transparent transition"
+                    className="w-full bg-zinc-50 dark:bg-white/3 border border-zinc-200 dark:border-white/6 rounded-lg p-3 text-sm text-(--pulse-ink) outline-hidden focus:ring-2 focus:ring-(--pulse-rose) focus:border-transparent transition"
                     style={{ fontVariantNumeric: 'tabular-nums' }}
                   />
                 </div>
                 <div>
-                  <label className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 font-semibold mb-1.5 block">Priority</label>
+                  <label className="font-mono text-[11px] tracking-widest uppercase text-zinc-500 font-semibold mb-1.5 block">Priority</label>
                   <select
                     name="priority"
                     defaultValue={props.editingGoal?.priority || 1}
-                    className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-lg p-3 text-sm text-[var(--pulse-ink)] outline-none focus:ring-2 focus:ring-[var(--pulse-rose)] focus:border-transparent transition"
+                    className="w-full bg-zinc-50 dark:bg-white/3 border border-zinc-200 dark:border-white/6 rounded-lg p-3 text-sm text-(--pulse-ink) outline-hidden focus:ring-2 focus:ring-(--pulse-rose) focus:border-transparent transition"
                   >
                     <option value="1">High</option>
                     <option value="2">Medium</option>
@@ -835,12 +835,12 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                 </div>
               </div>
               <div>
-                <label className="font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 font-semibold mb-2 block">Color</label>
+                <label className="font-mono text-[11px] tracking-widest uppercase text-zinc-500 font-semibold mb-2 block">Color</label>
                 <div className="flex gap-2 flex-wrap">
                   {EVENT_COLORS.map(color => (
                     <label key={color.id} className="cursor-pointer">
                       <input type="radio" name="color" value={color.class} defaultChecked={props.editingGoal?.color === color.class || (!props.editingGoal && color.id === 'blue')} className="sr-only peer" />
-                      <div className={`w-8 h-8 rounded-full ${color.class} transition ring-2 ring-offset-2 ring-transparent peer-checked:ring-[var(--pulse-rose)] dark:ring-offset-zinc-900`}></div>
+                      <div className={`w-8 h-8 rounded-full ${color.class} transition ring-2 ring-offset-2 ring-transparent peer-checked:ring-(--pulse-rose) dark:ring-offset-zinc-900`}></div>
                     </label>
                   ))}
                 </div>
@@ -852,16 +852,16 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                     onClick={() => {
                       props.onDeleteGoal(props.editingGoal!.id);
                     }}
-                    className="px-4 py-2 font-mono text-[11px] tracking-[0.1em] uppercase text-[var(--pulse-tone-overdue)] hover:bg-[var(--pulse-tone-overdue-soft)] rounded-lg transition"
+                    className="px-4 py-2 font-mono text-[11px] tracking-widest uppercase text-(--pulse-tone-overdue) hover:bg-(--pulse-tone-overdue-soft) rounded-lg transition"
                   >
                     Delete
                   </button>
                 )}
                 <div className="flex gap-2 ml-auto">
-                  <button type="button" onClick={props.onCloseGoalModal} className="px-4 py-2 font-mono text-[11px] tracking-[0.1em] uppercase text-zinc-500 hover:text-[var(--pulse-ink)] transition">
+                  <button type="button" onClick={props.onCloseGoalModal} className="px-4 py-2 font-mono text-[11px] tracking-widest uppercase text-zinc-500 hover:text-(--pulse-ink) transition">
                     Cancel
                   </button>
-                  <button type="submit" className="px-5 py-2 bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white rounded-lg font-mono text-[11px] tracking-[0.1em] uppercase font-semibold transition">
+                  <button type="submit" className="px-5 py-2 bg-(--pulse-rose) hover:bg-(--pulse-rose-deep) text-white rounded-lg font-mono text-[11px] tracking-widest uppercase font-semibold transition">
                     {props.editingGoal ? 'Save' : 'Create'}
                   </button>
                 </div>
@@ -873,7 +873,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
 
       {/* ── Post-Meeting Follow-Up Prompt ────────────────────────────── */}
       {props.activeFollowUpPrompt && (
-        <div className="fixed bottom-[calc(1.5rem+var(--pulse-bottom-bar))] right-6 max-w-md z-[100] animate-fade-in">
+        <div className="fixed bottom-[calc(1.5rem+var(--pulse-bottom-bar))] right-6 max-w-md z-100 animate-fade-in">
           <PostMeetingPrompt
             followUp={props.activeFollowUpPrompt}
             onCreateAction={props.onFollowUpCreateAction}

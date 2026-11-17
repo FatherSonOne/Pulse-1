@@ -85,7 +85,7 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
           }}
           placeholder="Search emails"
           aria-label="Search emails"
-          className="w-full h-9 rounded-md pl-9 pr-9 text-[13px] pulse-ink-color border pulse-border-color focus:outline-none focus:pulse-rose-border transition"
+          className="w-full h-9 rounded-md pl-9 pr-9 text-[13px] pulse-ink-color border pulse-border-color focus:outline-hidden focus:pulse-rose-border transition"
           style={{
             background: 'var(--pulse-surface)',
           }}
@@ -94,7 +94,7 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
           <button
             type="button"
             onClick={onSearchClear}
-            className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded flex items-center justify-center pulse-ink-3-color hover:pulse-ink-color hover:pulse-surface-raised transition-transform active:scale-90"
+            className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-sm flex items-center justify-center pulse-ink-3-color hover:pulse-ink-color hover:pulse-surface-raised transition-transform active:scale-90"
             aria-label="Clear search"
             title="Clear search"
           >

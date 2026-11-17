@@ -38,7 +38,7 @@ const AnalyticsHome: React.FC<AnalyticsHomeProps> = ({
       <div
         role="tablist"
         aria-label="Analytics views"
-        className="sticky top-0 z-10 flex items-center gap-1 px-6 pt-4 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm"
+        className="sticky top-0 z-10 flex items-center gap-1 px-6 pt-4 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xs"
       >
         {TABS.map(({ id, label, icon: Icon }) => {
           const active = tab === id;

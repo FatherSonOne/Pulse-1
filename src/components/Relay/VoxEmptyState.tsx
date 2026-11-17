@@ -70,7 +70,7 @@ export const VoxEmptyState: React.FC<VoxEmptyStateProps> = ({
 
       {eyebrow && (
         <p
-          className="font-mono text-[10px] uppercase tracking-[0.1em] mb-2"
+          className="font-mono text-[10px] uppercase tracking-widest mb-2"
           style={{ color: 'var(--pulse-ink-3)' }}
         >
           {eyebrow}
@@ -100,7 +100,7 @@ export const VoxEmptyState: React.FC<VoxEmptyStateProps> = ({
 
       {hint && (
         <p
-          className="font-mono text-[10px] uppercase tracking-[0.1em] mt-4"
+          className="font-mono text-[10px] uppercase tracking-widest mt-4"
           style={{ color: 'var(--pulse-ink-3)' }}
         >
           {hint}

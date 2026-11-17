@@ -214,7 +214,7 @@ export const ThreadLinking: React.FC<ThreadLinkingProps> = ({
                           <span className="text-sm font-medium text-zinc-800 dark:text-white truncate">
                             {thread.contactName}
                           </span>
-                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${getLinkTypeColor(thread.linkType)}`}>
+                          <span className={`px-1.5 py-0.5 rounded-sm text-[9px] font-bold ${getLinkTypeColor(thread.linkType)}`}>
                             {getLinkTypeLabel(thread.linkType)}
                           </span>
                         </div>
@@ -235,14 +235,14 @@ export const ThreadLinking: React.FC<ThreadLinkingProps> = ({
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
                         <button
                           onClick={() => onNavigateToThread?.(thread.id)}
-                          className="p-1.5 rounded text-zinc-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                          className="p-1.5 rounded-sm text-zinc-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
                           title="Go to thread"
                         >
                           <ArrowRight className="text-xs" />
                         </button>
                         <button
                           onClick={() => onUnlinkThread?.(thread.id)}
-                          className="p-1.5 rounded text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          className="p-1.5 rounded-sm text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                           title="Unlink"
                         >
                           <Unlink className="text-xs" />
@@ -322,7 +322,7 @@ export const ThreadLinking: React.FC<ThreadLinkingProps> = ({
                     value={searchQuery}
                     onChange={e => handleSearch(e.target.value)}
                     placeholder="Search by name or content..."
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-hidden"
                   />
                   {isSearching && (
                     <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 animate-spin" />
@@ -402,7 +402,7 @@ export const ThreadReferenceBadge: React.FC<{
 }> = ({ threadName, onClick }) => (
   <button
     onClick={onClick}
-    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-medium hover:bg-indigo-200 dark:hover:bg-indigo-900/60 transition"
+    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-medium hover:bg-indigo-200 dark:hover:bg-indigo-900/60 transition"
   >
     <Link />
     {threadName}

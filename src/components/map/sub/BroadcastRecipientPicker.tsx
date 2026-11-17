@@ -80,7 +80,7 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search Pulse contacts…"
           aria-label="Search Pulse contacts"
-          className={`w-full px-3 py-2 rounded-lg text-sm outline-none transition-colors ${
+          className={`w-full px-3 py-2 rounded-lg text-sm outline-hidden transition-colors ${
             isDarkMode
               ? 'bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-rose-500'
               : 'bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-rose-500'
@@ -99,7 +99,7 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
               type="button"
               onClick={selectAll}
               disabled={eligible.length === 0}
-              className={`text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:underline disabled:opacity-40 ${
+              className={`text-[11px] font-medium transition-colors focus-visible:outline-hidden focus-visible:underline disabled:opacity-40 ${
                 isDarkMode ? 'text-rose-300 hover:text-rose-200' : 'text-rose-600 hover:text-rose-700'
               }`}
             >
@@ -109,7 +109,7 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
               type="button"
               onClick={clearAll}
               disabled={selected.size === 0}
-              className={`text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:underline disabled:opacity-40 ${
+              className={`text-[11px] font-medium transition-colors focus-visible:outline-hidden focus-visible:underline disabled:opacity-40 ${
                 isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -156,13 +156,13 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
                     toggleContact(userId);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:bg-rose-500/10 ${
+                className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors focus-visible:outline-hidden focus-visible:bg-rose-500/10 ${
                   isDarkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50'
                 }`}
               >
                 <div
                   aria-hidden="true"
-                  className={`w-5 h-5 rounded flex items-center justify-center transition-colors flex-shrink-0 ${
+                  className={`w-5 h-5 rounded flex items-center justify-center transition-colors shrink-0 ${
                     isSelected
                       ? 'bg-rose-500 text-white'
                       : isDarkMode ? 'bg-white/10 text-transparent' : 'bg-gray-100 text-transparent'
@@ -173,7 +173,7 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
                 </div>
                 <div
                   aria-hidden="true"
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0"
                   style={{ backgroundColor: c.avatarColor || '#f43f5e' }}
                 >
                   {c.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
@@ -194,11 +194,11 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
         )}
       </div>
 
-      <div className={`px-4 py-3 border-t flex items-center gap-2 ${isDarkMode ? 'border-white/10 bg-white/[0.02]' : 'border-gray-100 bg-gray-50'}`}>
+      <div className={`px-4 py-3 border-t flex items-center gap-2 ${isDarkMode ? 'border-white/10 bg-white/2' : 'border-gray-100 bg-gray-50'}`}>
         <button
           type="button"
           onClick={onCancel}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 ${
             isDarkMode ? 'bg-white/5 text-gray-300 hover:bg-white/10' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
         >
@@ -209,7 +209,7 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
           onClick={() => onConfirm(Array.from(selected))}
           disabled={selected.size === 0}
           aria-label={`Broadcast to ${selected.size} ${selected.size === 1 ? 'recipient' : 'recipients'}`}
-          className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1"
+          className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1"
         >
           <Users size={11} aria-hidden="true" />
           <span aria-hidden="true">Broadcast to {selected.size}</span>
@@ -225,7 +225,7 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
       <div
         ref={sheetRef}
         className={`rounded-xl border overflow-hidden ${
-          isDarkMode ? 'border-white/10 bg-white/[0.02]' : 'border-gray-200 bg-gray-50/60'
+          isDarkMode ? 'border-white/10 bg-white/2' : 'border-gray-200 bg-gray-50/60'
         }`}
       >
         {content}
@@ -256,7 +256,7 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
             <Radio size={14} className="text-rose-500" aria-hidden="true" />
             <span
               id="broadcast-picker-title"
-              className="text-[11px] tracking-[0.1em] uppercase"
+              className="text-[11px] tracking-widest uppercase"
               style={{ fontFamily: "'JetBrains Mono', monospace" }}
             >
               Pick who can see your live location
@@ -266,7 +266,7 @@ const BroadcastRecipientPicker: React.FC<BroadcastRecipientPickerProps> = ({
             type="button"
             onClick={onCancel}
             aria-label="Close"
-            className={`p-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
+            className={`p-1.5 rounded transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
               isDarkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-gray-100 text-gray-500'
             }`}
           >

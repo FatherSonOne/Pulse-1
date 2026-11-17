@@ -295,7 +295,7 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
           aria-hidden="true"
           onClick={onClose}
           className={[
-            'fixed inset-0 z-40 bg-black/40 backdrop-blur-sm',
+            'fixed inset-0 z-40 bg-black/40 backdrop-blur-xs',
             closing ? 'msg-ctx-fade-out' : 'animate-fade-in',
           ].join(' ')}
         />
@@ -349,8 +349,8 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
                     aria-controls="msg-menu-overflow"
                     className={[
                       'mt-1 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg',
-                      'min-h-[44px] text-xs font-mono uppercase tracking-[0.1em]',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+                      'min-h-[44px] text-xs font-mono uppercase tracking-widest',
+                      'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
                       isDarkMode
                         ? 'text-zinc-300 hover:bg-white/10 focus-visible:bg-white/10'
                         : 'text-zinc-500 hover:bg-black/5 focus-visible:bg-black/5',
@@ -442,8 +442,8 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
                 aria-controls="msg-menu-overflow-desktop"
                 className={[
                   'w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg',
-                  'min-h-[44px] text-xs font-mono uppercase tracking-[0.1em]',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+                  'min-h-[44px] text-xs font-mono uppercase tracking-widest',
+                  'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
                   isDarkMode
                     ? 'text-zinc-400 hover:bg-white/5'
                     : 'text-zinc-500 hover:bg-black/5',

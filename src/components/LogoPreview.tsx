@@ -339,13 +339,13 @@ const LogoPreview: React.FC<LogoPreviewProps> = ({ onClose, onSelect }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-700 w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-purple-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-rose-500 to-purple-600 flex items-center justify-center">
                 <Palette className="text-white" />
               </div>
               Pulse Logo Preview

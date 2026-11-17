@@ -112,14 +112,14 @@ export const BriefingSheet: React.FC<BriefingSheetProps> = ({ open, onClose, ite
 
       {/* Sheet */}
       <div
-        className="relative w-full max-w-[560px] h-full bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-white/[0.08] shadow-2xl flex flex-col animate-slide-in-right"
+        className="relative w-full max-w-[560px] h-full bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-white/8 shadow-2xl flex flex-col animate-slide-in-right"
         onClick={e => e.stopPropagation()}
         style={{ animation: 'briefing-slide 280ms cubic-bezier(0.16, 1, 0.3, 1)' }}
       >
         <style>{`@keyframes briefing-slide { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
 
         {/* Header */}
-        <header className="px-6 pt-6 pb-5 border-b border-zinc-200 dark:border-white/[0.06]">
+        <header className="px-6 pt-6 pb-5 border-b border-zinc-200 dark:border-white/6">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="inline-flex items-center gap-1.5 mb-2">
@@ -139,7 +139,7 @@ export const BriefingSheet: React.FC<BriefingSheetProps> = ({ open, onClose, ite
             </div>
             <button
               onClick={onClose}
-              className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition flex-shrink-0"
+              className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/4 transition shrink-0"
               aria-label="Close briefing"
             >
               <X className="w-4 h-4" />
@@ -164,7 +164,7 @@ export const BriefingSheet: React.FC<BriefingSheetProps> = ({ open, onClose, ite
               {items.length >= 2 && (
                 <button
                   onClick={() => setRetryKey(k => k + 1)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/[0.08] hover:bg-rose-500/[0.14] border border-rose-500/30 text-[11px] font-mono uppercase tracking-[0.12em] text-rose-600 dark:text-rose-400 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/8 hover:bg-rose-500/[0.14] border border-rose-500/30 text-[11px] font-mono uppercase tracking-[0.12em] text-rose-600 dark:text-rose-400 transition-colors"
                 >
                   <RotateCcw className="w-3 h-3" />
                   Retry synthesis
@@ -176,7 +176,7 @@ export const BriefingSheet: React.FC<BriefingSheetProps> = ({ open, onClose, ite
           {briefing && !loading && (
             <div className="px-6 py-5 space-y-6 max-w-prose">
               {briefing.provenance === 'skeleton' && (
-                <div className="text-[10px] font-mono uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-500 px-3 py-2 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded">
+                <div className="text-[10px] font-mono uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-500 px-3 py-2 bg-zinc-50 dark:bg-white/3 border border-zinc-200 dark:border-white/6 rounded-sm">
                   AI synthesis unavailable · showing source skeleton
                 </div>
               )}
@@ -206,7 +206,7 @@ export const BriefingSheet: React.FC<BriefingSheetProps> = ({ open, onClose, ite
                   <ul className="space-y-2.5">
                     {briefing.threads.map((t, i) => (
                       <li key={i} className="flex items-start gap-3">
-                        <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-400 dark:text-zinc-600 mt-1 tabular-nums w-6 flex-shrink-0">
+                        <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-400 dark:text-zinc-600 mt-1 tabular-nums w-6 shrink-0">
                           {String(i + 1).padStart(2, '0')}
                         </span>
                         <div className="flex-1 min-w-0">
@@ -232,7 +232,7 @@ export const BriefingSheet: React.FC<BriefingSheetProps> = ({ open, onClose, ite
                   <ul className="space-y-1.5">
                     {briefing.decisions.map((d, i) => (
                       <li key={i} className="flex items-baseline gap-2">
-                        <span className="text-rose-500 mt-1.5 flex-shrink-0" aria-hidden>·</span>
+                        <span className="text-rose-500 mt-1.5 shrink-0" aria-hidden>·</span>
                         <button
                           onClick={() => openItem(d.itemId)}
                           className="text-left text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed hover:text-rose-500 transition-colors"
@@ -251,7 +251,7 @@ export const BriefingSheet: React.FC<BriefingSheetProps> = ({ open, onClose, ite
                   <ul className="space-y-1.5">
                     {briefing.openQuestions.map((q, i) => (
                       <li key={i} className="flex items-baseline gap-2">
-                        <span className="text-zinc-400 dark:text-zinc-600 mt-1.5 flex-shrink-0" aria-hidden>?</span>
+                        <span className="text-zinc-400 dark:text-zinc-600 mt-1.5 shrink-0" aria-hidden>?</span>
                         <span className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
                           {q}
                         </span>
@@ -266,8 +266,8 @@ export const BriefingSheet: React.FC<BriefingSheetProps> = ({ open, onClose, ite
                 <Section label="For the next conversation" accent>
                   <ul className="space-y-2">
                     {briefing.talkingPoints.map((p, i) => (
-                      <li key={i} className="flex items-baseline gap-2.5 px-3 py-2 rounded-lg bg-rose-500/[0.05] border border-rose-500/15">
-                        <Sparkles className="w-3 h-3 text-rose-500 mt-1 flex-shrink-0" />
+                      <li key={i} className="flex items-baseline gap-2.5 px-3 py-2 rounded-lg bg-rose-500/5 border border-rose-500/15">
+                        <Sparkles className="w-3 h-3 text-rose-500 mt-1 shrink-0" />
                         <span className="text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed">{p}</span>
                       </li>
                     ))}
@@ -294,7 +294,7 @@ export const BriefingSheet: React.FC<BriefingSheetProps> = ({ open, onClose, ite
                             onClick={() => openItem(id)}
                             className="w-full flex items-baseline gap-3 py-1 text-left hover:text-rose-500 transition-colors"
                           >
-                            <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400 dark:text-zinc-600 tabular-nums w-12 flex-shrink-0">
+                            <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400 dark:text-zinc-600 tabular-nums w-12 shrink-0">
                               {fmtShort(d)}
                             </span>
                             <span className="text-xs text-zinc-600 dark:text-zinc-400 truncate">{item.title}</span>
@@ -311,20 +311,20 @@ export const BriefingSheet: React.FC<BriefingSheetProps> = ({ open, onClose, ite
 
         {/* Footer */}
         {briefing && !loading && (
-          <footer className="px-6 py-3 border-t border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] flex items-center justify-between gap-3">
+          <footer className="px-6 py-3 border-t border-zinc-200 dark:border-white/6 bg-zinc-50 dark:bg-white/2 flex items-center justify-between gap-3">
             <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-500">
               {demoMode ? 'Demo synthesis · counted toward AI usage' : 'Esc to close'}
             </span>
             <div className="flex items-center gap-1.5">
               <button
                 onClick={handleEmail}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/4 transition"
               >
                 <Mail className="w-3.5 h-3.5" /> Email
               </button>
               <button
                 onClick={handleCopy}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-rose-600 dark:text-rose-400 bg-rose-500/[0.08] hover:bg-rose-500/[0.14] transition"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-rose-600 dark:text-rose-400 bg-rose-500/8 hover:bg-rose-500/[0.14] transition"
               >
                 {copied ? (
                   <>

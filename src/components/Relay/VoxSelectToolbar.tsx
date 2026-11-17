@@ -112,7 +112,7 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
                       toast.error('Could not undo archive');
                     }
                   }}
-                  className="w-full rounded-none rounded-r-xl px-4 flex items-center gap-1.5 text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition focus:outline-none"
+                  className="w-full rounded-none rounded-r-xl px-4 flex items-center gap-1.5 text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition focus:outline-hidden"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   Undo
@@ -218,7 +218,7 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
     <>
       {/* Selection Toolbar */}
       <div
-        className="fixed bottom-[var(--pulse-bottom-bar)] left-0 right-0 px-6 py-4"
+        className="fixed bottom-(--pulse-bottom-bar) left-0 right-0 px-6 py-4"
         style={{
           zIndex: 999999,
           background: isDarkMode
@@ -232,7 +232,7 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
           {/* Error Message (if any) */}
           {archiveError && (
             <div className={`mb-2 px-3 py-2 rounded-lg flex items-center gap-2 text-sm ${isDarkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-50 text-red-600'}`}>
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{archiveError}</span>
               <button
                 onClick={() => setArchiveError(null)}

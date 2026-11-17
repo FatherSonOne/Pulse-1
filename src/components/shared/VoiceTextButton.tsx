@@ -153,7 +153,7 @@ export const VoiceTextButton: React.FC<VoiceTextButtonProps> = ({
         className={`
           ${sizeClasses[size]}
           rounded-lg flex items-center justify-center transition-all duration-200
-          focus:outline-none focus:ring-2 focus:ring-red-500/50
+          focus:outline-hidden focus:ring-2 focus:ring-red-500/50
           ${isListening
             ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/30'
             : 'bg-stone-100 dark:bg-zinc-800 hover:bg-stone-200 dark:hover:bg-zinc-700 text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white'}

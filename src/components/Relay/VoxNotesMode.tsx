@@ -656,7 +656,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
             placeholder="Search notes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={`w-full pl-10 pr-4 py-2.5 rounded-xl ${tc.inputBg} ${tc.text} text-sm border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse`}
+            className={`w-full pl-10 pr-4 py-2.5 rounded-xl ${tc.inputBg} ${tc.text} text-sm border focus:outline-hidden focus:ring-2 focus:ring-[#f43f5e]/50 transition-[box-shadow,border-color] ease-pulse`}
           />
         </div>
 
@@ -665,9 +665,9 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-            className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-mono text-[11px] uppercase tracking-[0.1em] transition ${
+            className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-mono text-[11px] uppercase tracking-widest transition ${
               showFavoritesOnly
-                ? 'bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185]'
+                ? 'bg-[rgba(244,63,94,0.10)] text-rose-600 dark:text-[#fb7185]'
                 : `${tc.textSecondary} ${tc.hoverBg}`
             }`}
           >
@@ -679,9 +679,9 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
             <button
               key={tag}
               onClick={() => setFilterTag(filterTag === tag ? null : tag)}
-              className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-mono text-[11px] uppercase tracking-[0.1em] transition ${
+              className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-mono text-[11px] uppercase tracking-widest transition ${
                 filterTag === tag
-                  ? 'bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185]'
+                  ? 'bg-[rgba(244,63,94,0.10)] text-rose-600 dark:text-[#fb7185]'
                   : `${tc.textSecondary} ${tc.hoverBg}`
               }`}
             >
@@ -700,7 +700,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
         {Object.entries(groupedNotes).map(([dateKey, dateNotes]) => (
           <div key={dateKey} className="mb-6">
             <div className="flex items-center gap-3 mb-3">
-              <span className="text-[10px] font-mono uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-400">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
                 {new Date(dateKey).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
               </span>
               <div className="flex-1 h-px" style={{ background: 'var(--pulse-border)' }} />
@@ -748,7 +748,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                           }}
                           className={`w-7 h-7 shrink-0 self-center rounded-lg flex items-center justify-center transition-colors ease-pulse ${
                             isSelected(note.id)
-                              ? 'bg-[#f43f5e] border-2 border-[#e11d48]'
+                              ? 'bg-[#f43f5e] border-2 border-rose-600'
                               : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
                           }`}
                           aria-label={isSelected(note.id) ? 'Deselect note' : 'Select note'}
@@ -796,7 +796,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                           {note.tags.map((t) => (
                             <span
                               key={t}
-                              className="px-1.5 py-0.5 rounded text-[9px] font-mono uppercase tracking-[0.1em] bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
+                              className="px-1.5 py-0.5 rounded-sm text-[9px] font-mono uppercase tracking-widest bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                             >
                               #{t}
                             </span>
@@ -932,7 +932,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                           type="text"
                           value={editTitle}
                           onChange={(e) => setEditTitle(e.target.value)}
-                          className={`text-xl font-bold rounded-xl px-3 py-1 ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50`}
+                          className={`text-xl font-bold rounded-xl px-3 py-1 ${tc.inputBg} ${tc.text} border focus:outline-hidden focus:ring-2 focus:ring-[#f43f5e]/50`}
                           autoFocus
                         />
                         <button
@@ -1080,14 +1080,14 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                     {selectedNote.tags.map((tag) => (
                       <span
                         key={tag}
-                        className={`px-2 py-1 rounded font-mono text-[11px] uppercase tracking-[0.1em] ${tc.cardBg} border ${tc.border} ${tc.textSecondary}`}
+                        className={`px-2 py-1 rounded-sm font-mono text-[11px] uppercase tracking-widest ${tc.cardBg} border ${tc.border} ${tc.textSecondary}`}
                       >
                         {tag}
                       </span>
                     ))}
                     <button
                       onClick={() => setShowTagInput(!showTagInput)}
-                      className={`px-2 py-1 rounded font-mono text-[11px] uppercase tracking-[0.1em] transition flex items-center gap-1 ${tc.cardBg} border ${tc.border} ${tc.textSecondary} ${tc.hoverBg}`}
+                      className={`px-2 py-1 rounded-sm font-mono text-[11px] uppercase tracking-widest transition flex items-center gap-1 ${tc.cardBg} border ${tc.border} ${tc.textSecondary} ${tc.hoverBg}`}
                     >
                       <Plus className="w-3 h-3" />
                       Add tag
@@ -1106,7 +1106,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                         placeholder="Enter tag name..."
                         aria-label="New tag name"
                         autoFocus
-                        className={`px-3 py-1 rounded-lg text-sm border ${tc.border} ${tc.cardBg} ${tc.text} focus:outline-none focus:ring-2`}
+                        className={`px-3 py-1 rounded-lg text-sm border ${tc.border} ${tc.cardBg} ${tc.text} focus:outline-hidden focus:ring-2`}
                         style={{ focusRingColor: MODE_COLOR } as React.CSSProperties}
                       />
                       <button
@@ -1161,7 +1161,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
           ) : (
             <div className={`flex-1 flex items-center justify-center ${tc.textMuted}`}>
               <div className="text-center p-6">
-                <div className={`w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center border ${tc.border} ${isDarkMode ? 'bg-white/[0.03]' : 'bg-zinc-100'}`}>
+                <div className={`w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center border ${tc.border} ${isDarkMode ? 'bg-white/3' : 'bg-zinc-100'}`}>
                   <FileText className={`w-7 h-7 ${tc.textMuted}`} />
                 </div>
                 <p className={`text-lg ${tc.text}`}>Select a note to view</p>
@@ -1199,7 +1199,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
           <div className={tc.modalOverlay} onClick={() => setShowLinkModal(false)} />
           <div className={`relative w-full max-w-sm rounded-2xl border ${tc.modalBg} p-5`}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className={`text-[11px] font-mono uppercase tracking-[0.1em] ${tc.textSecondary}`}>Link a contact</h3>
+              <h3 className={`text-[11px] font-mono uppercase tracking-widest ${tc.textSecondary}`}>Link a contact</h3>
               <button
                 onClick={() => { setShowLinkModal(false); setLinkSearch(''); }}
                 className={`p-1 rounded-md ${tc.btnGhost}`}
@@ -1218,7 +1218,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                 value={linkSearch}
                 onChange={(e) => setLinkSearch(e.target.value)}
                 autoFocus
-                className={`w-full pl-10 pr-3 py-2 rounded-lg text-sm border ${tc.border} ${tc.cardBg} ${tc.text} focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/50`}
+                className={`w-full pl-10 pr-3 py-2 rounded-lg text-sm border ${tc.border} ${tc.cardBg} ${tc.text} focus:outline-hidden focus:ring-2 focus:ring-[#f43f5e]/50`}
               />
             </div>
 
@@ -1268,7 +1268,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
 
       {/* Conversation Summary Modal */}
       {conversationSummary && showSummary && (
-        <div className="fixed inset-0 bg-zinc-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-zinc-950/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="max-w-2xl w-full">
             <MessageAIPanel
               summary={conversationSummary}

@@ -94,7 +94,7 @@ export const RelaySettings: React.FC<RelaySettingsProps> = ({
           }`}
         >
           <h2
-            className={`font-mono text-[11px] uppercase tracking-[0.1em] ${
+            className={`font-mono text-[11px] uppercase tracking-widest ${
               isDarkMode ? 'text-[#b4b4b8]' : 'text-[#52525b]'
             }`}
           >
@@ -129,9 +129,9 @@ export const RelaySettings: React.FC<RelaySettingsProps> = ({
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 min-w-0 inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2 rounded-md font-mono text-[11px] uppercase tracking-[0.1em] transition ${
+                className={`flex-1 min-w-0 inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2 rounded-md font-mono text-[11px] uppercase tracking-widest transition ${
                   isActive
-                    ? 'bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185]'
+                    ? 'bg-[rgba(244,63,94,0.10)] text-rose-600 dark:text-[#fb7185]'
                     : isDarkMode
                       ? 'text-[#b4b4b8] hover:bg-[rgba(255,255,255,0.055)]'
                       : 'text-[#52525b] hover:bg-[#f2f2f2]'
@@ -154,7 +154,7 @@ export const RelaySettings: React.FC<RelaySettingsProps> = ({
           }`}
         >
           <p
-            className={`font-mono text-[10px] uppercase tracking-[0.1em] ${
+            className={`font-mono text-[10px] uppercase tracking-widest ${
               isDarkMode ? 'text-[#6b7280]' : 'text-[#6b7280]'
             }`}
           >
@@ -163,7 +163,7 @@ export const RelaySettings: React.FC<RelaySettingsProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="btn-brand-primary px-4 py-1.5 rounded-md font-mono text-[11px] uppercase tracking-[0.1em] font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f43f5e] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-black"
+            className="btn-brand-primary px-4 py-1.5 rounded-md font-mono text-[11px] uppercase tracking-widest font-semibold focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[#f43f5e] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-black"
           >
             Done
           </button>

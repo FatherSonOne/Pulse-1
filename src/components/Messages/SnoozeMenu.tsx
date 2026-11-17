@@ -157,10 +157,10 @@ export const SnoozeMenu: React.FC<SnoozeMenuProps> = ({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
+        className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
           isSnoozed
             ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-bright'
-            : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright'
+            : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/4 hover:text-rose-500 dark:hover:text-rose-bright'
         }`}
         title={buttonTitle}
         aria-label={buttonTitle}
@@ -172,11 +172,11 @@ export const SnoozeMenu: React.FC<SnoozeMenuProps> = ({
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-black/90 border border-zinc-200 dark:border-white/[0.06] rounded-xl shadow-xl z-50 overflow-hidden backdrop-blur-md"
+          className="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-black/90 border border-zinc-200 dark:border-white/6 rounded-xl shadow-xl z-50 overflow-hidden backdrop-blur-md"
           role="menu"
         >
-          <div className="px-3 py-2 border-b border-zinc-200 dark:border-white/[0.06]">
-            <h4 className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
+          <div className="px-3 py-2 border-b border-zinc-200 dark:border-white/6">
+            <h4 className="font-mono uppercase tracking-widest text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
               {isSnoozed ? 'SNOOZED' : 'REMIND ME ABOUT THIS'}
             </h4>
           </div>
@@ -214,7 +214,7 @@ export const SnoozeMenu: React.FC<SnoozeMenuProps> = ({
                     type="button"
                     onClick={() => void handleSnooze(preset.key)}
                     disabled={!!pendingPreset}
-                    className="w-full flex items-center gap-3 px-3 py-2 text-left text-sm hover:bg-[var(--pulse-surface-raised)] transition disabled:opacity-50 disabled:cursor-wait"
+                    className="w-full flex items-center gap-3 px-3 py-2 text-left text-sm hover:bg-(--pulse-surface-raised) transition disabled:opacity-50 disabled:cursor-wait"
                     role="menuitem"
                   >
                     <span className="text-zinc-500 dark:text-zinc-400">

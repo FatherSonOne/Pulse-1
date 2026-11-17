@@ -138,7 +138,7 @@ export function MapLibreRadiusRings({ map, center, isDarkMode }: MapLibreRadiusR
           lng={center.lng + ring.radiusMiles / 55 /* rough offset east, matches Google */}
         >
           <div
-            className="text-xs font-semibold pointer-events-none select-none px-1.5 py-0.5 rounded"
+            className="text-xs font-semibold pointer-events-none select-none px-1.5 py-0.5 rounded-sm"
             style={{
               color: ring.strokeColor,
               background: isDarkMode ? 'rgba(15,23,42,0.7)' : 'rgba(255,255,255,0.8)',

@@ -57,7 +57,7 @@ export const FloatingFilterIsland: React.FC<FloatingFilterIslandProps> = ({
           onChange={(e) => onFilterChange({ ...filter, searchQuery: e.target.value })}
           placeholder="Search · /"
           aria-label="Search the map"
-          className={`text-xs outline-none bg-transparent w-full min-w-0 ${
+          className={`text-xs outline-hidden bg-transparent w-full min-w-0 ${
             isDarkMode ? 'text-white placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'
           }`}
         />
@@ -66,7 +66,7 @@ export const FloatingFilterIsland: React.FC<FloatingFilterIslandProps> = ({
             type="button"
             onClick={() => onFilterChange({ ...filter, searchQuery: '' })}
             aria-label="Clear search"
-            className={`p-0.5 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+            className={`p-0.5 rounded focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-1 ${
               isDarkMode ? 'focus-visible:ring-zinc-400' : 'focus-visible:ring-zinc-500'
             }`}
             style={{ color: 'var(--pulse-ink-3)' }}
@@ -89,7 +89,7 @@ export const FloatingFilterIsland: React.FC<FloatingFilterIslandProps> = ({
               aria-pressed={active}
               title={`Show ${label.toLowerCase()} locations`}
               onClick={() => onFilterChange({ ...filter, locationType: value })}
-              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] tracking-[0.1em] uppercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] tracking-widest uppercase transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-1 ${
                 isDarkMode ? 'focus-visible:ring-zinc-400' : 'focus-visible:ring-zinc-500'
               }`}
               style={{

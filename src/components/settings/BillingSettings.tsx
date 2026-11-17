@@ -516,7 +516,7 @@ export const BillingSettings: React.FC = () => {
       >
         <div className="flex items-center gap-4 mb-5">
           <div
-            className="w-14 h-14 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0"
+            className="w-14 h-14 rounded-xl flex items-center justify-center shadow-lg shrink-0"
             style={{
               background: TEAM_COLORS.gradient,
               boxShadow: `0 4px 12px ${TEAM_COLORS.shadow}`,
@@ -657,7 +657,7 @@ export const BillingSettings: React.FC = () => {
                   Pulse Solo
                 </h4>
                 <span
-                  className="text-[10px] font-semibold px-2 py-0.5 rounded"
+                  className="text-[10px] font-semibold px-2 py-0.5 rounded-sm"
                   style={{
                     background: `${SOLO_COLORS.badge}20`,
                     color: SOLO_COLORS.badge,
@@ -915,7 +915,7 @@ export const BillingSettings: React.FC = () => {
                   Outgrew Pulse Team?
                 </h4>
                 <span
-                  className="text-[10px] font-semibold px-2 py-0.5 rounded"
+                  className="text-[10px] font-semibold px-2 py-0.5 rounded-sm"
                   style={{
                     background: `${GROWTH_COLORS.badge}20`,
                     color: GROWTH_COLORS.badge,

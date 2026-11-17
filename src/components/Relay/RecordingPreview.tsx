@@ -151,7 +151,7 @@ const RecordingPreview: React.FC<RecordingPreviewProps> = ({
           <button
             type="button"
             onClick={handlePlayPause}
-            className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+            className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-400"
             style={{
               background: isPlaying ? 'var(--pulse-rose)' : 'var(--pulse-surface-raised)',
               color: isPlaying ? '#ffffff' : 'var(--pulse-ink)',

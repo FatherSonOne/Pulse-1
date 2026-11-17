@@ -57,7 +57,7 @@ const AttentionDensityTile: React.FC<AttentionDensityTileProps> = ({
       ) : (
         <>
           <div
-            className="h-1.5 w-full rounded-full overflow-hidden bg-zinc-100 dark:bg-white/[0.04] flex"
+            className="h-1.5 w-full rounded-full overflow-hidden bg-zinc-100 dark:bg-white/4 flex"
             role="img"
             aria-label="Attention by source"
           >

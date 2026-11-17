@@ -77,7 +77,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
             bg-transparent
             text-sm text-zinc-900 dark:text-white
             placeholder:text-zinc-400
-            focus:outline-none
+            focus:outline-hidden
           "
           aria-label="Search tools"
         />
@@ -103,8 +103,8 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
         {/* Keyboard Shortcut Hint */}
         {!value && !isFocused && (
           <div className="absolute right-3 flex items-center gap-1 text-xs text-zinc-400 pointer-events-none">
-            <kbd className="px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 font-mono">⌘</kbd>
-            <kbd className="px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 font-mono">K</kbd>
+            <kbd className="px-1.5 py-0.5 rounded-sm bg-zinc-200 dark:bg-zinc-800 font-mono">⌘</kbd>
+            <kbd className="px-1.5 py-0.5 rounded-sm bg-zinc-200 dark:bg-zinc-800 font-mono">K</kbd>
           </div>
         )}
       </div>

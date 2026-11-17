@@ -68,7 +68,7 @@ const VoxModeHeader: React.FC<VoxModeHeaderProps> = ({
           )}
           <h1 className={`text-lg md:text-xl font-semibold ${tc.text}`}>{modeName}</h1>
           {modeTagline && (
-            <p className={`text-xs md:text-sm font-mono uppercase tracking-[0.1em] ${tc.textSecondary} hidden sm:block`}>
+            <p className={`text-xs md:text-sm font-mono uppercase tracking-widest ${tc.textSecondary} hidden sm:block`}>
               {modeTagline}
             </p>
           )}

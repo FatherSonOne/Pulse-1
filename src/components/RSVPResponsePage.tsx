@@ -68,7 +68,7 @@ const RSVPResponsePage: React.FC = () => {
     <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center py-12 px-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-rose-500/30">
+          <div className="w-14 h-14 rounded-full bg-linear-to-br from-rose-500 to-pink-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-rose-500/30">
             <CalendarCheck className="w-7 h-7 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">RSVP</h1>

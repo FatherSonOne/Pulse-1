@@ -164,10 +164,10 @@ export const OrgSetupChecklist: React.FC<OrgSetupChecklistProps> = ({ openSettin
             <ListChecks className="w-5 h-5 text-white" aria-hidden="true" />
           </div>
           <div className="min-w-0">
-            <h3 className="text-base sm:text-lg font-semibold line-clamp-2 text-[var(--pulse-ink)]">
+            <h3 className="text-base sm:text-lg font-semibold line-clamp-2 text-(--pulse-ink)">
               Finish setting up {currentWorkspace.name}
             </h3>
-            <p className="text-xs sm:text-sm mt-0.5 text-[var(--pulse-ink-2)]">
+            <p className="text-xs sm:text-sm mt-0.5 text-(--pulse-ink-2)">
               {completedCount} of {totalCount} complete
             </p>
           </div>
@@ -177,7 +177,7 @@ export const OrgSetupChecklist: React.FC<OrgSetupChecklistProps> = ({ openSettin
           onClick={handleDismiss}
           disabled={isDismissing}
           aria-label="Dismiss setup checklist"
-          className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] focus-visible:ring-offset-2"
+          className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition disabled:opacity-50 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-rose) focus-visible:ring-offset-2"
         >
           {isDismissing ? (
             <Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
@@ -231,7 +231,7 @@ export const OrgSetupChecklist: React.FC<OrgSetupChecklistProps> = ({ openSettin
                   );
                   openSettings(item.section);
                 }}
-                className={`w-full flex items-center gap-3 p-3 rounded-xl border transition text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)] focus-visible:ring-offset-2
+                className={`w-full flex items-center gap-3 p-3 rounded-xl border transition text-left focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-rose) focus-visible:ring-offset-2
                   ${item.done
                     ? 'border-transparent bg-zinc-100/60 dark:bg-zinc-800/40 opacity-60 hover:opacity-80'
                     : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-300 dark:hover:border-zinc-700'
@@ -261,14 +261,14 @@ export const OrgSetupChecklist: React.FC<OrgSetupChecklistProps> = ({ openSettin
                     </span>
                     {emphasize && (
                       <span
-                        className="text-[10px] font-mono uppercase tracking-[0.1em] px-1.5 py-0.5 rounded text-white shrink-0"
+                        className="text-[10px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded-sm text-white shrink-0"
                         style={{ background: 'var(--pulse-rose)' }}
                       >
                         Start here
                       </span>
                     )}
                   </div>
-                  <div className="text-xs mt-0.5 text-[var(--pulse-ink-2)]">
+                  <div className="text-xs mt-0.5 text-(--pulse-ink-2)">
                     {item.description}
                   </div>
                 </div>

@@ -85,7 +85,7 @@ export const QuietHoursCard: React.FC = () => {
           checked={enabled}
           onChange={(e) => setEnabled(e.target.checked)}
           disabled={isLoading}
-          className="w-4 h-4 text-rose-500 border-zinc-300 rounded focus:ring-rose-500"
+          className="w-4 h-4 text-rose-500 border-zinc-300 rounded-sm focus:ring-rose-500"
         />
         <span className="text-sm text-zinc-700 dark:text-zinc-300">Enable quiet hours</span>
       </label>
@@ -100,7 +100,7 @@ export const QuietHoursCard: React.FC = () => {
             type="time"
             value={start}
             onChange={(e) => setStart(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
           />
         </div>
         <div>
@@ -112,7 +112,7 @@ export const QuietHoursCard: React.FC = () => {
             type="time"
             value={end}
             onChange={(e) => setEnd(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
           />
         </div>
       </div>

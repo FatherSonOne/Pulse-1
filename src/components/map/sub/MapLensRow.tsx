@@ -37,7 +37,7 @@ export const MapLensRow: React.FC<MapLensRowProps> = ({
       <div
         role="group"
         aria-label="Map lens"
-        className="flex items-center gap-1 flex-shrink-0"
+        className="flex items-center gap-1 shrink-0"
       >
         {LENS_OPTIONS.map(({ id, label, Icon }) => {
           const active = lens === id;
@@ -58,7 +58,7 @@ export const MapLensRow: React.FC<MapLensRowProps> = ({
               aria-keyshortcuts={hotkey}
               onClick={() => onLensChange(id)}
               title={`${label} · ${scopeHint} · press ${hotkey}`}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] tracking-[0.1em] uppercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] tracking-widest uppercase transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
                 active
                   ? `text-rose-500 ${isDarkMode ? 'bg-rose-500/10' : 'bg-rose-50'}`
                   : `${isDarkMode ? 'text-gray-400 hover:bg-white/5' : 'text-gray-500 hover:bg-gray-100'}`

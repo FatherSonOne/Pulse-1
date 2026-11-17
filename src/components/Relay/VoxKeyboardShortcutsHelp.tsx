@@ -22,7 +22,7 @@ export const VoxKeyboardShortcutsHelp: React.FC<VoxKeyboardShortcutsHelpProps> =
 
   return (
     <div
-      className="fixed inset-0 z-[999999] flex items-center justify-center p-4 animate-fadeIn"
+      className="fixed inset-0 z-999999 flex items-center justify-center p-4 animate-fadeIn"
       style={{
         background: 'rgba(0, 0, 0, 0.7)',
         backdropFilter: 'blur(8px)',
@@ -128,7 +128,7 @@ export const VoxKeyboardShortcutsHelp: React.FC<VoxKeyboardShortcutsHelpProps> =
             className="text-xs"
             style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}
           >
-            Press <kbd className="px-2 py-1 rounded bg-gray-700 text-white font-mono text-xs mx-1">?</kbd> anytime to show this help
+            Press <kbd className="px-2 py-1 rounded-sm bg-gray-700 text-white font-mono text-xs mx-1">?</kbd> anytime to show this help
           </p>
         </div>
       </div>

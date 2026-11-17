@@ -73,7 +73,7 @@ const CustomEventTypesManager: React.FC<CustomEventTypesManagerProps> = ({
   const showForm = isCreating || editingId !== null;
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+    <div className="fixed inset-0 z-200 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
       <div className="bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-lg shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden animate-scale-in">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
@@ -114,7 +114,7 @@ const CustomEventTypesManager: React.FC<CustomEventTypesManagerProps> = ({
                   >
                     {/* Color swatch + icon */}
                     <div
-                      className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                       style={{ backgroundColor: type.color + '20', border: `2px solid ${type.color}` }}
                     >
                       <i className={`fa-solid ${type.icon} text-sm`} style={{ color: type.color }} />
@@ -158,7 +158,7 @@ const CustomEventTypesManager: React.FC<CustomEventTypesManagerProps> = ({
               {/* Preview */}
               <div className="flex items-center gap-3">
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all"
                   style={{ backgroundColor: formColor + '25', border: `2px solid ${formColor}` }}
                 >
                   <i className={`fa-solid ${formIcon} text-base`} style={{ color: formColor }} />
@@ -179,7 +179,7 @@ const CustomEventTypesManager: React.FC<CustomEventTypesManagerProps> = ({
                   value={formName}
                   onChange={e => setFormName(e.target.value)}
                   placeholder="e.g., Workshop, Interview, Volunteer..."
-                  className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:border-transparent transition"
+                  className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-hidden focus:ring-2 focus:border-transparent transition"
                   style={{ '--tw-ring-color': formColor } as React.CSSProperties}
                   maxLength={30}
                   autoFocus

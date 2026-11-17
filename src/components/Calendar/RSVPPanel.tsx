@@ -41,13 +41,13 @@ const StatusBadge: React.FC<{ status: RSVPRecord['status'] }> = ({ status }) => 
 
 const Avatar: React.FC<{ name: string; avatarUrl?: string }> = ({ name, avatarUrl }) => {
   if (avatarUrl) {
-    return <img src={avatarUrl} alt={name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />;
+    return <img src={avatarUrl} alt={name} className="w-8 h-8 rounded-full object-cover shrink-0" />;
   }
   const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   const hue = name.charCodeAt(0) % 360;
   return (
     <div
-      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
       style={{ background: `hsl(${hue},65%,50%)` }}
     >
       {initials}
@@ -159,7 +159,7 @@ export const RSVPPanel: React.FC<RSVPPanelProps> = ({ eventId, isOrganizer }) =>
 
       {/* Summary row */}
       {summary.total > 0 && (
-        <div className="flex items-center gap-3 text-xs text-[var(--pulse-ink-3)] pb-1 border-b border-[var(--pulse-border)]">
+        <div className="flex items-center gap-3 text-xs text-(--pulse-ink-3) pb-1 border-b border-(--pulse-border)">
           {summary.accepted > 0 && <span className="text-emerald-600 dark:text-emerald-400 font-medium">{summary.accepted} accepted</span>}
           {summary.declined > 0 && <span className="text-red-500 font-medium">{summary.declined} declined</span>}
           {summary.maybe > 0    && <span className="text-amber-500 font-medium">{summary.maybe} maybe</span>}
@@ -195,7 +195,7 @@ export const RSVPPanel: React.FC<RSVPPanelProps> = ({ eventId, isOrganizer }) =>
                   <button
                     type="button"
                     onClick={() => handleResend(record.email, record.name)}
-                    className="p-1 text-zinc-400 hover:text-[var(--pulse-rose)] transition"
+                    className="p-1 text-zinc-400 hover:text-(--pulse-rose) transition"
                     title="Resend invite"
                   >
                     <Mail className="w-3.5 h-3.5" />
@@ -217,12 +217,12 @@ export const RSVPPanel: React.FC<RSVPPanelProps> = ({ eventId, isOrganizer }) =>
 
       {/* Add attendee */}
       {isOrganizer && (
-        <div className="border-t border-[var(--pulse-border)] pt-3">
+        <div className="border-t border-(--pulse-border) pt-3">
           {!showAddForm ? (
             <button
               type="button"
               onClick={() => setShowAddForm(true)}
-              className="flex items-center gap-2 text-sm text-[var(--pulse-rose)] hover:text-[var(--pulse-rose-deep)] font-medium transition"
+              className="flex items-center gap-2 text-sm text-(--pulse-rose) hover:text-(--pulse-rose-deep) font-medium transition"
             >
               <Plus className="w-4 h-4" />
               Add attendee
@@ -234,7 +234,7 @@ export const RSVPPanel: React.FC<RSVPPanelProps> = ({ eventId, isOrganizer }) =>
                 placeholder="Name (optional)"
                 value={addName}
                 onChange={e => setAddName(e.target.value)}
-                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--pulse-rose)] dark:text-zinc-200 transition"
+                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-(--pulse-border) rounded-lg px-3 py-2 text-sm outline-hidden focus:border-(--pulse-rose) dark:text-zinc-200 transition"
               />
               <input
                 type="email"
@@ -242,7 +242,7 @@ export const RSVPPanel: React.FC<RSVPPanelProps> = ({ eventId, isOrganizer }) =>
                 value={addEmail}
                 onChange={e => setAddEmail(e.target.value)}
                 required
-                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-[var(--pulse-border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--pulse-rose)] dark:text-zinc-200 transition"
+                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-(--pulse-border) rounded-lg px-3 py-2 text-sm outline-hidden focus:border-(--pulse-rose) dark:text-zinc-200 transition"
               />
               <div className="flex gap-2">
                 <button
@@ -255,7 +255,7 @@ export const RSVPPanel: React.FC<RSVPPanelProps> = ({ eventId, isOrganizer }) =>
                 <button
                   type="submit"
                   disabled={adding}
-                  className="flex-1 py-2 bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white text-sm font-medium rounded-lg transition disabled:opacity-50"
+                  className="flex-1 py-2 bg-(--pulse-rose) hover:bg-(--pulse-rose-deep) text-white text-sm font-medium rounded-lg transition disabled:opacity-50"
                 >
                   {adding ? 'Inviting…' : 'Invite'}
                 </button>

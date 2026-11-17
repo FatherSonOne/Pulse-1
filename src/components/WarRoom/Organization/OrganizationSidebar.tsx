@@ -69,7 +69,7 @@ export const OrganizationSidebar: React.FC<OrganizationSidebarProps> = ({
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 py-1.5 px-2 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1 ${
                 activeTab === tab.id
-                  ? 'bg-white dark:bg-gray-600 shadow-sm text-gray-700 dark:text-white'
+                  ? 'bg-white dark:bg-gray-600 shadow-xs text-gray-700 dark:text-white'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
               title={tab.label}

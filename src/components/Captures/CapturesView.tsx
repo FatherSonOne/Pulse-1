@@ -177,7 +177,7 @@ const CapturesView: React.FC = () => {
     <div className="h-full flex flex-col">
 
       {/* Top bar: title, filter chips, + Capture trigger */}
-      <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-zinc-100 dark:border-white/[0.06] shrink-0">
+      <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-zinc-100 dark:border-white/6 shrink-0">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <h2 className="pulse-label text-zinc-500 dark:text-zinc-400 shrink-0">
             NOTES · {notes.length}
@@ -187,7 +187,7 @@ const CapturesView: React.FC = () => {
               <button
                 key={f.value ?? 'null'}
                 onClick={() => setFilterKind(f.value)}
-                className={`pulse-label px-2.5 py-1 rounded transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 shrink-0 ${
+                className={`pulse-label px-2.5 py-1 rounded transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 shrink-0 ${
                   filterKind === f.value
                     ? 'text-rose-600 dark:text-rose-400 bg-rose-500/10'
                     : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
@@ -200,7 +200,7 @@ const CapturesView: React.FC = () => {
         </div>
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('pulse:capture-open'))}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 shrink-0"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 shrink-0"
         >
           <Plus size={14} />
           New
@@ -212,8 +212,8 @@ const CapturesView: React.FC = () => {
       <div className="flex-1 flex min-h-0">
 
         {/* LIST PANE */}
-        <aside className="w-80 border-r border-zinc-100 dark:border-white/[0.06] flex flex-col min-h-0 shrink-0">
-          <div className="px-3 py-2.5 border-b border-zinc-100 dark:border-white/[0.06] shrink-0">
+        <aside className="w-80 border-r border-zinc-100 dark:border-white/6 flex flex-col min-h-0 shrink-0">
+          <div className="px-3 py-2.5 border-b border-zinc-100 dark:border-white/6 shrink-0">
             <div className="relative">
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500 pointer-events-none" />
               <input
@@ -221,7 +221,7 @@ const CapturesView: React.FC = () => {
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Filter notes…"
-                className="w-full pl-8 pr-3 py-1.5 bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.06] rounded-lg text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:border-rose-500/40 focus:ring-2 focus:ring-rose-500/20 focus:outline-none transition-colors duration-150"
+                className="w-full pl-8 pr-3 py-1.5 bg-zinc-50 dark:bg-white/4 border border-zinc-200 dark:border-white/6 rounded-lg text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:border-rose-500/40 focus:ring-2 focus:ring-rose-500/20 focus:outline-hidden transition-colors duration-150"
               />
             </div>
           </div>
@@ -246,15 +246,15 @@ const CapturesView: React.FC = () => {
                     onClick={() => setSelectedId(n.id)}
                     role="option"
                     aria-selected={isSelected}
-                    className={`w-full text-left flex flex-col gap-1 px-3 py-2.5 border-l-2 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
+                    className={`w-full text-left flex flex-col gap-1 px-3 py-2.5 border-l-2 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                       isSelected
                         ? 'bg-rose-500/5 dark:bg-rose-500/10 border-rose-500'
-                        : 'border-transparent hover:bg-zinc-50 dark:hover:bg-white/[0.04]'
+                        : 'border-transparent hover:bg-zinc-50 dark:hover:bg-white/4'
                     }`}
                   >
                     <div className="flex items-baseline gap-2 min-w-0">
                       {n.kind && (
-                        <span className={`pulse-label px-1.5 py-0.5 rounded shrink-0 ${KIND_PILL[n.kind]}`}>
+                        <span className={`pulse-label px-1.5 py-0.5 rounded-sm shrink-0 ${KIND_PILL[n.kind]}`}>
                           {n.kind.toUpperCase()}
                         </span>
                       )}
@@ -290,7 +290,7 @@ const CapturesView: React.FC = () => {
           {selected ? (
             <>
               {/* Detail header */}
-              <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-zinc-100 dark:border-white/[0.06] shrink-0">
+              <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-zinc-100 dark:border-white/6 shrink-0">
                 <div className="flex items-baseline gap-2 min-w-0 flex-wrap">
                   <span className="pulse-label text-rose-600 dark:text-rose-400">CAPTURE</span>
                   <span className="pulse-label text-zinc-300 dark:text-zinc-600">·</span>
@@ -304,7 +304,7 @@ const CapturesView: React.FC = () => {
                   {selected.kind && (
                     <>
                       <span className="pulse-label text-zinc-300 dark:text-zinc-600">·</span>
-                      <span className={`pulse-label px-1.5 py-0.5 rounded ${KIND_PILL[selected.kind]}`}>
+                      <span className={`pulse-label px-1.5 py-0.5 rounded-sm ${KIND_PILL[selected.kind]}`}>
                         {selected.kind.toUpperCase()}
                       </span>
                     </>
@@ -327,7 +327,7 @@ const CapturesView: React.FC = () => {
                     <button
                       onClick={() => void handleSave()}
                       disabled={saving}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium transition-colors duration-150 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium transition-colors duration-150 disabled:opacity-40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                     >
                       <Save size={13} />
                       Save
@@ -338,7 +338,7 @@ const CapturesView: React.FC = () => {
                     onClick={() => void handleDelete()}
                     aria-label="Archive note"
                     title="Archive note"
-                    className="w-8 h-8 inline-flex items-center justify-center rounded text-zinc-400 dark:text-zinc-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40"
+                    className="w-8 h-8 inline-flex items-center justify-center rounded-sm text-zinc-400 dark:text-zinc-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-red-500/40"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -355,7 +355,7 @@ const CapturesView: React.FC = () => {
                     setDraftDirty(e.target.value !== selected.content);
                   }}
                   placeholder="Empty note. Start typing."
-                  className="w-full h-full min-h-[60vh] bg-transparent border-0 p-0 text-base leading-relaxed resize-none focus:ring-0 focus:outline-none text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 font-light"
+                  className="w-full h-full min-h-[60vh] bg-transparent border-0 p-0 text-base leading-relaxed resize-none focus:ring-0 focus:outline-hidden text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 font-light"
                 />
               </div>
             </>
@@ -368,7 +368,7 @@ const CapturesView: React.FC = () => {
               </p>
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('pulse:capture-open'))}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
               >
                 <Plus size={14} />
                 Capture a thought

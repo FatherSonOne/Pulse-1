@@ -96,7 +96,7 @@ const VoxMessageMenu: React.FC<VoxMessageMenuProps> = ({
         onClick={(e) => { e.stopPropagation(); handleArchive(); }}
         className={`w-full flex items-center gap-2 px-3 py-2 text-sm ${textPrimary} ${hoverBg} transition-colors`}
       >
-        <Archive className="w-4 h-4 flex-shrink-0" style={{ color: accentColor }} />
+        <Archive className="w-4 h-4 shrink-0" style={{ color: accentColor }} />
         <span>Archive</span>
       </button>
 
@@ -105,7 +105,7 @@ const VoxMessageMenu: React.FC<VoxMessageMenuProps> = ({
         onClick={(e) => { e.stopPropagation(); handleDownload(); }}
         className={`w-full flex items-center gap-2 px-3 py-2 text-sm ${textPrimary} ${hoverBg} transition-colors`}
       >
-        <Download className="w-4 h-4 flex-shrink-0" style={{ color: accentColor }} />
+        <Download className="w-4 h-4 shrink-0" style={{ color: accentColor }} />
         <span>Download</span>
       </button>
 
@@ -117,7 +117,7 @@ const VoxMessageMenu: React.FC<VoxMessageMenuProps> = ({
             onClick={(e) => { e.stopPropagation(); handleDelete(); }}
             className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 ${hoverBg} transition-colors`}
           >
-            <Trash2 className="w-4 h-4 flex-shrink-0" />
+            <Trash2 className="w-4 h-4 shrink-0" />
             <span>Delete</span>
           </button>
         </>

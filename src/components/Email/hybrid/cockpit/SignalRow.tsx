@@ -169,7 +169,7 @@ export const SignalRow: React.FC<SignalRowProps> = ({
               <button
                 type="button"
                 onClick={handleChevronClick}
-                className="p-1 rounded hover:pulse-surface-raised pulse-ink-3-color transition-transform active:scale-90"
+                className="p-1 rounded-sm hover:pulse-surface-raised pulse-ink-3-color transition-transform active:scale-90"
                 aria-label={expanded ? `Collapse email from ${email.from}` : `Expand email from ${email.from}`}
                 title={expanded ? 'Collapse (Esc)' : 'Expand'}
               >

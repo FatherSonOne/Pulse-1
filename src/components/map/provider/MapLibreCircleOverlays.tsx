@@ -189,7 +189,7 @@ export function MapLibreCircleOverlays({
       {labels.map(l => (
         <MapMarkerPortal key={l.circleId} map={map} lat={l.centroid.lat} lng={l.centroid.lng}>
           <div
-            className="pointer-events-none select-none px-2 py-0.5 rounded-full text-xs font-semibold shadow"
+            className="pointer-events-none select-none px-2 py-0.5 rounded-full text-xs font-semibold shadow-sm"
             style={{
               color: l.color,
               backgroundColor: isDarkMode ? 'rgba(15,23,42,0.8)' : 'rgba(255,255,255,0.85)',

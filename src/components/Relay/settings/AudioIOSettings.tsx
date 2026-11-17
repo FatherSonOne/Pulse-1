@@ -106,14 +106,14 @@ export const AudioIOSettings: React.FC<AudioIOSettingsProps> = ({
   };
 
   const tc = {
-    bg: isDarkMode ? 'bg-white/[0.03]' : 'bg-white/80',
-    cardBg: isDarkMode ? 'bg-white/[0.03]' : 'bg-gray-50/80',
+    bg: isDarkMode ? 'bg-white/3' : 'bg-white/80',
+    cardBg: isDarkMode ? 'bg-white/3' : 'bg-gray-50/80',
     border: isDarkMode ? 'border-[rgba(255,255,255,0.06)]' : 'border-gray-200/60',
     text: isDarkMode ? 'text-white' : 'text-gray-900',
     textSecondary: isDarkMode ? 'text-gray-400' : 'text-gray-600',
     textMuted: isDarkMode ? 'text-gray-500' : 'text-gray-400',
-    inputBg: isDarkMode ? 'bg-white/[0.055]' : 'bg-white',
-    hoverBg: isDarkMode ? 'hover:bg-white/[0.055]' : 'hover:bg-gray-100/80',
+    inputBg: isDarkMode ? 'bg-white/5.5' : 'bg-white',
+    hoverBg: isDarkMode ? 'hover:bg-white/5.5' : 'hover:bg-gray-100/80',
   };
 
   return (
@@ -220,9 +220,9 @@ export const AudioIOSettings: React.FC<AudioIOSettingsProps> = ({
                 role="radio"
                 aria-checked={isSelected}
                 onClick={() => handleQualityChange(preset.id as typeof audioQuality)}
-                className={`flex-1 px-3 py-1.5 rounded font-mono text-[11px] uppercase tracking-[0.1em] transition ${
+                className={`flex-1 px-3 py-1.5 rounded font-mono text-[11px] uppercase tracking-widest transition ${
                   isSelected
-                    ? 'bg-[rgba(244,63,94,0.10)] text-[#e11d48] dark:text-[#fb7185]'
+                    ? 'bg-[rgba(244,63,94,0.10)] text-rose-600 dark:text-[#fb7185]'
                     : isDarkMode
                       ? 'text-[#b4b4b8] hover:text-[#fafafa]'
                       : 'text-[#52525b] hover:text-[#0f0f0f]'

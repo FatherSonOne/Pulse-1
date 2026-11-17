@@ -23,7 +23,7 @@ export const ArchiveListView: React.FC<ArchiveListViewProps> = ({ groupedItems }
     <>
       {Object.entries(groupedItems).map(([dateLabel, groupItems]) => (
         <div key={dateLabel} className="mb-6">
-          <div className="px-3 py-2 text-[10px] font-mono text-zinc-500 dark:text-zinc-500 uppercase tracking-widest sticky top-0 bg-zinc-50 dark:bg-zinc-950 z-10 flex items-center gap-2 border-b border-zinc-200/60 dark:border-white/[0.04]">
+          <div className="px-3 py-2 text-[10px] font-mono text-zinc-500 dark:text-zinc-500 uppercase tracking-widest sticky top-0 bg-zinc-50 dark:bg-zinc-950 z-10 flex items-center gap-2 border-b border-zinc-200/60 dark:border-white/4">
             <div className="w-1 h-1 bg-rose-500 rounded-full"></div>
             {dateLabel}
           </div>
@@ -38,17 +38,17 @@ export const ArchiveListView: React.FC<ArchiveListViewProps> = ({ groupedItems }
                 onMouseLeave={() => setHoveredItem(null)}
                 className={`p-4 rounded-xl cursor-pointer transition-all mb-2 border group ${
                   selectedItem?.id === item.id
-                    ? 'bg-rose-500/[0.06] border-rose-500/30'
+                    ? 'bg-rose-500/6 border-rose-500/30'
                     : isSelected
-                    ? 'bg-rose-500/[0.04] border-rose-500/20'
-                    : 'bg-white dark:bg-white/[0.03] border-zinc-200 dark:border-white/[0.06] hover:border-zinc-300 dark:hover:border-white/[0.10]'
+                    ? 'bg-rose-500/4 border-rose-500/20'
+                    : 'bg-white dark:bg-white/3 border-zinc-200 dark:border-white/6 hover:border-zinc-300 dark:hover:border-white/10'
                 }`}
               >
                 <div className="flex items-start gap-3">
                   {/* Selection checkbox */}
                   <button
                     onClick={(e) => handleSelectItem(item.id, e)}
-                    className={`w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center transition ${
+                    className={`w-5 h-5 rounded border shrink-0 flex items-center justify-center transition ${
                       isSelected
                         ? 'bg-rose-500 border-rose-500 text-white'
                         : 'border-zinc-300 dark:border-zinc-700 opacity-0 group-hover:opacity-100'
@@ -56,7 +56,7 @@ export const ArchiveListView: React.FC<ArchiveListViewProps> = ({ groupedItems }
                   >
                     {isSelected && <Check className="text-[10px]" />}
                   </button>
-                  <div className={`w-9 h-9 rounded-lg ${config.bg} flex items-center justify-center flex-shrink-0`}>
+                  <div className={`w-9 h-9 rounded-lg ${config.bg} flex items-center justify-center shrink-0`}>
                     <config.Icon className={`${config.color} w-4 h-4`} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -77,12 +77,12 @@ export const ArchiveListView: React.FC<ArchiveListViewProps> = ({ groupedItems }
                     {(item.tags?.length > 0 || item.aiTags?.length) && (
                       <div className="flex gap-1 mt-2 flex-wrap">
                         {item.tags?.slice(0, 2).map(tag => (
-                          <span key={tag} className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-[9px] text-zinc-500 font-mono">
+                          <span key={tag} className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-sm text-[9px] text-zinc-500 font-mono">
                             #{tag}
                           </span>
                         ))}
                         {item.aiTags?.slice(0, 2).map(tag => (
-                          <span key={tag} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-rose-500/10 rounded text-[9px] text-rose-600 dark:text-rose-400 font-mono uppercase tracking-wider">
+                          <span key={tag} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-rose-500/10 rounded-sm text-[9px] text-rose-600 dark:text-rose-400 font-mono uppercase tracking-wider">
                             <Sparkles className="w-2 h-2" />{tag}
                           </span>
                         ))}

@@ -108,7 +108,7 @@ export const AttachSheet: React.FC<AttachSheetProps> = ({
           }}
           className={[
             'w-full flex items-center gap-3 px-4 text-left',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+            'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
             isMobile ? 'min-h-[52px]' : 'min-h-[44px]',
             isDarkMode ? 'text-zinc-100 hover:bg-white/5' : 'text-zinc-900 hover:bg-black/5',
           ].join(' ')}
@@ -154,7 +154,7 @@ export const AttachSheet: React.FC<AttachSheetProps> = ({
         <div
           aria-hidden="true"
           onClick={onClose}
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm animate-fade-in"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs animate-fade-in"
         />
         <div
           ref={containerRef}
@@ -185,7 +185,7 @@ export const AttachSheet: React.FC<AttachSheetProps> = ({
               onClick={onClose}
               className={[
                 'w-full rounded-lg text-sm font-medium min-h-[44px]',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+                'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
                 isDarkMode
                   ? 'bg-white/5 text-zinc-200 hover:bg-white/10'
                   : 'bg-black/5 text-zinc-800 hover:bg-black/10',
@@ -209,14 +209,14 @@ export const AttachSheet: React.FC<AttachSheetProps> = ({
       aria-label="Attach"
       style={{ position: 'fixed', top, left, zIndex: 50, width: 220 }}
       className={[
-        'rounded-xl shadow-2xl backdrop-blur animate-fade-in overflow-hidden',
+        'rounded-xl shadow-2xl backdrop-blur-sm animate-fade-in overflow-hidden',
         isDarkMode
           ? 'bg-zinc-900/95 border border-white/10 text-zinc-100'
           : 'bg-white/98 border border-black/10 text-zinc-900',
       ].join(' ')}
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-current/10">
-        <span className="text-xs font-mono uppercase tracking-[0.1em] opacity-60">
+        <span className="text-xs font-mono uppercase tracking-widest opacity-60">
           Attach
         </span>
         <button
@@ -224,8 +224,8 @@ export const AttachSheet: React.FC<AttachSheetProps> = ({
           aria-label="Close"
           onClick={onClose}
           className={[
-            'rounded p-1 min-w-[28px] min-h-[28px] flex items-center justify-center',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+            'rounded-sm p-1 min-w-[28px] min-h-[28px] flex items-center justify-center',
+            'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
             isDarkMode ? 'hover:bg-white/10' : 'hover:bg-black/5',
           ].join(' ')}
         >

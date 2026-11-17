@@ -189,7 +189,7 @@ export const SessionExport: React.FC<SessionExportProps> = ({
   };
 
   return (
-    <div className={`fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 ${className}`}>
+    <div className={`fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center z-50 ${className}`}>
       <div className="war-room-modal w-full max-w-lg mx-4 rounded-2xl overflow-hidden">
         {/* Header */}
         <div className="p-4 border-b border-white/10 flex items-center justify-between">

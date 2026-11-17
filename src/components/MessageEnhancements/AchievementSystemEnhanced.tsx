@@ -199,9 +199,9 @@ export const AchievementSystemEnhanced: React.FC<AchievementSystemEnhancedProps>
 
   const getRarityBadge = (rarity: Achievement['rarity']) => {
     switch (rarity) {
-      case 'legendary': return 'bg-gradient-to-r from-amber-500 to-orange-500 text-white';
-      case 'epic': return 'bg-gradient-to-r from-purple-500 to-pink-500 text-white';
-      case 'rare': return 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white';
+      case 'legendary': return 'bg-linear-to-r from-amber-500 to-orange-500 text-white';
+      case 'epic': return 'bg-linear-to-r from-purple-500 to-pink-500 text-white';
+      case 'rare': return 'bg-linear-to-r from-blue-500 to-cyan-500 text-white';
       default: return 'bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300';
     }
   };
@@ -209,7 +209,7 @@ export const AchievementSystemEnhanced: React.FC<AchievementSystemEnhancedProps>
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
       {/* Header with Level */}
-      <div className="px-4 py-4 border-b border-zinc-200 dark:border-zinc-700 bg-gradient-to-r from-indigo-500 to-purple-600">
+      <div className="px-4 py-4 border-b border-zinc-200 dark:border-zinc-700 bg-linear-to-r from-indigo-500 to-purple-600">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold text-white">
@@ -300,12 +300,12 @@ export const AchievementSystemEnhanced: React.FC<AchievementSystemEnhancedProps>
               key={achievement.id}
               className={`relative p-3 rounded-lg border-2 transition-all ${
                 achievement.unlocked
-                  ? `bg-gradient-to-br ${getRarityColor(achievement.rarity).split(' ').slice(0, 2).join(' ')} bg-opacity-10 border-opacity-50 ${getRarityColor(achievement.rarity).split(' ')[2]}`
+                  ? `bg-linear-to-br ${getRarityColor(achievement.rarity).split(' ').slice(0, 2).join(' ')} bg-opacity-10 border-opacity-50 ${getRarityColor(achievement.rarity).split(' ')[2]}`
                   : 'bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 opacity-60'
               }`}
             >
               {/* Rarity Badge */}
-              <div className={`absolute -top-1 -right-1 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${getRarityBadge(achievement.rarity)}`}>
+              <div className={`absolute -top-1 -right-1 px-1.5 py-0.5 rounded-sm text-[8px] font-bold uppercase ${getRarityBadge(achievement.rarity)}`}>
                 {achievement.rarity}
               </div>
 

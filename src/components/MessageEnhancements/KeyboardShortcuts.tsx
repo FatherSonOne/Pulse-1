@@ -203,7 +203,7 @@ export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-gradient-to-r from-zinc-50 to-slate-50 dark:from-zinc-900/50 dark:to-slate-900/50">
+      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-linear-to-r from-zinc-50 to-slate-50 dark:from-zinc-900/50 dark:to-slate-900/50">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center">
@@ -321,7 +321,7 @@ export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
                               formatKeys(recordingKeys).map((key, idx) => (
                                 <kbd
                                   key={idx}
-                                  className="px-2 py-1 text-xs font-mono bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 rounded border border-amber-200 dark:border-amber-700"
+                                  className="px-2 py-1 text-xs font-mono bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 rounded-sm border border-amber-200 dark:border-amber-700"
                                 >
                                   {key}
                                 </kbd>
@@ -335,13 +335,13 @@ export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
                           <button
                             onClick={saveRecording}
                             disabled={recordingKeys.length === 0}
-                            className="p-1 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded disabled:opacity-50"
+                            className="p-1 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-sm disabled:opacity-50"
                           >
                             <Check className="text-xs" />
                           </button>
                           <button
                             onClick={cancelRecording}
-                            className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                            className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-sm"
                           >
                             <X className="text-xs" />
                           </button>
@@ -352,7 +352,7 @@ export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
                             {formatKeys(shortcut.keys).map((key, idx) => (
                               <kbd
                                 key={idx}
-                                className="px-2 py-1 text-xs font-mono bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded border border-zinc-200 dark:border-zinc-600"
+                                className="px-2 py-1 text-xs font-mono bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded-sm border border-zinc-200 dark:border-zinc-600"
                               >
                                 {key}
                               </kbd>
@@ -448,7 +448,7 @@ export const ShortcutHint: React.FC<{
       {keys.map((key, idx) => (
         <kbd
           key={idx}
-          className="px-1.5 py-0.5 text-[10px] font-mono bg-zinc-100 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400 rounded border border-zinc-200 dark:border-zinc-600"
+          className="px-1.5 py-0.5 text-[10px] font-mono bg-zinc-100 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400 rounded-sm border border-zinc-200 dark:border-zinc-600"
         >
           {formatKey(key)}
         </kbd>

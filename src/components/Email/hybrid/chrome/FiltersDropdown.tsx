@@ -116,7 +116,7 @@ export const FiltersDropdown: React.FC = () => {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="p-0.5 rounded hover:pulse-surface-raised pulse-ink-3-color"
+              className="p-0.5 rounded-sm hover:pulse-surface-raised pulse-ink-3-color"
               aria-label="Close"
             >
               <X className="w-3.5 h-3.5" />

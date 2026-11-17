@@ -85,7 +85,7 @@ export const DataErasureCard: React.FC = () => {
         <div className="space-y-4">
           <div className="bg-white dark:bg-zinc-900 border border-red-200 dark:border-red-900/30 rounded-lg p-4 space-y-3">
             <div className="flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+              <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-semibold text-red-600 dark:text-red-400">What will be deleted</p>
               </div>
@@ -93,7 +93,7 @@ export const DataErasureCard: React.FC = () => {
             <ul className="space-y-1 text-xs">
               {DELETION_SCOPE.map((s, i) => (
                 <li key={i} className="flex items-start gap-2 text-zinc-700 dark:text-zinc-300">
-                  <span className="w-1 h-1 rounded-full bg-red-500 mt-2 flex-shrink-0" />
+                  <span className="w-1 h-1 rounded-full bg-red-500 mt-2 shrink-0" />
                   <div>
                     <span className="font-medium">{s.label}</span>{' '}
                     <span className="text-zinc-500 dark:text-zinc-400">— {s.detail}</span>
@@ -108,7 +108,7 @@ export const DataErasureCard: React.FC = () => {
             <ul className="space-y-1 text-xs">
               {RETAINED_SCOPE.map((s, i) => (
                 <li key={i} className="flex items-start gap-2 text-zinc-500 dark:text-zinc-400">
-                  <span className="w-1 h-1 rounded-full bg-zinc-400 mt-2 flex-shrink-0" />
+                  <span className="w-1 h-1 rounded-full bg-zinc-400 mt-2 shrink-0" />
                   {s}
                 </li>
               ))}
@@ -126,13 +126,13 @@ export const DataErasureCard: React.FC = () => {
               placeholder="Helps us improve. Not required."
               rows={2}
               maxLength={300}
-              className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/50 resize-none"
+              className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-red-500/50 resize-none"
             />
           </div>
 
           <div>
             <label htmlFor="erase-confirm" className="block text-xs font-semibold uppercase tracking-wide text-red-600 dark:text-red-400 mb-1">
-              Type <code className="font-mono bg-red-100 dark:bg-red-900/40 px-1 py-0.5 rounded">{CONFIRM_PHRASE}</code> to confirm
+              Type <code className="font-mono bg-red-100 dark:bg-red-900/40 px-1 py-0.5 rounded-sm">{CONFIRM_PHRASE}</code> to confirm
             </label>
             <input
               id="erase-confirm"
@@ -141,7 +141,7 @@ export const DataErasureCard: React.FC = () => {
               onChange={(e) => setConfirmText(e.target.value)}
               autoComplete="off"
               spellCheck={false}
-              className="w-full px-3 py-2 text-sm font-mono border border-red-300 dark:border-red-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/50"
+              className="w-full px-3 py-2 text-sm font-mono border border-red-300 dark:border-red-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-red-500/50"
             />
           </div>
 

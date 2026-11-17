@@ -230,7 +230,7 @@ export const MissionShell: React.FC<MissionShellProps> = ({
                 onChange={(e) => onInputChange(e.target.value)}
                 onKeyDown={onKeyDown}
                 placeholder={inputPlaceholder}
-                className="flex-1 bg-transparent border-none outline-none text-sm"
+                className="flex-1 bg-transparent border-none outline-hidden text-sm"
                 disabled={isLoading}
               />
               <button

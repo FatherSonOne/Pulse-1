@@ -89,7 +89,7 @@ const SummitLastCaptureStrip: React.FC<SummitLastCaptureStripProps> = ({ onResum
           </h2>
           <button
             onClick={onResume}
-            className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+            className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
           >
             START SESSION
           </button>
@@ -109,7 +109,7 @@ const SummitLastCaptureStrip: React.FC<SummitLastCaptureStripProps> = ({ onResum
         </h2>
         <button
           onClick={onResume}
-          className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+          className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
         >
           RESUME
         </button>
@@ -122,9 +122,9 @@ const SummitLastCaptureStrip: React.FC<SummitLastCaptureStripProps> = ({ onResum
               <button
                 data-strip-row
                 onClick={makeStripRowClick(onResume)}
-                className="w-full text-left flex items-baseline gap-3 px-3 py-2.5 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
+                className="w-full text-left flex items-baseline gap-3 px-3 py-2.5 rounded-sm hover:bg-zinc-50 dark:hover:bg-white/4 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
               >
-                <span className={`pulse-label px-1.5 py-0.5 rounded shrink-0 ${t.pill}`}>{t.label}</span>
+                <span className={`pulse-label px-1.5 py-0.5 rounded-sm shrink-0 ${t.pill}`}>{t.label}</span>
                 <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate flex-1">
                   {item.content}
                 </span>

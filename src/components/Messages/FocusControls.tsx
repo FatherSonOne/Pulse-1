@@ -40,7 +40,7 @@ export const FocusControls: React.FC<FocusControlsProps> = ({
         {!isActive ? (
           <motion.button
             onClick={onStart}
-            className="btn-brand-primary flex items-center space-x-2 px-8 py-4 text-white rounded-full font-semibold text-lg shadow-lg transition-colors focus:outline-none focus:ring-4 focus:ring-[#f43f5e] focus:ring-opacity-50"
+            className="btn-brand-primary flex items-center space-x-2 px-8 py-4 text-white rounded-full font-semibold text-lg shadow-lg transition-colors focus:outline-hidden focus:ring-4 focus:ring-[#f43f5e] focus:ring-opacity-50"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             aria-label="Start focus session"
@@ -62,7 +62,7 @@ export const FocusControls: React.FC<FocusControlsProps> = ({
         ) : isPaused ? (
           <motion.button
             onClick={onResume}
-            className="flex items-center space-x-2 px-8 py-4 bg-green-600 hover:bg-green-700 text-white rounded-full font-semibold text-lg shadow-lg transition-colors focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50"
+            className="flex items-center space-x-2 px-8 py-4 bg-green-600 hover:bg-green-700 text-white rounded-full font-semibold text-lg shadow-lg transition-colors focus:outline-hidden focus:ring-4 focus:ring-green-500 focus:ring-opacity-50"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             aria-label="Resume focus session"
@@ -84,7 +84,7 @@ export const FocusControls: React.FC<FocusControlsProps> = ({
         ) : (
           <motion.button
             onClick={onPause}
-            className="flex items-center space-x-2 px-8 py-4 bg-yellow-600 hover:bg-yellow-700 text-white rounded-full font-semibold text-lg shadow-lg transition-colors focus:outline-none focus:ring-4 focus:ring-yellow-500 focus:ring-opacity-50"
+            className="flex items-center space-x-2 px-8 py-4 bg-yellow-600 hover:bg-yellow-700 text-white rounded-full font-semibold text-lg shadow-lg transition-colors focus:outline-hidden focus:ring-4 focus:ring-yellow-500 focus:ring-opacity-50"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             aria-label="Pause focus session"
@@ -109,7 +109,7 @@ export const FocusControls: React.FC<FocusControlsProps> = ({
         {isActive && (
           <motion.button
             onClick={onStop}
-            className="flex items-center space-x-2 px-6 py-4 bg-red-600 hover:bg-red-700 text-white rounded-full font-semibold text-lg shadow-lg transition-colors focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-opacity-50"
+            className="flex items-center space-x-2 px-6 py-4 bg-red-600 hover:bg-red-700 text-white rounded-full font-semibold text-lg shadow-lg transition-colors focus:outline-hidden focus:ring-4 focus:ring-red-500 focus:ring-opacity-50"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             initial={{ opacity: 0, scale: 0.8 }}
@@ -144,7 +144,7 @@ export const FocusControls: React.FC<FocusControlsProps> = ({
           {/* Skip Button */}
           <button
             onClick={onSkip}
-            className="flex items-center space-x-2 px-4 py-2 bg-zinc-100 dark:bg-[rgba(255,255,255,0.055)] hover:bg-zinc-200 dark:hover:bg-[rgba(255,255,255,0.10)] text-zinc-900 dark:text-white rounded-lg font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-300 dark:focus:ring-[rgba(255,255,255,0.20)] focus:ring-opacity-50"
+            className="flex items-center space-x-2 px-4 py-2 bg-zinc-100 dark:bg-[rgba(255,255,255,0.055)] hover:bg-zinc-200 dark:hover:bg-[rgba(255,255,255,0.10)] text-zinc-900 dark:text-white rounded-lg font-medium text-sm transition-colors focus:outline-hidden focus:ring-2 focus:ring-zinc-300 dark:focus:ring-[rgba(255,255,255,0.20)] focus:ring-opacity-50"
             aria-label={`Skip ${mode === 'work' ? 'to break' : 'break'}`}
           >
             <svg
@@ -190,7 +190,7 @@ export const FocusControls: React.FC<FocusControlsProps> = ({
       {onSettings && !isActive && (
         <motion.button
           onClick={onSettings}
-          className="flex items-center space-x-2 px-4 py-2 text-zinc-600 dark:text-[#b4b4b8] hover:text-zinc-900 dark:hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-300 dark:focus:ring-[rgba(255,255,255,0.20)] focus:ring-opacity-50 rounded-lg"
+          className="flex items-center space-x-2 px-4 py-2 text-zinc-600 dark:text-[#b4b4b8] hover:text-zinc-900 dark:hover:text-white transition-colors focus:outline-hidden focus:ring-2 focus:ring-zinc-300 dark:focus:ring-[rgba(255,255,255,0.20)] focus:ring-opacity-50 rounded-lg"
           whileHover={{ scale: 1.05 }}
           aria-label="Focus mode settings"
         >
@@ -212,15 +212,15 @@ export const FocusControls: React.FC<FocusControlsProps> = ({
 
       {/* Keyboard Shortcut Hint */}
       <div className="text-xs text-zinc-500 dark:text-[#6b7280] flex items-center space-x-2">
-        <kbd className="px-2 py-1 bg-zinc-100 dark:bg-[rgba(255,255,255,0.055)] border border-zinc-300 dark:border-[rgba(255,255,255,0.10)] rounded text-zinc-700 dark:text-[#b4b4b8]">
+        <kbd className="px-2 py-1 bg-zinc-100 dark:bg-[rgba(255,255,255,0.055)] border border-zinc-300 dark:border-[rgba(255,255,255,0.10)] rounded-sm text-zinc-700 dark:text-[#b4b4b8]">
           Ctrl
         </kbd>
         <span>+</span>
-        <kbd className="px-2 py-1 bg-zinc-100 dark:bg-[rgba(255,255,255,0.055)] border border-zinc-300 dark:border-[rgba(255,255,255,0.10)] rounded text-zinc-700 dark:text-[#b4b4b8]">
+        <kbd className="px-2 py-1 bg-zinc-100 dark:bg-[rgba(255,255,255,0.055)] border border-zinc-300 dark:border-[rgba(255,255,255,0.10)] rounded-sm text-zinc-700 dark:text-[#b4b4b8]">
           Shift
         </kbd>
         <span>+</span>
-        <kbd className="px-2 py-1 bg-zinc-100 dark:bg-[rgba(255,255,255,0.055)] border border-zinc-300 dark:border-[rgba(255,255,255,0.10)] rounded text-zinc-700 dark:text-[#b4b4b8]">
+        <kbd className="px-2 py-1 bg-zinc-100 dark:bg-[rgba(255,255,255,0.055)] border border-zinc-300 dark:border-[rgba(255,255,255,0.10)] rounded-sm text-zinc-700 dark:text-[#b4b4b8]">
           F
         </kbd>
         <span>to exit focus mode</span>

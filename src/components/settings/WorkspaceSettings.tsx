@@ -379,7 +379,7 @@ export const WorkspaceSettings: React.FC = () => {
             onChange={(e) => setName(e.target.value)}
             disabled={!isAdmin}
             maxLength={80}
-            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white disabled:opacity-50 focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
           />
         </div>
         <div>
@@ -391,7 +391,7 @@ export const WorkspaceSettings: React.FC = () => {
             disabled={!isAdmin}
             placeholder="e.g., Acme Incorporated"
             maxLength={120}
-            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white disabled:opacity-50 focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
           />
         </div>
         <div>
@@ -401,7 +401,7 @@ export const WorkspaceSettings: React.FC = () => {
             onChange={(e) => setDescription(e.target.value)}
             disabled={!isAdmin}
             rows={2}
-            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white disabled:opacity-50 resize-none focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white disabled:opacity-50 resize-none focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -416,7 +416,7 @@ export const WorkspaceSettings: React.FC = () => {
               disabled={!isAdmin}
               placeholder="e.g., Media, SaaS, Consulting"
               maxLength={60}
-              className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+              className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white disabled:opacity-50 focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
             />
           </div>
           <div>
@@ -428,7 +428,7 @@ export const WorkspaceSettings: React.FC = () => {
               onChange={(e) => setSizeBucket(e.target.value as OrgSizeBucket | '')}
               disabled={!isAdmin}
               aria-label="Team size"
-              className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+              className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white disabled:opacity-50 focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
             >
               <option value="">Select size...</option>
               {SIZE_OPTIONS.map(o => (
@@ -484,7 +484,7 @@ export const WorkspaceSettings: React.FC = () => {
               onChange={(e) => setAutoJoinDomain(e.target.value)}
               placeholder="acme.com"
               autoComplete="off"
-              className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+              className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
             />
             <p className="text-[11px] text-zinc-400 mt-1">No "@" — just the domain.</p>
           </div>
@@ -494,7 +494,7 @@ export const WorkspaceSettings: React.FC = () => {
               type="checkbox"
               checked={autoJoinEnabled}
               onChange={(e) => setAutoJoinEnabled(e.target.checked)}
-              className="w-4 h-4 text-rose-500 border-zinc-300 rounded focus:ring-rose-500"
+              className="w-4 h-4 text-rose-500 border-zinc-300 rounded-sm focus:ring-rose-500"
             />
             <span className="text-sm text-zinc-700 dark:text-zinc-300">Enable auto-join for this domain</span>
           </label>
@@ -541,7 +541,7 @@ export const WorkspaceSettings: React.FC = () => {
               onChange={(e) => setBillingEmail(e.target.value)}
               placeholder="billing@acme.com"
               autoComplete="off"
-              className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+              className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
             />
           </div>
           <div className="flex justify-end">
@@ -596,7 +596,7 @@ export const WorkspaceSettings: React.FC = () => {
                 value={transferTargetId}
                 onChange={(e) => setTransferTargetId(e.target.value)}
                 aria-label="New owner"
-                className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+                className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
               >
                 <option value="">Select a member...</option>
                 {nonOwnerMembers.map(m => (
@@ -645,7 +645,7 @@ export const WorkspaceSettings: React.FC = () => {
                 <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
                   {auditLog.map(entry => (
                     <div key={entry.id} className="px-4 py-3 flex items-start gap-3">
-                      <Clock className="w-3.5 h-3.5 text-zinc-400 mt-0.5 flex-shrink-0" />
+                      <Clock className="w-3.5 h-3.5 text-zinc-400 mt-0.5 shrink-0" />
                       <div className="min-w-0 flex-1">
                         <p className="text-xs text-zinc-700 dark:text-zinc-300">
                           <span className="font-medium">{formatAction(entry.action)}</span>

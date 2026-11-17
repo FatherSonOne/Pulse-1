@@ -2133,7 +2133,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             {allDayEvents.slice(0, 3).map(ev => (
                 <div
                   key={ev.id}
-                  className={`text-[8px] sm:text-[9px] lg:text-[10px] px-1 sm:px-1.5 py-0.5 sm:py-1 rounded-sm truncate cursor-pointer transition ${ev.color} text-white hover:opacity-90 ring-1 ring-white/40`}
+                  className={`text-[8px] sm:text-[9px] lg:text-[10px] px-1 sm:px-1.5 py-0.5 sm:py-1 rounded-xs truncate cursor-pointer transition ${ev.color} text-white hover:opacity-90 ring-1 ring-white/40`}
                   onClick={(e) => { e.stopPropagation(); openEventDetail(ev); }}
                   onContextMenu={(e) => handleContextMenu(e, 'event', date, ev.id)}
                   title="All-day event"
@@ -2146,7 +2146,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             {timedEvents.slice(0, 2).map(ev => (
                 <div
                   key={ev.id}
-                  className={`text-[8px] sm:text-[9px] lg:text-[10px] px-1 sm:px-1.5 py-0.5 sm:py-1 rounded-sm truncate cursor-pointer transition ${ev.color} text-white hover:opacity-90`}
+                  className={`text-[8px] sm:text-[9px] lg:text-[10px] px-1 sm:px-1.5 py-0.5 sm:py-1 rounded-xs truncate cursor-pointer transition ${ev.color} text-white hover:opacity-90`}
                   onClick={(e) => { e.stopPropagation(); openEventDetail(ev); }}
                   onContextMenu={(e) => handleContextMenu(e, 'event', date, ev.id)}
                 >
@@ -2263,12 +2263,12 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
 
       {/* Event Detail Modal - Enhanced with Google Calendar fields */}
       {showEventDetail && selectedEvent && (
-          <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
+          <div className="absolute inset-0 z-50 bg-zinc-950/70 backdrop-blur-xs flex items-center justify-center animate-fade-in p-4">
               <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in overflow-hidden max-h-[90vh] overflow-y-auto">
                   <div className={`${selectedEvent.color} p-6`}>
                     <div className="flex items-start justify-between">
                       <div>
-                        <div className="flex items-center gap-2 text-white/80 font-mono text-[10px] tracking-[0.1em] uppercase font-semibold mb-1">
+                        <div className="flex items-center gap-2 text-white/80 font-mono text-[10px] tracking-widest uppercase font-semibold mb-1">
                           {(() => {
                             const typeMeta = allEventTypes.find(t => t.id === selectedEvent.type);
                             return typeMeta ? (
@@ -2284,7 +2284,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                         <h3 className="text-xl font-bold text-white">{selectedEvent.title}</h3>
                         {/* Conflict badge — shown when this event overlaps a cross-provider duplicate */}
                         {syncConflicts.some(c => c.eventA.id === selectedEvent.id || c.eventB.id === selectedEvent.id) && (
-                          <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 bg-amber-400/30 border border-amber-300/50 rounded-full font-mono text-[10px] font-semibold text-amber-100 uppercase tracking-[0.1em]">
+                          <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 bg-amber-400/30 border border-amber-300/50 rounded-full font-mono text-[10px] font-semibold text-amber-100 uppercase tracking-widest">
                             <AlertTriangle className="text-[9px]" />
                             Possible duplicate
                           </div>
@@ -2301,9 +2301,9 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                       <button
                         key={tab}
                         onClick={() => setEventDetailTab(tab)}
-                        className={`px-4 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] border-b-2 transition -mb-px ${
+                        className={`px-4 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-widest border-b-2 transition -mb-px ${
                           eventDetailTab === tab
-                            ? 'border-[var(--pulse-rose)] text-[var(--pulse-rose)]'
+                            ? 'border-(--pulse-rose) text-(--pulse-rose)'
                             : 'border-transparent text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
                         }`}
                       >
@@ -2352,8 +2352,8 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                               onClick={() => { window.location.href = link; }}
                               className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                                 isActive
-                                  ? 'bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white shadow-lg shadow-[0_8px_24px_rgba(244,63,94,0.20)]'
-                                  : 'bg-[var(--pulse-rose-soft)] hover:bg-[var(--pulse-rose-glow)] text-[var(--pulse-rose)] border border-[var(--pulse-rose-glow)]'
+                                  ? 'bg-(--pulse-rose) hover:bg-(--pulse-rose-deep) text-white shadow-lg shadow-[0_8px_24px_rgba(244,63,94,0.20)]'
+                                  : 'bg-(--pulse-rose-soft) hover:bg-(--pulse-rose-glow) text-(--pulse-rose) border border-(--pulse-rose-glow)'
                               }`}
                             >
                               <Video size={15} />
@@ -2368,7 +2368,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                                 type="button"
                                 onClick={() => navigator.clipboard.writeText(`${window.location.origin}${link}`).catch(() => {})}
                                 title="Copy link"
-                                className="shrink-0 p-1 rounded text-zinc-400 hover:text-[var(--pulse-rose)] transition"
+                                className="shrink-0 p-1 rounded-sm text-zinc-400 hover:text-(--pulse-rose) transition"
                               >
                                 <Copy size={12} />
                               </button>
@@ -2390,7 +2390,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                               href={link}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[var(--pulse-rose)] hover:underline font-medium truncate"
+                              className="text-(--pulse-rose) hover:underline font-medium truncate"
                             >
                               {label}
                             </a>
@@ -2446,7 +2446,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                               const isOrganizer = selectedEvent.organizer?.email && attendee.email === selectedEvent.organizer.email;
                               return (
                                 <div key={i} title={`${name}: ${attendee.responseStatus || 'pending'}`} className="flex items-center gap-1.5">
-                                  <div className={`w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 ring-2 ${statusColor} ${isOrganizer ? 'shadow-[inset_0_0_0_1px_var(--cal-accent)]' : ''} flex items-center justify-center text-zinc-600 dark:text-zinc-300 text-[10px] font-bold flex-shrink-0`}>
+                                  <div className={`w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 ring-2 ${statusColor} ${isOrganizer ? 'shadow-[inset_0_0_0_1px_var(--cal-accent)]' : ''} flex items-center justify-center text-zinc-600 dark:text-zinc-300 text-[10px] font-bold shrink-0`}>
                                     {initials}
                                   </div>
                                   <span className="text-xs text-zinc-600 dark:text-zinc-300 max-w-[80px] truncate">{name.split(' ')[0]}</span>
@@ -2468,7 +2468,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                               const initials = a.split(/[@\s]/).filter(Boolean).map((w: string) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
                               return (
                                 <div key={i} title={a} className="flex items-center gap-1.5">
-                                  <div className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 text-[10px] font-bold flex-shrink-0">
+                                  <div className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 text-[10px] font-bold shrink-0">
                                     {initials}
                                   </div>
                                   <span className="text-xs text-zinc-600 dark:text-zinc-300 max-w-[80px] truncate">{a.split('@')[0]}</span>
@@ -2616,7 +2616,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     className="w-full text-left p-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition group"
                   >
                     <div className="flex items-start gap-3">
-                      <div className={`w-3 h-3 rounded-full ${event.color} mt-1 flex-shrink-0`}></div>
+                      <div className={`w-3 h-3 rounded-full ${event.color} mt-1 shrink-0`}></div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium dark:text-white truncate">{event.title}</div>
                         <div className="text-xs text-zinc-500 mt-0.5">
@@ -2664,7 +2664,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             <button
               onClick={() => setFilterEventType('all')}
               aria-label={`Clear filter: ${EVENT_TYPES.find(t => t.id === filterEventType)?.name || filterEventType}`}
-              className="flex items-center gap-1.5 px-2 py-1 rounded-md font-mono text-[10px] tracking-[0.1em] uppercase font-semibold bg-[var(--pulse-rose-soft)] text-[var(--pulse-rose-text)] border border-[var(--pulse-rose-glow)] hover:bg-[var(--pulse-rose-glow)] transition"
+              className="flex items-center gap-1.5 px-2 py-1 rounded-md font-mono text-[10px] tracking-widest uppercase font-semibold bg-(--pulse-rose-soft) text-(--pulse-rose-text) border border-(--pulse-rose-glow) hover:bg-(--pulse-rose-glow) transition"
             >
               {EVENT_TYPES.find(t => t.id === filterEventType)?.name || filterEventType}
               <X className="w-2.5 h-2.5" />
@@ -2676,7 +2676,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             <button
               onClick={() => { setSearchInput(''); setSearchQuery(''); }}
               aria-label={`Clear search: ${searchQuery}`}
-              className="flex items-center gap-1.5 px-2 py-1 rounded-md font-mono text-[10px] tracking-[0.1em] uppercase font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition max-w-[160px]"
+              className="flex items-center gap-1.5 px-2 py-1 rounded-md font-mono text-[10px] tracking-widest uppercase font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition max-w-[160px]"
             >
               <span className="truncate normal-case tracking-normal">{searchQuery}</span>
               <X className="w-2.5 h-2.5 shrink-0" />
@@ -2689,7 +2689,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
           {/* New Event — primary CTA, the only solid coral at rest */}
           <button
             onClick={() => setShowEventModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white rounded-lg font-mono text-[11px] tracking-[0.1em] uppercase font-semibold transition shadow-[0_2px_8px_rgba(244,63,94,0.20)]"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-(--pulse-rose) hover:bg-(--pulse-rose-deep) text-white rounded-lg font-mono text-[11px] tracking-widest uppercase font-semibold transition shadow-[0_2px_8px_rgba(244,63,94,0.20)]"
           >
             <Plus className="w-3 h-3" />
             <span className="hidden sm:inline">New Event</span>
@@ -2705,7 +2705,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
               }}
               aria-label="AI Calendar Assistant (⌘I)"
               title="AI Calendar Assistant (⌘I)"
-              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showAIPanel ? 'bg-[var(--pulse-rose)] border-[var(--pulse-rose)] text-white shadow-[0_0_0_4px_rgba(244,63,94,0.12)]' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-[var(--pulse-rose)] hover:border-[var(--pulse-rose-soft)]'}`}
+              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showAIPanel ? 'bg-(--pulse-rose) border-(--pulse-rose) text-white shadow-[0_0_0_4px_rgba(244,63,94,0.12)]' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-(--pulse-rose) hover:border-(--pulse-rose-soft)'}`}
             >
               <Wand2 className={`w-3.5 h-3.5 ${aiLoading ? 'animate-pulse' : ''}`} />
             </button>
@@ -2745,7 +2745,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                   onMouseDown={e => e.stopPropagation()}
                 >
                   <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
-                    <span className="font-mono text-[10px] tracking-[0.1em] uppercase font-semibold text-zinc-400">Panels</span>
+                    <span className="font-mono text-[10px] tracking-widest uppercase font-semibold text-zinc-400">Panels</span>
                   </div>
                   <button
                     onClick={() => { setShowUpcoming(!showUpcoming); setShowExportMenu(false); }}
@@ -2761,14 +2761,14 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                   </button>
 
                   <div className="px-3 py-2 border-y border-zinc-100 dark:border-zinc-800 mt-1">
-                    <span className="font-mono text-[10px] tracking-[0.1em] uppercase font-semibold text-zinc-400">Filter</span>
+                    <span className="font-mono text-[10px] tracking-widest uppercase font-semibold text-zinc-400">Filter</span>
                   </div>
                   <div className="px-3 py-2">
                     <select
                       value={filterEventType}
                       onChange={(e) => setFilterEventType(e.target.value)}
                       aria-label="Filter events by type"
-                      className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-2 py-1.5 text-xs outline-none dark:text-white focus:ring-2 focus:ring-[var(--pulse-rose)] focus:border-transparent"
+                      className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-2 py-1.5 text-xs outline-hidden dark:text-white focus:ring-2 focus:ring-(--pulse-rose) focus:border-transparent"
                     >
                       <option value="all">All event types</option>
                       {EVENT_TYPES.map(type => (
@@ -2778,7 +2778,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                   </div>
 
                   <div className="px-3 py-2 border-y border-zinc-100 dark:border-zinc-800 mt-1">
-                    <span className="font-mono text-[10px] tracking-[0.1em] uppercase font-semibold text-zinc-400">Navigate</span>
+                    <span className="font-mono text-[10px] tracking-widest uppercase font-semibold text-zinc-400">Navigate</span>
                   </div>
                   <button
                     onClick={() => { setShowJumpToDate(prev => !prev); setShowExportMenu(false); }}
@@ -2805,7 +2805,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                   {(googleConnected || outlookConnected) && (
                     <>
                       <div className="px-3 py-2 border-y border-zinc-100 dark:border-zinc-800 mt-1">
-                        <span className="font-mono text-[10px] tracking-[0.1em] uppercase font-semibold text-zinc-400">Sync</span>
+                        <span className="font-mono text-[10px] tracking-widest uppercase font-semibold text-zinc-400">Sync</span>
                       </div>
                       <button
                         onClick={() => {
@@ -2830,7 +2830,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                   )}
 
                   <div className="px-3 py-2 border-y border-zinc-100 dark:border-zinc-800 mt-1">
-                    <span className="font-mono text-[10px] tracking-[0.1em] uppercase font-semibold text-zinc-400">Export</span>
+                    <span className="font-mono text-[10px] tracking-widest uppercase font-semibold text-zinc-400">Export</span>
                   </div>
                   <button
                     onClick={() => { exportAsICS(); setShowExportMenu(false); }}
@@ -3018,7 +3018,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                  className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 pointer-events-none"
                  aria-live="polite"
                >
-                 <div className="flex items-center gap-2.5 px-4 py-2.5 bg-zinc-900/90 dark:bg-zinc-100/90 text-white dark:text-zinc-900 text-sm font-medium rounded-full shadow-xl backdrop-blur-sm animate-fade-in">
+                 <div className="flex items-center gap-2.5 px-4 py-2.5 bg-zinc-900/90 dark:bg-zinc-100/90 text-white dark:text-zinc-900 text-sm font-medium rounded-full shadow-xl backdrop-blur-xs animate-fade-in">
                    <ArrowLeftRight className="text-zinc-400 dark:text-zinc-500 w-3.5 h-3.5" />
                    Swipe left or right to navigate weeks
                  </div>
@@ -3085,7 +3085,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
          {showTaskPanel && (
              <div className="cal-task-panel w-80 bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 p-6 animate-slide-in-right flex flex-col shadow-2xl z-20 absolute right-0 top-0 bottom-0 md:relative">
                  <div className="flex justify-between items-center mb-8">
-                     <h3 className="font-mono text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.1em] flex items-center gap-2">
+                     <h3 className="font-mono text-[11px] font-semibold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
                          Tasks
                      </h3>
                      <button onClick={() => setShowTaskPanel(false)} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white"><X /></button>
@@ -3099,7 +3099,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                              tabIndex={0}
                              aria-pressed={task.completed}
                              aria-label={`Toggle task: ${task.title}`}
-                             className="group flex items-start gap-3 p-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)]"
+                             className="group flex items-start gap-3 p-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition cursor-pointer outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-rose)"
                              onClick={() => toggleTask(task.id)}
                              onKeyDown={(e) => {
                                  if (e.key === 'Enter' || e.key === ' ') {
@@ -3109,7 +3109,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                              }}
                          >
                              <div 
-                                className={`mt-1 w-4 h-4 rounded border flex items-center justify-center transition ${task.completed ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white' : 'border-zinc-300 dark:border-zinc-600 group-hover:border-zinc-500'}`}
+                                className={`mt-1 w-4 h-4 rounded-sm border flex items-center justify-center transition ${task.completed ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white' : 'border-zinc-300 dark:border-zinc-600 group-hover:border-zinc-500'}`}
                              >
                                  {task.completed && <Check className="text-[10px] text-white dark:text-black" />}
                              </div>
@@ -3298,7 +3298,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
           Coral signal: focus mode IS active state, matches the cal-focus-mode top stripe. */}
       {focusMode && (
         <div
-          className="fixed bottom-[calc(1rem+var(--pulse-bottom-bar))] left-1/2 -translate-x-1/2 z-[9996] flex items-center gap-3 px-4 py-2 rounded-full bg-[var(--pulse-rose)] text-white font-mono text-[11px] tracking-[0.1em] uppercase font-semibold shadow-[0_4px_24px_rgba(244,63,94,0.30)]"
+          className="fixed bottom-[calc(1rem+var(--pulse-bottom-bar))] left-1/2 -translate-x-1/2 z-9996 flex items-center gap-3 px-4 py-2 rounded-full bg-(--pulse-rose) text-white font-mono text-[11px] tracking-widest uppercase font-semibold shadow-[0_4px_24px_rgba(244,63,94,0.30)]"
           role="status"
           aria-live="polite"
         >

@@ -88,12 +88,12 @@ export const CalendarTimelineView: React.FC<CalendarTimelineViewProps> = ({
   const ROW_H = 44; // px per swim lane
 
   return (
-    <div className="flex-1 overflow-auto bg-[var(--pulse-surface)] dark:bg-[var(--pulse-canvas)]">
+    <div className="flex-1 overflow-auto bg-(--pulse-surface) dark:bg-(--pulse-canvas)">
       {/* Sticky header */}
-      <div className="sticky top-0 z-10 bg-[var(--pulse-surface)] dark:bg-[var(--pulse-canvas)] border-b border-[var(--pulse-border)]">
+      <div className="sticky top-0 z-10 bg-(--pulse-surface) dark:bg-(--pulse-canvas) border-b border-(--pulse-border)">
         <div className="flex">
           {/* Lane label gutter */}
-          <div className="w-28 flex-shrink-0 border-r border-[var(--pulse-border)]" />
+          <div className="w-28 shrink-0 border-r border-(--pulse-border)" />
           {/* Day columns */}
           {days.map((day, i) => {
             const isToday = isSameDay(day, today);
@@ -101,18 +101,18 @@ export const CalendarTimelineView: React.FC<CalendarTimelineViewProps> = ({
               <div
                 key={i}
                 style={{ width: COL_W, minWidth: COL_W }}
-                className={`text-center py-2 border-r border-[var(--pulse-border)]/50 flex-shrink-0 ${
+                className={`text-center py-2 border-r border-(--pulse-border)/50 shrink-0 ${
                   isToday
-                    ? 'bg-[var(--pulse-rose-soft)]'
+                    ? 'bg-(--pulse-rose-soft)'
                     : day.getDay() === 0 || day.getDay() === 6
-                      ? 'bg-[var(--pulse-canvas-soft)] dark:bg-[var(--pulse-surface)]/40'
+                      ? 'bg-(--pulse-canvas-soft) dark:bg-(--pulse-surface)/40'
                       : ''
                 }`}
               >
-                <div className={`text-[10px] font-medium ${isToday ? 'text-[var(--pulse-rose)]' : 'text-zinc-400'}`}>
+                <div className={`text-[10px] font-medium ${isToday ? 'text-(--pulse-rose)' : 'text-zinc-400'}`}>
                   {DAY_NAMES[day.getDay()]}
                 </div>
-                <div className={`text-sm font-bold ${isToday ? 'text-[var(--pulse-rose)]' : 'text-[var(--pulse-ink)]'}`}>
+                <div className={`text-sm font-bold ${isToday ? 'text-(--pulse-rose)' : 'text-(--pulse-ink)'}`}>
                   {day.getDate()}
                 </div>
                 {i === 0 || day.getDate() === 1 ? (
@@ -133,10 +133,10 @@ export const CalendarTimelineView: React.FC<CalendarTimelineViewProps> = ({
         </div>
       ) : (
         laneGroups.map(([lane, laneEvents]) => (
-          <div key={lane} className="flex border-b border-[var(--pulse-border)]/50" style={{ minHeight: ROW_H }}>
+          <div key={lane} className="flex border-b border-(--pulse-border)/50" style={{ minHeight: ROW_H }}>
             {/* Lane label */}
-            <div className="w-28 flex-shrink-0 border-r border-[var(--pulse-border)] px-2 py-1 flex items-center">
-              <span className="text-[10px] font-semibold text-[var(--pulse-ink-3)] uppercase tracking-wider truncate">
+            <div className="w-28 shrink-0 border-r border-(--pulse-border) px-2 py-1 flex items-center">
+              <span className="text-[10px] font-semibold text-(--pulse-ink-3) uppercase tracking-wider truncate">
                 {lane}
               </span>
             </div>
@@ -149,8 +149,8 @@ export const CalendarTimelineView: React.FC<CalendarTimelineViewProps> = ({
                   <div
                     key={i}
                     style={{ width: COL_W, minWidth: COL_W }}
-                    className={`flex-shrink-0 border-r border-[var(--pulse-border)]/40 h-full ${
-                      isSameDay(day, today) ? 'bg-[var(--pulse-rose-softer)]' : ''
+                    className={`shrink-0 border-r border-(--pulse-border)/40 h-full ${
+                      isSameDay(day, today) ? 'bg-(--pulse-rose-softer)' : ''
                     }`}
                   />
                 ))}
@@ -186,7 +186,7 @@ export const CalendarTimelineView: React.FC<CalendarTimelineViewProps> = ({
                       height: ROW_H - 12,
                       backgroundColor: getEventColor(ev),
                     }}
-                    className="rounded-md px-1.5 text-[10px] font-semibold text-white truncate text-left hover:brightness-110 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pulse-rose)]"
+                    className="rounded-md px-1.5 text-[10px] font-semibold text-white truncate text-left hover:brightness-110 transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--pulse-rose)"
                   >
                     {ev.title}
                   </button>

@@ -93,7 +93,7 @@ export const BillingContactsCard: React.FC = () => {
               <button
                 type="button"
                 onClick={() => removeContact(email)}
-                className="p-1 text-zinc-400 hover:text-red-500 rounded"
+                className="p-1 text-zinc-400 hover:text-red-500 rounded-sm"
                 aria-label={`Remove ${email}`}
                 title="Remove"
               >
@@ -114,7 +114,7 @@ export const BillingContactsCard: React.FC = () => {
             placeholder="finance@example.com"
             spellCheck={false}
             autoComplete="off"
-            className="flex-1 px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+            className="flex-1 px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
           />
           <button
             type="button"

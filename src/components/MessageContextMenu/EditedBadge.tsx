@@ -73,9 +73,9 @@ export const EditedBadge: React.FC<EditedBadgeProps> = ({
         aria-expanded={open}
         aria-haspopup={originalText ? 'dialog' : undefined}
         className={[
-          'ml-2 align-baseline font-mono uppercase tracking-[0.1em] text-[9px]',
-          'inline-flex items-center px-1 rounded',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+          'ml-2 align-baseline font-mono uppercase tracking-widest text-[9px]',
+          'inline-flex items-center px-1 rounded-sm',
+          'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
           isDarkMode ? 'text-zinc-400 hover:text-zinc-200' : 'text-zinc-500 hover:text-zinc-800',
           originalText ? 'cursor-help' : 'cursor-default',
         ].join(' ')}
@@ -88,7 +88,7 @@ export const EditedBadge: React.FC<EditedBadgeProps> = ({
           aria-label="Original message"
           className={[
             'absolute z-50 mt-1 right-0 min-w-[180px] max-w-[260px] p-2 rounded-lg shadow-lg text-xs',
-            'whitespace-pre-wrap break-words',
+            'whitespace-pre-wrap wrap-break-word',
             isDarkMode
               ? 'bg-zinc-800 text-zinc-100 border border-white/10'
               : 'bg-white text-zinc-900 border border-black/10',
@@ -96,7 +96,7 @@ export const EditedBadge: React.FC<EditedBadgeProps> = ({
         >
           <span
             className={[
-              'block font-mono uppercase tracking-[0.1em] text-[9px] mb-1',
+              'block font-mono uppercase tracking-widest text-[9px] mb-1',
               isDarkMode ? 'text-zinc-400' : 'text-zinc-500',
             ].join(' ')}
           >

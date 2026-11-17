@@ -137,9 +137,9 @@ export const ArchiveModals: React.FC = () => {
                 <button
                   key={id}
                   onClick={() => handleShareTo(id, selectedItem)}
-                  className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] hover:bg-zinc-100 dark:hover:bg-white/[0.06] hover:border-zinc-300 dark:hover:border-white/[0.10] transition-colors group"
+                  className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-zinc-50 dark:bg-white/3 border border-zinc-200 dark:border-white/6 hover:bg-zinc-100 dark:hover:bg-white/6 hover:border-zinc-300 dark:hover:border-white/10 transition-colors group"
                 >
-                  <div className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-white/[0.05] flex items-center justify-center text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-white/5 flex items-center justify-center text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
                     <Icon className="w-4 h-4" />
                   </div>
                   <span className="text-[10px] text-zinc-600 dark:text-zinc-400">{label}</span>
@@ -351,7 +351,7 @@ export const ArchiveModals: React.FC = () => {
                   {user.avatarUrl ? (
                     <img src={user.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-500 to-orange-500 flex items-center justify-center text-white text-xs font-bold">
+                    <div className="w-8 h-8 rounded-full bg-linear-to-br from-rose-500 to-orange-500 flex items-center justify-center text-white text-xs font-bold">
                       {(user.displayName || user.fullName || '?').split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                     </div>
                   )}
@@ -494,7 +494,7 @@ export const ArchiveModals: React.FC = () => {
                 <p className="text-sm text-zinc-500 text-center py-4">No action items found in this content.</p>
               ) : modals.actionItemsResult.map((action, i) => (
                 <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800">
-                  <span className="w-6 h-6 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</span>
+                  <span className="w-6 h-6 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>
                   <p className="text-sm text-zinc-900 dark:text-white">{action}</p>
                 </div>
               ))}

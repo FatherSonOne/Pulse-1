@@ -123,7 +123,7 @@ export const SmartComposeEnhanced: React.FC<SmartComposeEnhancedProps> = ({
         onBlur={() => setTimeout(() => setShowSuggestionsList(false), 200)}
         placeholder={placeholder}
         disabled={disabled}
-        className="w-full bg-transparent resize-none outline-none text-zinc-900 dark:text-white"
+        className="w-full bg-transparent resize-none outline-hidden text-zinc-900 dark:text-white"
         style={{
           padding: '0.75rem 1rem',
           paddingRight: '3rem',
@@ -134,7 +134,7 @@ export const SmartComposeEnhanced: React.FC<SmartComposeEnhancedProps> = ({
 
       {/* Tab hint */}
       {ghostText && (
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-sm">
           <kbd className="font-mono">Tab</kbd>
           <span>to complete</span>
         </div>
@@ -156,8 +156,8 @@ export const SmartComposeEnhanced: React.FC<SmartComposeEnhancedProps> = ({
               <span className="text-xs font-bold text-zinc-600 dark:text-zinc-300">Smart Suggestions</span>
             </div>
             <span className="text-[10px] text-zinc-400">
-              <kbd className="bg-zinc-200 dark:bg-zinc-700 px-1 rounded text-[9px]">↑↓</kbd> navigate
-              <kbd className="bg-zinc-200 dark:bg-zinc-700 px-1 rounded text-[9px] ml-1">↵</kbd> select
+              <kbd className="bg-zinc-200 dark:bg-zinc-700 px-1 rounded-sm text-[9px]">↑↓</kbd> navigate
+              <kbd className="bg-zinc-200 dark:bg-zinc-700 px-1 rounded-sm text-[9px] ml-1">↵</kbd> select
             </span>
           </div>
           <div className="max-h-48 overflow-y-auto">
@@ -252,7 +252,7 @@ export const QuickPhrases: React.FC<QuickPhrasesProps> = ({ onSelect, context = 
           <button
             key={index}
             onClick={() => onSelect(phrase)}
-            className="px-2.5 py-1 text-xs rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-rose-500/[0.10] hover:text-rose-600 dark:hover:bg-rose-500/[0.15] dark:hover:text-rose-400 transition-colors border border-zinc-200 dark:border-zinc-700 hover:border-rose-300 dark:hover:border-rose-500/40"
+            className="px-2.5 py-1 text-xs rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:bg-rose-500/15 dark:hover:text-rose-400 transition-colors border border-zinc-200 dark:border-zinc-700 hover:border-rose-300 dark:hover:border-rose-500/40"
           >
             {phrase}
           </button>
@@ -296,7 +296,7 @@ export const ToneAdjuster: React.FC<ToneAdjusterProps> = ({ originalText, onAdju
             disabled={loading}
             className={`p-1.5 rounded-lg transition-all ${
               selectedTone === tone.id
-                ? 'bg-rose-500/[0.10] dark:bg-rose-500/[0.15] text-rose-600 dark:text-rose-400'
+                ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400'
                 : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-rose-600 dark:hover:text-rose-400'
             } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             title={tone.label}

@@ -155,7 +155,7 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
           isDarkMode ? 'bg-[rgba(255,255,255,0.055)] text-[#b4b4b8]' : 'bg-[#f2f2f2] text-[#52525b]'
         }`}
       >
-        <span className="[&>svg]:w-4 [&>svg]:h-4 [&>svg]:md:w-5 [&>svg]:md:h-5 flex items-center">
+        <span className="[&>svg]:w-4 [&>svg]:h-4 md:[&>svg]:w-5 md:[&>svg]:h-5 flex items-center">
           {modeIcon}
         </span>
       </div>
@@ -209,7 +209,7 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
               ) : (
                 <AlignLeft className="w-3 h-3" />
               )}
-              <span className="hidden sm:inline-block group-hover:[text-decoration:underline] [text-decoration-thickness:1px] [text-underline-offset:3px]">
+              <span className="hidden sm:inline-block group-hover:[text-decoration:underline] decoration-1 underline-offset-[3px]">
                 Summarize
               </span>
             </button>
@@ -232,7 +232,7 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
               ) : (
                 <Reply className="w-3 h-3" />
               )}
-              <span className="hidden sm:inline-block group-hover:[text-decoration:underline] [text-decoration-thickness:1px] [text-underline-offset:3px]">
+              <span className="hidden sm:inline-block group-hover:[text-decoration:underline] decoration-1 underline-offset-[3px]">
                 Reply
               </span>
             </button>
@@ -257,7 +257,7 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
               ) : (
                 <FileText className="w-3 h-3" />
               )}
-              <span className="hidden sm:inline-block group-hover:[text-decoration:underline] [text-decoration-thickness:1px] [text-underline-offset:3px]">
+              <span className="hidden sm:inline-block group-hover:[text-decoration:underline] decoration-1 underline-offset-[3px]">
                 {notesLabel}
               </span>
             </button>

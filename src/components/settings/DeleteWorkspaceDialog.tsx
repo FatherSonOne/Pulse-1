@@ -27,7 +27,7 @@ export const DeleteWorkspaceDialog: React.FC<DeleteWorkspaceDialogProps> = ({
   const isConfirmed = confirmText === requiredText;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-950/70 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-9999 flex items-center justify-center bg-zinc-950/70 backdrop-blur-xs p-4">
       <div role="dialog" aria-modal="true" aria-label="Delete workspace" className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full border border-zinc-200 dark:border-zinc-800">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-zinc-200 dark:border-zinc-800">
@@ -90,7 +90,7 @@ export const DeleteWorkspaceDialog: React.FC<DeleteWorkspaceDialogProps> = ({
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
               placeholder={requiredText}
-              className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+              className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
               autoFocus
             />
           </div>

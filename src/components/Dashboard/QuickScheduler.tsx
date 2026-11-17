@@ -323,14 +323,14 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
       <div className="flex justify-between items-center mb-4">
         <div>
           {hasCalendarSync && (
-            <span className="text-[10px] px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded font-semibold">
+            <span className="text-[10px] px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-sm font-semibold">
               SYNCED
             </span>
           )}
         </div>
         <button
           type="button"
-          className="pulse-label px-3 py-1.5 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white rounded-lg transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+          className="pulse-label px-3 py-1.5 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white rounded-lg transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
           onClick={() => {
             setShowForm(!showForm);
             if (showForm) {
@@ -346,7 +346,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
 
       {/* Add Event Form */}
       {showForm && (
-        <div className="mb-6 p-4 bg-zinc-50 dark:bg-white/[0.04] rounded-lg border border-zinc-200 dark:border-white/[0.06] relative z-10">
+        <div className="mb-6 p-4 bg-zinc-50 dark:bg-white/4 rounded-lg border border-zinc-200 dark:border-white/6 relative z-10">
           {/* Selected Date Header */}
           <div className="mb-3 pb-3 border-b border-zinc-200 dark:border-zinc-800">
             <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
@@ -363,7 +363,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
               value={formData.title}
               onChange={(e) => { setFormData({...formData, title: e.target.value}); if (formError) setFormError(''); }}
               autoFocus
-              className={`w-full px-3 py-2 bg-white dark:bg-zinc-950 border rounded-lg text-sm dark:text-zinc-50 focus:ring-2 focus:ring-rose-500/20 outline-none transition ${formError ? 'border-rose-500 focus:border-rose-500' : 'border-zinc-200 dark:border-zinc-800 focus:border-rose-500/60'}`}
+              className={`w-full px-3 py-2 bg-white dark:bg-zinc-950 border rounded-lg text-sm dark:text-zinc-50 focus:ring-2 focus:ring-rose-500/20 outline-hidden transition ${formError ? 'border-rose-500 focus:border-rose-500' : 'border-zinc-200 dark:border-zinc-800 focus:border-rose-500/60'}`}
             />
             {formError && (
               <p className="text-rose-500 text-xs mt-1">{formError}</p>
@@ -377,7 +377,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
                   type="time"
                   value={formData.time}
                   onChange={(e) => setFormData({...formData, time: e.target.value})}
-                  className="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm dark:text-zinc-50 focus:border-rose-500/60 outline-none transition"
+                  className="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm dark:text-zinc-50 focus:border-rose-500/60 outline-hidden transition"
                 />
               </div>
               <div>
@@ -385,7 +385,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
                 <select
                   value={formData.duration}
                   onChange={(e) => setFormData({...formData, duration: parseInt(e.target.value)})}
-                  className="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm dark:text-zinc-50 focus:border-rose-500/60 outline-none transition"
+                  className="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm dark:text-zinc-50 focus:border-rose-500/60 outline-hidden transition"
                 >
                   <option value="15">15 min</option>
                   <option value="30">30 min</option>
@@ -436,7 +436,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
                     setShowContactDropdown(true);
                   }}
                   onFocus={() => setShowContactDropdown(true)}
-                  className="w-full pl-9 pr-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm dark:text-zinc-50 focus:border-rose-500/60 outline-none transition"
+                  className="w-full pl-9 pr-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm dark:text-zinc-50 focus:border-rose-500/60 outline-hidden transition"
                 />
               </div>
 
@@ -453,7 +453,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
                         onClick={() => handleAddAttendee(contact)}
                         className="w-full flex items-center gap-3 px-3 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition text-left"
                       >
-                        <div className={`w-8 h-8 rounded-full ${contact.avatarColor} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
+                        <div className={`w-8 h-8 rounded-full ${contact.avatarColor} flex items-center justify-center text-white text-xs font-bold shrink-0`}>
                           {contact.name.charAt(0)}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -513,7 +513,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
         onClick={() => setShowFullCalendar(v => !v)}
         aria-expanded={showFullCalendar}
         aria-controls="quick-scheduler-grid"
-        className="flex items-center justify-between w-full mb-4 px-3 py-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 transition-colors duration-150"
+        className="flex items-center justify-between w-full mb-4 px-3 py-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-white/4 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 transition-colors duration-150"
       >
         <span className="flex items-baseline gap-2">
           <span className="pulse-label text-rose-600 dark:text-rose-400">TODAY</span>
@@ -574,7 +574,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
               ? 'bg-rose-500 text-white font-semibold'
               : isSelected
                 ? 'ring-2 ring-rose-500/60 text-zinc-900 dark:text-zinc-50 font-medium'
-                : 'hover:bg-zinc-100 dark:hover:bg-white/[0.05] text-zinc-700 dark:text-zinc-300';
+                : 'hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-700 dark:text-zinc-300';
 
             return (
               <div
@@ -604,7 +604,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
                 )}
                 {/* Hover tooltip */}
                 {isHovered && totalEvents > 0 && !isSelected && (
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[10px] rounded shadow-lg whitespace-nowrap z-50 pointer-events-none">
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[10px] rounded-sm shadow-lg whitespace-nowrap z-50 pointer-events-none">
                     {totalEvents} event{totalEvents > 1 ? 's' : ''}
                     {googleDayEvents.length > 0 && <span className="text-emerald-400 dark:text-emerald-600 ml-1">({googleDayEvents.length} synced)</span>}
                   </div>
@@ -645,9 +645,9 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
               .map(event => (
                 <div
                   key={event.id}
-                  className="flex items-start gap-3 px-3 py-2.5 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 group"
+                  className="flex items-start gap-3 px-3 py-2.5 rounded-sm hover:bg-zinc-50 dark:hover:bg-white/4 transition-colors duration-150 group"
                 >
-                  <div className="flex-shrink-0 w-10 text-center">
+                  <div className="shrink-0 w-10 text-center">
                     <div className="text-[10px] font-bold text-emerald-500 uppercase">
                       <ExternalLink />
                     </div>
@@ -690,9 +690,9 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
               .map(event => (
                 <div
                   key={event.id}
-                  className="flex items-start gap-3 px-3 py-2.5 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 group"
+                  className="flex items-start gap-3 px-3 py-2.5 rounded-sm hover:bg-zinc-50 dark:hover:bg-white/4 transition-colors duration-150 group"
                 >
-                  <div className="flex-shrink-0 w-10 text-center">
+                  <div className="shrink-0 w-10 text-center">
                     <div className="text-[10px] font-bold text-rose-500 uppercase">
                       {event.synced === 'google' ? <ExternalLink /> : 'New'}
                     </div>
@@ -719,7 +719,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
                   </div>
                   <button
                     onClick={() => handleDeleteEvent(event.id)}
-                    className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded flex items-center justify-center text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40"
+                    className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-sm flex items-center justify-center text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-red-500/40"
                   >
                     <Trash2 className="text-xs" />
                   </button>

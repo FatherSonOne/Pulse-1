@@ -163,7 +163,7 @@ export const DeveloperSettings: React.FC = () => {
                     value={assemblyApiKey}
                     onChange={(e) => { setAssemblyApiKey(e.target.value); setAssemblyKeySaved(false); }}
                     placeholder="Enter AssemblyAI key..."
-                    className="w-full px-4 py-2.5 bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30"
+                    className="w-full px-4 py-2.5 bg-(--pulse-surface) border border-(--pulse-border) rounded-lg text-sm dark:text-white text-zinc-900 focus:outline-hidden focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30"
                   />
                   <button
                     onClick={() => setShowAssemblyKey(!showAssemblyKey)}
@@ -202,7 +202,7 @@ export const DeveloperSettings: React.FC = () => {
                     value={elevenLabsApiKey}
                     onChange={(e) => { setElevenLabsApiKey(e.target.value); setElevenLabsKeySaved(false); }}
                     placeholder="Enter ElevenLabs key..."
-                    className="w-full px-4 py-2.5 bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30"
+                    className="w-full px-4 py-2.5 bg-(--pulse-surface) border border-(--pulse-border) rounded-lg text-sm dark:text-white text-zinc-900 focus:outline-hidden focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30"
                   />
                   <button
                     onClick={() => setShowElevenLabsKey(!showElevenLabsKey)}
@@ -241,7 +241,7 @@ export const DeveloperSettings: React.FC = () => {
                     value={mapboxApiKey}
                     onChange={(e) => { setMapboxApiKey(e.target.value); setMapboxKeySaved(false); }}
                     placeholder="pk.eyJ1..."
-                    className="w-full px-4 py-2.5 bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30"
+                    className="w-full px-4 py-2.5 bg-(--pulse-surface) border border-(--pulse-border) rounded-lg text-sm dark:text-white text-zinc-900 focus:outline-hidden focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30"
                   />
                   <button
                     onClick={() => setShowMapboxKey(!showMapboxKey)}
@@ -284,7 +284,7 @@ export const DeveloperSettings: React.FC = () => {
           </div>
 
           <div className="space-y-3">
-            <div className="bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg p-4">
+            <div className="bg-(--pulse-surface) border border-(--pulse-border) rounded-lg p-4">
               <div className="flex items-center gap-3">
                 <div className={`w-3 h-3 rounded-full ${
                   supabaseStatus === 'connected' ? 'bg-emerald-500' :

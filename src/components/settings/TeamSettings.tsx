@@ -221,7 +221,7 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
             return (
               <div key={member.user_id} className="p-4 flex items-center gap-3">
                 {/* Avatar */}
-                <div className="w-10 h-10 rounded-full bg-rose-500/10 dark:bg-rose-500/15 border border-rose-500/20 flex items-center justify-center text-rose-500 dark:text-rose-400 font-semibold overflow-hidden flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-rose-500/10 dark:bg-rose-500/15 border border-rose-500/20 flex items-center justify-center text-rose-500 dark:text-rose-400 font-semibold overflow-hidden shrink-0">
                   {member.avatar_url ? (
                     <img src={member.avatar_url} alt={displayName} className="w-full h-full object-cover" />
                   ) : (

@@ -76,7 +76,7 @@ export const Insights: React.FC<InsightsProps> = ({
               style={{ minHeight: TOUCH_TARGET_PX }}
               className={[
                 'inline-flex items-center gap-1.5 px-3 rounded-lg text-sm font-medium',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+                'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
                 isDarkMode
                   ? 'text-zinc-300 hover:bg-white/5'
                   : 'text-zinc-600 hover:bg-black/5',
@@ -103,7 +103,7 @@ export const Insights: React.FC<InsightsProps> = ({
                   'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium',
                   isDarkMode
                     ? 'bg-white/5 text-zinc-200 border border-white/10'
-                    : 'bg-black/[0.04] text-zinc-700 border border-black/[0.06]',
+                    : 'bg-black/4 text-zinc-700 border border-black/6',
                 ].join(' ')}
               >
                 {chip.label}
@@ -118,8 +118,8 @@ export const Insights: React.FC<InsightsProps> = ({
                   className={[
                     'rounded-lg p-3',
                     isDarkMode
-                      ? 'bg-white/[0.03] border border-white/[0.06]'
-                      : 'bg-black/[0.02] border border-black/[0.05]',
+                      ? 'bg-white/3 border border-white/6'
+                      : 'bg-black/2 border border-black/5',
                   ].join(' ')}
                 >
                   <p
@@ -145,7 +145,7 @@ export const Insights: React.FC<InsightsProps> = ({
           <div
             className={[
               'mt-4 pt-3 border-t flex items-center justify-between flex-wrap gap-2',
-              isDarkMode ? 'border-white/10' : 'border-black/[0.06]',
+              isDarkMode ? 'border-white/10' : 'border-black/6',
             ].join(' ')}
           >
             <p
@@ -162,7 +162,7 @@ export const Insights: React.FC<InsightsProps> = ({
               style={{ minHeight: TOUCH_TARGET_PX }}
               className={[
                 'inline-flex items-center gap-1.5 px-3 rounded-lg text-xs font-medium',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+                'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
                 isDarkMode
                   ? 'text-zinc-200 hover:bg-white/5'
                   : 'text-zinc-700 hover:bg-black/5',
@@ -196,7 +196,7 @@ export const Insights: React.FC<InsightsProps> = ({
             <button
               type="button"
               onClick={generate}
-              className="font-semibold underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
+              className="font-semibold underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-xs"
             >
               Try again
             </button>

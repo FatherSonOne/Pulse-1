@@ -107,7 +107,7 @@ const TeamRadarTile: React.FC<TeamRadarTileProps> = ({ workspaceId, authUserId, 
       )}
 
       {coverageGaps.length > 0 && (
-        <div className="mt-2 pt-2 border-t border-zinc-200/60 dark:border-white/[0.06]">
+        <div className="mt-2 pt-2 border-t border-zinc-200/60 dark:border-white/6">
           <div className="pulse-label text-amber-600 dark:text-amber-400 mb-1 flex items-center gap-1">
             <AlertCircle size={10} />
             COVERAGE GAPS
@@ -138,21 +138,21 @@ const BroadcastingRow: React.FC<{ member: BroadcastingMember }> = ({ member }) =
         <img
           src={member.avatarUrl}
           alt=""
-          className="w-5 h-5 rounded-full object-cover flex-shrink-0"
+          className="w-5 h-5 rounded-full object-cover shrink-0"
         />
       ) : (
-        <div className="w-5 h-5 rounded-full bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 flex items-center justify-center text-[9px] font-bold flex-shrink-0">
+        <div className="w-5 h-5 rounded-full bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 flex items-center justify-center text-[9px] font-bold shrink-0">
           {initials || '?'}
         </div>
       )}
-      <span className="relative inline-flex h-2 w-2 flex-shrink-0">
+      <span className="relative inline-flex h-2 w-2 shrink-0">
         <span className="absolute inline-flex h-full w-full rounded-full bg-cyan-500 opacity-60 animate-ping" />
         <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-500" />
       </span>
       <span className="truncate flex-1 text-zinc-700 dark:text-zinc-200 font-medium">
         {member.name}
       </span>
-      <span className="text-zinc-500 dark:text-zinc-400 flex items-center gap-0.5 flex-shrink-0">
+      <span className="text-zinc-500 dark:text-zinc-400 flex items-center gap-0.5 shrink-0">
         {member.locationLabel && (
           <>
             <MapPin size={9} className="text-zinc-400" />
@@ -174,7 +174,7 @@ const CoverageGapRow: React.FC<{ gap: CoverageGap }> = ({ gap }) => {
   return (
     <li className="flex items-center gap-2 text-xs">
       <span
-        className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor.startsWith('#') ? '' : dotColor}`}
+        className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor.startsWith('#') ? '' : dotColor}`}
         style={dotColor.startsWith('#') ? { backgroundColor: dotColor } : undefined}
       />
       <span className="truncate flex-1 text-zinc-700 dark:text-zinc-300">
@@ -183,7 +183,7 @@ const CoverageGapRow: React.FC<{ gap: CoverageGap }> = ({ gap }) => {
           <span className="text-zinc-400 dark:text-zinc-500"> · {gap.company}</span>
         )}
       </span>
-      <span className="text-amber-600 dark:text-amber-400 font-medium flex-shrink-0">
+      <span className="text-amber-600 dark:text-amber-400 font-medium shrink-0">
         {stalenessLabel}
       </span>
     </li>

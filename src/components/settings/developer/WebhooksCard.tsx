@@ -58,19 +58,19 @@ export const WebhooksCard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg p-3">
+        <div className="bg-(--pulse-surface) border border-(--pulse-border) rounded-lg p-3">
           <div className="flex items-center gap-2 text-xs text-zinc-500 mb-1">
             <Clock className="w-3.5 h-3.5" /> Received
           </div>
           <div className="text-2xl font-semibold text-zinc-900 dark:text-white tabular-nums">{stats.totalReceived}</div>
         </div>
-        <div className="bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg p-3">
+        <div className="bg-(--pulse-surface) border border-(--pulse-border) rounded-lg p-3">
           <div className="flex items-center gap-2 text-xs text-zinc-500 mb-1">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Processed
           </div>
           <div className="text-2xl font-semibold text-zinc-900 dark:text-white tabular-nums">{stats.totalProcessed}</div>
         </div>
-        <div className="bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg p-3">
+        <div className="bg-(--pulse-surface) border border-(--pulse-border) rounded-lg p-3">
           <div className="flex items-center gap-2 text-xs text-zinc-500 mb-1">
             <AlertCircle className="w-3.5 h-3.5 text-red-500" /> Failed
           </div>
@@ -80,7 +80,7 @@ export const WebhooksCard: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg overflow-hidden">
+      <div className="bg-(--pulse-surface) border border-(--pulse-border) rounded-lg overflow-hidden">
         {logs.length === 0 ? (
           <div className="text-center py-8 text-sm text-zinc-500">No webhook activity yet</div>
         ) : (
@@ -91,7 +91,7 @@ export const WebhooksCard: React.FC = () => {
                 <span className="text-zinc-700 dark:text-zinc-300 font-medium uppercase tracking-wider shrink-0 w-20">
                   {log.source}
                 </span>
-                <span className={`px-1.5 py-0.5 rounded font-medium uppercase tracking-wider shrink-0 ${statusStyles[log.status]}`}>
+                <span className={`px-1.5 py-0.5 rounded-sm font-medium uppercase tracking-wider shrink-0 ${statusStyles[log.status]}`}>
                   {log.status}
                 </span>
                 <span className="text-zinc-600 dark:text-zinc-400 truncate flex-1">{log.eventType}</span>

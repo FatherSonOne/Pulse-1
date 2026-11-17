@@ -157,7 +157,7 @@ const Archives: React.FC = () => {
     <div className="h-full flex flex-col bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-fade-in shadow-2xl">
 
       {/* Tab strip: Memory (archive_items) vs Notes (pulse_notes) */}
-      <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-white/[0.06] px-4 shrink-0">
+      <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-white/6 px-4 shrink-0">
         {([
           { id: 'memory' as const, label: 'MEMORY' },
           { id: 'notes'  as const, label: 'NOTES' },
@@ -169,7 +169,7 @@ const Archives: React.FC = () => {
               role="tab"
               aria-selected={isActive}
               onClick={() => setActiveTab(tab.id)}
-              className={`relative px-3 py-2.5 pulse-label transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm ${
+              className={`relative px-3 py-2.5 pulse-label transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-xs ${
                 isActive
                   ? 'text-rose-600 dark:text-rose-400'
                   : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'

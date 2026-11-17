@@ -247,7 +247,7 @@ const InboxCard: React.FC<{
       // don't double-fire this.
       onClick={canPlay ? onTogglePlay : onOpen}
       className={`relative group p-4 ${
-        focused ? 'outline outline-2 outline-offset-2 outline-zinc-300 dark:outline-zinc-600' : ''
+        focused ? 'outline-solid outline-2 outline-offset-2 outline-zinc-300 dark:outline-zinc-600' : ''
       }`}
     >
       {/* Header row */}
@@ -284,15 +284,15 @@ const InboxCard: React.FC<{
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onOpen(); }}
-              className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate hover:underline focus:outline-none"
+              className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate hover:underline focus:outline-hidden"
             >
               {item.senderName}
             </button>
-            <span className="font-mono text-[10px] uppercase tracking-[0.1em] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0">
+            <span className="font-mono text-[10px] uppercase tracking-widest px-1.5 py-0.5 rounded-sm bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0">
               {item.audienceLabel}
             </span>
             {active && isPlaying && (
-              <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.1em] text-rose-600 dark:text-rose-400">
+              <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest text-rose-600 dark:text-rose-400">
                 <span className="w-1 h-1 rounded-full bg-rose-500 pulse-dot-anim" aria-hidden="true" />
                 Now playing
               </span>
@@ -310,7 +310,7 @@ const InboxCard: React.FC<{
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onTogglePlay?.(); }}
-            className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
+            className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-400 ${
               active
                 ? 'bg-rose-500 text-white'
                 : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-rose-500 hover:text-white'
@@ -399,7 +399,7 @@ const InboxCard: React.FC<{
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onDismiss(); }}
-              className="inline-flex items-center justify-center w-6 h-6 rounded-md text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+              className="inline-flex items-center justify-center w-6 h-6 rounded-md text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-400"
               aria-label={`Dismiss ${item.senderName} from triage`}
               title="Dismiss from triage"
             >
@@ -411,7 +411,7 @@ const InboxCard: React.FC<{
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setOverflowMenuOpen(false); setSnoozeMenuOpen((o) => !o); }}
-                className={`inline-flex items-center gap-1 px-2 py-1 rounded-md bg-transparent text-zinc-600 dark:text-zinc-400 ring-1 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded-md bg-transparent text-zinc-600 dark:text-zinc-400 ring-1 transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-400 ${
                   snoozeMenuOpen ? 'ring-rose-400 text-rose-600 dark:text-rose-400' : 'ring-zinc-200 dark:ring-zinc-700 hover:ring-zinc-300 dark:hover:ring-zinc-600'
                 }`}
                 aria-haspopup="menu"
@@ -419,7 +419,7 @@ const InboxCard: React.FC<{
                 aria-label={`Snooze ${item.senderName}`}
               >
                 <Clock className="w-3 h-3" />
-                <span className="font-mono text-[10px] uppercase tracking-[0.1em]">Snooze</span>
+                <span className="font-mono text-[10px] uppercase tracking-widest">Snooze</span>
                 <ChevronDown className={`w-3 h-3 transition-transform duration-150 ease-pulse ${snoozeMenuOpen ? 'rotate-180' : ''}`} />
               </button>
               {snoozeMenuOpen && (
@@ -434,7 +434,7 @@ const InboxCard: React.FC<{
                       type="button"
                       role="menuitem"
                       onClick={(e) => { e.stopPropagation(); setSnoozeMenuOpen(false); onSnooze(opt.ms); }}
-                      className="w-full text-left px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-zinc-600 dark:text-zinc-300 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 transition"
+                      className="w-full text-left px-3 py-1.5 font-mono text-[11px] uppercase tracking-widest text-zinc-600 dark:text-zinc-300 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 transition"
                     >
                       {opt.label}
                     </button>
@@ -447,11 +447,11 @@ const InboxCard: React.FC<{
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onReply?.(); }}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-rose-500 hover:bg-rose-600 text-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-rose-500 hover:bg-rose-600 text-white transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-400"
               aria-label={`Reply to ${item.senderName}`}
             >
               <Reply className="w-3 h-3" />
-              <span className="font-mono text-[10px] uppercase tracking-[0.1em]">Reply</span>
+              <span className="font-mono text-[10px] uppercase tracking-widest">Reply</span>
             </button>
           )}
           {(onMarkRead || onDelete) && (
@@ -459,7 +459,7 @@ const InboxCard: React.FC<{
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setSnoozeMenuOpen(false); setOverflowMenuOpen((o) => !o); }}
-                className={`inline-flex items-center justify-center w-6 h-6 rounded-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
+                className={`inline-flex items-center justify-center w-6 h-6 rounded-md transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-400 ${
                   overflowMenuOpen ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200' : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800'
                 }`}
                 aria-haspopup="menu"
@@ -476,7 +476,7 @@ const InboxCard: React.FC<{
                       type="button"
                       role="menuitem"
                       onClick={(e) => { e.stopPropagation(); setOverflowMenuOpen(false); onMarkRead(); }}
-                      className="w-full text-left px-3 py-1.5 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.1em] text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100 transition"
+                      className="w-full text-left px-3 py-1.5 flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100 transition"
                     >
                       <Check className="w-3 h-3" />
                       Mark as read
@@ -487,7 +487,7 @@ const InboxCard: React.FC<{
                       type="button"
                       role="menuitem"
                       onClick={(e) => { e.stopPropagation(); setOverflowMenuOpen(false); onDelete(); }}
-                      className="w-full text-left px-3 py-1.5 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.1em] text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition"
+                      className="w-full text-left px-3 py-1.5 flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition"
                     >
                       <Trash2 className="w-3 h-3" />
                       Delete forever
@@ -509,11 +509,11 @@ const SkeletonList: React.FC = () => (
       <div key={idx} className="rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 animate-pulse">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800" />
-          <div className="h-3 w-1/3 rounded bg-zinc-100 dark:bg-zinc-800" />
+          <div className="h-3 w-1/3 rounded-sm bg-zinc-100 dark:bg-zinc-800" />
         </div>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800" />
-          <div className="h-6 flex-1 rounded bg-zinc-100 dark:bg-zinc-800" />
+          <div className="h-6 flex-1 rounded-sm bg-zinc-100 dark:bg-zinc-800" />
         </div>
       </div>
     ))}
@@ -617,7 +617,7 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
               if (ok) toast.success('Snooze undone');
               else toast.error('Could not undo snooze');
             }}
-            className="font-mono text-[10px] uppercase tracking-[0.1em] text-rose-600 hover:text-rose-700"
+            className="font-mono text-[10px] uppercase tracking-widest text-rose-600 hover:text-rose-700"
           >
             Undo
           </button>
@@ -660,7 +660,7 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
               await undismiss(item);
               toast.success('Restored');
             }}
-            className="font-mono text-[10px] uppercase tracking-[0.1em] text-rose-600 hover:text-rose-700"
+            className="font-mono text-[10px] uppercase tracking-widest text-rose-600 hover:text-rose-700"
           >
             Undo
           </button>
@@ -673,7 +673,7 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
   const removeItem = async (item: TriageItem) => {
     toast(
       (t) => (
-        <span className="flex flex-col gap-2 min-w-[14rem]">
+        <span className="flex flex-col gap-2 min-w-56">
           <span className="text-sm">
             Delete this voice {item.kind === 'note' ? 'note' : 'message'} forever? This can't be undone.
           </span>
@@ -681,7 +681,7 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
             <button
               type="button"
               onClick={() => toast.dismiss(t.id)}
-              className="font-mono text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="font-mono text-[10px] uppercase tracking-widest px-2 py-1 rounded-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
               Cancel
             </button>
@@ -693,7 +693,7 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
                 if (ok) toast.success('Deleted');
                 else toast.error("Couldn't delete — you may not own this row.");
               }}
-              className="font-mono text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded bg-rose-500 hover:bg-rose-600 text-white"
+              className="font-mono text-[10px] uppercase tracking-widest px-2 py-1 rounded-sm bg-rose-500 hover:bg-rose-600 text-white"
             >
               Delete
             </button>
@@ -807,7 +807,7 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
                     onClick={() => setStatusFilter(s.id)}
                     className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
                       statusFilter === s.id
-                        ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm'
+                        ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-xs'
                         : 'text-zinc-500 dark:text-zinc-400'
                     }`}
                   >
@@ -866,7 +866,7 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
           <button
             type="button"
             onClick={() => markManyRead(items)}
-            className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-400 hover:text-rose-700 dark:hover:text-rose-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 rounded"
+            className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-zinc-500 dark:text-zinc-400 hover:text-rose-700 dark:hover:text-rose-300 transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-400 rounded-sm"
             aria-label="Mark all as read"
           >
             <CheckCheck className="w-3 h-3" />

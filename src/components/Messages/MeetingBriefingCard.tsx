@@ -55,16 +55,16 @@ export const MeetingBriefingCard: React.FC<MeetingBriefingCardProps> = ({
           <AIProvenanceTag source="pulse-ai" kind="briefing" />
           <div className="flex items-center gap-2 flex-wrap">
             {profileName && (
-              <span className="text-[9px] font-mono font-medium uppercase tracking-[0.1em] text-[var(--pulse-ink-2)] bg-[var(--pulse-surface-raised)] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] px-1.5 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-[9px] font-mono font-medium uppercase tracking-widest text-(--pulse-ink-2) bg-(--pulse-surface-raised) border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] px-1.5 py-0.5 rounded-full flex items-center gap-1">
                 <Sparkles className="w-2.5 h-2.5" />
                 {profileName}
               </span>
             )}
             {timeLabel && (
-              <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-mono uppercase tracking-[0.1em] ${
+              <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-mono uppercase tracking-widest ${
                 urgent
                   ? 'bg-amber-500/10 border-amber-500/25 text-amber-700 dark:text-amber-400'
-                  : 'bg-[var(--pulse-surface-raised)] border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] text-[var(--pulse-ink-2)]'
+                  : 'bg-(--pulse-surface-raised) border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] text-(--pulse-ink-2)'
               }`}>
                 <Clock className="w-2.5 h-2.5" />
                 {timeLabel}
@@ -93,15 +93,15 @@ export const MeetingBriefingCard: React.FC<MeetingBriefingCardProps> = ({
         <div className="px-4 py-3 space-y-3">
           {/* Participants */}
           {participants.length > 0 && (
-            <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-3">
-              <div className="text-[10px] font-mono font-medium text-[var(--pulse-ink-2)] uppercase tracking-[0.1em] mb-2 flex items-center gap-1">
+            <div className="rounded-lg bg-white/3 border border-white/6 p-3">
+              <div className="text-[10px] font-mono font-medium text-(--pulse-ink-2) uppercase tracking-widest mb-2 flex items-center gap-1">
                 <Users className="w-3 h-3" />
                 Participants
               </div>
               <ul className="space-y-1">
                 {participants.map((p: any, i: number) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-[var(--pulse-ink)]">
-                    <span className="text-[var(--pulse-rose)] mt-0.5 flex-shrink-0">•</span>
+                  <li key={i} className="flex items-start gap-2 text-sm text-(--pulse-ink)">
+                    <span className="text-(--pulse-rose) mt-0.5 shrink-0">•</span>
                     <div>
                       <span className="font-medium text-zinc-200">{p.name}</span>
                       {p.role && <span className="text-zinc-500 ml-1">· {p.role}</span>}
@@ -119,14 +119,14 @@ export const MeetingBriefingCard: React.FC<MeetingBriefingCardProps> = ({
 
           {/* Context Highlights */}
           {highlights.length > 0 && (
-            <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-3">
-              <div className="text-[10px] font-mono font-medium text-[var(--pulse-ink-2)] uppercase tracking-[0.1em] mb-2">
+            <div className="rounded-lg bg-white/3 border border-white/6 p-3">
+              <div className="text-[10px] font-mono font-medium text-(--pulse-ink-2) uppercase tracking-widest mb-2">
                 Context Highlights
               </div>
               <ul className="space-y-1">
                 {highlights.map((h, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-[var(--pulse-ink)]">
-                    <span className="text-[var(--pulse-rose)] mt-0.5 flex-shrink-0">•</span>
+                  <li key={i} className="flex items-start gap-2 text-sm text-(--pulse-ink)">
+                    <span className="text-(--pulse-rose) mt-0.5 shrink-0">•</span>
                     <span>{h}</span>
                   </li>
                 ))}
@@ -137,7 +137,7 @@ export const MeetingBriefingCard: React.FC<MeetingBriefingCardProps> = ({
           {/* Open Action Items */}
           {openItems.length > 0 && (
             <div className="rounded-lg bg-amber-500/10 border border-amber-500/15 p-3">
-              <div className="text-[10px] font-mono font-medium text-amber-700 dark:text-amber-400 uppercase tracking-[0.1em] mb-2 flex items-center gap-1">
+              <div className="text-[10px] font-mono font-medium text-amber-700 dark:text-amber-400 uppercase tracking-widest mb-2 flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3" />
                 Open Items Going In
               </div>
@@ -146,7 +146,7 @@ export const MeetingBriefingCard: React.FC<MeetingBriefingCardProps> = ({
                   const isDueSoon = item.dueDate && new Date(item.dueDate) <= new Date(Date.now() + 3 * 86400000);
                   return (
                     <li key={i} className="flex items-start gap-2 text-sm">
-                      <span className={`mt-0.5 flex-shrink-0 ${isDueSoon ? 'text-amber-400' : 'text-zinc-500'}`}>
+                      <span className={`mt-0.5 shrink-0 ${isDueSoon ? 'text-amber-400' : 'text-zinc-500'}`}>
                         {isDueSoon ? '⚠️' : '•'}
                       </span>
                       <div>
@@ -176,7 +176,7 @@ export const MeetingBriefingCard: React.FC<MeetingBriefingCardProps> = ({
             <button
               key={i}
               onClick={() => onAction?.(action) || (action.url && window.open(action.url, '_blank'))}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[rgba(244,63,94,0.10)] hover:bg-[rgba(244,63,94,0.15)] text-[var(--pulse-rose-text)] border border-[rgba(244,63,94,0.20)] hover:border-[rgba(244,63,94,0.35)] transition"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[rgba(244,63,94,0.10)] hover:bg-[rgba(244,63,94,0.15)] text-(--pulse-rose-text) border border-[rgba(244,63,94,0.20)] hover:border-[rgba(244,63,94,0.35)] transition"
             >
               {action.url && <ExternalLink className="w-3 h-3" />}
               {action.label}

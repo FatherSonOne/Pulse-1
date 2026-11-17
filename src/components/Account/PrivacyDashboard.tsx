@@ -497,7 +497,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
     <>
       {/* MFA Setup Modal */}
       {showMfaSetup && mfaEnrollment && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[10000] animate-fadeIn">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center z-10000 animate-fadeIn">
           <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6 border border-zinc-200 dark:border-zinc-800">
             <div className="text-center mb-6">
               <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center mx-auto mb-4">
@@ -587,12 +587,12 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
       )}
 
       {/* Main Privacy Dashboard */}
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-end z-[9999] animate-fadeIn p-0">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-end z-9999 animate-fadeIn p-0">
       <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl h-screen rounded-l-2xl shadow-2xl flex flex-col border-l border-zinc-200 dark:border-zinc-800 overflow-hidden animate-slideInFromRight">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-r from-rose-500/10 to-pink-500/10">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-linear-to-r from-rose-500/10 to-pink-500/10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-linear-to-br from-rose-500 to-pink-500 flex items-center justify-center">
               <ShieldHalf className="text-white" />
             </div>
             <div>
@@ -615,7 +615,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
             onClick={() => setActiveTab('services')}
             className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === 'services'
-                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
+                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
@@ -626,7 +626,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
             onClick={() => setActiveTab('privacy')}
             className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === 'privacy'
-                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
+                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
@@ -637,7 +637,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
             onClick={() => setActiveTab('security')}
             className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === 'security'
-                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
+                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
@@ -648,7 +648,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
             onClick={() => setActiveTab('activity')}
             className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === 'activity'
-                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-sm'
+                ? 'bg-white dark:bg-zinc-900 text-rose-600 dark:text-rose-400 shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
@@ -717,7 +717,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
                         <ul className="space-y-1">
                           {service.dataAccessed.map((access, idx) => (
                             <li key={idx} className="text-sm text-zinc-600 dark:text-zinc-400 flex items-start gap-2">
-                              <Check className="text-green-500 text-xs mt-1 flex-shrink-0" />
+                              <Check className="text-green-500 text-xs mt-1 shrink-0" />
                               <span>{access}</span>
                             </li>
                           ))}
@@ -980,12 +980,12 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
                                       {log.description}
                                     </p>
                                     {log.severity === 'critical' && (
-                                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400">
+                                      <span className="px-2 py-0.5 rounded-sm text-xs font-medium bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400">
                                         Critical
                                       </span>
                                     )}
                                     {log.severity === 'warning' && (
-                                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400">
+                                      <span className="px-2 py-0.5 rounded-sm text-xs font-medium bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400">
                                         Warning
                                       </span>
                                     )}
@@ -1087,7 +1087,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
 
     {/* Delete Account Confirmation Modal */}
     {showDeleteConfirm && (
-      <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-60 bg-black/60 flex items-center justify-center p-4">
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-zinc-200 dark:border-zinc-700">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
@@ -1107,7 +1107,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
             value={deleteConfirmEmail}
             onChange={(e) => setDeleteConfirmEmail(e.target.value)}
             placeholder={userEmail}
-            className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg text-sm mb-4 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg text-sm mb-4 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-red-500"
           />
           <div className="flex gap-3">
             <button

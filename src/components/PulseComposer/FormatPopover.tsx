@@ -146,7 +146,7 @@ export const FormatPopover: React.FC<FormatPopoverProps> = ({
         zIndex: 60,
       }}
       className={[
-        'flex items-center gap-0.5 px-1 py-1 rounded-xl shadow-2xl backdrop-blur animate-fade-in',
+        'flex items-center gap-0.5 px-1 py-1 rounded-xl shadow-2xl backdrop-blur-sm animate-fade-in',
         isDarkMode
           ? 'bg-zinc-900/95 border border-white/10 text-zinc-100'
           : 'bg-white/98 border border-black/10 text-zinc-900',
@@ -166,7 +166,7 @@ export const FormatPopover: React.FC<FormatPopoverProps> = ({
             onClick={() => onApply(action.id)}
             className={[
               'flex items-center justify-center rounded-lg',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+              'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
               isDarkMode ? 'hover:bg-white/10' : 'hover:bg-black/5',
             ].join(' ')}
             style={{ minWidth: TOUCH_TARGET_PX, minHeight: TOUCH_TARGET_PX }}

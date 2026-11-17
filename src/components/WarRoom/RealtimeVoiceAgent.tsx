@@ -817,7 +817,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
     <div className={`realtime-voice-agent ${className}`}>
       {/* Connection Status Bar */}
       <div
-        className="flex items-center justify-between p-3 bg-gray-900/80 backdrop-blur-sm"
+        className="flex items-center justify-between p-3 bg-gray-900/80 backdrop-blur-xs"
         style={{ borderBottom: '1px solid var(--pulse-border)' }}
       >
         <div className="flex items-center gap-3">
@@ -955,9 +955,9 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
                 key={i}
                 className={`w-1 rounded-full transition-all duration-75 ${
                   isListening
-                    ? 'bg-gradient-to-t from-rose-500 to-pink-500'
+                    ? 'bg-linear-to-t from-rose-500 to-pink-500'
                     : isSpeaking
-                    ? 'bg-gradient-to-t from-purple-500 to-pink-500'
+                    ? 'bg-linear-to-t from-purple-500 to-pink-500'
                     : 'bg-gray-700'
                 }`}
                 style={{ height: `${barHeight}px` }}
@@ -1045,7 +1045,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
 
       {/* Tool Approval Modal */}
       {pendingApproval && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs">
           <div className="bg-gray-900 border border-rose-500/25 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
@@ -1077,7 +1077,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
               </button>
               <button
                 onClick={handleApprove}
-                className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-400 hover:to-emerald-400 transition-colors"
+                className="flex-1 px-4 py-2 rounded-lg bg-linear-to-r from-green-500 to-emerald-500 text-white hover:from-green-400 hover:to-emerald-400 transition-colors"
               >
                 <Check className="fa mr-2" />
                 Approve
@@ -1113,7 +1113,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
               type="text"
               name="textInput"
               placeholder="Type a message (or just speak)..."
-              className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-rose-500"
+              className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-hidden focus:border-rose-500"
             />
             {/* Voice-to-Text Button for text input */}
             <VoiceTextButton

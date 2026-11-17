@@ -43,7 +43,7 @@ export const AIProvenanceChip: React.FC<AIProvenanceChipProps> = ({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded font-mono text-[11px] font-medium uppercase tracking-[0.1em] bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-sm font-mono text-[11px] font-medium uppercase tracking-widest bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 ${className}`}
     >
       {fresh && (
         <span
@@ -57,7 +57,7 @@ export const AIProvenanceChip: React.FC<AIProvenanceChipProps> = ({
           type="button"
           onClick={onDismiss}
           aria-label={`Dismiss ${label}`}
-          className="ml-0.5 inline-flex items-center justify-center w-3.5 h-3.5 rounded-sm hover:bg-rose-500/20 transition-colors"
+          className="ml-0.5 inline-flex items-center justify-center w-3.5 h-3.5 rounded-xs hover:bg-rose-500/20 transition-colors"
         >
           <X className="w-2.5 h-2.5" strokeWidth={2.5} />
         </button>

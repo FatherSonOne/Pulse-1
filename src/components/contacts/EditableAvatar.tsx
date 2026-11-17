@@ -89,7 +89,7 @@ export const EditableAvatar: React.FC<EditableAvatarProps> = ({
         disabled={uploading || !userId}
         title={userId ? 'Upload a photo' : 'Sign in to upload'}
         aria-label="Upload a photo"
-        className="absolute -right-1 -bottom-1 w-7 h-7 rounded-full flex items-center justify-center border shadow disabled:opacity-50"
+        className="absolute -right-1 -bottom-1 w-7 h-7 rounded-full flex items-center justify-center border shadow-sm disabled:opacity-50"
         style={{
           background: 'var(--pulse-surface)',
           borderColor: 'var(--pulse-border-strong)',

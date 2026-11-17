@@ -35,7 +35,7 @@ interface SheetAction {
 }
 
 const rowClass =
-  'w-full flex items-center gap-3 px-4 min-h-[48px] text-sm text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-white/[0.04] active:bg-zinc-100 dark:active:bg-white/[0.06] hover:text-rose-600 dark:hover:text-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-inset transition-colors duration-150';
+  'w-full flex items-center gap-3 px-4 min-h-[48px] text-sm text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-white/4 active:bg-zinc-100 dark:active:bg-white/6 hover:text-rose-600 dark:hover:text-rose-400 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-inset transition-colors duration-150';
 
 export const MobileQuickActionsSheet: React.FC<MobileQuickActionsSheetProps> = ({
   contacts,
@@ -125,12 +125,12 @@ export const MobileQuickActionsSheet: React.FC<MobileQuickActionsSheetProps> = (
           </ul>
         ) : (
           <div>
-            <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-100 dark:border-white/[0.06]">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-100 dark:border-white/6">
               <button
                 type="button"
                 onClick={() => { setVoxPicker(false); setVoxQuery(''); }}
                 aria-label="Back to quick actions"
-                className="shrink-0 w-8 h-8 rounded flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                className="shrink-0 w-8 h-8 rounded-sm flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
@@ -141,7 +141,7 @@ export const MobileQuickActionsSheet: React.FC<MobileQuickActionsSheetProps> = (
                 placeholder="Voice message to…"
                 autoFocus
                 spellCheck={false}
-                className="flex-1 bg-transparent border-0 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-0"
+                className="flex-1 bg-transparent border-0 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-hidden focus:ring-0"
                 aria-label="Search contacts for a voice message"
               />
             </div>

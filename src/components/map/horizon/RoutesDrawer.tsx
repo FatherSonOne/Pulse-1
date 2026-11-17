@@ -55,12 +55,12 @@ export const RoutesDrawer: React.FC<RoutesDrawerProps> = ({
         }`}
       >
         {/* Header — neutral chrome (coral reserved for the AI route engine below). */}
-        <div className={`flex items-center justify-between px-4 py-3 border-b flex-shrink-0 ${
+        <div className={`flex items-center justify-between px-4 py-3 border-b shrink-0 ${
           isDarkMode ? 'border-white/10' : 'border-gray-100'
         }`}>
           <div className="flex items-center gap-2">
             <Route size={14} className={isDarkMode ? 'text-gray-400' : 'text-gray-500'} aria-hidden="true" />
-            <span id="routes-drawer-title" className="text-[11px] tracking-[0.1em] uppercase" style={monoStyle}>
+            <span id="routes-drawer-title" className="text-[11px] tracking-widest uppercase" style={monoStyle}>
               Routes
             </span>
           </div>
@@ -69,7 +69,7 @@ export const RoutesDrawer: React.FC<RoutesDrawerProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className={`p-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+            className={`p-1.5 rounded transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-1 ${
               isDarkMode ? 'hover:bg-white/10 text-gray-400 focus-visible:ring-zinc-400' : 'hover:bg-gray-100 text-gray-500 focus-visible:ring-zinc-500'
             }`}
           >

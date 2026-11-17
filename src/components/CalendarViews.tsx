@@ -826,8 +826,8 @@ const TravelBufferChip: React.FC<{ info: BufferInfo | undefined }> = ({ info }) 
   // Late = overdue tone (urgent status), NOT coral (reserved for AI signal).
   // Status-Stays-Status Rule from DESIGN.md §2.
   const tone = info.severity === 'late'
-    ? 'bg-[var(--pulse-tone-overdue-soft)] text-[var(--pulse-tone-overdue)] border-[var(--pulse-tone-overdue-soft)]'
-    : 'bg-[var(--pulse-tone-warning-soft)] text-[var(--pulse-tone-warning)] border-[var(--pulse-tone-warning-soft)]';
+    ? 'bg-(--pulse-tone-overdue-soft) text-(--pulse-tone-overdue) border-(--pulse-tone-overdue-soft)'
+    : 'bg-(--pulse-tone-warning-soft) text-(--pulse-tone-warning) border-(--pulse-tone-warning-soft)';
   return (
     <div
       className={`cal-day-event-buffer inline-flex items-center gap-1 px-1.5 py-0.5 mt-0.5 rounded-full text-[10px] font-medium border ${tone}`}

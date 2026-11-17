@@ -73,23 +73,23 @@ export const TriageBrief: React.FC<TriageBriefProps> = ({
     ?? (pulseConversations.length > 0 ? pulseConversations[0].last_message_at : null);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-8 py-12 bg-[var(--pulse-canvas)] overflow-y-auto">
+    <div className="flex-1 flex flex-col items-center justify-center px-8 py-12 bg-(--pulse-canvas) overflow-y-auto">
       <div className="w-full max-w-md space-y-8">
         {/* Headline — display weight per DESIGN.md "Light-Display Rule" */}
         <div className="space-y-2">
           {caughtUp ? (
-            <h1 className="text-[30px] leading-[1.25] tracking-[-0.025em] font-light text-zinc-900 dark:text-zinc-100">
+            <h1 className="text-[30px] leading-tight tracking-tight font-light text-zinc-900 dark:text-zinc-100">
               You're caught up.
             </h1>
           ) : (
-            <h1 className="text-[30px] leading-[1.25] tracking-[-0.025em] font-light text-zinc-900 dark:text-zinc-100">
-              <span className="font-medium text-[var(--pulse-rose)]">{unread}</span>
+            <h1 className="text-[30px] leading-tight tracking-tight font-light text-zinc-900 dark:text-zinc-100">
+              <span className="font-medium text-(--pulse-rose)">{unread}</span>
               {' '}
               {unread === 1 ? 'conversation needs you' : 'conversations need you'}.
             </h1>
           )}
           {lastSeen && (
-            <p className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-600 dark:text-zinc-400 inline-flex items-center gap-1.5">
+            <p className="font-mono uppercase tracking-widest text-[10px] text-zinc-600 dark:text-zinc-400 inline-flex items-center gap-1.5">
               <Clock className="w-3 h-3" aria-hidden="true" />
               LAST ACTIVITY · {formatRelative(lastSeen)}
             </p>
@@ -101,7 +101,7 @@ export const TriageBrief: React.FC<TriageBriefProps> = ({
           <div className="space-y-2">
             <AIProvenanceTag source="pulse-ai" kind="briefing" />
 
-            <p className="text-[15px] leading-[1.5] text-zinc-700 dark:text-zinc-300 max-w-[65ch]">
+            <p className="text-[15px] leading-normal text-zinc-700 dark:text-zinc-300 max-w-[65ch]">
               {aiSummary}
             </p>
           </div>
@@ -110,7 +110,7 @@ export const TriageBrief: React.FC<TriageBriefProps> = ({
         {/* Top urgent threads — quiet rows, click to open */}
         {urgent.length > 0 && (
           <div className="space-y-2">
-            <h2 className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-zinc-600 dark:text-zinc-400">
+            <h2 className="font-mono uppercase tracking-widest text-[10px] font-medium text-zinc-600 dark:text-zinc-400">
               NEEDS YOU · {urgent.length}
             </h2>
             <ul className="space-y-px">
@@ -126,15 +126,15 @@ export const TriageBrief: React.FC<TriageBriefProps> = ({
                   <li key={conv.id}>
                     <button
                       onClick={() => onOpenConversation(conv.id)}
-                      className="w-full text-left px-3 py-2.5 rounded-md hover:bg-white dark:hover:bg-white/[0.03] transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                      className="w-full text-left px-3 py-2.5 rounded-md hover:bg-white dark:hover:bg-white/3 transition-colors group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                     >
                       <div className="flex items-baseline justify-between gap-3">
                         <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 truncate">
                           {name}
                         </span>
-                        <span className="flex-shrink-0 inline-flex items-center gap-2">
+                        <span className="shrink-0 inline-flex items-center gap-2">
                           {count > 0 && (
-                            <span className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-700 dark:text-rose-300">
+                            <span className="font-mono uppercase tracking-widest text-[10px] font-medium px-1.5 py-0.5 rounded-sm bg-rose-500/10 text-rose-700 dark:text-rose-300">
                               {count}
                             </span>
                           )}
@@ -162,14 +162,14 @@ export const TriageBrief: React.FC<TriageBriefProps> = ({
         <div className="pt-2">
           <button
             onClick={onNewConversation}
-            className="inline-flex items-center gap-2 px-3 py-2 -ml-3 rounded-md text-rose-700 dark:text-rose-400 hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+            className="inline-flex items-center gap-2 px-3 py-2 -ml-3 rounded-md text-rose-700 dark:text-rose-400 hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
           >
             <Plus className="w-3.5 h-3.5" aria-hidden="true" />
             <span className="text-[13px] font-medium">New conversation</span>
-            <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-600 dark:text-zinc-400">⌘N</span>
+            <span className="font-mono uppercase tracking-widest text-[10px] text-zinc-600 dark:text-zinc-400">⌘N</span>
           </button>
           {total > 0 && caughtUp && (
-            <p className="mt-2 font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-600 dark:text-zinc-400">
+            <p className="mt-2 font-mono uppercase tracking-widest text-[10px] text-zinc-600 dark:text-zinc-400">
               {total} {total === 1 ? 'CONVERSATION' : 'CONVERSATIONS'} · ALL READ
             </p>
           )}

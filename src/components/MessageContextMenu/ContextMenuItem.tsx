@@ -49,7 +49,7 @@ export const ContextMenuItem = forwardRef<HTMLButtonElement, ContextMenuItemProp
           'w-full flex items-center gap-3 text-left rounded-lg',
           // Touch target — always ≥44px on the row height.
           compact ? 'px-3 py-2 min-h-[44px]' : 'px-3 py-2.5 min-h-[44px]',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+          'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
           // Ease background AND transform so the press-scale settles back
           // smoothly; `transition-colors` alone would snap the scale.
           'transition-[background-color,color,transform] duration-150 ease-out',

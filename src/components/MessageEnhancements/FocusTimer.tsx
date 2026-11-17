@@ -291,7 +291,7 @@ export const FocusTimer: React.FC<FocusTimerProps> = ({
   return (
     <div className="space-y-4">
       {/* Timer Display */}
-      <div className="bg-gradient-to-br from-rose-500/10 via-orange-500/10 to-amber-500/10 dark:from-rose-900/20 dark:via-orange-900/20 dark:to-amber-900/20 rounded-xl p-6 border border-rose-200 dark:border-rose-800 text-center">
+      <div className="bg-linear-to-br from-rose-500/10 via-orange-500/10 to-amber-500/10 dark:from-rose-900/20 dark:via-orange-900/20 dark:to-amber-900/20 rounded-xl p-6 border border-rose-200 dark:border-rose-800 text-center">
         {/* Session Indicators */}
         <div className="flex justify-center gap-2 mb-4">
           {Array.from({ length: settings.sessionsBeforeLongBreak }).map((_, i) => (
@@ -563,7 +563,7 @@ export const FocusTimer: React.FC<FocusTimerProps> = ({
                   onClick={() => updateSetting(setting.key, !settings[setting.key])}
                   className={`w-10 h-5 rounded-full transition-colors ${settings[setting.key] ? 'bg-rose-500' : 'bg-zinc-300 dark:bg-zinc-600'}`}
                 >
-                  <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform ${settings[setting.key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${settings[setting.key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </button>
               </div>
             ))}

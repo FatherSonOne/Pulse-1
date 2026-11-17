@@ -71,8 +71,8 @@ const StatusChip: React.FC<{ label: string; count?: number; active: boolean; onC
     onClick={onClick}
     className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
       active
-        ? 'bg-[var(--pulse-rose-soft)] border-[var(--pulse-rose-soft)] text-[var(--pulse-rose)]'
-        : 'border-[var(--pulse-border)] text-zinc-500 dark:text-zinc-400 hover:bg-[var(--pulse-surface-raised)]'
+        ? 'bg-(--pulse-rose-soft) border-(--pulse-rose-soft) text-(--pulse-rose)'
+        : 'border-(--pulse-border) text-zinc-500 dark:text-zinc-400 hover:bg-(--pulse-surface-raised)'
     }`}
   >
     {label}
@@ -134,7 +134,7 @@ export const BrowseColumn: React.FC<BrowseColumnProps> = ({
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search contacts…"
             data-contacts-search
-            className="flex-1 bg-transparent outline-none text-sm text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-400"
+            className="flex-1 bg-transparent outline-hidden text-sm text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-400"
           />
         </div>
 
@@ -152,7 +152,7 @@ export const BrowseColumn: React.FC<BrowseColumnProps> = ({
             active={filterStatus === 'online'}
             onClick={() => onFilterStatusChange(filterStatus === 'online' ? 'all' : 'online')}
           />
-          <span className="w-px h-4 bg-[var(--pulse-border)] mx-0.5" />
+          <span className="w-px h-4 bg-(--pulse-border) mx-0.5" />
           {TAGS.map((tag) => (
             <StatusChip
               key={tag.id}
@@ -168,7 +168,7 @@ export const BrowseColumn: React.FC<BrowseColumnProps> = ({
           type="button"
           onClick={() => setDrawerOpen((v) => !v)}
           aria-expanded={drawerOpen}
-          className="mt-2.5 w-full flex items-center justify-between px-3 py-2 rounded-lg border text-sm transition-colors hover:bg-[var(--pulse-surface-raised)]"
+          className="mt-2.5 w-full flex items-center justify-between px-3 py-2 rounded-lg border text-sm transition-colors hover:bg-(--pulse-surface-raised)"
           style={{ borderColor: 'var(--pulse-border)', color: 'var(--pulse-ink-2)' }}
         >
           <span className="inline-flex items-center gap-2">
@@ -176,7 +176,7 @@ export const BrowseColumn: React.FC<BrowseColumnProps> = ({
             Filters
           </span>
           {activeDrawerFilterCount > 0 && (
-            <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-[11px] font-semibold bg-[var(--pulse-rose-soft)] text-[var(--pulse-rose)]">
+            <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-[11px] font-semibold bg-(--pulse-rose-soft) text-(--pulse-rose)">
               {activeDrawerFilterCount}
             </span>
           )}

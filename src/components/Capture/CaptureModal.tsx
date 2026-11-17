@@ -206,7 +206,7 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ currentView }) => {
       role="dialog"
       aria-modal="true"
       aria-labelledby="capture-modal-heading"
-      className="fixed inset-0 z-[10000] flex items-start justify-center pt-[18vh] px-4"
+      className="fixed inset-0 z-10000 flex items-start justify-center pt-[18vh] px-4"
     >
       {/* Scrim — backdrop blur is a DESIGN.md-permitted glass surface for modals only */}
       <div
@@ -216,10 +216,10 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ currentView }) => {
       />
 
       {/* Sheet */}
-      <div className="relative w-full max-w-xl rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/[0.08] shadow-2xl shadow-rose-500/10 overflow-hidden animate-capture-enter">
+      <div className="relative w-full max-w-xl rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/8 shadow-2xl shadow-rose-500/10 overflow-hidden animate-capture-enter">
 
         {/* Header strip */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-100 dark:border-white/[0.06]">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-100 dark:border-white/6">
           <div className="flex items-baseline gap-2 min-w-0">
             <h2 id="capture-modal-heading" className="pulse-label text-rose-600 dark:text-rose-400">
               CAPTURE
@@ -234,7 +234,7 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ currentView }) => {
           <button
             onClick={() => close(true)}
             aria-label="Close (Esc)"
-            className="w-7 h-7 flex items-center justify-center rounded text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+            className="w-7 h-7 flex items-center justify-center rounded-sm text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
           >
             <X className="w-4 h-4" />
           </button>
@@ -248,7 +248,7 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ currentView }) => {
             onChange={e => setContent(e.target.value)}
             placeholder="Capture a thought. Cmd+Enter to save, Esc to close."
             rows={6}
-            className="w-full bg-transparent border-0 p-0 text-base resize-none focus:ring-0 focus:outline-none placeholder-zinc-400 dark:placeholder-zinc-500 text-zinc-900 dark:text-zinc-50 leading-relaxed font-light min-h-[140px]"
+            className="w-full bg-transparent border-0 p-0 text-base resize-none focus:ring-0 focus:outline-hidden placeholder-zinc-400 dark:placeholder-zinc-500 text-zinc-900 dark:text-zinc-50 leading-relaxed font-light min-h-[140px]"
           />
         </div>
 
@@ -260,10 +260,10 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ currentView }) => {
               <button
                 key={c.label}
                 onClick={() => setKind(selected ? null : c.kind)}
-                className={`text-xs px-3 py-1 rounded-full border transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
+                className={`text-xs px-3 py-1 rounded-full border transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                   selected
                     ? 'bg-rose-500 border-rose-500 text-white'
-                    : 'bg-zinc-50 dark:bg-white/[0.04] border-zinc-200 dark:border-white/[0.06] text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100'
+                    : 'bg-zinc-50 dark:bg-white/4 border-zinc-200 dark:border-white/6 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100'
                 }`}
               >
                 {c.label}
@@ -273,21 +273,21 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ currentView }) => {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-5 py-3 border-t border-zinc-100 dark:border-white/[0.06] bg-zinc-50/60 dark:bg-white/[0.02]">
+        <div className="flex items-center justify-between px-5 py-3 border-t border-zinc-100 dark:border-white/6 bg-zinc-50/60 dark:bg-white/2">
           <span className="pulse-label text-zinc-400 dark:text-zinc-500">
             {content.trim().split(/\s+/).filter(Boolean).length} WORDS · {content.length} CHARS
           </span>
           <div className="flex items-center gap-2">
             <button
               onClick={() => close(true)}
-              className="pulse-label px-3 py-1.5 rounded text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+              className="pulse-label px-3 py-1.5 rounded-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
             >
               ESC
             </button>
             <button
               onClick={() => void save()}
               disabled={saving || !content.trim()}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium transition-colors duration-150 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium transition-colors duration-150 disabled:opacity-40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
             >
               {primaryCta}
               <span className="pulse-label opacity-70">⌘↵</span>

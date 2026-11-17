@@ -61,7 +61,7 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
           <WifiOff />
           <span>Offline</span>
           {pendingActionsCount > 0 && (
-            <span className="px-1.5 py-0.5 bg-amber-500/20 rounded text-xs">
+            <span className="px-1.5 py-0.5 bg-amber-500/20 rounded-sm text-xs">
               {pendingActionsCount} pending
             </span>
           )}
@@ -73,7 +73,7 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
           {onSync && (
             <button
               onClick={onSync}
-              className="ml-1 px-2 py-0.5 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 transition"
+              className="ml-1 px-2 py-0.5 bg-blue-500 text-white rounded-sm text-xs hover:bg-blue-600 transition"
               aria-label="Sync pending changes now"
             >
               Sync Now

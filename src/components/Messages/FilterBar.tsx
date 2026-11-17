@@ -44,13 +44,13 @@ const FILTERS: FilterDef[] = [
 
 // Shared chip shell. `active` swaps in the rose accent + reveals the label.
 const chipBase =
-  'flex-shrink-0 h-6 px-1.5 inline-flex items-center rounded font-mono uppercase tracking-[0.1em] text-[10px] font-medium transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40';
+  'shrink-0 h-6 px-1.5 inline-flex items-center rounded-sm font-mono uppercase tracking-widest text-[10px] font-medium transition-colors duration-200 ease-pulse active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40';
 const chipInactive =
-  'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/40 dark:hover:bg-white/[0.04]';
+  'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/40 dark:hover:bg-white/4';
 // Label reveal: collapses to 0 width (icon-only) when inactive; the
 // overflow-hidden + max-width keeps the row from ever needing to scroll.
 const labelBase =
-  'overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none';
+  'overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-200 ease-pulse motion-reduce:transition-none';
 
 interface FilterBarProps {
   threadFilter: string;
@@ -92,7 +92,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             aria-pressed={active}
             className={`${chipBase} ${active ? 'bg-rose-500/10 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400' : chipInactive}`}
           >
-            <Icon className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
+            <Icon className="w-3 h-3 shrink-0" aria-hidden="true" />
             <span className={`${labelBase} ${active ? 'max-w-[72px] opacity-100 pl-1' : 'max-w-0 opacity-0'}`}>
               {label}
             </span>
@@ -100,7 +100,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         );
       })}
 
-      <div className="flex-shrink-0 w-px h-3 bg-zinc-200 dark:bg-white/[0.08] mx-1" aria-hidden="true" />
+      <div className="shrink-0 w-px h-3 bg-zinc-200 dark:bg-white/8 mx-1" aria-hidden="true" />
 
       <button
         type="button"
@@ -110,7 +110,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         aria-pressed={showArchived}
         className={`${chipBase} ${showArchived ? 'bg-rose-500/10 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400' : chipInactive}`}
       >
-        <Archive className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
+        <Archive className="w-3 h-3 shrink-0" aria-hidden="true" />
         <span className={`${labelBase} ${showArchived ? 'max-w-[72px] opacity-100 pl-1' : 'max-w-0 opacity-0'}`}>
           Archived
         </span>

@@ -43,7 +43,7 @@ export const DateDivider: React.FC<DateDividerProps> = React.memo(({ date, label
  */
 export const StickyDateDivider: React.FC<DateDividerProps> = React.memo(({ date, label }) => {
   return (
-    <div className="sticky top-0 z-10 bg-[var(--pulse-canvas)] py-2 px-4">
+    <div className="sticky top-0 z-10 bg-(--pulse-canvas) py-2 px-4">
       <div className="date-divider">
         <span className="date-divider-dot" aria-hidden="true" />
         <span

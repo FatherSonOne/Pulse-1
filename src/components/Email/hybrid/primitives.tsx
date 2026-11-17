@@ -89,7 +89,7 @@ export const ToneChip: React.FC<{ tone: Tone }> = ({ tone }) => {
   const t = TONE_MAP[tone] ?? TONE_MAP.cool;
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-[10px] font-mono-pulse tracking-tight-mono ${t.cls}`}
+      className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-sm text-[10px] font-mono-pulse tracking-tight-mono ${t.cls}`}
     >
       {t.label.toUpperCase()}
     </span>

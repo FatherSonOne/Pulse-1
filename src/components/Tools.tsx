@@ -551,10 +551,10 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
                 className="group relative bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 text-left hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-300 hover:shadow-lg hover:shadow-zinc-200/50 dark:hover:shadow-black/50 hover:-translate-y-1"
               >
                 {/* Gradient accent */}
-                <div className={`absolute inset-x-0 top-0 h-1 rounded-t-2xl bg-gradient-to-r ${tile.gradient} opacity-0 group-hover:opacity-100 transition-opacity`}></div>
+                <div className={`absolute inset-x-0 top-0 h-1 rounded-t-2xl bg-linear-to-r ${tile.gradient} opacity-0 group-hover:opacity-100 transition-opacity`}></div>
 
                 {/* Icon */}
-                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${tile.gradient} flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
+                <div className={`w-14 h-14 rounded-2xl bg-linear-to-br ${tile.gradient} flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
                   <i className={`fa-solid ${tile.icon} text-white text-xl`}></i>
                 </div>
 
@@ -586,11 +586,11 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
         {/* Deep Reasoner */}
         {activeTool === 'reason' && (
            <div className="max-w-3xl mx-auto space-y-6 animate-slide-up">
-              <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+              <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
                  <div className="mb-4">
                     <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest block mb-2">Complex Query</label>
                     <textarea 
-                      className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-purple-500 transition min-h-[120px]"
+                      className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-sm dark:text-white text-zinc-900 focus:outline-hidden focus:border-purple-500 transition min-h-[120px]"
                       placeholder="Ask a complex question requiring deep reasoning (e.g., 'Analyze the geopolitical implications of...' or 'Solve this advanced logic puzzle...')"
                       value={reasonPrompt}
                       onChange={(e) => setReasonPrompt(e.target.value)}
@@ -608,7 +608,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
               </div>
               
               {reasonResult && (
-                 <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm animate-fade-in relative overflow-hidden">
+                 <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs animate-fade-in relative overflow-hidden">
                      <div className="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
                      <h3 className="text-purple-500 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
                         <Lightbulb /> Analysis Result
@@ -624,7 +624,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
         {/* Video Analyst */}
         {activeTool === 'video' && (
            <div className="max-w-3xl mx-auto space-y-6 animate-slide-up">
-              <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+              <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                     <div>
                         <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest block mb-2">Upload Video</label>
@@ -643,7 +643,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
                     <div className="flex flex-col">
                         <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest block mb-2">Prompt</label>
                         <textarea 
-                           className="flex-1 w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-blue-500 transition resize-none"
+                           className="flex-1 w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-sm dark:text-white text-zinc-900 focus:outline-hidden focus:border-blue-500 transition resize-none"
                            placeholder="What should I look for in this video?"
                            value={videoPrompt}
                            onChange={(e) => setVideoPrompt(e.target.value)}
@@ -662,7 +662,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
               </div>
 
               {videoResult && (
-                 <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm animate-fade-in relative overflow-hidden">
+                 <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs animate-fade-in relative overflow-hidden">
                      <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
                      <h3 className="text-blue-500 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
                         <Eye /> Video Insights
@@ -678,7 +678,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
         {/* Video Generation */}
         {activeTool === 'video_gen' && (
             <div className="max-w-3xl mx-auto space-y-6 animate-slide-up">
-                <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+                <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                         <div>
                             <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest block mb-2">Source Image (Optional)</label>
@@ -700,7 +700,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
                         <div className="flex flex-col">
                             <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest block mb-2">Prompt</label>
                             <textarea 
-                                className="flex-1 w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-orange-500 transition resize-none"
+                                className="flex-1 w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-sm dark:text-white text-zinc-900 focus:outline-hidden focus:border-orange-500 transition resize-none"
                                 placeholder="Describe the video you want to generate (e.g. A neon cyberpunk city rain)"
                                 value={videoGenPrompt}
                                 onChange={(e) => setVideoGenPrompt(e.target.value)}
@@ -761,7 +761,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
               </div>
 
               {transcription && (
-                 <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm animate-fade-in text-left relative overflow-hidden">
+                 <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs animate-fade-in text-left relative overflow-hidden">
                      <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
                      <div className="flex justify-between items-center mb-4">
                         <h3 className="text-emerald-500 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
@@ -786,11 +786,11 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
         {/* Code Studio */}
         {activeTool === 'code' && (
             <div className="max-w-4xl mx-auto space-y-6 animate-slide-up">
-                <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col gap-4">
+                <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs flex flex-col gap-4">
                     <div>
                         <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest block mb-2">Task Description</label>
                         <textarea 
-                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-indigo-500 transition min-h-[120px] font-mono"
+                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-sm dark:text-white text-zinc-900 focus:outline-hidden focus:border-indigo-500 transition min-h-[120px] font-mono"
                             placeholder="Describe the function, component, or algorithm you need..."
                             value={codePrompt}
                             onChange={(e) => setCodePrompt(e.target.value)}
@@ -830,11 +830,11 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
         {/* Vision Lab */}
         {activeTool === 'vision' && (
             <div className="max-w-4xl mx-auto space-y-6 animate-slide-up">
-                <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="md:col-span-2">
                         <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest block mb-2">Image Prompt</label>
                         <textarea 
-                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-pink-500 transition min-h-[120px]"
+                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-sm dark:text-white text-zinc-900 focus:outline-hidden focus:border-pink-500 transition min-h-[120px]"
                             placeholder="Describe the image you want to create in detail..."
                             value={visionPrompt}
                             onChange={(e) => setVisionPrompt(e.target.value)}
@@ -846,7 +846,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
                             <select 
                                 value={aspectRatio}
                                 onChange={(e) => setAspectRatio(e.target.value)}
-                                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-pink-500"
+                                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 text-sm dark:text-white text-zinc-900 focus:outline-hidden focus:border-pink-500"
                             >
                                 <option value="1:1">Square (1:1)</option>
                                 <option value="16:9">Landscape (16:9)</option>
@@ -860,7 +860,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
                             <select 
                                 value={imageSize}
                                 onChange={(e) => setImageSize(e.target.value)}
-                                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-pink-500"
+                                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 text-sm dark:text-white text-zinc-900 focus:outline-hidden focus:border-pink-500"
                             >
                                 <option value="1K">1K</option>
                                 <option value="2K">2K</option>
@@ -895,7 +895,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
         {/* Image Editor */}
         {activeTool === 'image_edit' && (
             <div className="max-w-4xl mx-auto space-y-6 animate-slide-up">
-                <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+                <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                         <div>
                             <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest block mb-2">Original Image</label>
@@ -917,7 +917,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
                         <div className="flex flex-col">
                             <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest block mb-2">Edit Instruction</label>
                             <textarea 
-                                className="flex-1 w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-cyan-500 transition resize-none"
+                                className="flex-1 w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-sm dark:text-white text-zinc-900 focus:outline-hidden focus:border-cyan-500 transition resize-none"
                                 placeholder="e.g., 'Add a retro filter', 'Make the background snowy'..."
                                 value={editPrompt}
                                 onChange={(e) => setEditPrompt(e.target.value)}
@@ -953,11 +953,11 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
         {/* Maps / Geo Intel */}
         {activeTool === 'maps' && (
              <div className="max-w-3xl mx-auto space-y-6 animate-slide-up">
-                 <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+                 <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
                     <div className="flex gap-2">
                         <input 
                             type="text" 
-                            className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-green-500 transition"
+                            className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm dark:text-white text-zinc-900 focus:outline-hidden focus:border-green-500 transition"
                             placeholder="Ask about places (e.g., 'Coffee shops near Time Square')..."
                             value={mapsQuery}
                             onChange={(e) => setMapsQuery(e.target.value)}
@@ -973,7 +973,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
                  </div>
 
                  {mapsResult && (
-                     <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm animate-fade-in relative overflow-hidden">
+                     <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs animate-fade-in relative overflow-hidden">
                          <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
                          <h3 className="text-green-500 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
                              <MapPin /> Geo Intel Result
@@ -1011,7 +1011,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
         {/* Meeting Intel (AssemblyAI) */}
         {activeTool === 'meeting_intel' && (
           <div className="max-w-4xl mx-auto space-y-6 animate-slide-up">
-            <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+            <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                 <div>
                   <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest block mb-2">Upload Meeting Recording</label>
@@ -1030,7 +1030,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
                 <div className="flex flex-col">
                   <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest block mb-2">Insight Prompt</label>
                   <textarea 
-                    className="flex-1 w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-violet-500 transition resize-none"
+                    className="flex-1 w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-sm dark:text-white text-zinc-900 focus:outline-hidden focus:border-violet-500 transition resize-none"
                     placeholder="What insights do you want from this meeting?"
                     value={meetingInsightPrompt}
                     onChange={(e) => setMeetingInsightPrompt(e.target.value)}
@@ -1052,7 +1052,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
             </div>
 
             {meetingTranscript && (
-              <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm animate-fade-in relative overflow-hidden">
+              <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs animate-fade-in relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-1 h-full bg-violet-500"></div>
                 <h3 className="text-violet-500 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
                   <Mic /> Transcript
@@ -1095,7 +1095,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
             )}
 
             {meetingInsights && (
-              <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm animate-fade-in relative overflow-hidden">
+              <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs animate-fade-in relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
                 <h3 className="text-purple-500 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
                   <Lightbulb /> Meeting Insights
@@ -1111,11 +1111,11 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
         {/* Voice Studio (ElevenLabs) */}
         {activeTool === 'voice_studio' && (
           <div className="max-w-3xl mx-auto space-y-6 animate-slide-up">
-            <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+            <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
               <div className="mb-4">
                 <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest block mb-2">Text to Speak</label>
                 <textarea 
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-amber-500 transition min-h-[120px]"
+                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 text-sm dark:text-white text-zinc-900 focus:outline-hidden focus:border-amber-500 transition min-h-[120px]"
                   placeholder="Enter the text you want to convert to speech..."
                   value={ttsText}
                   onChange={(e) => setTtsText(e.target.value)}
@@ -1129,7 +1129,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
                     value={selectedVoice}
                     onChange={(e) => setSelectedVoice(e.target.value)}
                     onFocus={loadElevenLabsVoices}
-                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-amber-500"
+                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 text-sm dark:text-white text-zinc-900 focus:outline-hidden focus:border-amber-500"
                   >
                     <option value="21m00Tcm4TlvDq8ikWAM">Rachel (Female)</option>
                     <option value="AZnzlk1XvdvUeBnXmlld">Domi (Female)</option>
@@ -1180,13 +1180,13 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
         {/* Route Planner (Mapbox) */}
         {activeTool === 'route_planner' && (
           <div className="max-w-3xl mx-auto space-y-6 animate-slide-up">
-            <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+            <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest block mb-2">Start Location</label>
                   <input 
                     type="text"
-                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-teal-500 transition"
+                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm dark:text-white text-zinc-900 focus:outline-hidden focus:border-teal-500 transition"
                     placeholder="e.g., 123 Main St, New York"
                     value={startAddress}
                     onChange={(e) => setStartAddress(e.target.value)}
@@ -1196,7 +1196,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
                   <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest block mb-2">Destination</label>
                   <input 
                     type="text"
-                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-teal-500 transition"
+                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm dark:text-white text-zinc-900 focus:outline-hidden focus:border-teal-500 transition"
                     placeholder="e.g., JFK Airport"
                     value={endAddress}
                     onChange={(e) => setEndAddress(e.target.value)}
@@ -1218,7 +1218,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapbo
             </div>
 
             {routeInfo && (
-              <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm animate-fade-in overflow-hidden">
+              <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs animate-fade-in overflow-hidden">
                 {mapImageUrl && (
                   <img src={mapImageUrl} alt="Route Map" className="w-full h-48 object-cover" />
                 )}

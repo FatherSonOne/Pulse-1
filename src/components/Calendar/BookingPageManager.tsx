@@ -114,27 +114,27 @@ export const BookingPageManager: React.FC = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-[var(--pulse-ink-2)] uppercase tracking-wide">Booking Pages</h3>
-        <button type="button" onClick={() => setShowCreate(s => !s)} className="flex items-center gap-1.5 text-xs text-[var(--pulse-rose)] hover:text-[var(--pulse-rose-deep)] font-medium transition">
+        <h3 className="text-sm font-bold text-(--pulse-ink-2) uppercase tracking-wide">Booking Pages</h3>
+        <button type="button" onClick={() => setShowCreate(s => !s)} className="flex items-center gap-1.5 text-xs text-(--pulse-rose) hover:text-(--pulse-rose-deep) font-medium transition">
           <Plus className="w-3.5 h-3.5" /> New page
         </button>
       </div>
 
       {/* Create form */}
       {showCreate && (
-        <form onSubmit={handleCreate} className="bg-[var(--pulse-canvas-soft)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-xl p-4 space-y-3">
+        <form onSubmit={handleCreate} className="bg-(--pulse-canvas-soft) dark:bg-(--pulse-surface) border border-(--pulse-border) rounded-xl p-4 space-y-3">
           {error && <p className="text-xs text-red-500">{error}</p>}
           <div>
             <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Title</label>
             <input type="text" required value={form.title} onChange={e => handleTitleChange(e.target.value)} placeholder="30-minute intro call"
-              className="w-full bg-[var(--pulse-surface)] dark:bg-[var(--pulse-canvas)] border border-[var(--pulse-border-strong)] rounded-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-[var(--pulse-rose)] transition" />
+              className="w-full bg-(--pulse-surface) dark:bg-(--pulse-canvas) border border-(--pulse-border-strong) rounded-lg px-3 py-2 text-sm dark:text-white outline-hidden focus:border-(--pulse-rose) transition" />
           </div>
           <div>
             <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">URL slug</label>
             <div className="flex items-center">
-              <span className="text-xs text-zinc-400 bg-[var(--pulse-surface-raised)] dark:bg-[var(--pulse-surface-raised)] border border-r-0 border-[var(--pulse-border-strong)] rounded-l-lg px-2 py-2 whitespace-nowrap">/book/</span>
+              <span className="text-xs text-zinc-400 bg-(--pulse-surface-raised) dark:bg-(--pulse-surface-raised) border border-r-0 border-(--pulse-border-strong) rounded-l-lg px-2 py-2 whitespace-nowrap">/book/</span>
               <input type="text" required minLength={3} maxLength={60} pattern="[a-z0-9-]+" value={form.slug} onChange={e => setForm(p => ({ ...p, slug: slugify(e.target.value) }))} placeholder="intro-call"
-                className="flex-1 bg-[var(--pulse-surface)] dark:bg-[var(--pulse-canvas)] border border-[var(--pulse-border-strong)] rounded-r-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-[var(--pulse-rose)] transition" />
+                className="flex-1 bg-(--pulse-surface) dark:bg-(--pulse-canvas) border border-(--pulse-border-strong) rounded-r-lg px-3 py-2 text-sm dark:text-white outline-hidden focus:border-(--pulse-rose) transition" />
             </div>
           </div>
           <div>
@@ -142,7 +142,7 @@ export const BookingPageManager: React.FC = () => {
             <div className="flex gap-2 flex-wrap">
               {DURATIONS.map(d => (
                 <button key={d} type="button" onClick={() => setForm(p => ({ ...p, duration_minutes: d }))}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${form.duration_minutes === d ? 'bg-[var(--pulse-rose)] border-[var(--pulse-rose)] text-white' : 'border-[var(--pulse-border-strong)] text-[var(--pulse-ink-2)] hover:border-[var(--pulse-rose-soft)]'}`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${form.duration_minutes === d ? 'bg-(--pulse-rose) border-(--pulse-rose) text-white' : 'border-(--pulse-border-strong) text-(--pulse-ink-2) hover:border-(--pulse-rose-soft)'}`}>
                   {d}m
                 </button>
               ))}
@@ -153,7 +153,7 @@ export const BookingPageManager: React.FC = () => {
             <div className="flex gap-1.5">
               {DAYS.map((day, i) => (
                 <button key={i} type="button" onClick={() => setForm(p => ({ ...p, days: p.days.includes(i) ? p.days.filter(d => d !== i) : [...p.days, i] }))}
-                  className={`w-8 h-8 rounded-full text-xs font-medium transition ${form.days.includes(i) ? 'bg-[var(--pulse-rose)] text-white' : 'bg-[var(--pulse-surface-raised)] dark:bg-[var(--pulse-surface-raised)] text-zinc-500 hover:bg-[var(--pulse-surface-raised)] dark:hover:bg-[var(--pulse-surface-raised)]'}`}>
+                  className={`w-8 h-8 rounded-full text-xs font-medium transition ${form.days.includes(i) ? 'bg-(--pulse-rose) text-white' : 'bg-(--pulse-surface-raised) dark:bg-(--pulse-surface-raised) text-zinc-500 hover:bg-(--pulse-surface-raised) dark:hover:bg-(--pulse-surface-raised)'}`}>
                   {day[0]}
                 </button>
               ))}
@@ -163,17 +163,17 @@ export const BookingPageManager: React.FC = () => {
             <div>
               <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Start time</label>
               <input type="time" aria-label="Availability start time" value={form.start} onChange={e => setForm(p => ({ ...p, start: e.target.value }))}
-                className="w-full bg-[var(--pulse-surface)] dark:bg-[var(--pulse-canvas)] border border-[var(--pulse-border-strong)] rounded-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-[var(--pulse-rose)] transition" />
+                className="w-full bg-(--pulse-surface) dark:bg-(--pulse-canvas) border border-(--pulse-border-strong) rounded-lg px-3 py-2 text-sm dark:text-white outline-hidden focus:border-(--pulse-rose) transition" />
             </div>
             <div>
               <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">End time</label>
               <input type="time" aria-label="Availability end time" value={form.end} onChange={e => setForm(p => ({ ...p, end: e.target.value }))}
-                className="w-full bg-[var(--pulse-surface)] dark:bg-[var(--pulse-canvas)] border border-[var(--pulse-border-strong)] rounded-lg px-3 py-2 text-sm dark:text-white outline-none focus:border-[var(--pulse-rose)] transition" />
+                className="w-full bg-(--pulse-surface) dark:bg-(--pulse-canvas) border border-(--pulse-border-strong) rounded-lg px-3 py-2 text-sm dark:text-white outline-hidden focus:border-(--pulse-rose) transition" />
             </div>
           </div>
           <div className="flex gap-2 pt-1">
             <button type="button" onClick={() => { setShowCreate(false); setForm(DEFAULT_FORM); }} className="flex-1 py-2 text-sm text-zinc-500 hover:text-zinc-700 transition">Cancel</button>
-            <button type="submit" disabled={saving} className="flex-1 py-2 bg-[var(--pulse-rose)] hover:bg-[var(--pulse-rose-deep)] text-white text-sm font-semibold rounded-lg transition disabled:opacity-50">
+            <button type="submit" disabled={saving} className="flex-1 py-2 bg-(--pulse-rose) hover:bg-(--pulse-rose-deep) text-white text-sm font-semibold rounded-lg transition disabled:opacity-50">
               {saving ? 'Creating…' : 'Create'}
             </button>
           </div>
@@ -188,26 +188,26 @@ export const BookingPageManager: React.FC = () => {
       ) : (
         <div className="space-y-2">
           {pages.map(page => (
-            <div key={page.id} className="flex items-center gap-3 p-3 bg-[var(--pulse-canvas-soft)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-xl group">
+            <div key={page.id} className="flex items-center gap-3 p-3 bg-(--pulse-canvas-soft) dark:bg-(--pulse-surface) border border-(--pulse-border) rounded-xl group">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate">{page.title}</span>
                   <span className="text-[10px] text-zinc-400">{page.duration_minutes}m</span>
-                  {!page.is_active && <span className="text-[10px] bg-[var(--pulse-surface-raised)] dark:bg-[var(--pulse-surface-raised)] text-zinc-500 px-1.5 py-0.5 rounded">Inactive</span>}
+                  {!page.is_active && <span className="text-[10px] bg-(--pulse-surface-raised) dark:bg-(--pulse-surface-raised) text-zinc-500 px-1.5 py-0.5 rounded-sm">Inactive</span>}
                 </div>
                 <div className="text-xs text-zinc-400 font-mono truncate">/book/{page.slug}</div>
               </div>
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <button type="button" onClick={() => handleCopy(page.slug, page.id)} title="Copy link" className="p-1.5 text-zinc-400 hover:text-[var(--pulse-rose)] transition rounded">
+              <div className="flex items-center gap-1 shrink-0">
+                <button type="button" onClick={() => handleCopy(page.slug, page.id)} title="Copy link" className="p-1.5 text-zinc-400 hover:text-(--pulse-rose) transition rounded-sm">
                   {copiedId === page.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
-                <a href={`/book/${page.slug}`} target="_blank" rel="noopener noreferrer" title="Open booking page" className="p-1.5 text-zinc-400 hover:text-[var(--pulse-rose)] transition rounded">
+                <a href={`/book/${page.slug}`} target="_blank" rel="noopener noreferrer" title="Open booking page" className="p-1.5 text-zinc-400 hover:text-(--pulse-rose) transition rounded-sm">
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
-                <button type="button" onClick={() => void handleToggle(page.id, page.is_active)} title={page.is_active ? 'Deactivate' : 'Activate'} className="p-1.5 text-zinc-400 hover:text-[var(--pulse-rose)] transition rounded">
-                  {page.is_active ? <ToggleRight className="w-4 h-4 text-[var(--pulse-rose)]" /> : <ToggleLeft className="w-4 h-4" />}
+                <button type="button" onClick={() => void handleToggle(page.id, page.is_active)} title={page.is_active ? 'Deactivate' : 'Activate'} className="p-1.5 text-zinc-400 hover:text-(--pulse-rose) transition rounded-sm">
+                  {page.is_active ? <ToggleRight className="w-4 h-4 text-(--pulse-rose)" /> : <ToggleLeft className="w-4 h-4" />}
                 </button>
-                <button type="button" onClick={() => void handleDelete(page.id)} title="Delete" className="p-1.5 text-zinc-400 hover:text-red-500 transition rounded opacity-0 group-hover:opacity-100">
+                <button type="button" onClick={() => void handleDelete(page.id)} title="Delete" className="p-1.5 text-zinc-400 hover:text-red-500 transition rounded-sm opacity-0 group-hover:opacity-100">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>

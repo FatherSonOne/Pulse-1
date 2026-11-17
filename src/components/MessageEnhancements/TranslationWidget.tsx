@@ -45,7 +45,7 @@ export const TranslationWidget: React.FC<TranslationWidgetProps> = ({
     <div className="inline-block">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        className="p-1 rounded-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         title="Translate message"
       >
         <Globe className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
@@ -88,7 +88,7 @@ export const TranslationWidget: React.FC<TranslationWidgetProps> = ({
                     <button
                       key={lang.code}
                       onClick={() => handleTranslate(lang.code)}
-                      className="text-xs px-2 py-1.5 rounded bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 transition-colors"
+                      className="text-xs px-2 py-1.5 rounded-sm bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 transition-colors"
                     >
                       {lang.name}
                     </button>

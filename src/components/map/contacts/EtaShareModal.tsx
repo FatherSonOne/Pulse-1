@@ -136,7 +136,7 @@ const EtaShareModal: React.FC<EtaShareModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[75] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+    <div className="fixed inset-0 z-75 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
       <div className={`w-full max-w-md rounded-2xl border shadow-2xl ${bg} animate-scale-in`}>
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3">

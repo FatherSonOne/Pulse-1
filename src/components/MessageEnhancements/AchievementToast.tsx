@@ -65,7 +65,7 @@ export const AchievementToast: React.FC<AchievementToastProps> = ({
 
   return (
     <div
-      className={`fixed top-4 right-4 z-[9999] transform transition-all duration-300 ${
+      className={`fixed top-4 right-4 z-9999 transform transition-all duration-300 ${
         visible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
       }`}
     >

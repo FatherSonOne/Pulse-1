@@ -89,7 +89,7 @@ const MapCircleOverlay: React.FC<MapCircleOverlayProps> = ({
       />
       <OverlayView position={centroid} mapPaneName={OverlayView.OVERLAY_LAYER}>
         <div
-          className="pointer-events-none select-none px-2 py-0.5 rounded-full text-xs font-semibold shadow"
+          className="pointer-events-none select-none px-2 py-0.5 rounded-full text-xs font-semibold shadow-sm"
           style={{
             color: circle.color,
             backgroundColor: isDarkMode ? 'rgba(15,23,42,0.8)' : 'rgba(255,255,255,0.85)',

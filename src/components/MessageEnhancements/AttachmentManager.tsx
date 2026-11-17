@@ -334,10 +334,10 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
       )}
 
       {/* Storage Overview */}
-      <div className="bg-gradient-to-r from-pink-500/10 to-rose-500/10 dark:from-pink-900/20 dark:to-rose-900/20 rounded-xl p-4 border border-pink-200 dark:border-pink-800">
+      <div className="bg-linear-to-r from-pink-500/10 to-rose-500/10 dark:from-pink-900/20 dark:to-rose-900/20 rounded-xl p-4 border border-pink-200 dark:border-pink-800">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-xs">
               <HardDrive className="text-pink-500" />
             </div>
             <div>
@@ -433,7 +433,7 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
         <select
           value={filter.sortBy}
           onChange={(e) => setFilter(prev => ({ ...prev, sortBy: e.target.value as AttachmentFilter['sortBy'] }))}
-          className="px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
+          className="px-2 py-1 rounded-sm border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
         >
           <option value="date">Date</option>
           <option value="name">Name</option>
@@ -442,7 +442,7 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
         </select>
         <button
           onClick={() => setFilter(prev => ({ ...prev, sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc' }))}
-          className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          className="p-1 rounded-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
         >
           <i className={`fa-solid fa-arrow-${filter.sortOrder === 'asc' ? 'up' : 'down'} text-zinc-500`} />
         </button>
@@ -473,14 +473,14 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
                     <i className={`fa-solid ${getTypeIcon(attachment.type)} text-2xl ${colors.text}`} />
                   </div>
                 )}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 to-transparent p-2">
                   <p className="text-[10px] text-white truncate">{attachment.name}</p>
                   <p className="text-[9px] text-white/70">{formatFileSize(attachment.size)}</p>
                 </div>
                 <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition flex gap-1">
                   <button
                     onClick={(e) => { e.stopPropagation(); onAttachmentDownload?.(attachment.id); }}
-                    className="p-1 bg-white/90 dark:bg-zinc-800/90 rounded text-zinc-600 dark:text-zinc-400 hover:bg-white"
+                    className="p-1 bg-white/90 dark:bg-zinc-800/90 rounded-sm text-zinc-600 dark:text-zinc-400 hover:bg-white"
                   >
                     <Download className="text-[10px]" />
                   </button>
@@ -516,19 +516,19 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
                     <button
                       onClick={(e) => { e.stopPropagation(); onAttachmentDownload?.(attachment.id); }}
-                      className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded"
+                      className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-sm"
                     >
                       <Download className="text-zinc-500 text-sm" />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); onAttachmentShare?.(attachment.id); }}
-                      className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded"
+                      className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-sm"
                     >
                       <Share className="text-zinc-500 text-sm" />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDelete(attachment.id); }}
-                      className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                      className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-sm"
                     >
                       <Trash2 className="text-red-500 text-sm" />
                     </button>
@@ -587,7 +587,7 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
             <p className="text-sm font-medium text-zinc-900 dark:text-white truncate">{selectedAttachment.name}</p>
             <button
               onClick={() => setSelectedAttachment(null)}
-              className="p-1 hover:bg-pink-100 dark:hover:bg-pink-900/30 rounded"
+              className="p-1 hover:bg-pink-100 dark:hover:bg-pink-900/30 rounded-sm"
             >
               <X className="text-zinc-500 text-xs" />
             </button>

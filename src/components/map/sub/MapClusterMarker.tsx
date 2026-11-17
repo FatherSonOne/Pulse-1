@@ -58,7 +58,7 @@ const MapClusterMarkerBodyInner: React.FC<MapClusterMarkerProps> = ({ cluster, o
       aria-label={`Cluster of ${cluster.count} contacts. Click to expand.`}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      className="cursor-pointer select-none rounded-full flex items-center justify-center font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
+      className="cursor-pointer select-none rounded-full flex items-center justify-center font-bold text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
       style={{
         width: diameter,
         height: diameter,

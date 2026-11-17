@@ -281,7 +281,7 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
   if (allComplete) {
     return (
       <div
-        className="pulse-modal-scrim fixed inset-0 z-[100] flex items-center justify-center p-4"
+        className="pulse-modal-scrim fixed inset-0 z-100 flex items-center justify-center p-4"
         role="dialog"
         aria-modal="true"
         aria-labelledby="perm-complete-title"
@@ -327,7 +327,7 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
 
   return (
     <div
-      className="pulse-modal-scrim fixed inset-0 z-[100] flex items-center justify-center p-4"
+      className="pulse-modal-scrim fixed inset-0 z-100 flex items-center justify-center p-4"
       onClick={overlayClickHandler}
     >
       <div
@@ -405,7 +405,7 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
               </h3>
               {currentPermission.required ? (
                 <span
-                  className="px-2 py-0.5 rounded text-[10px] font-medium"
+                  className="px-2 py-0.5 rounded-sm text-[10px] font-medium"
                   style={{
                     ...monoLabel,
                     color: 'var(--pulse-rose-text)',
@@ -416,7 +416,7 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
                 </span>
               ) : (
                 <span
-                  className="px-2 py-0.5 rounded text-[10px] font-medium"
+                  className="px-2 py-0.5 rounded-sm text-[10px] font-medium"
                   style={{
                     ...monoLabel,
                     color: 'var(--pulse-ink-3)',

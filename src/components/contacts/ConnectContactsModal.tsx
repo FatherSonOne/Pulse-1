@@ -493,7 +493,7 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs"
           onClick={handleBackdropClick}
           onKeyDown={handleKeyDown}
         >
@@ -563,7 +563,7 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
                         {isDone ? <Check className="w-3 h-3" aria-hidden="true" /> : idx + 1}
                       </span>
                       <span
-                        className="text-[11px] tracking-[0.1em] uppercase"
+                        className="text-[11px] tracking-widest uppercase"
                         style={{
                           color: isActive ? 'var(--pulse-ink)' : 'var(--pulse-ink-3)',
                           fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
@@ -591,7 +591,7 @@ export const ConnectContactsModal: React.FC<ConnectContactsModalProps> = ({
                 }}
                 role="alert"
               >
-                <ShieldAlert className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--pulse-tone-warning)' }} aria-hidden="true" />
+                <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" style={{ color: 'var(--pulse-tone-warning)' }} aria-hidden="true" />
                 <div className="flex-1 text-sm leading-5">
                   <div className="font-semibold">{t('contacts.connectModal.scope_lost_title')}</div>
                   <div style={{ color: 'var(--pulse-ink-2)' }}>
@@ -792,7 +792,7 @@ const StageStep: React.FC<StageStepProps> = ({
       {availableProviders.length > 1 && (
         <div className="flex items-center gap-3">
           <span
-            className="text-[11px] tracking-[0.1em] uppercase"
+            className="text-[11px] tracking-widest uppercase"
             style={{
               color: 'var(--pulse-ink-3)',
               fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
@@ -854,7 +854,7 @@ const StageStep: React.FC<StageStepProps> = ({
           has data (and search is just filtering it out) vs the API
           returned nothing. */}
       <div
-        className="flex items-center justify-between text-[11px] tracking-[0.1em] uppercase"
+        className="flex items-center justify-between text-[11px] tracking-widest uppercase"
         style={{
           color: 'var(--pulse-ink-3)',
           fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
@@ -922,7 +922,7 @@ const StageStep: React.FC<StageStepProps> = ({
                   {group.name || t('contacts.connectModal.group_label_unlabeled')}
                 </span>
                 <span
-                  className="text-[11px] tracking-[0.1em]"
+                  className="text-[11px] tracking-widest"
                   style={{
                     color: 'var(--pulse-ink-3)',
                     fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
@@ -995,7 +995,7 @@ const TagStep: React.FC<TagStepProps> = ({
       >
         <label
           htmlFor="bulk-category"
-          className="text-[11px] tracking-[0.1em] uppercase"
+          className="text-[11px] tracking-widest uppercase"
           style={{
             color: 'var(--pulse-ink-2)',
             fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
@@ -1041,7 +1041,7 @@ const TagStep: React.FC<TagStepProps> = ({
               style={{ background: 'var(--pulse-surface)' }}
             >
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 ${contact.avatarColor}`}
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0 ${contact.avatarColor}`}
                 aria-hidden="true"
               >
                 {contact.name.charAt(0).toUpperCase()}
@@ -1096,7 +1096,7 @@ const ConfirmStep: React.FC<ConfirmStepProps> = ({ count, workspaceName, breakdo
 
       <div>
         <h4
-          className="text-[11px] tracking-[0.1em] uppercase mb-2"
+          className="text-[11px] tracking-widest uppercase mb-2"
           style={{
             color: 'var(--pulse-ink-3)',
             fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
@@ -1117,7 +1117,7 @@ const ConfirmStep: React.FC<ConfirmStepProps> = ({ count, workspaceName, breakdo
             <li key={row.value} className="flex items-center justify-between p-3">
               <span className="text-sm font-medium">{t(`contacts.connectModal.${row.labelKey}`)}</span>
               <span
-                className="text-[11px] tracking-[0.1em]"
+                className="text-[11px] tracking-widest"
                 style={{
                   color: 'var(--pulse-ink-2)',
                   fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
@@ -1142,16 +1142,16 @@ interface ContactRowProps {
 
 const ContactRow: React.FC<ContactRowProps> = ({ contact, checked, onToggle, selectLabel }) => {
   return (
-    <label className="min-h-[44px] flex items-center gap-3 px-1 py-1 rounded-md cursor-pointer hover:bg-[var(--pulse-surface-raised)]">
+    <label className="min-h-[44px] flex items-center gap-3 px-1 py-1 rounded-md cursor-pointer hover:bg-(--pulse-surface-raised)">
       <input
         type="checkbox"
         checked={checked}
         onChange={onToggle}
         aria-label={selectLabel}
-        className="w-4 h-4 accent-[var(--pulse-rose)] flex-shrink-0"
+        className="w-4 h-4 accent-(--pulse-rose) shrink-0"
       />
       <div
-        className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-semibold flex-shrink-0 ${contact.avatarColor}`}
+        className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-semibold shrink-0 ${contact.avatarColor}`}
         aria-hidden="true"
       >
         {contact.name.charAt(0).toUpperCase()}
@@ -1191,7 +1191,7 @@ const GroupCheckbox: React.FC<{
       aria-checked={isPartial ? 'mixed' : checked}
       aria-label={ariaLabel}
       onChange={onChange}
-      className="w-4 h-4 accent-[var(--pulse-rose)] flex-shrink-0"
+      className="w-4 h-4 accent-(--pulse-rose) shrink-0"
     />
   );
 };

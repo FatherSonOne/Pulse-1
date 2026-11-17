@@ -245,11 +245,11 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
     <div className="flex flex-col h-full overflow-hidden">
 
       {/* Header */}
-      <div className="flex-shrink-0 px-4 pt-4 pb-3 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="shrink-0 px-4 pt-4 pb-3 border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center justify-between mb-1">
           <div>
             <div
-              className="text-[11px] uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-400 mb-0.5"
+              className="text-[11px] uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-0.5"
               style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace" }}
             >
               Your Day
@@ -329,7 +329,7 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
 
       {/* Filter chips */}
       {!loading && activeItems.length > 0 && (
-        <div className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 overflow-x-auto border-b border-zinc-100 dark:border-zinc-800">
+        <div className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 overflow-x-auto border-b border-zinc-100 dark:border-zinc-800">
           {FILTER_CHIPS.map(chip => {
             const count = chip.id === 'all'
               ? activeItems.length
@@ -340,7 +340,7 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
                 key={chip.id}
                 onClick={() => { setFilter(chip.id); setShowAll(false); }}
                 className={`
-                  flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors
+                  shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors
                   ${filter === chip.id
                     ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300'
                     : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
@@ -385,13 +385,13 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
             {[1, 2, 3].map(n => (
               <div key={n} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 animate-pulse">
                 <div className="flex items-start gap-3">
-                  <div className="w-11 h-11 rounded-full bg-zinc-200 dark:bg-zinc-700 flex-shrink-0" />
+                  <div className="w-11 h-11 rounded-full bg-zinc-200 dark:bg-zinc-700 shrink-0" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded w-1/4" />
-                    <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-3/4" />
-                    <div className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded w-1/2" />
+                    <div className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded-sm w-1/4" />
+                    <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded-sm w-3/4" />
+                    <div className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded-sm w-1/2" />
                   </div>
-                  <div className="w-24 h-7 bg-zinc-200 dark:bg-zinc-700 rounded-lg flex-shrink-0" />
+                  <div className="w-24 h-7 bg-zinc-200 dark:bg-zinc-700 rounded-lg shrink-0" />
                 </div>
               </div>
             ))}
@@ -496,7 +496,7 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
                   <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-200 flex items-center gap-1.5">
                     <MapPin size={12} className="text-zinc-500 dark:text-zinc-400" />
                     {c.label === null
-                      ? <span className="inline-block w-24 h-3 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse" />
+                      ? <span className="inline-block w-24 h-3 bg-zinc-200 dark:bg-zinc-700 rounded-sm animate-pulse" />
                       : c.label}
                     <span className="text-xs font-normal text-zinc-400 dark:text-zinc-500">
                       · {c.items.length}

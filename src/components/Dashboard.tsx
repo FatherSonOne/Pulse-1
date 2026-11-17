@@ -139,17 +139,17 @@ interface BriefingStats {
 // ============= SKELETON COMPONENTS =============
 
 const BriefingSkeleton: React.FC = () => (
-  <div className="bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-xl p-6 sm:p-8 animate-pulse">
-    <div className="h-3 bg-zinc-200/70 dark:bg-white/[0.06] rounded w-32 mb-5"></div>
-    <div className="h-6 bg-zinc-200/70 dark:bg-white/[0.06] rounded w-1/2 mb-3"></div>
+  <div className="bg-white dark:bg-white/3 border border-zinc-200 dark:border-white/6 rounded-xl p-6 sm:p-8 animate-pulse">
+    <div className="h-3 bg-zinc-200/70 dark:bg-white/6 rounded-sm w-32 mb-5"></div>
+    <div className="h-6 bg-zinc-200/70 dark:bg-white/6 rounded-sm w-1/2 mb-3"></div>
     <div className="space-y-2 mb-6">
-      <div className="h-4 bg-zinc-200/70 dark:bg-white/[0.06] rounded w-full max-w-[65ch]"></div>
-      <div className="h-4 bg-zinc-200/70 dark:bg-white/[0.06] rounded w-4/5 max-w-[55ch]"></div>
+      <div className="h-4 bg-zinc-200/70 dark:bg-white/6 rounded-sm w-full max-w-[65ch]"></div>
+      <div className="h-4 bg-zinc-200/70 dark:bg-white/6 rounded-sm w-4/5 max-w-[55ch]"></div>
     </div>
-    <div className="h-9 bg-zinc-200/70 dark:bg-white/[0.06] rounded w-72 mb-6"></div>
+    <div className="h-9 bg-zinc-200/70 dark:bg-white/6 rounded-sm w-72 mb-6"></div>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
       {[1, 2, 3, 4].map(i => (
-        <div key={i} className="h-10 bg-zinc-100/80 dark:bg-white/[0.04] rounded"></div>
+        <div key={i} className="h-10 bg-zinc-100/80 dark:bg-white/4 rounded-sm"></div>
       ))}
     </div>
   </div>
@@ -168,7 +168,7 @@ interface ProvenanceChipProps {
 const ProvenanceChip: React.FC<ProvenanceChipProps> = ({ provider = 'pulse', kind, className = '' }) => {
   const label = provider === 'claude' ? 'CLAUDE' : provider === 'gemini' ? 'GEMINI' : 'PULSE AI';
   return (
-    <span className={`pulse-label inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 ${className}`}>
+    <span className={`pulse-label inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm bg-rose-500/10 text-rose-600 dark:text-rose-400 ${className}`}>
       <span className="w-1.5 h-1.5 rounded-full bg-rose-500" aria-hidden="true"></span>
       {label} · {kind}
     </span>
@@ -249,11 +249,11 @@ const TodaysPriorities: React.FC<TodaysPrioritiesProps> = ({ priorities, isLoadi
   if (isLoading) {
     return (
       <section className="animate-pulse">
-        <div className="h-3 bg-zinc-200/70 dark:bg-white/[0.06] rounded w-24 mb-4"></div>
-        <div className="h-20 bg-zinc-100/80 dark:bg-white/[0.04] rounded-xl mb-2"></div>
+        <div className="h-3 bg-zinc-200/70 dark:bg-white/6 rounded-sm w-24 mb-4"></div>
+        <div className="h-20 bg-zinc-100/80 dark:bg-white/4 rounded-xl mb-2"></div>
         <div className="space-y-1.5">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-10 bg-zinc-100/60 dark:bg-white/[0.03] rounded"></div>
+            <div key={i} className="h-10 bg-zinc-100/60 dark:bg-white/3 rounded-sm"></div>
           ))}
         </div>
       </section>
@@ -288,7 +288,7 @@ const TodaysPriorities: React.FC<TodaysPrioritiesProps> = ({ priorities, isLoadi
       {/* Priority #1 — full-width, primary visual weight */}
       <button
         onClick={() => onItemClick(primary)}
-        className="w-full text-left bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] hover:border-rose-500/40 dark:hover:border-rose-500/30 rounded-xl px-5 py-4 mb-2 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+        className="w-full text-left bg-white dark:bg-white/3 border border-zinc-200 dark:border-white/6 hover:border-rose-500/40 dark:hover:border-rose-500/30 rounded-xl px-5 py-4 mb-2 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
       >
         <div className="flex items-center gap-2 mb-1.5">
           <span className={`w-2 h-2 rounded-full ${getUrgencyDotColor(primary.urgency)}`} aria-hidden="true"></span>
@@ -316,7 +316,7 @@ const TodaysPriorities: React.FC<TodaysPrioritiesProps> = ({ priorities, isLoadi
             <li key={item.id}>
               <button
                 onClick={() => onItemClick(item)}
-                className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
+                className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-sm hover:bg-zinc-50 dark:hover:bg-white/4 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
               >
                 <span className={`w-1.5 h-1.5 rounded-full ${getUrgencyDotColor(item.urgency)} shrink-0`} aria-hidden="true"></span>
                 <span className="text-sm text-zinc-800 dark:text-zinc-200 truncate flex-1">
@@ -542,7 +542,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
       const pulseUserTeamMembers: TeamMember[] = pulseUsersData.map(user => ({
         id: user.id,
         name: user.display_name || user.full_name || 'Pulse User',
-        avatarColor: 'bg-zinc-200 dark:bg-white/[0.08] text-zinc-700 dark:text-zinc-200',
+        avatarColor: 'bg-zinc-200 dark:bg-white/8 text-zinc-700 dark:text-zinc-200',
         status: 'online' as const,
         unreadCount: 0,
       }));
@@ -1281,7 +1281,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
       {loadingBriefing || isLoading ? (
         <BriefingSkeleton />
       ) : (
-        <section className="bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-xl p-6 sm:p-8 transition-colors duration-150">
+        <section className="bg-white dark:bg-white/3 border border-zinc-200 dark:border-white/6 rounded-xl p-6 sm:p-8 transition-colors duration-150">
           {briefing ? (
             <div>
               {/* Header: provenance + greeting + refresh */}
@@ -1298,7 +1298,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                       <button
                         onClick={handleRefreshBriefing}
                         disabled={loadingBriefing}
-                        className="pulse-label inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/15 transition-colors duration-150 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40"
+                        className="pulse-label inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/15 transition-colors duration-150 disabled:opacity-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-red-500/40"
                         title={briefingError}
                       >
                         <span className="w-1.5 h-1.5 rounded-full bg-red-500" aria-hidden="true"></span>
@@ -1313,7 +1313,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                 <button
                   onClick={handleRefreshBriefing}
                   disabled={loadingBriefing}
-                  className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors duration-150 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors duration-150 disabled:opacity-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                   title="Refresh briefing"
                   aria-label="Refresh briefing"
                 >
@@ -1346,7 +1346,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                       setView(AppView.EMAIL);
                     }
                   }}
-                  className="group inline-flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-rose-500 text-white text-sm font-medium hover:bg-rose-600 active:bg-rose-700 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 max-w-full"
+                  className="group inline-flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-rose-500 text-white text-sm font-medium hover:bg-rose-600 active:bg-rose-700 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 max-w-full"
                 >
                   <span className="truncate text-left">{briefing.focusRecommendation}</span>
                   <ArrowRight className="w-4 h-4 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5" />
@@ -1355,7 +1355,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
 
               {/* Single mono-tracked status line replacing the 4-stat grid */}
               {briefingStats && (
-                <div className="mt-5 pt-4 border-t border-zinc-100 dark:border-white/[0.06]">
+                <div className="mt-5 pt-4 border-t border-zinc-100 dark:border-white/6">
                   <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 pulse-label text-zinc-500 dark:text-zinc-400">
                     <span><span className="text-zinc-900 dark:text-zinc-100 font-semibold mr-1">{briefingStats.unreadMessages}</span>UNREAD</span>
                     <span><span className="text-zinc-900 dark:text-zinc-100 font-semibold mr-1">{briefingStats.pendingTasks}</span>TASKS</span>
@@ -1367,7 +1367,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
 
               {/* Highlights + Suggestions: two ranked lists, no cards */}
               {((briefing.highlights && briefing.highlights.length > 0) || briefing.suggestions.length > 0) && (
-                <div className="mt-6 pt-5 border-t border-zinc-100 dark:border-white/[0.06] grid gap-x-10 gap-y-6 lg:grid-cols-2">
+                <div className="mt-6 pt-5 border-t border-zinc-100 dark:border-white/6 grid gap-x-10 gap-y-6 lg:grid-cols-2">
                   {briefing.highlights && briefing.highlights.length > 0 && (
                     <div>
                       <h3 className="pulse-label text-zinc-500 dark:text-zinc-400 mb-3">HIGHLIGHTS</h3>
@@ -1376,7 +1376,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                           <li key={idx}>
                             <button
                               onClick={() => handleHighlightAction(highlight.category)}
-                              className="w-full text-left flex items-baseline gap-2.5 px-2 py-1.5 -mx-2 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
+                              className="w-full text-left flex items-baseline gap-2.5 px-2 py-1.5 -mx-2 rounded-sm hover:bg-zinc-50 dark:hover:bg-white/4 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
                             >
                               <span
                                 className={`w-1.5 h-1.5 rounded-full shrink-0 self-center ${
@@ -1407,7 +1407,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                           <li key={idx}>
                             <button
                               onClick={() => suggestion.type === 'ai_assist' && suggestion.aiFeature ? handleAIFeatureClick(suggestion.aiFeature) : handleSuggestionAction(suggestion.type)}
-                              className="w-full text-left flex items-baseline gap-2.5 px-2 py-1.5 -mx-2 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
+                              className="w-full text-left flex items-baseline gap-2.5 px-2 py-1.5 -mx-2 rounded-sm hover:bg-zinc-50 dark:hover:bg-white/4 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
                             >
                               <span
                                 className={`w-1.5 h-1.5 rounded-full shrink-0 self-center ${
@@ -1453,7 +1453,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
               <button
                 onClick={handleRefreshBriefing}
                 disabled={loadingBriefing}
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium transition-colors duration-150 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 shadow-sm shadow-rose-500/10"
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium transition-colors duration-150 disabled:opacity-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 shadow-xs shadow-rose-500/10"
               >
                 {loadingBriefing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Target className="w-4 h-4" />}
                 {loadingBriefing ? 'Generating briefing' : 'Generate briefing'}
@@ -1493,7 +1493,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
             </h2>
             <button
               onClick={() => setView(AppView.MESSAGES)}
-              className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+              className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
             >
               VIEW INBOX
             </button>
@@ -1507,7 +1507,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                     sessionStorage.setItem('pulse_focus_thread', item.threadId);
                     setView(AppView.MESSAGES);
                   }}
-                  className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
+                  className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-sm hover:bg-zinc-50 dark:hover:bg-white/4 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
                 >
                   <span
                     className={`w-1.5 h-1.5 rounded-full shrink-0 ${
@@ -1528,7 +1528,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                       {item.source.toUpperCase()}
                     </span>
                   )}
-                  <span className="pulse-label text-zinc-500 dark:text-zinc-400 shrink-0 min-w-[2.5rem] text-right">
+                  <span className="pulse-label text-zinc-500 dark:text-zinc-400 shrink-0 min-w-10 text-right">
                     {formatAwaitingAge(item.ageMin)}
                   </span>
                   <ChevronRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 group-hover:text-rose-500 dark:group-hover:text-rose-400 transition-colors shrink-0" />
@@ -1671,7 +1671,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                 serves dashboard click + Cmd+J shortcut anywhere in Pulse. */}
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('pulse:capture-open'))}
-              className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-zinc-200 dark:border-white/[0.06] hover:border-rose-500/40 dark:hover:border-rose-500/40 hover:bg-rose-500/[0.02] dark:hover:bg-rose-500/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
+              className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-zinc-200 dark:border-white/6 hover:border-rose-500/40 dark:hover:border-rose-500/40 hover:bg-rose-500/2 dark:hover:bg-rose-500/4 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
             >
               <span className="flex items-baseline gap-2 min-w-0">
                 <span className="text-sm text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
@@ -1679,13 +1679,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                 </span>
               </span>
               <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0 inline-flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-white/[0.06] text-zinc-600 dark:text-zinc-300 font-mono text-[10px]">⌘J</kbd>
+                <kbd className="px-1.5 py-0.5 rounded-sm bg-zinc-100 dark:bg-white/6 text-zinc-600 dark:text-zinc-300 font-mono text-[10px]">⌘J</kbd>
               </span>
             </button>
 
             {/* RECENT captures from pulse_notes — workspace-scoped */}
             {recentCaptures.length > 0 && (
-              <div className="pt-3 border-t border-zinc-100 dark:border-white/[0.06]">
+              <div className="pt-3 border-t border-zinc-100 dark:border-white/6">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="pulse-label text-zinc-500 dark:text-zinc-400">RECENT</h4>
                   <button
@@ -1693,7 +1693,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                       sessionStorage.setItem('pulse_archives_tab', 'notes');
                       setView(AppView.ARCHIVES);
                     }}
-                    className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+                    className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
                   >
                     SEE ALL
                   </button>
@@ -1710,7 +1710,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                             sessionStorage.setItem('pulse_focus_note', n.id);
                             setView(AppView.ARCHIVES);
                           }}
-                          className="w-full text-left flex items-baseline gap-2.5 px-2 py-1.5 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
+                          className="w-full text-left flex items-baseline gap-2.5 px-2 py-1.5 rounded-sm hover:bg-zinc-50 dark:hover:bg-white/4 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
                         >
                           <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0 min-w-[46px]">
                             {dateLabel}
@@ -1771,14 +1771,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                 </h2>
                 <button
                   onClick={() => setBatchedNotifications([])}
-                  className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+                  className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
                 >
                   CLEAR
                 </button>
               </div>
               <ul className="space-y-px">
                 {batchedNotifications.slice(0, 4).map(n => (
-                  <li key={n.id} className="flex items-baseline gap-3 px-3 py-2 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150">
+                  <li key={n.id} className="flex items-baseline gap-3 px-3 py-2 rounded-sm hover:bg-zinc-50 dark:hover:bg-white/4 transition-colors duration-150">
                     <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0 min-w-[44px]">{n.source.toUpperCase()}</span>
                     <span className="text-sm text-zinc-700 dark:text-zinc-300 truncate flex-1">{n.message}</span>
                     <span className="pulse-label text-zinc-500 dark:text-zinc-400 shrink-0">
@@ -1826,7 +1826,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
       {/* Persistent activity badge — bottom-left corner. Shows briefly after any save. */}
       {lastSavedAt && ReactDOM.createPortal(
         <div
-          className="fixed bottom-[calc(1.5rem+var(--pulse-bottom-bar))] left-6 z-[9998] pulse-label inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-400 shadow-sm animate-fade-in pointer-events-none"
+          className="fixed bottom-[calc(1.5rem+var(--pulse-bottom-bar))] left-6 z-9998 pulse-label inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/8 text-zinc-500 dark:text-zinc-400 shadow-xs animate-fade-in pointer-events-none"
           aria-live="polite"
           role="status"
         >
@@ -1839,21 +1839,21 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
       {/* Keyboard Shortcuts Overlay */}
       {showKbdOverlay && ReactDOM.createPortal(
         <div
-          className="fixed inset-0 bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center z-[10000] p-4 animate-fade-in"
+          className="fixed inset-0 bg-zinc-950/60 backdrop-blur-xs flex items-center justify-center z-10000 p-4 animate-fade-in"
           onClick={() => setShowKbdOverlay(false)}
           role="dialog"
           aria-modal="true"
           aria-label="Keyboard shortcuts"
         >
           <div
-            className="bg-white dark:bg-zinc-950 rounded-xl w-full max-w-md shadow-2xl border border-zinc-200 dark:border-white/[0.08] overflow-hidden animate-scale-in"
+            className="bg-white dark:bg-zinc-950 rounded-xl w-full max-w-md shadow-2xl border border-zinc-200 dark:border-white/8 overflow-hidden animate-scale-in"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-white/[0.06]">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-white/6">
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Keyboard shortcuts</h3>
               <button
                 onClick={() => setShowKbdOverlay(false)}
-                className="w-7 h-7 rounded flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                className="w-7 h-7 rounded-sm flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
                 aria-label="Close shortcuts"
               >
                 <X className="w-4 h-4" />
@@ -1873,7 +1873,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                   <span className="text-sm text-zinc-700 dark:text-zinc-300">{desc}</span>
                   <span className="flex items-center gap-1">
                     {keys.map(k => (
-                      <kbd key={k} className="inline-flex items-center justify-center min-w-[1.75rem] h-6 px-2 rounded text-xs font-mono text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.08]">
+                      <kbd key={k} className="inline-flex items-center justify-center min-w-7 h-6 px-2 rounded-sm text-xs font-mono text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-white/6 border border-zinc-200 dark:border-white/8">
                         {k}
                       </kbd>
                     ))}
@@ -1881,7 +1881,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                 </div>
               ))}
             </dl>
-            <div className="px-5 py-3 border-t border-zinc-100 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02]">
+            <div className="px-5 py-3 border-t border-zinc-100 dark:border-white/6 bg-zinc-50 dark:bg-white/2">
               <p className="pulse-label text-zinc-400 dark:text-zinc-500">PRESS <kbd className="font-mono normal-case tracking-normal">?</kbd> ANY TIME</p>
             </div>
           </div>
@@ -1907,7 +1907,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                 onClick={(e) => { e.stopPropagation(); setAnalyticsTimeRange(range); }}
                 role="tab"
                 aria-selected={analyticsTimeRange === range}
-                className={`pulse-label px-2.5 py-1 rounded transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
+                className={`pulse-label px-2.5 py-1 rounded transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                   analyticsTimeRange === range
                     ? 'text-rose-600 dark:text-rose-400 bg-rose-500/10'
                     : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
@@ -1947,7 +1947,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
         </dl>
 
         {/* Weekly chart — flat bars, no gradient, lives directly inside the widget (no nested card) */}
-        <div className="pt-4 border-t border-zinc-100 dark:border-white/[0.06]">
+        <div className="pt-4 border-t border-zinc-100 dark:border-white/6">
           <div className="flex items-center justify-between mb-4">
             <h4 className="pulse-label text-zinc-500 dark:text-zinc-400">WEEKLY ACTIVITY</h4>
             <div className="flex gap-1" role="tablist" aria-label="Weekly metric">
@@ -1957,7 +1957,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                   onClick={() => setSelectedMetric(metric)}
                   role="tab"
                   aria-selected={selectedMetric === metric}
-                  className={`pulse-label px-2 py-1 rounded transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
+                  className={`pulse-label px-2 py-1 rounded transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                     selectedMetric === metric
                       ? 'text-rose-600 dark:text-rose-400 bg-rose-500/10'
                       : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
@@ -1971,9 +1971,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
           <div className="flex items-end gap-2 h-28">
             {weeklyData.map((day) => (
               <div key={day.day} className="flex-1 flex flex-col items-center gap-2">
-                <div className="w-full bg-zinc-100 dark:bg-white/[0.05] rounded relative overflow-hidden" style={{ height: '100%' }}>
+                <div className="w-full bg-zinc-100 dark:bg-white/5 rounded-sm relative overflow-hidden" style={{ height: '100%' }}>
                   <div
-                    className="absolute bottom-0 w-full bg-rose-500 rounded transition-all duration-500"
+                    className="absolute bottom-0 w-full bg-rose-500 rounded-sm transition-all duration-500"
                     style={{ height: `${(day[selectedMetric] / maxChartValue) * 100}%` }}
                   ></div>
                 </div>
@@ -1981,7 +1981,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
               </div>
             ))}
           </div>
-          <div className="flex justify-between items-baseline mt-4 pt-3 border-t border-zinc-100 dark:border-white/[0.06]">
+          <div className="flex justify-between items-baseline mt-4 pt-3 border-t border-zinc-100 dark:border-white/6">
             <span className="pulse-label text-zinc-500 dark:text-zinc-400">TOTAL · WEEK</span>
             <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
               {weeklyTotals[selectedMetric]} {selectedMetric}
@@ -2043,7 +2043,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                         </span>
                       </div>
                     </div>
-                    <div className="h-1.5 bg-zinc-100 dark:bg-white/[0.05] rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-zinc-100 dark:bg-white/5 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${
                           progressPercent >= 100 ? 'bg-emerald-500' : 'bg-rose-500'
@@ -2097,7 +2097,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                 <select
                   value={selectedTeamId || ''}
                   onChange={(e) => setSelectedTeamId(e.target.value || null)}
-                  className="pulse-label bg-transparent border border-zinc-200 dark:border-white/[0.08] rounded px-2 py-1 text-zinc-600 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-rose-500/40"
+                  className="pulse-label bg-transparent border border-zinc-200 dark:border-white/8 rounded-sm px-2 py-1 text-zinc-600 dark:text-zinc-300 focus:outline-hidden focus:ring-2 focus:ring-rose-500/40"
                   onClick={e => e.stopPropagation()}
                 >
                   <option value="">ALL CONTACTS</option>
@@ -2144,7 +2144,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                 membersToDisplay = selectedTeam.members.map(m => ({
                   id: m.memberId,
                   name: m.name || 'Unknown',
-                  avatarColor: m.avatarColor || 'bg-zinc-200 dark:bg-white/[0.08] text-zinc-700 dark:text-zinc-200',
+                  avatarColor: m.avatarColor || 'bg-zinc-200 dark:bg-white/8 text-zinc-700 dark:text-zinc-200',
                   status: m.status || 'offline',
                   unreadCount: 0,
                 }));
@@ -2176,7 +2176,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                       }
                       setShowTeamBuilder(true);
                     }}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950"
                   >
                     {selectedTeamId ? 'Add members' : 'Build team'}
                   </button>
@@ -2190,7 +2190,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                   <li key={member.id}>
                     <button
                       onClick={() => setView(AppView.MESSAGES)}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-sm hover:bg-zinc-50 dark:hover:bg-white/4 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
                     >
                       <div className="relative shrink-0">
                         <div className={`w-9 h-9 rounded-full ${member.avatarColor} flex items-center justify-center text-white font-semibold text-sm`}>
@@ -2202,7 +2202,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate">{member.name}</span>
                           {member.unreadCount && member.unreadCount > 0 && (
-                            <span className="pulse-label inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded bg-rose-500 text-white shrink-0">
+                            <span className="pulse-label inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-sm bg-rose-500 text-white shrink-0">
                               {member.unreadCount}
                             </span>
                           )}
@@ -2234,7 +2234,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                 <Loader2 className="w-5 h-5 animate-spin text-zinc-400 dark:text-zinc-500" />
               </div>
             ) : teamHealthMetrics ? (
-              <div className="divide-y divide-zinc-100 dark:divide-white/[0.06]">
+              <div className="divide-y divide-zinc-100 dark:divide-white/6">
                 {/* Communication */}
                 <section className="py-5 first:pt-0">
                   <div className="flex items-center gap-2 mb-3">
@@ -2344,7 +2344,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
 
       {/* Team Builder Modal */}
       {showTeamBuilder && (
-        <div className="fixed inset-0 bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" onClick={() => {
+        <div className="fixed inset-0 bg-zinc-950/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in" onClick={() => {
           setShowTeamBuilder(false);
           setTeamBuilderName('');
           setTeamBuilderDescription('');
@@ -2389,7 +2389,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                     value={teamBuilderName}
                     onChange={(e) => setTeamBuilderName(e.target.value)}
                     placeholder="e.g., Engineering Team, Marketing Squad"
-                    className="w-full px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm dark:text-zinc-50 focus:outline-hidden focus:ring-2 focus:ring-rose-500 focus:border-transparent"
                     autoFocus
                   />
                 </div>
@@ -2400,7 +2400,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                     onChange={(e) => setTeamBuilderDescription(e.target.value)}
                     placeholder="What is this team for?"
                     rows={2}
-                    className="w-full px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none"
+                    className="w-full px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm dark:text-zinc-50 focus:outline-hidden focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none"
                   />
                 </div>
               </div>
@@ -2438,7 +2438,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                     value={teamBuilderSearchQuery}
                     onChange={(e) => setTeamBuilderSearchQuery(e.target.value)}
                     placeholder={teamBuilderTab === 'pulse' ? 'Search Pulse users by name or @handle...' : 'Search contacts...'}
-                    className="w-full pl-10 pr-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm dark:text-zinc-50 focus:outline-hidden focus:ring-2 focus:ring-rose-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -2504,7 +2504,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                               : 'hover:bg-zinc-50 dark:hover:bg-zinc-800'
                           }`}
                         >
-                          <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-white/[0.08] text-zinc-700 dark:text-zinc-200 flex items-center justify-center font-semibold text-sm flex-shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-white/8 text-zinc-700 dark:text-zinc-200 flex items-center justify-center font-semibold text-sm shrink-0">
                             {user.avatar_url ? (
                               <img src={user.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                             ) : (
@@ -2584,7 +2584,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                               : 'hover:bg-zinc-50 dark:hover:bg-zinc-800'
                           }`}
                         >
-                          <div className={`w-10 h-10 rounded-full ${contact.avatarColor} flex items-center justify-center text-white font-bold flex-shrink-0`}>
+                          <div className={`w-10 h-10 rounded-full ${contact.avatarColor} flex items-center justify-center text-white font-bold shrink-0`}>
                             {contact.name.charAt(0)}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -2597,7 +2597,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                             {!contact.pulseUserId && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); navigateToTeamInvite({ source: 'dashboard-team-builder' }); }}
-                                className="px-2 py-1 text-xs font-medium text-[var(--pulse-rose-text)] hover:text-[var(--pulse-rose-deep)] rounded transition"
+                                className="px-2 py-1 text-xs font-medium text-(--pulse-rose-text) hover:text-(--pulse-rose-deep) rounded-sm transition"
                                 title="Invite to Pulse"
                               >
                                 <Send />
@@ -2753,7 +2753,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
 
       {/* Goal Editor Modal */}
       {showGoalEditor && (
-        <div className="fixed inset-0 bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" onClick={() => setShowGoalEditor(false)}>
+        <div className="fixed inset-0 bg-zinc-950/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in" onClick={() => setShowGoalEditor(false)}>
           <div className="bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-2xl max-h-[90vh] shadow-2xl flex flex-col animate-scale-in border border-zinc-200 dark:border-zinc-800" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-zinc-200 dark:border-zinc-800">
@@ -2830,13 +2830,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                       key={goal.id}
                       className={`p-4 rounded-xl border transition-colors duration-150 ${
                         isEnabled
-                          ? 'bg-zinc-50 dark:bg-white/[0.04] border-zinc-200 dark:border-white/[0.06]'
-                          : 'bg-zinc-50/60 dark:bg-white/[0.02] border-zinc-200 dark:border-white/[0.04] opacity-60'
+                          ? 'bg-zinc-50 dark:bg-white/4 border-zinc-200 dark:border-white/6'
+                          : 'bg-zinc-50/60 dark:bg-white/2 border-zinc-200 dark:border-white/4 opacity-60'
                       }`}
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-3 flex-1">
-                          <div className="w-10 h-10 rounded-lg bg-zinc-200 dark:bg-white/[0.06] flex items-center justify-center text-zinc-600 dark:text-zinc-300">
+                          <div className="w-10 h-10 rounded-lg bg-zinc-200 dark:bg-white/6 flex items-center justify-center text-zinc-600 dark:text-zinc-300">
                             <i className={`fa-solid ${goal.icon || 'fa-bullseye'} text-sm`}></i>
                           </div>
                           <div className="flex-1 min-w-0">
@@ -2845,7 +2845,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                                 {goal.title}
                               </span>
                               {!isEnabled && (
-                                <span className="px-2 py-0.5 bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400 text-[10px] font-medium rounded">
+                                <span className="px-2 py-0.5 bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400 text-[10px] font-medium rounded-sm">
                                   Disabled
                                 </span>
                               )}
@@ -2855,12 +2855,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                         </div>
                         <button
                           onClick={() => handleToggleGoal(goal.id)}
-                          className={`h-10 rounded-lg flex items-center justify-center transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
+                          className={`h-10 rounded-lg flex items-center justify-center transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                             pendingDisableId === goal.id
                               ? 'px-3 bg-red-500/10 text-red-600 dark:text-red-400 pulse-label'
                               : isEnabled
                                 ? 'w-10 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
-                                : 'w-10 bg-zinc-200 dark:bg-white/[0.06] text-zinc-400 dark:text-zinc-500'
+                                : 'w-10 bg-zinc-200 dark:bg-white/6 text-zinc-400 dark:text-zinc-500'
                           }`}
                           title={
                             pendingDisableId === goal.id
@@ -2892,7 +2892,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                             </span>
                           </div>
                           <div className="space-y-2">
-                            <div className="h-1.5 bg-zinc-200 dark:bg-white/[0.06] rounded-full overflow-hidden">
+                            <div className="h-1.5 bg-zinc-200 dark:bg-white/6 rounded-full overflow-hidden">
                               <div
                                 className={`h-full rounded-full transition-all duration-500 ${
                                   progressPercent >= 100 ? 'bg-emerald-500' : 'bg-rose-500'
@@ -2914,7 +2914,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                                 min="1"
                                 value={goal.target}
                                 onChange={(e) => handleUpdateGoal(goal.id, { target: parseInt(e.target.value) || 1 })}
-                                className="w-20 px-2 py-1 text-sm bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                                className="w-20 px-2 py-1 text-sm bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-zinc-50 focus:outline-hidden focus:ring-2 focus:ring-rose-500"
                               />
                             </div>
                           </div>
@@ -2952,7 +2952,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setView, openSettings }) =>
                     // Just close the modal
                     setShowGoalEditor(false);
                   }}
-                  className="px-5 py-2 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white rounded-lg text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950"
+                  className="px-5 py-2 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white rounded-lg text-sm font-medium transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950"
                 >
                   Done
                 </button>

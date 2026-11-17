@@ -217,7 +217,7 @@ Provide:
               value={decision}
               onChange={(e) => setDecision(e.target.value)}
               placeholder="e.g., Which vendor should we choose?"
-              className="w-full px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-sm text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-none"
+              className="w-full px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-sm text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-hidden"
             />
           </div>
           <div>
@@ -228,7 +228,7 @@ Provide:
               value={context}
               onChange={(e) => setContext(e.target.value)}
               placeholder="Timeline, constraints, stakeholders..."
-              className="w-full px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-sm text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-none resize-none h-20"
+              className="w-full px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-sm text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-hidden resize-none h-20"
             />
           </div>
           <button
@@ -251,7 +251,7 @@ Provide:
               onChange={(e) => setNewOptionName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddOption()}
               placeholder="Add option..."
-              className="flex-1 px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-sm text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-none"
+              className="flex-1 px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-sm text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-hidden"
             />
             <button
               onClick={handleAddOption}
@@ -304,7 +304,7 @@ Provide:
               onChange={(e) => setNewCriteriaName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddCriteria()}
               placeholder="Add criteria..."
-              className="flex-1 px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-sm text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-none"
+              className="flex-1 px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-sm text-white placeholder-white/40 focus:border-cyan-500/50 focus:outline-hidden"
             />
             <button
               onClick={handleAddCriteria}
@@ -477,7 +477,7 @@ Provide:
                   toast.error('Failed to save decision');
                 }
               }}
-              className="w-full war-room-btn bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white py-3 font-semibold"
+              className="w-full war-room-btn bg-linear-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white py-3 font-semibold"
             >
               <CheckCircle className="fa mr-2" />
               Complete & Save Decision
@@ -525,7 +525,7 @@ Provide:
       chatEmptyState={
         <div className="h-full flex items-center justify-center">
           <div className="text-center max-w-md">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-linear-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
               <Route className="fa text-2xl text-cyan-400" />
             </div>
             <h3 className="text-lg font-semibold war-room-text-primary mb-2">

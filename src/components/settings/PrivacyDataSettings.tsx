@@ -64,7 +64,7 @@ export const PrivacyDataSettings: React.FC = () => {
               settingsService.set('nudgeFrequencyHours', v);
             }}
             title="How often dismissed nudges reappear"
-            className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+            className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-hidden focus:ring-2 focus:ring-rose-500"
           >
             <option value={24}>Every 24 hours</option>
             <option value={72}>Every 3 days</option>

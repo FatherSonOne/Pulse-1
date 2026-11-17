@@ -46,7 +46,7 @@ export function InstallPrompt() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={dismissPrompt}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]"
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs z-9998"
           />
 
           {/* Install Prompt Card */}
@@ -55,11 +55,11 @@ export function InstallPrompt() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-[var(--pulse-bottom-bar)] left-0 right-0 z-[9999] max-md:rounded-t-3xl md:bottom-6 md:left-1/2 md:-translate-x-1/2 md:max-w-md md:rounded-2xl"
+            className="fixed bottom-(--pulse-bottom-bar) left-0 right-0 z-9999 max-md:rounded-t-3xl md:bottom-6 md:left-1/2 md:-translate-x-1/2 md:max-w-md md:rounded-2xl"
           >
             <div className="bg-white dark:bg-zinc-900 shadow-2xl border border-zinc-200 dark:border-zinc-800 max-md:rounded-t-3xl md:rounded-2xl overflow-hidden">
               {/* Header */}
-              <div className="relative bg-gradient-to-br from-emerald-500 to-cyan-500 p-6 text-white">
+              <div className="relative bg-linear-to-br from-emerald-500 to-cyan-500 p-6 text-white">
                 {/* Close button */}
                 <button
                   onClick={dismissPrompt}
@@ -71,7 +71,7 @@ export function InstallPrompt() {
 
                 <div className="flex items-center gap-4">
                   {/* App Icon */}
-                  <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center">
                     <Zap className="text-3xl" />
                   </div>
 
@@ -96,7 +96,7 @@ export function InstallPrompt() {
                     <div className="space-y-3">
                       {instructions.map((instruction, index) => (
                         <div key={index} className="flex items-start gap-3">
-                          <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 text-sm font-bold">
+                          <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 text-sm font-bold">
                             {index + 1}
                           </div>
                           <p className="text-sm text-zinc-700 dark:text-zinc-300 pt-0.5">
@@ -108,7 +108,7 @@ export function InstallPrompt() {
 
                     {/* Share icon hint */}
                     <div className="mt-4 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white flex-shrink-0">
+                      <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white shrink-0">
                         <Upload className="text-lg" />
                       </div>
                       <p className="text-xs text-zinc-600 dark:text-zinc-400">
@@ -141,7 +141,7 @@ export function InstallPrompt() {
                     <div className="flex gap-3 mt-6">
                       <button
                         onClick={handleInstall}
-                        className="flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold py-3 px-4 rounded-xl hover:from-emerald-600 hover:to-cyan-600 transition shadow-lg shadow-emerald-500/30"
+                        className="flex-1 bg-linear-to-r from-emerald-500 to-cyan-500 text-white font-semibold py-3 px-4 rounded-xl hover:from-emerald-600 hover:to-cyan-600 transition shadow-lg shadow-emerald-500/30"
                       >
                         Install Now
                       </button>

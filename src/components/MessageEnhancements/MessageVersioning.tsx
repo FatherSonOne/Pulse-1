@@ -209,9 +209,9 @@ export const MessageVersioning: React.FC<MessageVersioningProps> = ({
   return (
     <div className="space-y-4">
       {/* Stats Header */}
-      <div className="bg-gradient-to-r from-violet-500/10 to-purple-500/10 dark:from-violet-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-violet-200 dark:border-violet-800">
+      <div className="bg-linear-to-r from-violet-500/10 to-purple-500/10 dark:from-violet-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-violet-200 dark:border-violet-800">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-sm">
+          <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-xs">
             <History className="text-violet-500" />
           </div>
           <div>
@@ -251,7 +251,7 @@ export const MessageVersioning: React.FC<MessageVersioningProps> = ({
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                  <div className="w-8 h-8 rounded-full bg-linear-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
                     {msg.sender.charAt(0)}
                   </div>
                   <div>
@@ -262,7 +262,7 @@ export const MessageVersioning: React.FC<MessageVersioningProps> = ({
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs text-zinc-400">{msg.versions.length} versions</span>
                   {msg.isDeleted && (
-                    <span className="text-xs px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+                    <span className="text-xs px-1.5 py-0.5 rounded-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
                       Deleted
                     </span>
                   )}
@@ -429,13 +429,13 @@ export const MessageVersioning: React.FC<MessageVersioningProps> = ({
                       <div className="mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-700 space-y-1">
                         {version.diff.removed.map((text, i) => (
                           <div key={`removed-${i}`} className="flex items-center gap-1.5 text-xs">
-                            <span className="w-4 h-4 rounded bg-red-100 dark:bg-red-900/30 text-red-500 flex items-center justify-center">-</span>
+                            <span className="w-4 h-4 rounded-sm bg-red-100 dark:bg-red-900/30 text-red-500 flex items-center justify-center">-</span>
                             <span className="text-red-600 dark:text-red-400 line-through">{text}</span>
                           </div>
                         ))}
                         {version.diff.added.map((text, i) => (
                           <div key={`added-${i}`} className="flex items-center gap-1.5 text-xs">
-                            <span className="w-4 h-4 rounded bg-green-100 dark:bg-green-900/30 text-green-500 flex items-center justify-center">+</span>
+                            <span className="w-4 h-4 rounded-sm bg-green-100 dark:bg-green-900/30 text-green-500 flex items-center justify-center">+</span>
                             <span className="text-green-600 dark:text-green-400">{text}</span>
                           </div>
                         ))}

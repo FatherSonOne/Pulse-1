@@ -155,7 +155,7 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20">
+      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-linear-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
@@ -183,7 +183,7 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
               className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition ${
                 activeTab === tab.id
-                  ? 'bg-white dark:bg-zinc-600 text-zinc-800 dark:text-white shadow-sm'
+                  ? 'bg-white dark:bg-zinc-600 text-zinc-800 dark:text-white shadow-xs'
                   : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white'
               }`}
             >
@@ -345,7 +345,7 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
                                         priority: e.target.value as 'all' | 'high' | 'none'
                                       }
                                     })}
-                                    className="px-2 py-1 text-[10px] rounded border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-800 dark:text-white"
+                                    className="px-2 py-1 text-[10px] rounded-sm border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-800 dark:text-white"
                                   >
                                     <option value="all">All messages</option>
                                     <option value="high">High priority only</option>
@@ -364,7 +364,7 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
                                         contacts: e.target.value as 'all' | 'favorites' | 'none'
                                       }
                                     })}
-                                    className="px-2 py-1 text-[10px] rounded border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-800 dark:text-white"
+                                    className="px-2 py-1 text-[10px] rounded-sm border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-800 dark:text-white"
                                   >
                                     <option value="all">Everyone</option>
                                     <option value="favorites">Favorites only</option>

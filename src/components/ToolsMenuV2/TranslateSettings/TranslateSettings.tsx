@@ -53,7 +53,7 @@ export const TranslateSettings: React.FC<ToolsMenuTileBodyProps> = ({
         <label
           htmlFor={languageId}
           className={[
-            'block text-xs font-mono uppercase tracking-[0.1em]',
+            'block text-xs font-mono uppercase tracking-widest',
             isDarkMode ? 'text-zinc-400' : 'text-zinc-500',
           ].join(' ')}
         >
@@ -75,7 +75,7 @@ export const TranslateSettings: React.FC<ToolsMenuTileBodyProps> = ({
             disabled={!settings.enabled}
             className={[
               'w-full pl-9 pr-3 py-2.5 rounded-lg border text-sm appearance-none',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+              'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
               'disabled:opacity-50 disabled:cursor-not-allowed',
               isDarkMode
                 ? 'bg-zinc-900 border-white/10 text-zinc-100'
@@ -132,8 +132,8 @@ const ToggleRow: React.FC<ToggleRowProps> = ({
         'flex items-start gap-3 rounded-xl border px-3 py-3',
         disabled ? 'opacity-50' : '',
         isDarkMode
-          ? 'border-white/10 bg-white/[0.02]'
-          : 'border-black/10 bg-black/[0.02]',
+          ? 'border-white/10 bg-white/2'
+          : 'border-black/10 bg-black/2',
       ].join(' ')}
     >
       <div className="flex-1 min-w-0">
@@ -168,7 +168,7 @@ const ToggleRow: React.FC<ToggleRowProps> = ({
         onClick={() => !disabled && onChange(!checked)}
         className={[
           'shrink-0 inline-flex items-center w-11 h-6 rounded-full transition-colors duration-150',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+          'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
           disabled ? 'cursor-not-allowed' : '',
           checked
             ? isDarkMode
@@ -182,7 +182,7 @@ const ToggleRow: React.FC<ToggleRowProps> = ({
         <span
           aria-hidden="true"
           className={[
-            'inline-block w-5 h-5 rounded-full bg-white shadow-sm transform transition-transform duration-150',
+            'inline-block w-5 h-5 rounded-full bg-white shadow-xs transform transition-transform duration-150',
             checked ? 'translate-x-[22px]' : 'translate-x-[2px]',
             !checked && !isDarkMode ? 'bg-white' : '',
             checked && isDarkMode ? 'bg-zinc-900' : '',

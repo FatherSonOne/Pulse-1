@@ -94,13 +94,13 @@ export const SegmentBuilder: React.FC<SegmentBuilderProps> = ({ segment, onSave,
   };
 
   const inputClass =
-    'w-full px-3 py-2 text-sm rounded-lg bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-700 text-stone-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-rose-500/40';
+    'w-full px-3 py-2 text-sm rounded-lg bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-700 text-stone-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-rose-500/40';
   const labelClass =
     'block text-xs font-semibold text-stone-600 dark:text-zinc-300 mb-1.5 uppercase tracking-wide';
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
       onClick={onClose}
     >
       <div
@@ -192,7 +192,7 @@ export const SegmentBuilder: React.FC<SegmentBuilderProps> = ({ segment, onSave,
           <button
             onClick={handleSave}
             disabled={saving || !name.trim()}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-rose-500 to-red-500 text-white shadow-sm disabled:opacity-50 transition-opacity hover:opacity-90"
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-linear-to-r from-rose-500 to-red-500 text-white shadow-xs disabled:opacity-50 transition-opacity hover:opacity-90"
           >
             {saving ? <Loader2 className="animate-spin" /> : 'Save Segment'}
           </button>

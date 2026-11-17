@@ -17,8 +17,8 @@ export const SentimentTab: React.FC<SentimentTabProps> = ({ isDarkMode = false }
       className={[
         'rounded-xl border px-4 py-6 text-center',
         isDarkMode
-          ? 'border-white/10 bg-white/[0.02] text-zinc-400'
-          : 'border-black/10 bg-black/[0.02] text-zinc-500',
+          ? 'border-white/10 bg-white/2 text-zinc-400'
+          : 'border-black/10 bg-black/2 text-zinc-500',
       ].join(' ')}
     >
       <p className="text-sm font-medium">Sentiment analysis coming soon</p>

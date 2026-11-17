@@ -72,7 +72,7 @@ export const RolePermissionsMatrixCard: React.FC = () => {
 
           {error && (
             <div className="flex items-start gap-2 text-xs text-rose-600 dark:text-rose-400 bg-rose-50/60 dark:bg-rose-900/10 border border-rose-200/60 dark:border-rose-900/40 rounded-md p-3">
-              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
               <span>Couldn't load role permissions: {error}</span>
             </div>
           )}

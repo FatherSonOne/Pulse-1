@@ -93,7 +93,7 @@ const ContextualSuggestionsBase: React.FC<ContextualSuggestionsProps> = ({
                 rounded-lg
                 border transition-all duration-200
                 hover:scale-105 hover:shadow-md
-                focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500
+                focus:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-500
                 ${colors.bg} ${colors.text} ${colors.border}
               `}
               title={tool.description}

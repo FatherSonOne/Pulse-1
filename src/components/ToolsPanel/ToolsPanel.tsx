@@ -122,13 +122,13 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({
         {/* Mobile Bottom Sheet */}
         <div
           className={`
-            fixed inset-x-0 bottom-[var(--pulse-bottom-bar)]
+            fixed inset-x-0 bottom-(--pulse-bottom-bar)
             h-[70vh] rounded-t-3xl
             bg-white dark:bg-zinc-900
             border-t border-zinc-200 dark:border-zinc-800
             shadow-2xl
             transform transition-transform duration-300 ease-out
-            z-[400]
+            z-400
             ${showMobilePanel ? 'translate-y-0' : 'translate-y-full'}
             ${className}
           `}
@@ -217,7 +217,7 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({
         {/* Backdrop */}
         {showMobilePanel && (
           <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[300]"
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs z-300"
             onClick={() => setShowMobilePanel(false)}
           />
         )}

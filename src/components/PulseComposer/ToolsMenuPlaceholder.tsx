@@ -85,12 +85,12 @@ export const ToolsMenuPlaceholder: React.FC<ToolsMenuPlaceholderProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="tools-placeholder-title"
-      className="fixed inset-0 z-[60] flex items-center justify-center px-4"
+      className="fixed inset-0 z-60 flex items-center justify-center px-4"
     >
       <div
         aria-hidden="true"
         onClick={onClose}
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
+        className="absolute inset-0 bg-black/50 backdrop-blur-xs animate-fade-in"
       />
       <div
         className={[
@@ -118,7 +118,7 @@ export const ToolsMenuPlaceholder: React.FC<ToolsMenuPlaceholderProps> = ({
             onClick={onClose}
             className={[
               'rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+              'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
               isDarkMode ? 'hover:bg-white/10' : 'hover:bg-black/5',
             ].join(' ')}
           >
@@ -137,7 +137,7 @@ export const ToolsMenuPlaceholder: React.FC<ToolsMenuPlaceholderProps> = ({
           </p>
           <p
             className={[
-              'mt-3 text-xs font-mono uppercase tracking-[0.1em]',
+              'mt-3 text-xs font-mono uppercase tracking-widest',
               isDarkMode ? 'text-zinc-500' : 'text-zinc-500',
             ].join(' ')}
           >

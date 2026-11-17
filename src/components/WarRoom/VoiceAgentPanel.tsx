@@ -222,7 +222,7 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
     >
       {/* Header */}
       <div
-        className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-900 to-gray-800"
+        className="flex items-center justify-between p-3 bg-linear-to-r from-gray-900 to-gray-800"
         style={{ borderBottom: '1px solid var(--pulse-border)' }}
       >
         <div className="flex items-center gap-3">
@@ -319,7 +319,7 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
             <select
               value={voiceSettings.voice}
               onChange={(e) => setVoiceSettings(prev => ({ ...prev, voice: e.target.value as any }))}
-              className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-rose-500"
+              className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:outline-hidden focus:border-rose-500"
             >
               <option value="alloy">Alloy (Neutral)</option>
               <option value="ash">Ash (Neutral)</option>
@@ -341,7 +341,7 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
             <select
               value={voiceSettings.turnDetection}
               onChange={(e) => setVoiceSettings(prev => ({ ...prev, turnDetection: e.target.value as any }))}
-              className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-rose-500"
+              className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:outline-hidden focus:border-rose-500"
             >
               <option value="semantic_vad">Semantic VAD (Smart)</option>
               <option value="server_vad">Server VAD (Fast)</option>
@@ -354,7 +354,7 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
             <select
               value={voiceSettings.noiseReduction}
               onChange={(e) => setVoiceSettings(prev => ({ ...prev, noiseReduction: e.target.value as any }))}
-              className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-rose-500"
+              className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:outline-hidden focus:border-rose-500"
             >
               <option value="near_field">Near Field (Close Mic)</option>
               <option value="far_field">Far Field (Room Mic)</option>

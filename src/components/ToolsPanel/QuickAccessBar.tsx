@@ -53,7 +53,7 @@ export const QuickAccessBar: React.FC<QuickAccessBarProps> = ({
               border border-zinc-700/30 hover:border-zinc-600
               transition-all duration-200
               hover:-translate-y-1 hover:shadow-lg
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500
+              focus:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-500
             "
             title={tool.name}
             aria-label={tool.name}

@@ -137,9 +137,9 @@ export const UsageWarningBanner: React.FC<UsageWarningBannerProps> = ({
   return (
     <div
       role="alert"
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 to-rose-500/10 text-amber-100 ${className}`}
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl border border-amber-500/30 bg-linear-to-r from-amber-500/10 to-rose-500/10 text-amber-100 ${className}`}
     >
-      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+      <div className="shrink-0 w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
         <AlertTriangle size={16} className="text-amber-400" aria-hidden="true" />
       </div>
       <div className="flex-1 min-w-0">
@@ -153,7 +153,7 @@ export const UsageWarningBanner: React.FC<UsageWarningBannerProps> = ({
       <button
         type="button"
         onClick={handleUpgrade}
-        className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 text-white text-xs font-semibold transition-colors"
+        className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-linear-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 text-white text-xs font-semibold transition-colors"
       >
         Upgrade
         <ArrowRight size={12} aria-hidden="true" />
@@ -162,7 +162,7 @@ export const UsageWarningBanner: React.FC<UsageWarningBannerProps> = ({
         type="button"
         onClick={handleDismiss}
         aria-label="Dismiss banner"
-        className="flex-shrink-0 w-7 h-7 rounded-md hover:bg-white/10 flex items-center justify-center text-amber-200/60 hover:text-amber-100 transition-colors"
+        className="shrink-0 w-7 h-7 rounded-md hover:bg-white/10 flex items-center justify-center text-amber-200/60 hover:text-amber-100 transition-colors"
       >
         <X size={14} aria-hidden="true" />
       </button>

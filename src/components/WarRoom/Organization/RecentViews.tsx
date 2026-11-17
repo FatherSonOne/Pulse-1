@@ -125,7 +125,7 @@ export const RecentViews: React.FC<RecentViewsProps> = ({
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* Header */}
-      <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+      <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Clock className="fa text-blue-500" />

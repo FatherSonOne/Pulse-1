@@ -43,8 +43,8 @@ export const CalendarSettingsPanel: React.FC<CalendarSettingsPanelProps> = ({
   if (!showCalendarSettings) return null;
 
   return (
-    <div className="absolute right-0 top-0 bottom-0 w-96 bg-[var(--pulse-surface)] dark:bg-[var(--pulse-canvas)] border-l border-[var(--pulse-border)] shadow-2xl z-50 animate-slide-in-right flex flex-col">
-      <div className="p-6 border-b border-[var(--pulse-border)] flex items-center justify-between">
+    <div className="absolute right-0 top-0 bottom-0 w-96 bg-(--pulse-surface) dark:bg-(--pulse-canvas) border-l border-(--pulse-border) shadow-2xl z-50 animate-slide-in-right flex flex-col">
+      <div className="p-6 border-b border-(--pulse-border) flex items-center justify-between">
         <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
           <Settings className="text-zinc-400" />
           Calendar Settings
@@ -59,11 +59,11 @@ export const CalendarSettingsPanel: React.FC<CalendarSettingsPanelProps> = ({
           <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">View Preferences</h4>
           <div className="space-y-4">
             <div>
-              <label className="text-sm text-[var(--pulse-ink-2)] mb-2 block">Default View</label>
+              <label className="text-sm text-(--pulse-ink-2) mb-2 block">Default View</label>
               <select
                 value={viewMode}
                 onChange={(e) => setViewMode(e.target.value as ViewMode)}
-                className="w-full bg-[var(--pulse-canvas-soft)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg px-3 py-2 text-sm outline-none"
+                className="w-full bg-(--pulse-canvas-soft) dark:bg-(--pulse-surface) border border-(--pulse-border) rounded-lg px-3 py-2 text-sm outline-hidden"
               >
                 <option value="day">Day</option>
                 <option value="week">Week</option>
@@ -72,11 +72,11 @@ export const CalendarSettingsPanel: React.FC<CalendarSettingsPanelProps> = ({
               </select>
             </div>
             <div>
-              <label className="text-sm text-[var(--pulse-ink-2)] mb-2 block">Week Starts On</label>
+              <label className="text-sm text-(--pulse-ink-2) mb-2 block">Week Starts On</label>
               <select
                 value={weekStartsOn}
                 onChange={(e) => setWeekStartsOn(e.target.value as 'sunday' | 'monday')}
-                className="w-full bg-[var(--pulse-canvas-soft)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg px-3 py-2 text-sm outline-none"
+                className="w-full bg-(--pulse-canvas-soft) dark:bg-(--pulse-surface) border border-(--pulse-border) rounded-lg px-3 py-2 text-sm outline-hidden"
               >
                 <option value="sunday">Sunday</option>
                 <option value="monday">Monday</option>
@@ -87,9 +87,9 @@ export const CalendarSettingsPanel: React.FC<CalendarSettingsPanelProps> = ({
                 type="checkbox"
                 checked={showWeekNumbers}
                 onChange={(e) => setShowWeekNumbers(e.target.checked)}
-                className="w-4 h-4 rounded"
+                className="w-4 h-4 rounded-sm"
               />
-              <span className="text-sm text-[var(--pulse-ink-2)]">Show Week Numbers</span>
+              <span className="text-sm text-(--pulse-ink-2)">Show Week Numbers</span>
             </label>
           </div>
         </div>
@@ -107,7 +107,7 @@ export const CalendarSettingsPanel: React.FC<CalendarSettingsPanelProps> = ({
                 <button
                   onClick={syncGoogleCalendar}
                   disabled={syncingGoogle}
-                  className="w-full flex items-center justify-center gap-2 bg-[var(--pulse-surface-raised)] dark:bg-[var(--pulse-surface-raised)] rounded-lg px-4 py-3 text-sm font-medium hover:bg-[var(--pulse-surface-raised)] dark:hover:bg-[var(--pulse-surface-raised)] transition"
+                  className="w-full flex items-center justify-center gap-2 bg-(--pulse-surface-raised) dark:bg-(--pulse-surface-raised) rounded-lg px-4 py-3 text-sm font-medium hover:bg-(--pulse-surface-raised) dark:hover:bg-(--pulse-surface-raised) transition"
                 >
                   <i className={`fa-solid fa-sync ${syncingGoogle ? 'animate-spin' : ''}`}></i>
                   {syncingGoogle ? 'Syncing...' : 'Sync Now'}
@@ -148,7 +148,7 @@ export const CalendarSettingsPanel: React.FC<CalendarSettingsPanelProps> = ({
                 <button
                   onClick={syncOutlookCalendar}
                   disabled={syncingOutlook}
-                  className="w-full flex items-center justify-center gap-2 bg-[var(--pulse-surface-raised)] dark:bg-[var(--pulse-surface-raised)] rounded-lg px-4 py-3 text-sm font-medium hover:bg-[var(--pulse-surface-raised)] dark:hover:bg-[var(--pulse-surface-raised)] transition"
+                  className="w-full flex items-center justify-center gap-2 bg-(--pulse-surface-raised) dark:bg-(--pulse-surface-raised) rounded-lg px-4 py-3 text-sm font-medium hover:bg-(--pulse-surface-raised) dark:hover:bg-(--pulse-surface-raised) transition"
                 >
                   <i className={`fa-solid fa-sync ${syncingOutlook ? 'animate-spin' : ''}`}></i>
                   {syncingOutlook ? 'Syncing...' : 'Sync Now'}
@@ -164,7 +164,7 @@ export const CalendarSettingsPanel: React.FC<CalendarSettingsPanelProps> = ({
               </>
             ) : (
               <>
-                <p className="text-xs text-[var(--pulse-ink-3)]">
+                <p className="text-xs text-(--pulse-ink-3)">
                   Sync events from your Microsoft 365 or Outlook.com calendar.
                   {!import.meta.env.VITE_MICROSOFT_CLIENT_ID && (
                     <span className="block mt-1 text-amber-600 dark:text-amber-400">
@@ -198,11 +198,11 @@ export const CalendarSettingsPanel: React.FC<CalendarSettingsPanelProps> = ({
           <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">Event Defaults</h4>
           <div className="space-y-4">
             <div>
-              <label className="text-sm text-[var(--pulse-ink-2)] mb-2 block">Default Reminder</label>
+              <label className="text-sm text-(--pulse-ink-2) mb-2 block">Default Reminder</label>
               <select
                 value={newEventReminder}
                 onChange={(e) => setAndPersistReminder(e.target.value as ReminderTime)}
-                className="w-full bg-[var(--pulse-canvas-soft)] dark:bg-[var(--pulse-surface)] border border-[var(--pulse-border)] rounded-lg px-3 py-2 text-sm outline-none"
+                className="w-full bg-(--pulse-canvas-soft) dark:bg-(--pulse-surface) border border-(--pulse-border) rounded-lg px-3 py-2 text-sm outline-hidden"
               >
                 <option value="none">No reminder</option>
                 <option value="5min">5 minutes before</option>
@@ -213,7 +213,7 @@ export const CalendarSettingsPanel: React.FC<CalendarSettingsPanelProps> = ({
               </select>
             </div>
             <div>
-              <label className="text-sm text-[var(--pulse-ink-2)] mb-2 block">Default Event Color</label>
+              <label className="text-sm text-(--pulse-ink-2) mb-2 block">Default Event Color</label>
               <div className="flex gap-2 flex-wrap">
                 {EVENT_COLORS.map(color => (
                   <button

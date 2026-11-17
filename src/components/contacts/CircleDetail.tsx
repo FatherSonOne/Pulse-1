@@ -62,7 +62,7 @@ const MemberCard: React.FC<MemberCardProps> = ({ contact, profile, onRemove, onC
   return (
     <div className="flex items-center gap-3 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 group hover:border-rose-200 dark:hover:border-rose-400/40 transition-colors">
       {/* Avatar */}
-      <button onClick={onClick} className="flex-shrink-0">
+      <button onClick={onClick} className="shrink-0">
         <div
           className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold"
           style={{
@@ -86,7 +86,7 @@ const MemberCard: React.FC<MemberCardProps> = ({ contact, profile, onRemove, onC
 
       {/* Score */}
       {score !== undefined && (
-        <span className={`text-xs font-semibold flex-shrink-0 ${getScoreColor(score)}`}>
+        <span className={`text-xs font-semibold shrink-0 ${getScoreColor(score)}`}>
           {score}
         </span>
       )}
@@ -94,7 +94,7 @@ const MemberCard: React.FC<MemberCardProps> = ({ contact, profile, onRemove, onC
       {/* Remove button (shown on hover) */}
       <button
         onClick={(e) => { e.stopPropagation(); onRemove(); }}
-        className="flex-shrink-0 opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded-full text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all"
+        className="shrink-0 opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded-full text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all"
         title="Remove from circle"
       >
         <X className="text-xs" />
@@ -178,7 +178,7 @@ export const CircleDetail: React.FC<CircleDetailProps> = ({
     <div className="fixed inset-y-0 right-0 w-full md:w-[420px] bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl z-50 flex flex-col">
 
       {/* Header */}
-      <div className="flex-shrink-0 px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+      <div className="shrink-0 px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button
             onClick={onClose}
@@ -191,7 +191,7 @@ export const CircleDetail: React.FC<CircleDetailProps> = ({
         {/* Source badge */}
         {localCircle.source === 'auto' && (
           <span
-            className="text-[10px] px-2 py-0.5 rounded font-semibold uppercase tracking-[0.1em]"
+            className="text-[10px] px-2 py-0.5 rounded-sm font-semibold uppercase tracking-widest"
             style={{
               background: 'var(--pulse-rose-soft)',
               color: 'var(--pulse-rose-deep)',
@@ -211,7 +211,7 @@ export const CircleDetail: React.FC<CircleDetailProps> = ({
           <div className="flex items-start gap-4 mb-4">
             {/* Color dot */}
             <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-md flex-shrink-0"
+              className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-md shrink-0"
               style={{ backgroundColor: `${selectedColor}22`, border: `2px solid ${selectedColor}` }}
             >
               {localCircle.icon ?? '◉'}
@@ -225,7 +225,7 @@ export const CircleDetail: React.FC<CircleDetailProps> = ({
                     value={editName}
                     onChange={e => setEditName(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') setIsEditingName(false); }}
-                    className="flex-1 text-lg font-bold bg-transparent border-b-2 border-rose-500 outline-none text-zinc-800 dark:text-zinc-100"
+                    className="flex-1 text-lg font-bold bg-transparent border-b-2 border-rose-500 outline-hidden text-zinc-800 dark:text-zinc-100"
                   />
                   <button onClick={handleSaveName} className="text-rose-500 text-sm font-medium">Save</button>
                 </div>

@@ -89,7 +89,7 @@ export const AnnotationReplyThread: React.FC<AnnotationReplyThreadProps> = ({
 
       {/* Reply input */}
       <div className="flex items-start gap-2">
-        <div className="w-6 h-6 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center flex-shrink-0">
+        <div className="w-6 h-6 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center shrink-0">
           <Reply className="fa text-xs text-rose-500" />
         </div>
         <div className="flex-1">
@@ -98,7 +98,7 @@ export const AnnotationReplyThread: React.FC<AnnotationReplyThreadProps> = ({
             onChange={(e) => setReplyText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Write a reply..."
-            className="w-full px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:border-rose-500 focus:outline-none resize-none text-gray-900 dark:text-white placeholder-gray-400"
+            className="w-full px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:border-rose-500 focus:outline-hidden resize-none text-gray-900 dark:text-white placeholder-gray-400"
             rows={2}
           />
           <div className="flex items-center justify-between mt-1">
@@ -108,7 +108,7 @@ export const AnnotationReplyThread: React.FC<AnnotationReplyThreadProps> = ({
             <button
               onClick={handleSubmit}
               disabled={!replyText.trim() || isSubmitting}
-              className="px-2 py-1 text-xs bg-rose-500 hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded transition-colors"
+              className="px-2 py-1 text-xs bg-rose-500 hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-sm transition-colors"
             >
               {isSubmitting ? (
                 <Loader2 className="fa animate-spin" />

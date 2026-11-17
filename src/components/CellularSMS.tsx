@@ -76,7 +76,7 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
     <div className="flex-1 flex flex-col h-full bg-white dark:bg-zinc-950">
       {/* Development Banner */}
       {showDevBanner && (
-        <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2 flex items-center justify-between">
+        <div className="bg-linear-to-r from-amber-500 to-orange-500 px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
               <FlaskConical className="text-white" />
@@ -110,7 +110,7 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
                 <ArrowLeft />
               </button>
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-linear-to-br from-green-500 to-emerald-600 flex items-center justify-center">
                   <Smartphone className="text-white text-sm" />
                 </div>
                 <div>
@@ -138,7 +138,7 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
                 placeholder="Search SMS..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full pl-9 pr-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-green-500"
               />
             </div>
           </div>
@@ -162,21 +162,21 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
                     onClick={() => onSelectThread(thread.id)}
                     className={`p-3 rounded-xl cursor-pointer transition relative group flex items-center gap-3
                       ${activeThreadId === thread.id
-                        ? 'bg-white dark:bg-zinc-800 shadow-sm ring-1 ring-green-200 dark:ring-green-800'
+                        ? 'bg-white dark:bg-zinc-800 shadow-xs ring-1 ring-green-200 dark:ring-green-800'
                         : 'hover:bg-white dark:hover:bg-zinc-800/50'}`}
                   >
                     {/* Actions on hover */}
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 flex gap-1 z-10">
                       <button
                         onClick={(e) => { e.stopPropagation(); onPinThread(thread.id); }}
-                        className={`w-6 h-6 rounded flex items-center justify-center ${thread.pinned ? 'text-amber-500' : 'text-zinc-400 hover:text-zinc-600'}`}
+                        className={`w-6 h-6 rounded-sm flex items-center justify-center ${thread.pinned ? 'text-amber-500' : 'text-zinc-400 hover:text-zinc-600'}`}
                         title={thread.pinned ? 'Unpin' : 'Pin'}
                       >
                         <Pin className="text-[10px]" />
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); onDeleteThread(thread.id); }}
-                        className="w-6 h-6 rounded flex items-center justify-center text-zinc-400 hover:text-red-500"
+                        className="w-6 h-6 rounded-sm flex items-center justify-center text-zinc-400 hover:text-red-500"
                         title="Delete"
                       >
                         <Trash2 className="text-[10px]" />
@@ -184,7 +184,7 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
                     </div>
 
                     {/* Avatar */}
-                    <div className={`w-10 h-10 rounded-full ${thread.avatarColor} flex items-center justify-center text-white text-sm font-bold flex-shrink-0 relative`}>
+                    <div className={`w-10 h-10 rounded-full ${thread.avatarColor} flex items-center justify-center text-white text-sm font-bold shrink-0 relative`}>
                       {thread.contactName.charAt(0)}
                       {thread.pinned && (
                         <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center">
@@ -213,7 +213,7 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
 
                     {/* Unread badge */}
                     {thread.unread && (
-                      <div className="w-2.5 h-2.5 rounded-full bg-green-500 flex-shrink-0"></div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-green-500 shrink-0"></div>
                     )}
                   </div>
                 );
@@ -282,7 +282,7 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                    className="flex-1 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="flex-1 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-full text-sm focus:outline-hidden focus:ring-2 focus:ring-green-500"
                   />
                   <button
                     onClick={handleSend}
@@ -298,7 +298,7 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
             /* Empty State */
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center max-w-md">
-                <div className="w-24 h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 flex items-center justify-center">
+                <div className="w-24 h-24 mx-auto mb-6 rounded-2xl bg-linear-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 flex items-center justify-center">
                   <MessageSquare className="text-4xl text-green-600 dark:text-green-400" />
                 </div>
                 <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">
@@ -311,7 +311,7 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
                 {/* Dev Notice */}
                 <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 text-left">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-800/50 flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-800/50 flex items-center justify-center shrink-0">
                       <Info className="text-amber-600 dark:text-amber-400" />
                     </div>
                     <div>

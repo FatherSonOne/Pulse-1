@@ -108,7 +108,7 @@ const PulseNudgesWidget: React.FC<PulseNudgesWidgetProps> = ({
   const hasAiNudge = nudges.some(n => n.kind !== 'invite-teammate');
 
   return (
-    <div className="bg-white dark:bg-white/[0.03] rounded-xl p-5 border border-zinc-200 dark:border-white/[0.06] transition-colors duration-150">
+    <div className="bg-white dark:bg-white/3 rounded-xl p-5 border border-zinc-200 dark:border-white/6 transition-colors duration-150">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-rose-500 dark:text-rose-400" aria-hidden="true" />
@@ -135,7 +135,7 @@ const PulseNudgesWidget: React.FC<PulseNudgesWidgetProps> = ({
                 <button
                   data-strip-row
                   onClick={() => dispatchNudge(n)}
-                  className="pulse-label text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded mt-1"
+                  className="pulse-label text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm mt-1"
                 >
                   {n.cta.label}
                   <span aria-hidden="true"> →</span>
@@ -150,7 +150,7 @@ const PulseNudgesWidget: React.FC<PulseNudgesWidgetProps> = ({
           primary affordance anymore. */}
       <form
         onSubmit={(e) => { e.preventDefault(); onAsk(); }}
-        className="pt-3 border-t border-zinc-100 dark:border-white/[0.06]"
+        className="pt-3 border-t border-zinc-100 dark:border-white/6"
       >
         <div className="relative">
           <input
@@ -160,7 +160,7 @@ const PulseNudgesWidget: React.FC<PulseNudgesWidgetProps> = ({
             onFocus={() => setAskFocused(true)}
             onBlur={() => { if (!askQuery.trim()) setAskFocused(false); }}
             placeholder="Ask Pulse AI anything"
-            className={`w-full bg-zinc-50 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.06] rounded-lg px-3 text-sm text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-500 focus:border-rose-500/40 focus:ring-2 focus:ring-rose-500/20 focus:outline-none transition-all pr-9 ${
+            className={`w-full bg-zinc-50 dark:bg-white/4 border border-zinc-200 dark:border-white/6 rounded-lg px-3 text-sm text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-500 focus:border-rose-500/40 focus:ring-2 focus:ring-rose-500/20 focus:outline-hidden transition-all pr-9 ${
               askFocused ? 'py-3' : 'py-2'
             }`}
             style={{ transitionDuration: '200ms', transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
@@ -168,7 +168,7 @@ const PulseNudgesWidget: React.FC<PulseNudgesWidgetProps> = ({
           <button
             type="submit"
             disabled={askLoading || !askQuery.trim()}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-sm text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 disabled:opacity-40 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
             aria-label="Send"
           >
             {askLoading ? <Loader2 className="animate-spin w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
@@ -177,19 +177,19 @@ const PulseNudgesWidget: React.FC<PulseNudgesWidgetProps> = ({
       </form>
 
       {askResponse && (
-        <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-white/[0.06] animate-fade-in">
+        <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-white/6 animate-fade-in">
           <AIProvenanceChip vendor="PULSE AI" type="ANSWER" className="mb-2" />
           <p className="text-xs leading-relaxed text-zinc-700 dark:text-zinc-300 line-clamp-4">{askResponse}</p>
           <div className="flex items-center justify-between mt-2.5">
             <button
               onClick={() => setView(AppView.LIVE_AI)}
-              className="pulse-label text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+              className="pulse-label text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
             >
               OPEN PULSE AI →
             </button>
             <button
               onClick={() => setAskResponse(null)}
-              className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+              className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
             >
               CLEAR
             </button>

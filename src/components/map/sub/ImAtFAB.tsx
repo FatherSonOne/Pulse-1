@@ -155,7 +155,7 @@ const ImAtFAB: React.FC<ImAtFABProps> = ({ userPosition, contacts, isDarkMode, o
            keeps the FAB prominent + easily reachable while leaving the credit
            visible/clickable. (-translate-x-1/2 centers; hover -translate-y-px
            composes via Tailwind's shared transform vars.) */
-        className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3.5 py-2 rounded-full shadow-lg text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 bg-rose-500 text-white hover:bg-rose-600 hover:-translate-y-px ${
+        className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3.5 py-2 rounded-full shadow-lg text-sm font-semibold transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 bg-rose-500 text-white hover:bg-rose-600 hover:-translate-y-px ${
           isDarkMode ? 'focus-visible:ring-offset-zinc-950' : 'focus-visible:ring-offset-white'
         }`}
         style={{ boxShadow: '0 4px 16px rgba(244,63,94,0.30)' }}
@@ -185,7 +185,7 @@ const ImAtFAB: React.FC<ImAtFABProps> = ({ userPosition, contacts, isDarkMode, o
               <div className="flex items-center gap-2">
                 <MapPin size={14} className="text-rose-500" />
                 <span
-                  className="text-[11px] tracking-[0.1em] uppercase"
+                  className="text-[11px] tracking-widest uppercase"
                   style={{ fontFamily: "'JetBrains Mono', monospace" }}
                 >
                   Share your location
@@ -206,7 +206,7 @@ const ImAtFAB: React.FC<ImAtFABProps> = ({ userPosition, contacts, isDarkMode, o
             <div className="px-4 py-3 space-y-3">
               <label className="block">
                 <span
-                  className={`block text-[10px] tracking-[0.1em] uppercase mb-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}
+                  className={`block text-[10px] tracking-widest uppercase mb-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}
                   style={{ fontFamily: "'JetBrains Mono', monospace" }}
                 >
                   Place
@@ -217,7 +217,7 @@ const ImAtFAB: React.FC<ImAtFABProps> = ({ userPosition, contacts, isDarkMode, o
                     value={placeName}
                     onChange={(e) => setPlaceName(e.target.value)}
                     placeholder={resolving ? 'Resolving address…' : 'e.g. Sightglass, Mission'}
-                    className={`w-full px-3 py-2 pr-9 rounded-lg text-sm outline-none transition-colors ${
+                    className={`w-full px-3 py-2 pr-9 rounded-lg text-sm outline-hidden transition-colors ${
                       isDarkMode
                         ? 'bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-rose-500'
                         : 'bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-rose-500'
@@ -234,7 +234,7 @@ const ImAtFAB: React.FC<ImAtFABProps> = ({ userPosition, contacts, isDarkMode, o
 
               <label className="block">
                 <span
-                  className={`block text-[10px] tracking-[0.1em] uppercase mb-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}
+                  className={`block text-[10px] tracking-widest uppercase mb-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}
                   style={{ fontFamily: "'JetBrains Mono', monospace" }}
                 >
                   Send to
@@ -244,7 +244,7 @@ const ImAtFAB: React.FC<ImAtFABProps> = ({ userPosition, contacts, isDarkMode, o
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search Pulse contacts…"
-                  className={`w-full px-3 py-2 rounded-lg text-sm outline-none transition-colors ${
+                  className={`w-full px-3 py-2 rounded-lg text-sm outline-hidden transition-colors ${
                     isDarkMode
                       ? 'bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-rose-500'
                       : 'bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:border-rose-500'
@@ -268,12 +268,12 @@ const ImAtFAB: React.FC<ImAtFABProps> = ({ userPosition, contacts, isDarkMode, o
                     key={c.id}
                     type="button"
                     onClick={() => handlePick(c.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:bg-rose-500/10 ${
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors focus-visible:outline-hidden focus-visible:bg-rose-500/10 ${
                       isDarkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50'
                     }`}
                   >
                     <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0"
                       style={{ backgroundColor: c.avatarColor || '#f43f5e' }}
                     >
                       {c.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
@@ -288,13 +288,13 @@ const ImAtFAB: React.FC<ImAtFABProps> = ({ userPosition, contacts, isDarkMode, o
                         </p>
                       )}
                     </div>
-                    <Send size={13} className="text-rose-500 flex-shrink-0" />
+                    <Send size={13} className="text-rose-500 shrink-0" />
                   </button>
                 ))
               )}
             </div>
 
-            <div className={`px-4 py-3 border-t flex items-center gap-2 ${isDarkMode ? 'border-white/10 bg-white/[0.02]' : 'border-gray-100 bg-gray-50'}`}>
+            <div className={`px-4 py-3 border-t flex items-center gap-2 ${isDarkMode ? 'border-white/10 bg-white/2' : 'border-gray-100 bg-gray-50'}`}>
               <MessageSquare size={11} className={isDarkMode ? 'text-gray-500' : 'text-gray-400'} />
               <span className={`text-[11px] ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
                 Picking a contact copies <span className="font-mono">"I'm at {placeName || '…'}"</span> and opens Messages.

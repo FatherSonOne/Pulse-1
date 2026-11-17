@@ -352,7 +352,7 @@ export const ToolsMenuV2: React.FC<ToolsMenuV2Props> = ({
               style={{ minWidth: TOUCH_TARGET_PX, minHeight: TOUCH_TARGET_PX }}
               className={[
                 'inline-flex items-center justify-center rounded-lg -ml-2',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+                'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
                 isDarkMode ? 'hover:bg-white/10' : 'hover:bg-black/5',
               ].join(' ')}
             >
@@ -391,7 +391,7 @@ export const ToolsMenuV2: React.FC<ToolsMenuV2Props> = ({
             style={{ minWidth: TOUCH_TARGET_PX, minHeight: TOUCH_TARGET_PX }}
             className={[
               'inline-flex items-center justify-center rounded-lg',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+              'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
               isDarkMode ? 'hover:bg-white/10' : 'hover:bg-black/5',
             ].join(' ')}
           >
@@ -410,7 +410,7 @@ export const ToolsMenuV2: React.FC<ToolsMenuV2Props> = ({
           style={{ minWidth: TOUCH_TARGET_PX, minHeight: TOUCH_TARGET_PX }}
           className={[
             'inline-flex items-center justify-center rounded-lg -mr-1',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+            'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
             isDarkMode ? 'hover:bg-white/10' : 'hover:bg-black/5',
           ].join(' ')}
         >
@@ -454,7 +454,7 @@ export const ToolsMenuV2: React.FC<ToolsMenuV2Props> = ({
               }}
               className={[
                 'w-full pl-9 pr-3 py-2.5 rounded-lg border text-sm',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+                'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
                 isDarkMode
                   ? 'bg-zinc-900 border-white/10 text-zinc-100 placeholder:text-zinc-500'
                   : 'bg-white border-black/10 text-zinc-900 placeholder:text-zinc-400',
@@ -516,7 +516,7 @@ export const ToolsMenuV2: React.FC<ToolsMenuV2Props> = ({
           </div>
           <p
             className={[
-              'mt-4 text-[11px] font-mono uppercase tracking-[0.1em]',
+              'mt-4 text-[11px] font-mono uppercase tracking-widest',
               isDarkMode ? 'text-zinc-500' : 'text-zinc-500',
             ].join(' ')}
           >
@@ -534,7 +534,7 @@ export const ToolsMenuV2: React.FC<ToolsMenuV2Props> = ({
         <div
           aria-hidden="true"
           onClick={onClose}
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm animate-fade-in"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs animate-fade-in"
         />
         <div
           ref={containerRef}

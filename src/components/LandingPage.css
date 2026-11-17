@@ -324,8 +324,8 @@ a.duration-300,
    Define lpFadeIn with spring curve; override .animate-fade-in
    to reference the new keyframe + correct timing
 
-   Note: JSX <style> tag defines fade-in at 0.8s ease-out.
-   !important overrides since <style> injects after external CSS.
+   Note: JSX \3c style> tag defines fade-in at 0.8s ease-out.
+   !important overrides since \3c style> injects after external CSS.
    ============================================================ */
 
 @keyframes lpFadeIn {

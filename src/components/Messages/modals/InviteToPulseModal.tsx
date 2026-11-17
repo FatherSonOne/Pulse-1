@@ -48,7 +48,7 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+        className="fixed inset-0 z-70 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
         onClick={onClose}
       >
         <motion.div
@@ -64,7 +64,7 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
           onClick={e => e.stopPropagation()}
         >
           {/* Header with gradient */}
-          <div className="relative p-6 text-center bg-gradient-to-br from-[#f43f5e] to-[#ec4899]">
+          <div className="relative p-6 text-center bg-linear-to-br from-[#f43f5e] to-pulse-pink">
             <div className="absolute inset-0 bg-black/10"></div>
             <button
               onClick={onClose}
@@ -73,7 +73,7 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
               <X className="text-lg" />
             </button>
             <div className="relative z-10">
-              <div className="w-16 h-16 mx-auto mb-4 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
                 <Rocket className="text-3xl text-white" />
               </div>
               <h3 className="text-xl font-bold text-white mb-1">Invite to Pulse</h3>
@@ -114,9 +114,9 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
                   {targetContact.email && (
                     <button
                       onClick={onSendEmail}
-                      className="w-full p-4 rounded-xl bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] border border-[rgba(244,63,94,0.20)] hover:border-[var(--pulse-rose)] transition flex items-center gap-4 group"
+                      className="w-full p-4 rounded-xl bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] border border-[rgba(244,63,94,0.20)] hover:border-(--pulse-rose) transition flex items-center gap-4 group"
                     >
-                      <div className="w-12 h-12 rounded-full bg-[var(--pulse-rose-soft)] text-[var(--pulse-coral-fg)] flex items-center justify-center transition">
+                      <div className="w-12 h-12 rounded-full bg-(--pulse-rose-soft) text-(--pulse-coral-fg) flex items-center justify-center transition">
                         <Mail className="text-lg" />
                       </div>
                       <div className="text-left flex-1">
@@ -130,9 +130,9 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
                   {/* Copy Shareable Link */}
                   <button
                     onClick={onCopyLink}
-                    className="w-full p-4 rounded-xl bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] border border-[rgba(244,63,94,0.20)] hover:border-[var(--pulse-rose)] transition flex items-center gap-4 group"
+                    className="w-full p-4 rounded-xl bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] border border-[rgba(244,63,94,0.20)] hover:border-(--pulse-rose) transition flex items-center gap-4 group"
                   >
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#f43f5e] to-[#ec4899] text-white flex items-center justify-center transition shadow-lg">
+                    <div className="w-12 h-12 rounded-full bg-linear-to-br from-[#f43f5e] to-pulse-pink text-white flex items-center justify-center transition shadow-lg">
                       {isCopied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
                     </div>
                     <div className="text-left flex-1">
@@ -148,9 +148,9 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
                   {targetContact.phone && (
                     <button
                       onClick={onSendSMS}
-                      className="w-full p-4 rounded-xl bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20 border border-pink-200 dark:border-pink-800 hover:border-pink-400 dark:hover:border-pink-600 transition flex items-center gap-4 group"
+                      className="w-full p-4 rounded-xl bg-linear-to-r from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20 border border-pink-200 dark:border-pink-800 hover:border-pink-400 dark:hover:border-pink-600 transition flex items-center gap-4 group"
                     >
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 text-white flex items-center justify-center transition shadow-lg">
+                      <div className="w-12 h-12 rounded-full bg-linear-to-br from-pink-500 to-rose-500 text-white flex items-center justify-center transition shadow-lg">
                         <MessageSquare className="text-lg" />
                       </div>
                       <div className="text-left flex-1">
@@ -164,18 +164,18 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
 
                 {/* Features Preview */}
                 <div className="mt-6 pt-6 border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)]">
-                  <p className="text-xs font-mono font-medium text-zinc-400 uppercase tracking-[0.1em] mb-3">What they'll get</p>
+                  <p className="text-xs font-mono font-medium text-zinc-400 uppercase tracking-widest mb-3">What they'll get</p>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
                       <Wand2 className="text-rose-500" />
                       <span>AI-powered messaging</span>
                     </div>
                     <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                      <Calendar className="text-[var(--pulse-rose)]" />
+                      <Calendar className="text-(--pulse-rose)" />
                       <span>Smart calendar</span>
                     </div>
                     <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                      <Mic className="text-[var(--pulse-ink-3)]" />
+                      <Mic className="text-(--pulse-ink-3)" />
                       <span>Meeting transcription</span>
                     </div>
                     <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">

@@ -278,12 +278,12 @@ Requirements:
                     <p className="text-xs mb-2" style={{ ...monoLabel, color: 'var(--pulse-ink-3)' }}>Documents to analyze</p>
                     <div className="flex flex-wrap gap-2 justify-center max-w-lg mx-auto">
                       {docsToUse.slice(0, 5).map(doc => (
-                        <span key={doc.id} className="text-xs px-2 py-1 rounded" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
+                        <span key={doc.id} className="text-xs px-2 py-1 rounded-sm" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
                           {doc.title}
                         </span>
                       ))}
                       {docsToUse.length > 5 && (
-                        <span className="text-xs px-2 py-1 rounded" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
+                        <span className="text-xs px-2 py-1 rounded-sm" style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink-2)' }}>
                           +{docsToUse.length - 5} more
                         </span>
                       )}
@@ -317,7 +317,7 @@ Requirements:
                 <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'var(--pulse-surface-raised)' }}>
                   <button
                     onClick={() => setViewMode('vertical')}
-                    className="px-3 py-1 rounded text-xs transition-all inline-flex items-center"
+                    className="px-3 py-1 rounded-sm text-xs transition-all inline-flex items-center"
                     style={viewToggle(viewMode === 'vertical')}
                   >
                     <GripVertical size={12} className="mr-1" />
@@ -325,7 +325,7 @@ Requirements:
                   </button>
                   <button
                     onClick={() => setViewMode('horizontal')}
-                    className="px-3 py-1 rounded text-xs transition-all inline-flex items-center"
+                    className="px-3 py-1 rounded-sm text-xs transition-all inline-flex items-center"
                     style={viewToggle(viewMode === 'horizontal')}
                   >
                     <GripHorizontal size={12} className="mr-1" />
@@ -337,7 +337,7 @@ Requirements:
                 <select
                   value={filterImportance}
                   onChange={(e) => setFilterImportance(e.target.value)}
-                  className="px-3 py-2 rounded-lg text-sm focus:outline-none"
+                  className="px-3 py-2 rounded-lg text-sm focus:outline-hidden"
                   style={fieldStyle}
                 >
                   <option value="all">All Importance</option>
@@ -350,7 +350,7 @@ Requirements:
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="px-3 py-2 rounded-lg text-sm focus:outline-none"
+                  className="px-3 py-2 rounded-lg text-sm focus:outline-hidden"
                   style={fieldStyle}
                 >
                   <option value="all">All Types</option>
@@ -383,7 +383,7 @@ Requirements:
                                   {event.title}
                                 </p>
                               </div>
-                              <span className="text-xs px-2 py-0.5 rounded" style={style.badge}>
+                              <span className="text-xs px-2 py-0.5 rounded-sm" style={style.badge}>
                                 {event.importance}
                               </span>
                             </div>
@@ -425,7 +425,7 @@ Requirements:
                               {event.description}
                             </p>
                             <div className="flex justify-center mt-2">
-                              <span className="text-xs px-2 py-0.5 rounded" style={style.badge}>
+                              <span className="text-xs px-2 py-0.5 rounded-sm" style={style.badge}>
                                 {event.importance}
                               </span>
                             </div>

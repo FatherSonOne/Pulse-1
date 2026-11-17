@@ -81,7 +81,7 @@ const Pill: React.FC<{
   if (compact) {
     return (
       <span
-        className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+        className="inline-block w-2 h-2 rounded-full shrink-0"
         style={{ backgroundColor: tag.color }}
         title={tag.name}
       />
@@ -265,7 +265,7 @@ export const TagPicker: React.FC<TagPickerProps> = ({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-12 h-12 flex items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-[var(--pulse-surface-raised)] transition-colors"
+        className="w-12 h-12 flex items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-(--pulse-surface-raised) transition-colors"
         title="Tag this conversation"
         aria-label="Tag this conversation"
         aria-expanded={open}
@@ -287,7 +287,7 @@ export const TagPicker: React.FC<TagPickerProps> = ({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search or create tag…"
-                className="w-full pl-7 pr-2 py-1.5 text-sm rounded-md bg-[var(--pulse-surface-raised)] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 outline-none focus:ring-2 focus:ring-rose-500/30"
+                className="w-full pl-7 pr-2 py-1.5 text-sm rounded-md bg-(--pulse-surface-raised) text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 outline-hidden focus:ring-2 focus:ring-rose-500/30"
               />
             </div>
           </div>
@@ -313,11 +313,11 @@ export const TagPicker: React.FC<TagPickerProps> = ({
                       type="button"
                       onClick={() => void handleToggle(tag)}
                       disabled={!!pendingTagId}
-                      className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-[var(--pulse-surface-raised)] transition disabled:opacity-50 disabled:cursor-wait"
+                      className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-(--pulse-surface-raised) transition disabled:opacity-50 disabled:cursor-wait"
                       role="menuitem"
                     >
                       <span
-                        className="inline-block w-3 h-3 rounded-full flex-shrink-0"
+                        className="inline-block w-3 h-3 rounded-full shrink-0"
                         style={{ backgroundColor: tag.color }}
                       />
                       <span className="flex-1 text-left text-zinc-900 dark:text-zinc-100 truncate">
@@ -378,7 +378,7 @@ export const TagPicker: React.FC<TagPickerProps> = ({
                 <button
                   type="button"
                   onClick={() => setCreating(false)}
-                  className="px-3 py-1.5 text-xs rounded-md text-zinc-600 dark:text-zinc-400 hover:bg-[var(--pulse-surface-raised)] transition"
+                  className="px-3 py-1.5 text-xs rounded-md text-zinc-600 dark:text-zinc-400 hover:bg-(--pulse-surface-raised) transition"
                 >
                   Cancel
                 </button>

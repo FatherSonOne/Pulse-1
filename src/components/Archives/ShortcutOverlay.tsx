@@ -22,7 +22,7 @@ const SHORTCUTS: Array<{ keys: string[]; label: string; group: string }> = [
 ];
 
 const Kbd: React.FC<{ k: string }> = ({ k }) => (
-  <kbd className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded border border-zinc-300 dark:border-white/[0.10] bg-white dark:bg-white/[0.04] text-[10px] font-mono uppercase tracking-wider text-zinc-700 dark:text-zinc-300 shadow-[0_1px_0_rgba(0,0,0,0.04)]">
+  <kbd className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-sm border border-zinc-300 dark:border-white/10 bg-white dark:bg-white/4 text-[10px] font-mono uppercase tracking-wider text-zinc-700 dark:text-zinc-300 shadow-[0_1px_0_rgba(0,0,0,0.04)]">
     {k}
   </kbd>
 );
@@ -55,10 +55,10 @@ export const ShortcutOverlay: React.FC<ShortcutOverlayProps> = ({ open, onClose 
       aria-label="Keyboard shortcuts"
     >
       <div
-        className="w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/8 rounded-2xl shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 dark:border-white/[0.06]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 dark:border-white/6">
           <div>
             <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-rose-500 mb-0.5">
               Memory · keyboard
@@ -67,7 +67,7 @@ export const ShortcutOverlay: React.FC<ShortcutOverlayProps> = ({ open, onClose 
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/4 transition"
             aria-label="Close shortcuts"
           >
             <X className="w-4 h-4" />
@@ -99,7 +99,7 @@ export const ShortcutOverlay: React.FC<ShortcutOverlayProps> = ({ open, onClose 
           ))}
         </div>
 
-        <div className="px-5 py-3 border-t border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02]">
+        <div className="px-5 py-3 border-t border-zinc-200 dark:border-white/6 bg-zinc-50 dark:bg-white/2">
           <p className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-500">
             Press <Kbd k="Esc" /> to close
           </p>

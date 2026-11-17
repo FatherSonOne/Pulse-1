@@ -348,7 +348,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
   // ---------------------------------------------------------------------------
 
   const inputClass =
-    'w-full px-3 py-2 text-sm rounded-lg bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-700 text-stone-900 dark:text-zinc-100 placeholder-stone-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-rose-500/50 transition-colors';
+    'w-full px-3 py-2 text-sm rounded-lg bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-700 text-stone-900 dark:text-zinc-100 placeholder-stone-400 dark:placeholder-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-rose-500/50 transition-colors';
 
   const labelClass = 'block text-xs font-medium text-stone-600 dark:text-zinc-400 mb-1.5 uppercase tracking-wide';
 
@@ -590,7 +590,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
             <div className="pt-2">
               <button
                 onClick={() => goToStep('compose')}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-rose-500 to-red-500 text-white text-sm font-medium shadow-sm hover:opacity-90 transition-opacity"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-linear-to-r from-rose-500 to-red-500 text-white text-sm font-medium shadow-xs hover:opacity-90 transition-opacity"
               >
                 Continue to Compose
                 <ArrowRight className="text-xs" />
@@ -604,10 +604,10 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
           <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
 
             {/* AI Content Generator */}
-            <div className="rounded-xl border-2 border-transparent bg-gradient-to-r from-violet-500/20 to-purple-500/20 p-0.5">
+            <div className="rounded-xl border-2 border-transparent bg-linear-to-r from-violet-500/20 to-purple-500/20 p-0.5">
               <div className="rounded-[10px] bg-stone-50 dark:bg-zinc-950 p-5">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow">
+                  <div className="w-8 h-8 rounded-lg bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-sm">
                     <Wand2 className="text-white text-xs" />
                   </div>
                   <div>
@@ -633,7 +633,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
                       <select
                         value={aiTone}
                         onChange={(e) => setAiTone(e.target.value as DraftGenerationParams['tone'])}
-                        className="px-3 py-1.5 text-sm rounded-lg bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-700 text-stone-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                        className="px-3 py-1.5 text-sm rounded-lg bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-700 text-stone-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-violet-500/50"
                       >
                         <option value="professional">Professional</option>
                         <option value="friendly">Friendly</option>
@@ -643,7 +643,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
                       <button
                         onClick={() => void handleAIGenerate()}
                         disabled={aiLoading || !aiPrompt.trim()}
-                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-gradient-to-r from-violet-500 to-purple-600 text-white text-sm font-medium shadow-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-linear-to-r from-violet-500 to-purple-600 text-white text-sm font-medium shadow-xs hover:opacity-90 disabled:opacity-50 transition-opacity"
                       >
                         {aiLoading ? (
                           <>
@@ -709,7 +709,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
                               {tpl.name}
                             </span>
                             {tpl.category && (
-                              <span className="shrink-0 text-xs px-1.5 py-0.5 rounded bg-stone-100 dark:bg-zinc-800 text-stone-500 dark:text-zinc-400">
+                              <span className="shrink-0 text-xs px-1.5 py-0.5 rounded-sm bg-stone-100 dark:bg-zinc-800 text-stone-500 dark:text-zinc-400">
                                 {tpl.category}
                               </span>
                             )}
@@ -760,7 +760,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
             <div className="pt-2">
               <button
                 onClick={() => goToStep('review')}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-rose-500 to-red-500 text-white text-sm font-medium shadow-sm hover:opacity-90 transition-opacity"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-linear-to-r from-rose-500 to-red-500 text-white text-sm font-medium shadow-xs hover:opacity-90 transition-opacity"
               >
                 Continue to Review
                 <ArrowRight className="text-xs" />
@@ -867,7 +867,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
                 <button
                   onClick={() => void handleSend(true)}
                   disabled={sending}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium shadow-sm disabled:opacity-50 transition-colors"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium shadow-xs disabled:opacity-50 transition-colors"
                 >
                   {sending ? (
                     <Loader2 className="animate-spin text-xs" />
@@ -880,7 +880,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
               <button
                 onClick={() => void handleSend(false)}
                 disabled={sending}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-rose-500 to-red-500 text-white text-sm font-medium shadow-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-linear-to-r from-rose-500 to-red-500 text-white text-sm font-medium shadow-xs hover:opacity-90 disabled:opacity-50 transition-opacity"
               >
                 {sending ? (
                   <Loader2 className="animate-spin text-xs" />

@@ -48,7 +48,7 @@ export const PanelShell: React.FC<PanelShellProps> = ({
     {/* Header */}
     <header className="flex items-start justify-between gap-3 px-4 pt-3 pb-2">
       <div className="min-w-0">
-        <div className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-rose-600 dark:text-rose-bright">
+        <div className="font-mono uppercase tracking-widest text-[10px] font-medium text-rose-600 dark:text-rose-bright">
           {attributedToAI ? `PULSE AI · ${source.toUpperCase()}` : source.toUpperCase()}
         </div>
         <h3 className="mt-0.5 text-[15px] font-medium text-zinc-900 dark:text-zinc-50 leading-tight">
@@ -60,14 +60,14 @@ export const PanelShell: React.FC<PanelShellProps> = ({
           </p>
         )}
       </div>
-      <div className="flex items-center gap-1 flex-shrink-0">
+      <div className="flex items-center gap-1 shrink-0">
         {actions}
         {onDismiss && (
           <button
             type="button"
             onClick={onDismiss}
             aria-label={`Dismiss ${title}`}
-            className="w-7 h-7 rounded-md text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright hover:bg-rose-500/[0.08] dark:hover:bg-rose-500/[0.10] flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+            className="w-7 h-7 rounded-md text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright hover:bg-rose-500/8 dark:hover:bg-rose-500/10 flex items-center justify-center transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40"
           >
             <X className="w-3.5 h-3.5" />
           </button>

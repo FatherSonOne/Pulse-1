@@ -70,7 +70,7 @@ export const SMSView: React.FC<SMSViewProps> = () => {
     <div className="h-full flex bg-zinc-950 rounded-xl overflow-hidden border border-zinc-800 animate-fadeIn">
       {/* Conversation List Sidebar */}
       <div
-        className={`w-full md:w-80 flex-shrink-0 border-r border-zinc-800 ${
+        className={`w-full md:w-80 shrink-0 border-r border-zinc-800 ${
           selectedConversation && !showConversationList ? 'hidden md:block' : ''
         }`}
       >
@@ -114,7 +114,7 @@ export const SMSView: React.FC<SMSViewProps> = () => {
 
       {/* New Message Modal */}
       {showNewMessageModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
           <div className="bg-zinc-900 rounded-xl border border-zinc-800 w-full max-w-md p-6 animate-fadeIn">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-white">New SMS Message</h3>
@@ -138,7 +138,7 @@ export const SMSView: React.FC<SMSViewProps> = () => {
                     value={newPhoneNumber}
                     onChange={(e) => setNewPhoneNumber(e.target.value)}
                     placeholder="(555) 123-4567"
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-10 pr-4 py-3 text-white placeholder:text-zinc-500 focus:outline-none focus:border-green-600 transition"
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-10 pr-4 py-3 text-white placeholder:text-zinc-500 focus:outline-hidden focus:border-green-600 transition"
                     autoFocus
                   />
                 </div>

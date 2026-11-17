@@ -286,7 +286,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:border-rose-500 focus:outline-none transition"
+                  className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:border-rose-500 focus:outline-hidden transition"
                 />
               </div>
               <div className="space-y-2">
@@ -297,7 +297,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
                     type="text"
                     value={handle}
                     onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                    className={`w-full bg-zinc-50 dark:bg-zinc-800 border rounded-lg pl-7 pr-10 py-2.5 dark:text-white text-zinc-900 focus:outline-none transition ${
+                    className={`w-full bg-zinc-50 dark:bg-zinc-800 border rounded-lg pl-7 pr-10 py-2.5 dark:text-white text-zinc-900 focus:outline-hidden transition ${
                       handleError ? 'border-red-400 focus:border-red-500' :
                       handleAvailable ? 'border-emerald-400 focus:border-emerald-500' :
                       'border-zinc-200 dark:border-zinc-700 focus:border-rose-500'
@@ -316,7 +316,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
                 onChange={(e) => setBio(e.target.value)}
                 placeholder="Tell us about yourself..."
                 rows={2}
-                className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:border-rose-500 focus:outline-none transition resize-none"
+                className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:border-rose-500 focus:outline-hidden transition resize-none"
               />
             </div>
 
@@ -362,7 +362,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
                 onClick={() => handleThemeChange(id)}
                 className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-sm font-medium transition ${
                   isActive
-                    ? 'text-zinc-900 dark:text-white shadow-sm'
+                    ? 'text-zinc-900 dark:text-white shadow-xs'
                     : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
                 }`}
                 style={isActive ? { backgroundColor: 'var(--pulse-surface)' } : undefined}
@@ -424,7 +424,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
                             toast.dismiss(t.id);
                             await logoutUser();
                           }}
-                          className="px-3 py-1 text-xs font-semibold text-white bg-rose-500 hover:bg-rose-600 rounded transition"
+                          className="px-3 py-1 text-xs font-semibold text-white bg-rose-500 hover:bg-rose-600 rounded-sm transition"
                         >
                           Log out
                         </button>

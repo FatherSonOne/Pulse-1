@@ -97,7 +97,7 @@ export const ChannelRow: React.FC<ChannelRowProps> = ({
           : 'flex flex-col items-center gap-1.5 px-1.5 py-2.5 rounded-xl';
         const interactive = inert
           ? 'opacity-40 cursor-not-allowed'
-          : 'hover:-translate-y-px hover:text-[var(--pulse-coral-fg)] hover:border-[var(--pulse-rose-soft)] hover:bg-[var(--pulse-rose-soft)]';
+          : 'hover:-translate-y-px hover:text-(--pulse-coral-fg) hover:border-(--pulse-rose-soft) hover:bg-(--pulse-rose-soft)';
 
         return (
           <button
@@ -107,7 +107,7 @@ export const ChannelRow: React.FC<ChannelRowProps> = ({
             onClick={() => !inert && run(ch)}
             title={reason || label}
             aria-label={inert && reason ? `${label} — ${reason}` : label}
-            className={`${layout} border transition-all duration-150 bg-[var(--pulse-surface-raised)] border-[var(--pulse-border)] text-[var(--pulse-ink-2)] ${interactive}`}
+            className={`${layout} border transition-all duration-150 bg-(--pulse-surface-raised) border-(--pulse-border) text-(--pulse-ink-2) ${interactive}`}
           >
             <Icon className="w-[18px] h-[18px]" />
             <span

@@ -200,7 +200,7 @@ const MessageSchedulingInner: React.FC<MessageSchedulingProps> = ({
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
+      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-linear-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
@@ -242,7 +242,7 @@ const MessageSchedulingInner: React.FC<MessageSchedulingProps> = ({
             onClick={() => setActiveTab('scheduled')}
             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition ${
               activeTab === 'scheduled'
-                ? 'bg-white dark:bg-zinc-600 text-zinc-800 dark:text-white shadow-sm'
+                ? 'bg-white dark:bg-zinc-600 text-zinc-800 dark:text-white shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white'
             }`}
           >
@@ -253,7 +253,7 @@ const MessageSchedulingInner: React.FC<MessageSchedulingProps> = ({
             onClick={() => setActiveTab('reminders')}
             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition ${
               activeTab === 'reminders'
-                ? 'bg-white dark:bg-zinc-600 text-zinc-800 dark:text-white shadow-sm'
+                ? 'bg-white dark:bg-zinc-600 text-zinc-800 dark:text-white shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white'
             }`}
           >
@@ -300,7 +300,7 @@ const MessageSchedulingInner: React.FC<MessageSchedulingProps> = ({
               return (
                 <div key={message.id} className="p-3 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition">
                   <div className="flex items-start gap-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                       message.status === 'pending'
                         ? 'bg-amber-100 dark:bg-amber-900/40'
                         : 'bg-zinc-100 dark:bg-zinc-700'
@@ -314,7 +314,7 @@ const MessageSchedulingInner: React.FC<MessageSchedulingProps> = ({
                         <span className="text-sm font-medium text-zinc-800 dark:text-white truncate">
                           To: {message.threadName}
                         </span>
-                        <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded capitalize ${getStatusBadge(message.status)}`}>
+                        <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded-sm capitalize ${getStatusBadge(message.status)}`}>
                           {message.status}
                         </span>
                       </div>
@@ -389,7 +389,7 @@ const MessageSchedulingInner: React.FC<MessageSchedulingProps> = ({
                   <div className="flex items-start gap-3">
                     <button
                       onClick={() => onCompleteReminder?.(reminder.id)}
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition ${
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition ${
                         reminder.completed
                           ? 'bg-green-100 dark:bg-green-900/40 text-green-500'
                           : `bg-${typeConfig.color}-100 dark:bg-${typeConfig.color}-900/40 text-${typeConfig.color}-500 hover:bg-green-100 dark:hover:bg-green-900/40 hover:text-green-500`
@@ -402,7 +402,7 @@ const MessageSchedulingInner: React.FC<MessageSchedulingProps> = ({
                         <span className={`text-sm font-medium ${reminder.completed ? 'line-through text-zinc-400' : 'text-zinc-800 dark:text-white'}`}>
                           {reminder.title}
                         </span>
-                        <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded bg-${priorityInfo.color}-100 dark:bg-${priorityInfo.color}-900/40 text-${priorityInfo.color}-600 dark:text-${priorityInfo.color}-400`}>
+                        <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded-sm bg-${priorityInfo.color}-100 dark:bg-${priorityInfo.color}-900/40 text-${priorityInfo.color}-600 dark:text-${priorityInfo.color}-400`}>
                           {priorityInfo.label}
                         </span>
                       </div>
@@ -584,7 +584,7 @@ const ScheduleMessageModal: React.FC<{
                 type="checkbox"
                 checked={isRecurring}
                 onChange={(e) => setIsRecurring(e.target.checked)}
-                className="rounded border-zinc-300 text-amber-500 focus:ring-amber-500"
+                className="rounded-sm border-zinc-300 text-amber-500 focus:ring-amber-500"
               />
               Recurring
             </label>

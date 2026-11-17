@@ -77,7 +77,7 @@ export const QuickReactionsBar: React.FC<QuickReactionsBarProps> = ({
               // Touch target — 44x44 is parent constraint; emoji uses 40
               // tap area with 8px spacing per WCAG 2.2 SC 2.5.8.
               'h-11 w-11 text-xl leading-none',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+              'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
               'transition-transform active:scale-90',
               picked
                 ? isDarkMode
@@ -100,7 +100,7 @@ export const QuickReactionsBar: React.FC<QuickReactionsBarProps> = ({
         disabled={!onMore}
         className={[
           'inline-flex items-center justify-center rounded-full h-11 w-11',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40',
+          'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40',
           'transition-transform active:scale-90',
           isDarkMode
             ? 'hover:bg-white/10 text-zinc-200 disabled:opacity-40'

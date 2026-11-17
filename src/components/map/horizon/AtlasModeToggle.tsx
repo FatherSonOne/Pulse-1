@@ -25,7 +25,7 @@ export const AtlasModeToggle: React.FC<AtlasModeToggleProps> = ({ atlasMode, onC
       aria-keyshortcuts="a"
       onClick={() => onChange(!atlasMode)}
       title={`Atlas — zoom out to everyone pinned · press a${atlasMode ? ' to exit' : ''}`}
-      className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] tracking-[0.1em] uppercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+      className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] tracking-widest uppercase transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-1 ${
         isDarkMode ? 'focus-visible:ring-zinc-400' : 'focus-visible:ring-zinc-500'
       } ${
         atlasMode

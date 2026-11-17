@@ -104,7 +104,7 @@ export const VoxSmartReplies: React.FC<VoxSmartRepliesProps> = ({
                   {reply.text}
                 </p>
               </div>
-              <MessageCircle className={`w-4 h-4 ${tc.textMuted} flex-shrink-0 mt-0.5`} />
+              <MessageCircle className={`w-4 h-4 ${tc.textMuted} shrink-0 mt-0.5`} />
             </div>
           </button>
         ))}

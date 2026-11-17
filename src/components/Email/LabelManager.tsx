@@ -276,7 +276,7 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
                   >
                     {/* Color dot */}
                     <div
-                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      className="w-3 h-3 rounded-full shrink-0"
                       style={{ backgroundColor: label.color }}
                     ></div>
 
@@ -291,7 +291,7 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
                           if (e.key === 'Enter') handleRenameLabel(label.id);
                           if (e.key === 'Escape') cancelRename();
                         }}
-                        className="flex-1 px-2 py-1 pulse-surface border pulse-border-color rounded-lg text-sm pulse-ink-color focus:outline-none focus:pulse-rose-border"
+                        className="flex-1 px-2 py-1 pulse-surface border pulse-border-color rounded-lg text-sm pulse-ink-color focus:outline-hidden focus:pulse-rose-border"
                         autoFocus
                       />
                     ) : (
@@ -355,7 +355,7 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
                               e.stopPropagation();
                               handleDeleteLabel(label.id);
                             }}
-                            className="w-7 h-7 rounded-lg hover:pulse-surface-raised flex items-center justify-center pulse-ink-3-color transition hover:text-[color:var(--pulse-tone-overdue)]"
+                            className="w-7 h-7 rounded-lg hover:pulse-surface-raised flex items-center justify-center pulse-ink-3-color transition hover:text-(--pulse-tone-overdue)"
                             aria-label={`Delete ${label.name} label`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -377,7 +377,7 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
                       value={newLabelName}
                       onChange={(e) => setNewLabelName(e.target.value)}
                       placeholder="Label name..."
-                      className="w-full px-3 py-2 pulse-surface border pulse-border-color rounded-lg pulse-ink-color placeholder:pulse-ink-3-color focus:outline-none focus:pulse-rose-border"
+                      className="w-full px-3 py-2 pulse-surface border pulse-border-color rounded-lg pulse-ink-color placeholder:pulse-ink-3-color focus:outline-hidden focus:pulse-rose-border"
                       autoFocus
                     />
                   </div>
@@ -389,7 +389,7 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
                         key={color.value}
                         onClick={() => setNewLabelColor(color.value)}
                         className={`w-6 h-6 rounded-full transition ${
-                          newLabelColor === color.value ? 'ring-2 ring-offset-2 ring-offset-transparent pulse-rose-border ring-[color:var(--pulse-rose)]' : ''
+                          newLabelColor === color.value ? 'ring-2 ring-offset-2 ring-offset-transparent pulse-rose-border ring-(--pulse-rose)' : ''
                         }`}
                         style={{ backgroundColor: color.value }}
                         title={color.name}

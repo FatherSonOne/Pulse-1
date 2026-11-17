@@ -186,7 +186,7 @@ export const SMSChat: React.FC<SMSChatProps> = ({
                       : 'bg-zinc-800 text-zinc-100 rounded-bl-md'
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap break-words">{message.body}</p>
+                  <p className="text-sm whitespace-pre-wrap wrap-break-word">{message.body}</p>
                   <div
                     className={`flex items-center gap-1 mt-1 ${
                       message.direction === 'outbound' ? 'justify-end' : 'justify-start'
@@ -232,7 +232,7 @@ export const SMSChat: React.FC<SMSChatProps> = ({
               onKeyDown={handleKeyDown}
               placeholder="Type a message..."
               rows={1}
-              className={`w-full bg-zinc-900 border rounded-xl px-4 py-3 pr-12 text-sm text-white placeholder:text-zinc-500 focus:outline-none resize-none transition ${
+              className={`w-full bg-zinc-900 border rounded-xl px-4 py-3 pr-12 text-sm text-white placeholder:text-zinc-500 focus:outline-hidden resize-none transition ${
                 isOverLimit
                   ? 'border-red-500 focus:border-red-500'
                   : 'border-zinc-800 focus:border-green-600'
@@ -256,7 +256,7 @@ export const SMSChat: React.FC<SMSChatProps> = ({
           <VoiceTextButton
             onTranscript={(text) => setNewMessage(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + text)}
             size="md"
-            className="flex-shrink-0"
+            className="shrink-0"
           />
 
           <button

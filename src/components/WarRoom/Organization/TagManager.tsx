@@ -233,7 +233,7 @@ export const TagManager: React.FC<TagManagerProps> = ({
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search tags..."
-              className="w-full px-3 py-1.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-rose-500 focus:outline-none text-gray-900 dark:text-white"
+              className="w-full px-3 py-1.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-rose-500 focus:outline-hidden text-gray-900 dark:text-white"
             />
           </div>
         )}
@@ -253,7 +253,7 @@ export const TagManager: React.FC<TagManagerProps> = ({
             value={newTagName}
             onChange={e => setNewTagName(e.target.value)}
             placeholder="Tag name..."
-            className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-rose-500 focus:outline-none text-gray-900 dark:text-white"
+            className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-rose-500 focus:outline-hidden text-gray-900 dark:text-white"
             autoFocus
           />
 
@@ -306,7 +306,7 @@ export const TagManager: React.FC<TagManagerProps> = ({
             value={newTagDescription}
             onChange={e => setNewTagDescription(e.target.value)}
             placeholder="Description (optional)..."
-            className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-rose-500 focus:outline-none text-gray-900 dark:text-white"
+            className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-rose-500 focus:outline-hidden text-gray-900 dark:text-white"
           />
 
           {/* Actions */}
@@ -324,7 +324,7 @@ export const TagManager: React.FC<TagManagerProps> = ({
             <button
               onClick={editingTag ? handleUpdateTag : handleCreateTag}
               disabled={!newTagName.trim()}
-              className="flex-1 py-2 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-all"
+              className="flex-1 py-2 bg-linear-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-all"
             >
               {editingTag ? 'Update' : 'Create'}
             </button>
@@ -385,7 +385,7 @@ export const TagManager: React.FC<TagManagerProps> = ({
                       )}
                     </div>
                     {tag.doc_count !== undefined && (
-                      <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">
+                      <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-sm">
                         {tag.doc_count}
                       </span>
                     )}
@@ -396,13 +396,13 @@ export const TagManager: React.FC<TagManagerProps> = ({
                     <div className="flex gap-1">
                       <button
                         onClick={() => startEditing(tag)}
-                        className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                        className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-sm transition-colors"
                       >
                         <Pencil className="fa text-xs" />
                       </button>
                       <button
                         onClick={() => handleDeleteTag(tag.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-sm transition-colors"
                       >
                         <Trash2 className="fa text-xs" />
                       </button>

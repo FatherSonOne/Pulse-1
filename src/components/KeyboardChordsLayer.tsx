@@ -132,7 +132,7 @@ const KeyboardChordsLayer: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-[1100] flex items-center justify-center px-4"
+      className="fixed inset-0 z-1100 flex items-center justify-center px-4"
       style={{ background: 'rgba(15, 15, 15, 0.55)', backdropFilter: 'blur(4px)' }}
       onClick={() => setShowOverlay(false)}
       role="dialog"
@@ -145,7 +145,7 @@ const KeyboardChordsLayer: React.FC = () => {
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 dark:border-white/10">
           <h2
-            className="text-[11px] tracking-[0.1em] uppercase text-zinc-500 dark:text-zinc-400"
+            className="text-[11px] tracking-widest uppercase text-zinc-500 dark:text-zinc-400"
             style={{ fontFamily: "'JetBrains Mono', monospace" }}
           >
             Keyboard chords
@@ -200,7 +200,7 @@ const KeyboardChordsLayer: React.FC = () => {
         </div>
 
         <p
-          className="px-5 py-3 border-t border-zinc-200 dark:border-white/10 text-[10px] tracking-[0.1em] uppercase text-zinc-400 dark:text-zinc-500"
+          className="px-5 py-3 border-t border-zinc-200 dark:border-white/10 text-[10px] tracking-widest uppercase text-zinc-400 dark:text-zinc-500"
           style={{ fontFamily: "'JetBrains Mono', monospace" }}
         >
           Press <span className="text-zinc-600 dark:text-zinc-300">g</span> then a letter within 0.7s
@@ -212,7 +212,7 @@ const KeyboardChordsLayer: React.FC = () => {
 
 const Kbd: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <kbd
-    className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded border bg-zinc-50 dark:bg-white/5 border-zinc-200 dark:border-white/10 text-[11px] text-zinc-700 dark:text-zinc-200"
+    className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-sm border bg-zinc-50 dark:bg-white/5 border-zinc-200 dark:border-white/10 text-[11px] text-zinc-700 dark:text-zinc-200"
     style={{ fontFamily: "'JetBrains Mono', monospace" }}
   >
     {children}

@@ -78,13 +78,13 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* Header */}
-      <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20">
+      <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-linear-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20">
         <div className="flex items-center gap-2">
           <Star className="fa text-amber-500" />
           <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Favorites
           </h3>
-          <span className="text-xs text-gray-400 bg-white dark:bg-gray-700 px-1.5 py-0.5 rounded">
+          <span className="text-xs text-gray-400 bg-white dark:bg-gray-700 px-1.5 py-0.5 rounded-sm">
             {favoriteDocuments.length}
           </span>
         </div>

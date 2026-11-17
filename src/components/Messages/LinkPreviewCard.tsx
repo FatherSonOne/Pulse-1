@@ -48,9 +48,9 @@ export const LinkPreviewCard: React.FC<LinkPreviewCardProps> = ({
       <div
         className={`rounded-lg border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)]/50 p-3 animate-pulse ${className}`}
       >
-        <div className="h-3 w-3/4 bg-zinc-200 dark:bg-zinc-700 rounded mb-2" />
-        <div className="h-2 w-full bg-zinc-200 dark:bg-zinc-700 rounded mb-1" />
-        <div className="h-2 w-2/3 bg-zinc-200 dark:bg-zinc-700 rounded" />
+        <div className="h-3 w-3/4 bg-zinc-200 dark:bg-zinc-700 rounded-sm mb-2" />
+        <div className="h-2 w-full bg-zinc-200 dark:bg-zinc-700 rounded-sm mb-1" />
+        <div className="h-2 w-2/3 bg-zinc-200 dark:bg-zinc-700 rounded-sm" />
       </div>
     );
   }
@@ -66,11 +66,11 @@ export const LinkPreviewCard: React.FC<LinkPreviewCardProps> = ({
       href={preview.url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`block rounded-lg border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] bg-white dark:bg-[rgba(255,255,255,0.03)] hover:border-rose-300 dark:hover:border-rose-700 hover:shadow-sm transition overflow-hidden ${className}`}
+      className={`block rounded-lg border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.10)] bg-white dark:bg-[rgba(255,255,255,0.03)] hover:border-rose-300 dark:hover:border-rose-700 hover:shadow-xs transition overflow-hidden ${className}`}
       title={preview.url}
     >
       {hasImage && (
-        <div className="aspect-video bg-[var(--pulse-surface-raised)] overflow-hidden">
+        <div className="aspect-video bg-(--pulse-surface-raised) overflow-hidden">
           <img
             src={preview.image_url}
             alt=""
@@ -85,7 +85,7 @@ export const LinkPreviewCard: React.FC<LinkPreviewCardProps> = ({
       )}
       <div className="p-3">
         {preview.site_name && (
-          <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-400 mb-1 flex items-center gap-1">
+          <div className="font-mono text-[10px] uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-1 flex items-center gap-1">
             <ExternalLink className="w-2.5 h-2.5" />
             <span className="truncate">{preview.site_name}</span>
           </div>

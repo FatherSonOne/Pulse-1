@@ -103,8 +103,8 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({ onOpenShortcuts 
 
     const toastId = toast.custom(
       (t) => (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-zinc-900 dark:bg-zinc-800 text-white shadow-2xl border border-white/[0.08] min-w-[280px]">
-          <Trash2 className="w-4 h-4 text-rose-400 flex-shrink-0" />
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-zinc-900 dark:bg-zinc-800 text-white shadow-2xl border border-white/8 min-w-[280px]">
+          <Trash2 className="w-4 h-4 text-rose-400 shrink-0" />
           <span className="text-sm flex-1">
             Deleted <span className="font-mono tabular-nums">{pending.count}</span>{' '}
             item{pending.count === 1 ? '' : 's'}
@@ -115,7 +115,7 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({ onOpenShortcuts 
                 toast.success('Restored', { id: toastId });
               }
             }}
-            className="text-xs font-mono uppercase tracking-[0.12em] text-rose-400 hover:text-rose-300 transition-colors px-2 py-1 rounded hover:bg-white/[0.05]"
+            className="text-xs font-mono uppercase tracking-[0.12em] text-rose-400 hover:text-rose-300 transition-colors px-2 py-1 rounded-sm hover:bg-white/5"
           >
             Undo
           </button>
@@ -286,7 +286,7 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({ onOpenShortcuts 
             {/* View mode buttons */}
             <button
               onClick={() => setViewMode('list')}
-              className={`w-9 h-9 rounded-lg flex items-center justify-center transition ${viewMode === 'list' ? 'bg-rose-500/[0.10] text-rose-500 dark:text-rose-400' : 'bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-zinc-900 dark:hover:text-zinc-100'}`}
+              className={`w-9 h-9 rounded-lg flex items-center justify-center transition ${viewMode === 'list' ? 'bg-rose-500/10 text-rose-500 dark:text-rose-400' : 'bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/4 hover:text-zinc-900 dark:hover:text-zinc-100'}`}
               title="List view"
               aria-label="List view"
               aria-pressed={viewMode === 'list'}
@@ -295,7 +295,7 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({ onOpenShortcuts 
             </button>
             <button
               onClick={() => setViewMode('grid')}
-              className={`w-9 h-9 rounded-lg flex items-center justify-center transition ${viewMode === 'grid' ? 'bg-rose-500/[0.10] text-rose-500 dark:text-rose-400' : 'bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-zinc-900 dark:hover:text-zinc-100'}`}
+              className={`w-9 h-9 rounded-lg flex items-center justify-center transition ${viewMode === 'grid' ? 'bg-rose-500/10 text-rose-500 dark:text-rose-400' : 'bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/4 hover:text-zinc-900 dark:hover:text-zinc-100'}`}
               title="Grid view"
               aria-label="Grid view"
               aria-pressed={viewMode === 'grid'}
@@ -304,7 +304,7 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({ onOpenShortcuts 
             </button>
             <button
               onClick={() => setViewMode('timeline')}
-              className={`w-9 h-9 rounded-lg flex items-center justify-center transition ${viewMode === 'timeline' ? 'bg-rose-500/[0.10] text-rose-500 dark:text-rose-400' : 'bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-zinc-900 dark:hover:text-zinc-100'}`}
+              className={`w-9 h-9 rounded-lg flex items-center justify-center transition ${viewMode === 'timeline' ? 'bg-rose-500/10 text-rose-500 dark:text-rose-400' : 'bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/4 hover:text-zinc-900 dark:hover:text-zinc-100'}`}
               title="Timeline view"
               aria-label="Timeline view"
               aria-pressed={viewMode === 'timeline'}
@@ -313,10 +313,10 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({ onOpenShortcuts 
             </button>
             {onOpenShortcuts && (
               <>
-                <span className="w-px h-4 bg-zinc-300/60 dark:bg-white/[0.08] mx-0.5" aria-hidden />
+                <span className="w-px h-4 bg-zinc-300/60 dark:bg-white/8 mx-0.5" aria-hidden />
                 <button
                   onClick={onOpenShortcuts}
-                  className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-zinc-900 dark:hover:text-zinc-100 transition"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/4 hover:text-zinc-900 dark:hover:text-zinc-100 transition"
                   title="Keyboard shortcuts (?)"
                   aria-label="Keyboard shortcuts"
                 >
@@ -335,7 +335,7 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({ onOpenShortcuts 
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search memory... (press /)"
             data-archive-search
-            className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-rose-500/50 transition"
+            className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 outline-hidden focus:border-rose-500/50 transition"
           />
           <Search className="absolute left-3.5 top-3 w-4 h-4 text-zinc-400 dark:text-zinc-600 pointer-events-none" />
         </div>
@@ -344,19 +344,19 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({ onOpenShortcuts 
         <div className="flex gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-xl mb-3">
           <button
             onClick={() => { setSidebarMode('filters'); setActiveCollectionId(null); setActiveSmartFolderId(null); }}
-            className={`flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition ${sidebarMode === 'filters' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+            className={`flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition ${sidebarMode === 'filters' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
           >
             <Filter className="w-3.5 h-3.5" /> Filters
           </button>
           <button
             onClick={() => { setSidebarMode('collections'); setActiveFilter('all'); setActiveSmartFolderId(null); }}
-            className={`flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition ${sidebarMode === 'collections' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+            className={`flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition ${sidebarMode === 'collections' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
           >
             <Folder className="w-3.5 h-3.5" /> Collections
           </button>
           <button
             onClick={() => { setSidebarMode('smart-folders'); setActiveFilter('all'); setActiveCollectionId(null); }}
-            className={`flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition ${sidebarMode === 'smart-folders' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+            className={`flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition ${sidebarMode === 'smart-folders' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
           >
             <Wand2 className="w-3.5 h-3.5" /> Smart
           </button>
@@ -381,8 +381,8 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({ onOpenShortcuts 
                       title={getFilterLabel(f)}
                       className={`inline-flex items-baseline gap-1.5 px-2.5 py-1.5 rounded text-[10px] font-mono uppercase tracking-[0.12em] whitespace-nowrap border transition-colors duration-200 ${
                         active
-                          ? 'bg-rose-500/[0.10] text-rose-600 dark:text-rose-400 border-rose-500/40'
-                          : 'bg-transparent text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-white/[0.06] hover:border-rose-500/30 hover:text-rose-500'
+                          ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/40'
+                          : 'bg-transparent text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-white/6 hover:border-rose-500/30 hover:text-rose-500'
                       }`}
                       style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
                     >
@@ -394,7 +394,7 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({ onOpenShortcuts 
                 {secondaryFilters.length > 0 && (
                   <button
                     onClick={() => setFiltersExpanded(v => !v)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-[10px] font-mono uppercase tracking-[0.12em] whitespace-nowrap border border-dashed border-zinc-300 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-500 hover:border-rose-500/30 hover:text-rose-500 transition-colors"
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-sm text-[10px] font-mono uppercase tracking-[0.12em] whitespace-nowrap border border-dashed border-zinc-300 dark:border-white/8 text-zinc-500 dark:text-zinc-500 hover:border-rose-500/30 hover:text-rose-500 transition-colors"
                     aria-expanded={filtersExpanded}
                     title={filtersExpanded ? 'Collapse filters' : 'Show all filters'}
                   >
@@ -416,8 +416,8 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({ onOpenShortcuts 
                         title={getFilterLabel(f)}
                         className={`inline-flex items-baseline gap-1.5 px-2.5 py-1.5 rounded text-[10px] font-mono uppercase tracking-[0.12em] whitespace-nowrap border transition-colors duration-200 ${
                           active
-                            ? 'bg-rose-500/[0.10] text-rose-600 dark:text-rose-400 border-rose-500/40'
-                            : 'bg-transparent text-zinc-500 dark:text-zinc-500 border-zinc-200/60 dark:border-white/[0.04] hover:border-rose-500/30 hover:text-rose-500'
+                            ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/40'
+                            : 'bg-transparent text-zinc-500 dark:text-zinc-500 border-zinc-200/60 dark:border-white/4 hover:border-rose-500/30 hover:text-rose-500'
                         }`}
                         style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
                       >
@@ -436,9 +436,9 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({ onOpenShortcuts 
           <div className="space-y-1">
             <button
               onClick={() => setActiveCollectionId(null)}
-              className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition ${!activeCollectionId ? 'bg-rose-500/10 text-rose-500 dark:text-rose-400' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.04]'}`}
+              className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition ${!activeCollectionId ? 'bg-rose-500/10 text-rose-500 dark:text-rose-400' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/4'}`}
             >
-              <Inbox className="w-4 h-4 flex-shrink-0" />
+              <Inbox className="w-4 h-4 shrink-0" />
               <span>All items</span>
               <span className="ml-auto text-xs font-mono opacity-60">{items.length}</span>
             </button>
@@ -457,7 +457,7 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({ onOpenShortcuts 
               onClick={() => openModal('createCollection')}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
             >
-              <Plus className="w-4 h-4 flex-shrink-0" />
+              <Plus className="w-4 h-4 shrink-0" />
               <span>New Collection</span>
             </button>
           </div>
@@ -480,7 +480,7 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({ onOpenShortcuts 
               onClick={() => openModal('createSmartFolder')}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
             >
-              <Plus className="w-4 h-4 flex-shrink-0" />
+              <Plus className="w-4 h-4 shrink-0" />
               <span>New Smart Folder</span>
             </button>
           </div>
@@ -493,7 +493,7 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({ onOpenShortcuts 
           <div className="flex items-center gap-2">
             <button
               onClick={handleSelectAll}
-              className="px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-500/10 rounded transition"
+              className="px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-500/10 rounded-sm transition"
             >
               {selectedItems.size === items.length ? 'Deselect All' : 'Select All'}
             </button>
@@ -502,34 +502,34 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({ onOpenShortcuts 
           <div className="flex items-center gap-1">
             <button
               onClick={() => openModal('bulkTag')}
-              className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-zinc-600 dark:text-zinc-400 hover:bg-zinc-500/10 hover:text-zinc-900 dark:hover:text-zinc-100 rounded transition"
+              className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-zinc-600 dark:text-zinc-400 hover:bg-zinc-500/10 hover:text-zinc-900 dark:hover:text-zinc-100 rounded-sm transition"
             >
               <Tags className="w-3 h-3" /> Tag
             </button>
             <button
               onClick={() => openModal('bulkCollection')}
-              className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-zinc-600 dark:text-zinc-400 hover:bg-zinc-500/10 hover:text-zinc-900 dark:hover:text-zinc-100 rounded transition"
+              className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-zinc-600 dark:text-zinc-400 hover:bg-zinc-500/10 hover:text-zinc-900 dark:hover:text-zinc-100 rounded-sm transition"
             >
               <FolderPlus className="w-3 h-3" /> Collection
             </button>
             <button
               onClick={handleBulkExport}
-              className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-zinc-600 dark:text-zinc-400 hover:bg-zinc-500/10 hover:text-zinc-900 dark:hover:text-zinc-100 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-zinc-600 dark:text-zinc-400 hover:bg-zinc-500/10 hover:text-zinc-900 dark:hover:text-zinc-100 rounded-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={!driveConnected}
               title={driveConnected ? 'Export to Google Drive' : 'Connect Google Drive to export'}
             >
               <HardDrive className="w-3 h-3" /> Export
             </button>
-            <span className="w-px h-4 bg-zinc-300/60 dark:bg-white/[0.08] mx-1" aria-hidden />
+            <span className="w-px h-4 bg-zinc-300/60 dark:bg-white/8 mx-1" aria-hidden />
             <button
               onClick={handleBulkDeleteWithUndo}
-              className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 rounded transition"
+              className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 rounded-sm transition"
             >
               <Trash2 className="w-3 h-3" /> Delete
             </button>
             <button
               onClick={clearSelection}
-              className="px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-500/10 hover:text-zinc-900 dark:hover:text-zinc-100 rounded transition"
+              className="px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-500/10 hover:text-zinc-900 dark:hover:text-zinc-100 rounded-sm transition"
             >
               Cancel
             </button>
@@ -572,14 +572,14 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({ onOpenShortcuts 
             <div className="w-full max-w-[280px] space-y-1">
               <a
                 href="#meetings"
-                className="block text-left px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.06] hover:border-rose-500/40 hover:bg-rose-500/[0.04] transition-colors"
+                className="block text-left px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/6 hover:border-rose-500/40 hover:bg-rose-500/4 transition-colors"
               >
                 <span className="text-[10px] font-mono uppercase tracking-wider text-rose-500">Record</span>
                 <span className="text-xs text-zinc-700 dark:text-zinc-300 ml-2">a meeting</span>
               </a>
               <a
                 href="#relay"
-                className="block text-left px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.06] hover:border-rose-500/40 hover:bg-rose-500/[0.04] transition-colors"
+                className="block text-left px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/6 hover:border-rose-500/40 hover:bg-rose-500/4 transition-colors"
               >
                 <span className="text-[10px] font-mono uppercase tracking-wider text-rose-500">Capture</span>
                 <span className="text-xs text-zinc-700 dark:text-zinc-300 ml-2">a voice note</span>
@@ -587,23 +587,23 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({ onOpenShortcuts 
               <button
                 onClick={handleImportPast}
                 disabled={importing}
-                className="w-full inline-flex items-center justify-between px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.06] hover:border-rose-500/40 hover:bg-rose-500/[0.04] transition-colors disabled:opacity-60 disabled:cursor-wait"
+                className="w-full inline-flex items-center justify-between px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/6 hover:border-rose-500/40 hover:bg-rose-500/4 transition-colors disabled:opacity-60 disabled:cursor-wait"
               >
                 <span className="flex items-center gap-2">
                   <span className="text-[10px] font-mono uppercase tracking-wider text-rose-500">Import</span>
                   <span className="text-xs text-zinc-700 dark:text-zinc-300">past conversations from Pulse</span>
                 </span>
                 {importing ? (
-                  <Loader2 className="w-3.5 h-3.5 text-rose-500 animate-spin flex-shrink-0" />
+                  <Loader2 className="w-3.5 h-3.5 text-rose-500 animate-spin shrink-0" />
                 ) : (
-                  <Download className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-600 flex-shrink-0" />
+                  <Download className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-600 shrink-0" />
                 )}
               </button>
             </div>
-            <div className="mt-6 pt-5 border-t border-zinc-200/60 dark:border-white/[0.06] w-full max-w-[280px]">
+            <div className="mt-6 pt-5 border-t border-zinc-200/60 dark:border-white/6 w-full max-w-[280px]">
               <button
                 onClick={() => seedDemoData()}
-                className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-mono uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-500 hover:text-rose-500 hover:bg-rose-500/[0.04] border border-dashed border-zinc-300 dark:border-white/[0.08] hover:border-rose-500/30 transition-colors"
+                className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-mono uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-500 hover:text-rose-500 hover:bg-rose-500/4 border border-dashed border-zinc-300 dark:border-white/8 hover:border-rose-500/30 transition-colors"
                 title="Load 30 demo conversations to preview Memory"
               >
                 Seed demo data

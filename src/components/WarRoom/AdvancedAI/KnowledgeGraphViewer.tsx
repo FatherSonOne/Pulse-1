@@ -562,14 +562,14 @@ export const KnowledgeGraphViewer: React.FC<KnowledgeGraphViewerProps> = ({
 
             {/* Legend */}
             {showLegend && (
-              <div className="absolute top-4 left-4 p-3 rounded-lg backdrop-blur-sm animate-fadeIn" style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)' }}>
+              <div className="absolute top-4 left-4 p-3 rounded-lg backdrop-blur-xs animate-fadeIn" style={{ background: 'var(--pulse-surface-raised)', border: '1px solid var(--pulse-border)' }}>
                 <h4 className="mb-2" style={{ ...monoLabel, color: 'var(--pulse-ink-3)' }}>Entity Types</h4>
                 <div className="grid grid-cols-2 gap-1">
                   {entityTypes.map(type => (
                     <button
                       key={type}
                       onClick={() => toggleEntityType(type)}
-                      className="flex items-center gap-2 px-2 py-1 rounded text-xs transition-colors"
+                      className="flex items-center gap-2 px-2 py-1 rounded-sm text-xs transition-colors"
                       style={activeTypes.includes(type)
                         ? { color: 'var(--pulse-ink)' }
                         : { color: 'var(--pulse-ink-3)', opacity: 0.6 }}
@@ -592,14 +592,14 @@ export const KnowledgeGraphViewer: React.FC<KnowledgeGraphViewerProps> = ({
                     placeholder="Search entities..."
                     value={filter.searchQuery || ''}
                     onChange={e => setFilter(f => ({ ...f, searchQuery: e.target.value }))}
-                    className="w-full pl-9 pr-4 py-2 rounded-lg focus:outline-none text-sm backdrop-blur-sm"
+                    className="w-full pl-9 pr-4 py-2 rounded-lg focus:outline-hidden text-sm backdrop-blur-xs"
                     style={{ background: 'var(--pulse-surface-raised)', color: 'var(--pulse-ink)', border: '1px solid var(--pulse-border)' }}
                   />
                 </div>
                 <VoiceTextButton
                   onTranscript={(text) => setFilter(f => ({ ...f, searchQuery: (f.searchQuery || '') + text }))}
                   size="sm"
-                  className="backdrop-blur-sm"
+                  className="backdrop-blur-xs"
                 />
               </div>
             </div>
@@ -679,7 +679,7 @@ const NodeDetails: React.FC<NodeDetailsProps> = ({
           <h3 className="font-semibold truncate" style={{ color: 'var(--pulse-ink)' }}>{node.label}</h3>
           <div className="flex items-center gap-2 mt-1">
             <span
-              className="px-2 py-0.5 rounded text-xs capitalize"
+              className="px-2 py-0.5 rounded-sm text-xs capitalize"
               style={{ backgroundColor: node.color + '20', color: node.color }}
             >
               {node.type}
@@ -712,7 +712,7 @@ const NodeDetails: React.FC<NodeDetailsProps> = ({
             return (
               <div
                 key={docId}
-                className="flex items-center gap-2 p-2 rounded text-sm"
+                className="flex items-center gap-2 p-2 rounded-sm text-sm"
                 style={{ background: 'var(--pulse-surface-raised)' }}
               >
                 <FileText size={14} style={{ color: 'var(--pulse-ink-3)' }} />
@@ -732,11 +732,11 @@ const NodeDetails: React.FC<NodeDetailsProps> = ({
               <button
                 key={edge.id}
                 onClick={() => onNodeSelect(connNode)}
-                className="w-full flex items-center gap-3 p-2 rounded transition-colors text-left"
+                className="w-full flex items-center gap-3 p-2 rounded-sm transition-colors text-left"
                 style={{ background: 'var(--pulse-surface-raised)' }}
               >
                 <span
-                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  className="w-3 h-3 rounded-full shrink-0"
                   style={{ backgroundColor: connNode.color }}
                 />
                 <div className="flex-1 min-w-0">

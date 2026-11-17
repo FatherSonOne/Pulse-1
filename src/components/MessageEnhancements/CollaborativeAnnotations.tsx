@@ -160,7 +160,7 @@ export const CollaborativeAnnotations: React.FC<CollaborativeAnnotationsProps> =
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
@@ -188,7 +188,7 @@ export const CollaborativeAnnotations: React.FC<CollaborativeAnnotationsProps> =
               onClick={() => setFilter(tab.key as typeof filter)}
               className={`flex-1 px-2 py-1.5 rounded-md text-xs font-medium transition ${
                 filter === tab.key
-                  ? 'bg-white dark:bg-zinc-600 text-zinc-800 dark:text-white shadow-sm'
+                  ? 'bg-white dark:bg-zinc-600 text-zinc-800 dark:text-white shadow-xs'
                   : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white'
               }`}
             >
@@ -200,7 +200,7 @@ export const CollaborativeAnnotations: React.FC<CollaborativeAnnotationsProps> =
 
       {/* Type filter */}
       <div className="px-4 py-2 border-b border-zinc-100 dark:border-zinc-700 flex items-center gap-2 overflow-x-auto">
-        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 flex-shrink-0">Type:</span>
+        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 shrink-0">Type:</span>
         <button
           onClick={() => setTypeFilter('all')}
           className={`px-2 py-1 rounded-full text-[10px] font-medium transition ${
@@ -251,7 +251,7 @@ export const CollaborativeAnnotations: React.FC<CollaborativeAnnotationsProps> =
               >
                 <div className="flex items-start gap-3">
                   {/* Author avatar */}
-                  <div className="relative flex-shrink-0">
+                  <div className="relative shrink-0">
                     {annotation.author.avatar ? (
                       <img
                         src={annotation.author.avatar}
@@ -278,11 +278,11 @@ export const CollaborativeAnnotations: React.FC<CollaborativeAnnotationsProps> =
                           <span className="text-sm font-medium text-zinc-800 dark:text-white">
                             {annotation.author.name}
                           </span>
-                          <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded bg-${typeConfig.color}-100 dark:bg-${typeConfig.color}-900/40 text-${typeConfig.color}-600 dark:text-${typeConfig.color}-400`}>
+                          <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded-sm bg-${typeConfig.color}-100 dark:bg-${typeConfig.color}-900/40 text-${typeConfig.color}-600 dark:text-${typeConfig.color}-400`}>
                             {typeConfig.label}
                           </span>
                           {annotation.resolved && (
-                            <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400">
+                            <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-sm bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400">
                               Resolved
                             </span>
                           )}
@@ -315,7 +315,7 @@ export const CollaborativeAnnotations: React.FC<CollaborativeAnnotationsProps> =
 
                     {/* Selected text context */}
                     {annotation.position && (
-                      <div className="mt-2 p-2 bg-zinc-50 dark:bg-zinc-900 rounded border-l-2 border-zinc-300 dark:border-zinc-600">
+                      <div className="mt-2 p-2 bg-zinc-50 dark:bg-zinc-900 rounded-sm border-l-2 border-zinc-300 dark:border-zinc-600">
                         <p className="text-xs text-zinc-600 dark:text-zinc-400 italic">
                           &quot;{annotation.position.selectedText}&quot;
                         </p>
@@ -333,7 +333,7 @@ export const CollaborativeAnnotations: React.FC<CollaborativeAnnotationsProps> =
                         {annotation.mentions.map(mention => (
                           <span
                             key={mention}
-                            className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400"
+                            className="px-1.5 py-0.5 text-[10px] font-medium rounded-sm bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400"
                           >
                             @{mention}
                           </span>
@@ -373,7 +373,7 @@ export const CollaborativeAnnotations: React.FC<CollaborativeAnnotationsProps> =
                                   onReact?.(annotation.id, emoji);
                                   setShowReactionPicker(null);
                                 }}
-                                className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-600 rounded transition"
+                                className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-600 rounded-sm transition"
                               >
                                 {emoji}
                               </button>
@@ -467,7 +467,7 @@ export const CollaborativeAnnotations: React.FC<CollaborativeAnnotationsProps> =
                                 <button
                                   onClick={() => handleSubmitReply(annotation.id)}
                                   disabled={!replyText.trim()}
-                                  className="px-2 py-1 text-[10px] font-medium bg-indigo-500 text-white rounded hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="px-2 py-1 text-[10px] font-medium bg-indigo-500 text-white rounded-sm hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   Reply
                                 </button>
@@ -546,7 +546,7 @@ export const QuickAnnotationCreator: React.FC<{
   return (
     <div className="p-3 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-700">
       {selectedText && (
-        <div className="mb-3 p-2 bg-zinc-50 dark:bg-zinc-900 rounded border-l-2 border-indigo-500">
+        <div className="mb-3 p-2 bg-zinc-50 dark:bg-zinc-900 rounded-sm border-l-2 border-indigo-500">
           <p className="text-xs text-zinc-600 dark:text-zinc-400 italic line-clamp-2">
             &quot;{selectedText}&quot;
           </p>
@@ -588,7 +588,7 @@ export const QuickAnnotationCreator: React.FC<{
         <button
           onClick={handleSubmit}
           disabled={!content.trim()}
-          className="px-3 py-1 text-xs font-medium bg-indigo-500 text-white rounded hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-3 py-1 text-xs font-medium bg-indigo-500 text-white rounded-sm hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Add {annotationTypes[type].label}
         </button>

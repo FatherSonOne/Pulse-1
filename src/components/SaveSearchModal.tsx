@@ -62,7 +62,7 @@ export const SaveSearchModal: React.FC<SaveSearchModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs"
       role="dialog"
       aria-modal="true"
       aria-label="Save search"
@@ -94,7 +94,7 @@ export const SaveSearchModal: React.FC<SaveSearchModalProps> = ({
             </label>
             <input
               autoFocus
-              className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-pink-400"
+              className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 outline-hidden focus:ring-2 focus:ring-pink-400"
               placeholder="e.g. Invoices from Alice"
               value={name}
               onChange={e => { setName(e.target.value); setError(''); }}
@@ -123,7 +123,7 @@ export const SaveSearchModal: React.FC<SaveSearchModalProps> = ({
               <select
                 value={alertFrequency}
                 onChange={e => setAlertFrequency(e.target.value as typeof alertFrequency)}
-                className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-pink-400"
+                className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 outline-hidden focus:ring-2 focus:ring-pink-400"
               >
                 <option value="instant">Instant</option>
                 <option value="daily">Daily digest</option>

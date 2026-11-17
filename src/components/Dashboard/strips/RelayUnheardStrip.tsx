@@ -174,7 +174,7 @@ const RelayUnheardStrip: React.FC<RelayUnheardStripProps> = ({ workspaceId, auth
         </h2>
         <button
           onClick={() => setView(AppView.RELAY)}
-          className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+          className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
         >
           OPEN RELAY
         </button>
@@ -185,7 +185,7 @@ const RelayUnheardStrip: React.FC<RelayUnheardStripProps> = ({ workspaceId, auth
           const isNew = highlight.has(r.id);
           return (
             <li key={r.id}>
-              <div className="w-full flex items-center gap-3 px-3 py-2.5 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 group">
+              <div className="w-full flex items-center gap-3 px-3 py-2.5 rounded-sm hover:bg-zinc-50 dark:hover:bg-white/4 transition-colors duration-150 group">
                 <button
                   aria-label={isPlaying ? `Pause vox from ${r.senderName}` : `Play vox from ${r.senderName}`}
                   onClick={() => handlePlay(r)}
@@ -193,9 +193,9 @@ const RelayUnheardStrip: React.FC<RelayUnheardStripProps> = ({ workspaceId, auth
                     w-7 h-7 rounded-full shrink-0 flex items-center justify-center transition-colors duration-150
                     ${isPlaying
                       ? 'bg-rose-500 text-white'
-                      : 'bg-zinc-100 dark:bg-white/[0.06] text-zinc-700 dark:text-zinc-200 hover:bg-rose-500 hover:text-white'}
+                      : 'bg-zinc-100 dark:bg-white/6 text-zinc-700 dark:text-zinc-200 hover:bg-rose-500 hover:text-white'}
                     ${isNew ? 'pulse-heartbeat-once' : ''}
-                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40
+                    focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40
                   `}
                 >
                   <Play className={`w-3 h-3 ${isPlaying ? '' : 'ml-px'}`} fill="currentColor" />
@@ -203,7 +203,7 @@ const RelayUnheardStrip: React.FC<RelayUnheardStripProps> = ({ workspaceId, auth
                 <button
                   data-strip-row
                   onClick={makeStripRowClick(() => setView(AppView.RELAY))}
-                  className="flex items-baseline gap-2 min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+                  className="flex items-baseline gap-2 min-w-0 flex-1 text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded-sm"
                 >
                   <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 shrink-0">
                     {r.senderName}
@@ -212,7 +212,7 @@ const RelayUnheardStrip: React.FC<RelayUnheardStripProps> = ({ workspaceId, auth
                     QUICK · {formatDuration(r.duration)}
                   </span>
                 </button>
-                <span className="pulse-label text-zinc-500 dark:text-zinc-400 shrink-0 min-w-[2.5rem] text-right">
+                <span className="pulse-label text-zinc-500 dark:text-zinc-400 shrink-0 min-w-10 text-right">
                   {formatAge(r.createdAt)}
                 </span>
                 <ChevronRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 group-hover:text-rose-500 dark:group-hover:text-rose-400 transition-colors shrink-0" />

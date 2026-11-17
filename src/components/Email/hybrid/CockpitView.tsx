@@ -89,9 +89,9 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
               <div className="flex items-start gap-4 px-4 py-3.5 animate-pulse">
                 <div className="rounded-full pulse-surface-raised shrink-0" style={{ width: 36, height: 36 }} />
                 <div className="flex-1 space-y-2 py-1">
-                  <div className="h-3 w-1/3 rounded pulse-surface-raised" />
-                  <div className="h-4 w-3/4 rounded pulse-surface-raised" />
-                  <div className="h-3 w-2/3 rounded pulse-surface-raised" />
+                  <div className="h-3 w-1/3 rounded-sm pulse-surface-raised" />
+                  <div className="h-4 w-3/4 rounded-sm pulse-surface-raised" />
+                  <div className="h-3 w-2/3 rounded-sm pulse-surface-raised" />
                 </div>
               </div>
             </div>

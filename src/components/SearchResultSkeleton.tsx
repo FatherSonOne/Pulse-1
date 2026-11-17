@@ -14,10 +14,10 @@ export const SearchResultSkeleton: React.FC<SearchResultSkeletonProps> = ({ coun
           style={{ height: '72px' }}
           aria-hidden="true"
         >
-          <div className="skeleton-icon w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
+          <div className="skeleton-icon w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 shrink-0" />
           <div className="skeleton-lines flex-1 space-y-2">
-            <div className="skeleton-line h-3 rounded bg-gray-200 dark:bg-gray-700 w-2/3" />
-            <div className="skeleton-line h-3 rounded bg-gray-200 dark:bg-gray-700 w-1/2" />
+            <div className="skeleton-line h-3 rounded-sm bg-gray-200 dark:bg-gray-700 w-2/3" />
+            <div className="skeleton-line h-3 rounded-sm bg-gray-200 dark:bg-gray-700 w-1/2" />
           </div>
         </div>
       ))}

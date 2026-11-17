@@ -43,7 +43,7 @@ export const ConversationStatsModal: React.FC<ConversationStatsModalProps> = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+        className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
         onClick={onClose}
       >
         <motion.div
@@ -61,12 +61,12 @@ export const ConversationStatsModal: React.FC<ConversationStatsModalProps> = ({
           {/* Header */}
           <div className="p-4 border-b border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.06)] flex justify-between items-center">
             <h3 className="font-bold dark:text-white flex items-center gap-2">
-              <BarChart className="text-[var(--pulse-rose)]" />
+              <BarChart className="text-(--pulse-rose)" />
               Conversation Statistics
             </h3>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg hover:bg-[var(--pulse-surface-raised)] flex items-center justify-center transition"
+              className="w-8 h-8 rounded-lg hover:bg-(--pulse-surface-raised) flex items-center justify-center transition"
             >
               <X className="text-zinc-500" />
             </button>
@@ -77,7 +77,7 @@ export const ConversationStatsModal: React.FC<ConversationStatsModalProps> = ({
             {/* Main Stats */}
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)] p-3 rounded-lg text-center">
-                <div className="text-2xl font-bold text-[var(--pulse-rose)]">{stats.totalMessages}</div>
+                <div className="text-2xl font-bold text-(--pulse-rose)">{stats.totalMessages}</div>
                 <div className="text-xs text-zinc-500">Total Messages</div>
               </div>
               <div className="bg-[#f8f8f8] dark:bg-[rgba(255,255,255,0.055)] p-3 rounded-lg text-center">
@@ -106,13 +106,13 @@ export const ConversationStatsModal: React.FC<ConversationStatsModalProps> = ({
             <div className="border-t pt-3">
               <div className="text-xs text-zinc-500 mb-2">Decisions</div>
               <div className="flex gap-3">
-                <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded text-xs">
+                <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-sm text-xs">
                   {stats.decisions.approved} Approved
                 </span>
-                <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded text-xs">
+                <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-sm text-xs">
                   {stats.decisions.pending} Pending
                 </span>
-                <span className="px-2 py-1 bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] text-[var(--pulse-rose-text)] rounded text-xs">
+                <span className="px-2 py-1 bg-[rgba(244,63,94,0.06)] dark:bg-[rgba(244,63,94,0.08)] text-(--pulse-rose-text) rounded-sm text-xs">
                   {stats.tasksCreated} Tasks
                 </span>
               </div>

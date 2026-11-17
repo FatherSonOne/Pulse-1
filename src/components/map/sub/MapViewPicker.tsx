@@ -29,7 +29,7 @@ export const MapViewPicker: React.FC<MapViewPickerProps> = ({
     <div
       role="group"
       aria-label="Map view mode"
-      className={`absolute bottom-20 right-4 z-10 flex items-center gap-0.5 rounded-lg p-0.5 shadow-md backdrop-blur-sm ${
+      className={`absolute bottom-20 right-4 z-10 flex items-center gap-0.5 rounded-lg p-0.5 shadow-md backdrop-blur-xs ${
         isDarkMode ? 'bg-zinc-900/85 border border-white/10' : 'bg-white/90 border border-gray-200'
       }`}
     >
@@ -44,7 +44,7 @@ export const MapViewPicker: React.FC<MapViewPickerProps> = ({
             aria-label={`${label} view`}
             onClick={() => onViewModeChange(id)}
             title={`${label} view · press ${hotkey}`}
-            className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] tracking-[0.1em] uppercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
+            className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] tracking-widest uppercase transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 ${
               active
                 ? `text-rose-500 ${isDarkMode ? 'bg-rose-500/10' : 'bg-rose-50'}`
                 : `${isDarkMode ? 'text-gray-400 hover:bg-white/5' : 'text-gray-500 hover:bg-gray-100'}`

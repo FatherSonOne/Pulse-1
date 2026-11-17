@@ -117,7 +117,7 @@ export const TaxIdCard: React.FC = () => {
             id="tax-id-type"
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
           >
             <option value="">— None —</option>
             {TAX_ID_TYPES.map(o => (
@@ -137,7 +137,7 @@ export const TaxIdCard: React.FC = () => {
             placeholder={example || ''}
             spellCheck={false}
             autoComplete="off"
-            className="w-full px-3 py-2 text-sm font-mono border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+            className="w-full px-3 py-2 text-sm font-mono border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
           />
           {example && (
             <p className="text-[10px] text-zinc-400 mt-1">Example: <code className="font-mono">{example}</code></p>

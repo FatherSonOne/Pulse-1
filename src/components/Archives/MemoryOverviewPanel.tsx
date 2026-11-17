@@ -226,7 +226,7 @@ export const MemoryOverviewPanel: React.FC = () => {
           {isFiltered && items.length >= 2 && (
             <button
               onClick={() => setBriefing({ open: true, items, subject: briefingSubject })}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/[0.10] hover:bg-rose-500/[0.16] border border-rose-500/30 text-[10px] font-mono uppercase tracking-[0.12em] text-rose-600 dark:text-rose-400 transition-colors flex-shrink-0"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/16 border border-rose-500/30 text-[10px] font-mono uppercase tracking-[0.12em] text-rose-600 dark:text-rose-400 transition-colors shrink-0"
               style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
               title="Catch up across these conversations: what was said"
             >
@@ -290,16 +290,16 @@ export const MemoryOverviewPanel: React.FC = () => {
               return (
                 <li key={person.contactId}>
                   <div
-                    className="relative w-full flex items-center gap-3 py-2 px-2 -mx-2 rounded-lg hover:bg-white dark:hover:bg-white/[0.03] transition-[background-color] duration-200 group"
+                    className="relative w-full flex items-center gap-3 py-2 px-2 -mx-2 rounded-lg hover:bg-white dark:hover:bg-white/3 transition-[background-color] duration-200 group"
                     style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
                   >
                     <button
                       onClick={() => setQuery(person.name)}
-                      className="absolute inset-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500/40"
+                      className="absolute inset-0 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-rose-500/40"
                       aria-label={`Show all conversations with ${person.name}`}
                       title={`Show everything from ${person.name}`}
                     />
-                    <div className="relative w-8 h-8 rounded-full bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.06] flex items-center justify-center text-[10px] font-mono font-medium text-zinc-600 dark:text-zinc-300 flex-shrink-0">
+                    <div className="relative w-8 h-8 rounded-full bg-zinc-100 dark:bg-white/4 border border-zinc-200 dark:border-white/6 flex items-center justify-center text-[10px] font-mono font-medium text-zinc-600 dark:text-zinc-300 shrink-0">
                       {initialsOf(person.name)}
                     </div>
                     <div className="relative flex-1 min-w-0">
@@ -323,8 +323,8 @@ export const MemoryOverviewPanel: React.FC = () => {
                               className="flex items-center gap-1 text-[9px] font-mono text-zinc-400 dark:text-zinc-500 min-w-0"
                               title={`${v} ${k}`}
                             >
-                              <ChannelIcon kind={k} className="w-2.5 h-2.5 flex-shrink-0" />
-                              <div className="hidden sm:block h-1 w-12 bg-zinc-200 dark:bg-white/[0.06] rounded-full overflow-hidden flex-shrink-0">
+                              <ChannelIcon kind={k} className="w-2.5 h-2.5 shrink-0" />
+                              <div className="hidden sm:block h-1 w-12 bg-zinc-200 dark:bg-white/6 rounded-full overflow-hidden shrink-0">
                                 <div className="h-full bg-rose-500/60" style={{ width: `${w}%` }} />
                               </div>
                               <span className="tabular-nums">{v}</span>
@@ -344,7 +344,7 @@ export const MemoryOverviewPanel: React.FC = () => {
                           e.stopPropagation();
                           setBriefing({ open: true, items: personItems, subject: person.name });
                         }}
-                        className="relative inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-mono uppercase tracking-[0.12em] text-rose-600 dark:text-rose-400 bg-rose-500/[0.08] opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-rose-500/[0.16] transition flex-shrink-0"
+                        className="relative inline-flex items-center gap-1 px-2 py-1 rounded-sm text-[10px] font-mono uppercase tracking-[0.12em] text-rose-600 dark:text-rose-400 bg-rose-500/8 opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-rose-500/16 transition shrink-0"
                         title={`Catch up on ${person.name}: what was said`}
                         aria-label={`Catch me up on ${person.name}`}
                       >
@@ -352,7 +352,7 @@ export const MemoryOverviewPanel: React.FC = () => {
                         Catch me up
                       </button>
                     )}
-                    <ChevronRight className="relative w-3.5 h-3.5 text-zinc-300 dark:text-zinc-700 group-hover:text-rose-500 transition-colors flex-shrink-0" />
+                    <ChevronRight className="relative w-3.5 h-3.5 text-zinc-300 dark:text-zinc-700 group-hover:text-rose-500 transition-colors shrink-0" />
                   </div>
                 </li>
               );
@@ -379,7 +379,7 @@ export const MemoryOverviewPanel: React.FC = () => {
               <button
                 key={theme}
                 onClick={() => setQuery(theme)}
-                className="inline-flex items-baseline gap-1.5 px-2.5 py-1 rounded bg-zinc-100 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] hover:border-rose-500/40 hover:bg-rose-500/[0.06] transition-colors duration-200"
+                className="inline-flex items-baseline gap-1.5 px-2.5 py-1 rounded-sm bg-zinc-100 dark:bg-white/3 border border-zinc-200 dark:border-white/6 hover:border-rose-500/40 hover:bg-rose-500/6 transition-colors duration-200"
                 style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
               >
                 <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-zinc-700 dark:text-zinc-300">
@@ -416,16 +416,16 @@ export const MemoryOverviewPanel: React.FC = () => {
                   tabIndex={0}
                   onClick={() => setSelectedItem(item)}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedItem(item); } }}
-                  className="w-full flex items-baseline gap-3 py-2 px-2 -mx-2 rounded-lg text-left cursor-pointer hover:bg-white dark:hover:bg-white/[0.03] transition-[background-color] duration-200 group focus:outline-none focus:ring-2 focus:ring-rose-500/40"
+                  className="w-full flex items-baseline gap-3 py-2 px-2 -mx-2 rounded-lg text-left cursor-pointer hover:bg-white dark:hover:bg-white/3 transition-[background-color] duration-200 group focus:outline-hidden focus:ring-2 focus:ring-rose-500/40"
                   style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
                 >
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400 dark:text-zinc-600 w-12 flex-shrink-0 tabular-nums">
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400 dark:text-zinc-600 w-12 shrink-0 tabular-nums">
                     {d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                   </span>
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setActiveFilter(item.type); }}
-                    className="font-mono text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-500 w-16 flex-shrink-0 text-left hover:text-rose-500 transition-colors truncate"
+                    className="font-mono text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-500 w-16 shrink-0 text-left hover:text-rose-500 transition-colors truncate"
                   >
                     {getTypeLabel(item.type)}
                   </button>
@@ -433,7 +433,7 @@ export const MemoryOverviewPanel: React.FC = () => {
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setQuery(contactName!); }}
-                      className="font-mono text-[10px] lowercase tracking-wide text-zinc-500 dark:text-zinc-500 hover:text-rose-500 transition-colors truncate flex-shrink-0 max-w-[80px]"
+                      className="font-mono text-[10px] lowercase tracking-wide text-zinc-500 dark:text-zinc-500 hover:text-rose-500 transition-colors truncate shrink-0 max-w-[80px]"
                       title={`Filter by ${contactName}`}
                     >
                       {contactFirst}
@@ -442,7 +442,7 @@ export const MemoryOverviewPanel: React.FC = () => {
                   <span className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-zinc-50 truncate flex-1">
                     {item.title}
                   </span>
-                  <ChevronRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-700 group-hover:text-rose-500 transition-colors flex-shrink-0" />
+                  <ChevronRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-700 group-hover:text-rose-500 transition-colors shrink-0" />
                 </div>
               </li>
             );
