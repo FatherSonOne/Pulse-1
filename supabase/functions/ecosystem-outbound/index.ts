@@ -17,6 +17,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { signBridgeRequest } from '../_shared/ecosystemSignature.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -103,12 +104,16 @@ serve(async (req) => {
       },
     };
 
-    // POST to target app's inbound endpoint
+    // POST to target app's inbound endpoint. Sign the exact bytes we send (EAI-08).
+    const rawBody = JSON.stringify(event);
+    const timestamp = Math.floor(Date.now() / 1000).toString();
     const outboundHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
       'X-Ecosystem-Token': config.service_token,
       'X-Ecosystem-Source': 'pulse',
       'X-Ecosystem-Event-Id': event.id as string,
+      'X-Ecosystem-Timestamp': timestamp,
+      'X-Ecosystem-Signature': await signBridgeRequest(config.service_token, timestamp, event.id as string, rawBody),
     };
     // Supabase edge functions require an anon key to pass the API gateway
     if (config.features?.gateway_key) {
@@ -118,7 +123,7 @@ serve(async (req) => {
     const resp = await fetch(config.api_url, {
       method: 'POST',
       headers: outboundHeaders,
-      body: JSON.stringify(event),
+      body: rawBody,
     });
 
     if (!resp.ok) {

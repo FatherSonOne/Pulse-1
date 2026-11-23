@@ -5,6 +5,7 @@
 // =====================================================
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { signBridgeRequest } from '../_shared/ecosystemSignature.ts';
 import { handleContextRequest } from './contextHandler.ts';
 
 const corsHeaders: Record<string, string> = {
@@ -736,11 +737,16 @@ async function sendServiceEvent(
     data: event.data,
   };
 
+  // Sign the exact bytes we send (EAI-08).
+  const rawBody = JSON.stringify(payload);
+  const signedAt = Math.floor(Date.now() / 1000).toString();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'X-Ecosystem-Token': config.service_token,
     'X-Ecosystem-Source': 'pulse',
     'X-Ecosystem-Event-Id': eventId,
+    'X-Ecosystem-Timestamp': signedAt,
+    'X-Ecosystem-Signature': await signBridgeRequest(config.service_token, signedAt, eventId, rawBody),
   };
   // Supabase API gateway requires both Authorization: Bearer AND apikey
   // headers — strict receivers (Entomate) check the apikey explicitly,
@@ -753,7 +759,7 @@ async function sendServiceEvent(
   const resp = await fetch(config.api_url, {
     method: 'POST',
     headers,
-    body: JSON.stringify(payload),
+    body: rawBody,
   });
 
   if (!resp.ok) {
