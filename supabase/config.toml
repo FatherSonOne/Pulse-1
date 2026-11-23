@@ -488,6 +488,10 @@ verify_jwt = true
 [functions.maps-route]
 verify_jwt = true
 
+# Called by pg_cron with CRON_SECRET, not a user JWT (matches production).
+[functions.ecosystem-heartbeat]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

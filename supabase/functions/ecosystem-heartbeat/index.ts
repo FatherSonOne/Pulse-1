@@ -7,6 +7,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { signBridgeRequest } from '../_shared/ecosystemSignature.ts';
 
 serve(async (req) => {
   // Auth — require CRON_SECRET. Without this, anyone with the URL
@@ -43,12 +44,24 @@ serve(async (req) => {
     const eventId = crypto.randomUUID();
 
     try {
+      // Sign the exact bytes we send (EAI-08).
+      const rawBody = JSON.stringify({
+        id: eventId,
+        source: 'pulse',
+        timestamp: new Date().toISOString(),
+        serviceToken: config.service_token,
+        eventType: 'heartbeat',
+        data: { app: 'pulse' },
+      });
+      const signedAt = Math.floor(Date.now() / 1000).toString();
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         'X-Ecosystem-Token': config.service_token,
         // Receivers (entomate, logos_vision) require these on every event:
         'X-Ecosystem-Source': 'pulse',
         'X-Ecosystem-Event-Id': eventId,
+        'X-Ecosystem-Timestamp': signedAt,
+        'X-Ecosystem-Signature': await signBridgeRequest(config.service_token, signedAt, eventId, rawBody),
       };
       // Supabase edge functions require an anon/publishable key to pass the
       // API gateway. Send via both `Authorization: Bearer` and `apikey` to
@@ -61,14 +74,7 @@ serve(async (req) => {
       const resp = await fetch(config.api_url, {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          id: eventId,
-          source: 'pulse',
-          timestamp: new Date().toISOString(),
-          serviceToken: config.service_token,
-          eventType: 'heartbeat',
-          data: { app: 'pulse' },
-        }),
+        body: rawBody,
         signal: AbortSignal.timeout(10_000),
       });
 
