@@ -8,8 +8,8 @@ import type { EcosystemConfig, EcosystemEvent } from '../../types/messages';
 import { ECOSYSTEM_APPS, ECOSYSTEM_APP_ORDER, type EcosystemAppName } from '../../config/ecosystem';
 import { EcosystemAppLogo } from './EcosystemAppLogo';
 import {
-  Zap, Link2, Activity, Bot, Loader2, Check, X,
-  ToggleLeft, ToggleRight, ChevronDown, ChevronUp,
+  Zap, Activity, Bot, Loader2,
+  ChevronDown, ChevronUp,
 } from 'lucide-react';
 
 interface EcosystemSettingsProps {
@@ -17,32 +17,11 @@ interface EcosystemSettingsProps {
 }
 
 export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) => {
-  const [ecosystemConfigs, setEcosystemConfigs] = useState<EcosystemConfig[]>([]);
+  const [ecosystemConfigs, setEcosystemConfigs] = useState<Omit<EcosystemConfig, 'service_token' | 'inbound_token' | 'features'>[]>([]);
   const [ecosystemEvents, setEcosystemEvents] = useState<EcosystemEvent[]>([]);
   const [ecosystemLoading, setEcosystemLoading] = useState(false);
   const [ecosystemEventsExpanded, setEcosystemEventsExpanded] = useState(false);
-  const [newAppName, setNewAppName] = useState<EcosystemAppName>('entomate');
-  const [newApiUrl, setNewApiUrl] = useState(ECOSYSTEM_APPS.entomate.inboundUrl);
-  const [newBotUrl, setNewBotUrl] = useState(ECOSYSTEM_APPS.entomate.botUrl ?? '');
-  const [newServiceToken, setNewServiceToken] = useState('');
-  const [newInboundToken, setNewInboundToken] = useState('');
-  const [ecosystemSaving, setEcosystemSaving] = useState(false);
-  const [ecosystemTestStatus, setEcosystemTestStatus] = useState<Record<string, 'testing' | 'ok' | 'error'>>({});
   const [ecosystemSetupStatus, setEcosystemSetupStatus] = useState<string | null>(null);
-  const [copiedToken, setCopiedToken] = useState<string | null>(null);
-  const [expandedConfigTokens, setExpandedConfigTokens] = useState<string | null>(null);
-
-  const generateToken = (): string => {
-    const bytes = new Uint8Array(32);
-    crypto.getRandomValues(bytes);
-    return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
-  };
-
-  const copyToClipboard = async (text: string, label: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopiedToken(label);
-    setTimeout(() => setCopiedToken(null), 2000);
-  };
 
   useEffect(() => { loadEcosystemData(); }, []);
 
@@ -50,7 +29,10 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
     setEcosystemLoading(true);
     try {
       const { data: configs } = await supabase
-        .from('ecosystem_config').select('*').order('app_name');
+        // Tokens and features are not readable from the browser (EAI-08).
+        .from('ecosystem_config')
+        .select('id, app_name, api_url, bot_url, enabled, last_heartbeat, created_at, updated_at')
+        .order('app_name');
       setEcosystemConfigs(configs || []);
 
       const { data: events } = await supabase
@@ -62,63 +44,6 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
     } finally {
       setEcosystemLoading(false);
     }
-  };
-
-  const saveEcosystemConfig = async () => {
-    if (!newApiUrl || !newServiceToken || !newInboundToken) return;
-    setEcosystemSaving(true);
-    try {
-      const { error } = await supabase.from('ecosystem_config').upsert({
-        app_name: newAppName,
-        api_url: newApiUrl,
-        bot_url: newBotUrl || null,
-        service_token: newServiceToken,
-        inbound_token: newInboundToken,
-        enabled: true,
-        features: { bot_messages: true, sync_tasks: true, notifications: true },
-      }, { onConflict: 'app_name' });
-      if (error) throw error;
-      setNewServiceToken('');
-      setNewInboundToken('');
-      await loadEcosystemData();
-    } catch (err) {
-      console.error('Failed to save ecosystem config:', err);
-    } finally {
-      setEcosystemSaving(false);
-    }
-  };
-
-  const testEcosystemConnection = async (config: EcosystemConfig) => {
-    setEcosystemTestStatus(s => ({ ...s, [config.app_name]: 'testing' }));
-    try {
-      // Call Pulse's own edge function with the app's inbound_token
-      // The function validates X-Ecosystem-Token against ecosystem_config.inbound_token
-      const { error } = await supabase.functions.invoke('ecosystem-inbound', {
-        body: {
-          id: crypto.randomUUID(),
-          source: config.app_name,
-          timestamp: new Date().toISOString(),
-          serviceToken: config.inbound_token,
-          eventType: 'heartbeat',
-          data: {},
-        },
-        headers: {
-          'X-Ecosystem-Token': config.inbound_token,
-        },
-      });
-      setEcosystemTestStatus(s => ({
-        ...s,
-        [config.app_name]: error ? 'error' : 'ok',
-      }));
-    } catch {
-      setEcosystemTestStatus(s => ({ ...s, [config.app_name]: 'error' }));
-    }
-  };
-
-  const toggleEcosystemApp = async (config: EcosystemConfig) => {
-    const { error } = await supabase
-      .from('ecosystem_config').update({ enabled: !config.enabled }).eq('id', config.id);
-    if (!error) await loadEcosystemData();
   };
 
   const setupWorkspaceBot = async (workspaceId: string) => {
@@ -251,7 +176,6 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
               const config = ecosystemConfigs.find(c => c.app_name === appKey);
               if (!config) return null;
               const appMeta = ECOSYSTEM_APPS[appKey];
-              const testStatus = ecosystemTestStatus[config.app_name];
               return (
                 <div key={config.id} className="rounded-xl bg-(--pulse-surface) border border-(--pulse-border) overflow-hidden">
                   <div className="flex items-center gap-3 p-3">
@@ -282,205 +206,18 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
                         <div className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-0.5">No heartbeat yet</div>
                       ) : null}
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button type="button"
-                        onClick={() => setExpandedConfigTokens(expandedConfigTokens === config.id ? null : config.id)}
-                        className="px-2 py-1 rounded-lg text-xs bg-(--pulse-surface) hover:bg-(--pulse-surface-raised) text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border border-(--pulse-border) transition">
-                        Tokens
-                      </button>
-                      <button type="button"
-                        onClick={() => testEcosystemConnection(config)}
-                        disabled={testStatus === 'testing'}
-                        className="px-2 py-1 rounded-lg text-xs bg-(--pulse-surface) hover:bg-(--pulse-surface-raised) text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border border-(--pulse-border) transition flex items-center gap-1">
-                        {testStatus === 'testing' ? <Loader2 className="w-3 h-3 animate-spin" />
-                          : testStatus === 'ok' ? <Check className="w-3 h-3 text-emerald-500" />
-                          : testStatus === 'error' ? <X className="w-3 h-3 text-rose-500" />
-                          : <Activity className="w-3 h-3" />}
-                        Test
-                      </button>
-                      <button type="button" onClick={() => toggleEcosystemApp(config)}
-                        className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
-                        title={config.enabled ? 'Disable' : 'Enable'}>
-                        {config.enabled
-                          ? <ToggleRight className="w-5 h-5 text-emerald-500" />
-                          : <ToggleLeft className="w-5 h-5" />}
-                      </button>
-                    </div>
                   </div>
-
-                  {expandedConfigTokens === config.id && (
-                    <div className="border-t border-(--pulse-border) px-4 py-3 bg-(--pulse-surface-raised) space-y-2">
-                      <p className="text-[10px] text-zinc-500 mb-2">
-                        Copy these into <span className="text-zinc-900 dark:text-white font-medium">{appMeta.name}</span>'s{' '}
-                        <code className="text-rose-600 dark:text-rose-300">ecosystem_config</code> table — values are <strong>swapped</strong>.
-                      </p>
-                      {[
-                        { label: `Pulse → ${appMeta.name}`, value: config.service_token, hint: `paste as inbound_token in ${appMeta.name}`, key: `svc-${config.id}` },
-                        { label: `${appMeta.name} → Pulse`, value: config.inbound_token, hint: `paste as service_token in ${appMeta.name}`, key: `inb-${config.id}` },
-                      ].map(({ label, value, hint, key }) => (
-                        <div key={key}>
-                          <div className="flex items-center justify-between mb-0.5">
-                            <span className="text-[10px] text-zinc-500">{label}</span>
-                            <button type="button" onClick={() => copyToClipboard(value, key)}
-                              className="text-[10px] px-2 py-0.5 rounded-sm bg-(--pulse-surface) hover:bg-(--pulse-surface-raised) text-zinc-600 dark:text-zinc-400 border border-(--pulse-border) transition">
-                              {copiedToken === key ? '✓ Copied' : 'Copy'}
-                            </button>
-                          </div>
-                          <div className="font-mono text-[10px] text-zinc-600 dark:text-zinc-400 bg-(--pulse-surface) rounded-sm px-2 py-1.5 truncate border border-(--pulse-border)">
-                            {value}
-                          </div>
-                          <p className="text-[9px] text-zinc-400 dark:text-zinc-600 mt-0.5">→ {hint}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               );
             })}
         </div>
       )}
 
-      {/* ── ADD CONNECTION ── */}
-      <div className="rounded-xl bg-(--pulse-surface) border border-(--pulse-border) p-4 space-y-3">
-        <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-          <Link2 className="w-3 h-3" />
-          Add Connection
-        </div>
-
-        {/* App selector */}
-        <div>
-          <label className="block text-xs text-zinc-500 mb-1">App</label>
-          <select
-            value={newAppName}
-            onChange={(e) => {
-              const app = e.target.value as EcosystemAppName;
-              setNewAppName(app);
-              setNewApiUrl(ECOSYSTEM_APPS[app].inboundUrl);
-              setNewBotUrl(ECOSYSTEM_APPS[app].botUrl ?? '');
-            }}
-            title="Select app to connect"
-            aria-label="Select app to connect"
-            className="w-full px-3 py-2 bg-(--pulse-surface) border border-(--pulse-border) rounded-lg text-sm text-zinc-900 dark:text-white focus:outline-hidden focus:border-rose-500 transition"
-          >
-            <option value="entomate">Entomate</option>
-            <option value="logos_vision">Logos Vision</option>
-          </select>
-        </div>
-
-        {/* Inbound URL — full width */}
-        <div>
-          <label className="block text-xs text-zinc-500 mb-1">
-            Inbound URL
-            <span className="ml-1.5 text-rose-500 dark:text-rose-400 opacity-70">(auto-filled)</span>
-          </label>
-          <input
-            type="url"
-            value={newApiUrl}
-            readOnly
-            title="Inbound URL for selected app"
-            placeholder="Auto-filled from app selection"
-            aria-label="Inbound URL for selected app"
-            className="w-full px-3 py-2 bg-(--pulse-surface-raised) border border-rose-500/20 rounded-lg text-xs text-rose-600 dark:text-rose-300 font-mono cursor-default select-all"
-          />
-        </div>
-
-        {/* Bot URL — optional, editable */}
-        <div>
-          <label className="block text-xs text-zinc-500 mb-1">
-            Bot URL
-            <span className="ml-1.5 text-zinc-400 dark:text-zinc-600 opacity-70">(optional)</span>
-          </label>
-          <input
-            type="url"
-            value={newBotUrl}
-            onChange={(e) => setNewBotUrl(e.target.value)}
-            placeholder="No bot API configured for this app"
-            title="Bot API URL for selected app"
-            aria-label="Bot API URL for selected app"
-            className="w-full px-3 py-2 bg-(--pulse-surface) border border-(--pulse-border) rounded-lg text-xs text-zinc-700 dark:text-zinc-300 font-mono placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-hidden focus:border-rose-500 transition"
-          />
-        </div>
-
-        {/* Token how-it-works hint */}
-        <div className="rounded-lg bg-rose-500/[0.07] dark:bg-rose-500/10 border border-rose-500/20 p-3 text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-          <span className="text-rose-600 dark:text-rose-300 font-semibold block mb-1">How tokens work:</span>
-          <span className="font-semibold text-zinc-800 dark:text-zinc-300">Service token</span> = what Pulse sends when calling <em>their</em> API.
-          Paste into the other app's <code className="text-rose-600 dark:text-rose-300">inbound_token</code>.<br />
-          <span className="font-semibold text-zinc-800 dark:text-zinc-300">Inbound token</span> = what they send when calling Pulse.
-          Paste into the other app's <code className="text-rose-600 dark:text-rose-300">service_token</code>.
-        </div>
-
-        {/* Service Token */}
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="text-xs text-zinc-500">Service Token — Pulse → {newAppName.replace('_', ' ')}</label>
-            <div className="flex gap-1">
-              <button type="button" onClick={() => setNewServiceToken(generateToken())}
-                className="text-[10px] px-2 py-0.5 rounded-sm bg-rose-500/15 hover:bg-rose-500/25 text-rose-600 dark:text-rose-300 border border-rose-500/25 transition">
-                Generate
-              </button>
-              {newServiceToken && (
-                <button type="button" onClick={() => copyToClipboard(newServiceToken, 'service')}
-                  className="text-[10px] px-2 py-0.5 rounded-sm bg-(--pulse-surface) hover:bg-(--pulse-surface-raised) text-zinc-600 dark:text-zinc-400 border border-(--pulse-border) transition">
-                  {copiedToken === 'service' ? '✓ Copied' : 'Copy'}
-                </button>
-              )}
-            </div>
-          </div>
-          <input
-            type="text"
-            value={newServiceToken}
-            onChange={(e) => setNewServiceToken(e.target.value)}
-            placeholder="Click Generate or paste existing token"
-            className="w-full px-3 py-2 bg-(--pulse-surface) border border-(--pulse-border) rounded-lg text-xs text-zinc-700 dark:text-zinc-300 font-mono placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-hidden focus:border-rose-500 transition"
-          />
-          {newServiceToken && (
-            <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-1">
-              → Paste as <code>inbound_token</code> in {newAppName.replace('_', ' ')}'s ecosystem_config
-            </p>
-          )}
-        </div>
-
-        {/* Inbound Token */}
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="text-xs text-zinc-500">Inbound Token — {newAppName.replace('_', ' ')} → Pulse</label>
-            <div className="flex gap-1">
-              <button type="button" onClick={() => setNewInboundToken(generateToken())}
-                className="text-[10px] px-2 py-0.5 rounded-sm bg-rose-500/15 hover:bg-rose-500/25 text-rose-600 dark:text-rose-300 border border-rose-500/25 transition">
-                Generate
-              </button>
-              {newInboundToken && (
-                <button type="button" onClick={() => copyToClipboard(newInboundToken, 'inbound')}
-                  className="text-[10px] px-2 py-0.5 rounded-sm bg-(--pulse-surface) hover:bg-(--pulse-surface-raised) text-zinc-600 dark:text-zinc-400 border border-(--pulse-border) transition">
-                  {copiedToken === 'inbound' ? '✓ Copied' : 'Copy'}
-                </button>
-              )}
-            </div>
-          </div>
-          <input
-            type="text"
-            value={newInboundToken}
-            onChange={(e) => setNewInboundToken(e.target.value)}
-            placeholder="Click Generate or paste existing token"
-            className="w-full px-3 py-2 bg-(--pulse-surface) border border-(--pulse-border) rounded-lg text-xs text-zinc-700 dark:text-zinc-300 font-mono placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-hidden focus:border-rose-500 transition"
-          />
-          {newInboundToken && (
-            <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-1">
-              → Paste as <code>service_token</code> in {newAppName.replace('_', ' ')}'s ecosystem_config
-            </p>
-          )}
-        </div>
-
-        <button
-          type="button"
-          onClick={saveEcosystemConfig}
-          disabled={ecosystemSaving || !newApiUrl || !newServiceToken || !newInboundToken}
-          className="w-full py-2 rounded-lg text-sm font-semibold bg-rose-500 hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed text-white transition flex items-center justify-center gap-2"
-        >
-          {ecosystemSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
-          {ecosystemSaving ? 'Saving...' : 'Save Connection'}
-        </button>
+      {/* ── MANAGED CONNECTIONS (EAI-08) ── */}
+      <div className="rounded-xl bg-(--pulse-surface) border border-(--pulse-border) p-4 text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+        <span className="font-semibold text-zinc-900 dark:text-white">Connections are managed by a platform admin.</span>{' '}
+        Bridge tokens are secrets, so this page does not show or change them. Each app checks the
+        connection every 15 minutes; the last ping above shows the result.
       </div>
 
       {/* ── BOT CHANNEL SETUP ── */}
