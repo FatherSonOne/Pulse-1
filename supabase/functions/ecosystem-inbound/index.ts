@@ -4,7 +4,7 @@
 // Validates service tokens, logs events, routes to handlers
 // =====================================================
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { signBridgeRequest } from '../_shared/ecosystemSignature.ts';
 import { handleContextRequest } from './contextHandler.ts';
 
@@ -71,6 +71,22 @@ Deno.serve(async (req) => {
     }
 
     const event: EcosystemEvent = await req.json();
+
+    // The version on each assignment makes these writes safe to replay.
+    // Handle before the ordinary event log, whose failed rows can block retries.
+    if (event.eventType === 'action_item.status_changed') {
+      if (config.app_name !== 'entomate' || event.source !== 'entomate' ||
+          req.headers.get('X-Ecosystem-Source') !== 'entomate') {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const result = await updateEntomateActionItemStatus(supabase, event);
+      return new Response(JSON.stringify(result), {
+        status: result.actionItemStatusSynced ? 200 : 422,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // Senders may use `id` or `correlationId`; fall back to a fresh UUID so the
     // NOT NULL `event_id` constraint never silently drops the row.
@@ -455,6 +471,28 @@ async function handleActionItemsExtracted(supabase: any, event: EcosystemEvent):
       actions: entomate_url ? [{ label: 'View Task', action: 'view_task', url: entomate_url }] : [],
     });
   }
+}
+
+async function updateEntomateActionItemStatus(supabase: SupabaseClient, event: EcosystemEvent) {
+  const { workspaceId, actionItemId, meetingId, status, statusVersion, completedAt, task } = event.data || {};
+  const uuid = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
+  if ([workspaceId, actionItemId, meetingId].some((value) => typeof value !== 'string' || !uuid.test(value)) ||
+      event.entityId !== actionItemId || typeof status !== 'string' || typeof statusVersion !== 'string' ||
+      !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}Z$/.test(statusVersion)) {
+    return { actionItemStatusSynced: false, error: 'Invalid action item status' };
+  }
+
+  const { data: updatedCount, error } = await supabase.rpc('apply_entomate_task_status', {
+    p_workspace_id: workspaceId,
+    p_meeting_id: meetingId,
+    p_action_item_id: actionItemId,
+    p_status: status,
+    p_status_version: statusVersion,
+    p_completed_at: completedAt ?? null,
+    p_task: task ?? null,
+  });
+  if (error) throw error;
+  return { actionItemStatusSynced: true, updatedCount };
 }
 
 async function handleTaskEvent(supabase: any, event: EcosystemEvent): Promise<void> {

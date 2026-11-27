@@ -9,7 +9,15 @@
  * — pulse_messages has no clean conversation_id and provenance data is still sparse.
  */
 import { AppView } from '../../../types';
+import { ECOSYSTEM_APPS } from '../../../config/ecosystem';
 import type { Task } from '../../../services/taskService';
+
+export function entomateMeetingUrl(task: Task): string | null {
+  const meetingId = task.metadata?.entomate_meeting_id;
+  if (task.metadata?.source !== 'entomate' || typeof meetingId !== 'string' ||
+      !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(meetingId)) return null;
+  return `${ECOSYSTEM_APPS.entomate.appUrl}/meetings/${meetingId}`;
+}
 
 export function taskSourceView(task: Task): AppView | null {
   return taskSourceTarget(task)?.view ?? null;

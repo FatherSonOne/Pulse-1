@@ -11,6 +11,7 @@ const SOURCE_MAP: Record<string, SourceMeta> = {
   email: { key: 'email', label: 'Email', Icon: Mail },
   messages: { key: 'messages', label: 'Messages', Icon: MessageSquare },
   meeting: { key: 'meeting', label: 'Meeting', Icon: Video },
+  entomate: { key: 'entomate', label: 'Entomate', Icon: Video },
   relay: { key: 'relay', label: 'Relay', Icon: Mic },
   manual: { key: 'manual', label: 'Manual', Icon: Pencil },
 };

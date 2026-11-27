@@ -15,6 +15,7 @@ export const ECOSYSTEM_APPS = {
   },
   entomate: {
     name: 'Entomate',
+    appUrl: 'https://entomate.logosvision.org',
     tagline: 'Meeting intelligence & automation',
     brandColor: '#FF2D6B',
     inboundUrl: 'https://epftmicjaxrthmpyoguy.supabase.co/functions/v1/ecosystem-inbound',

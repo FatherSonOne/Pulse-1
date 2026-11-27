@@ -14,7 +14,7 @@ import { useState } from 'react';
 import { Check, RotateCcw, UserCog, CalendarClock, Trash2, Ban, X, ExternalLink } from 'lucide-react';
 import type { Task } from '../../../../services/taskService';
 import type { User } from '../../../../types';
-import { taskSourceView, taskSourceLabel } from '../taskSource';
+import { entomateMeetingUrl, taskSourceView, taskSourceLabel } from '../taskSource';
 import { SubtaskList } from '../../SubtaskList';
 import { Prop, PropertyTable } from './PropertyTable';
 import { SourceContext } from './SourceContext';
@@ -82,6 +82,7 @@ export function TaskDetail({
   // Cross-surface deep-link (item C): only show "Open source" when the task carries
   // provenance we can route to (email / message / meeting / relay).
   const sourceView = taskSourceView(task);
+  const entomateUrl = entomateMeetingUrl(task);
 
   const assigneeName = (id?: string) => members.find((mem) => mem.id === id)?.name;
 
@@ -112,6 +113,10 @@ export function TaskDetail({
         onClick={handleDelete}
         title={confirmDelete ? 'Click again to confirm' : 'Delete task'}
       />
+      {entomateUrl && (
+        <ActBtn icon={ExternalLink} label="Open Entomate meeting"
+          onClick={() => window.open(entomateUrl, '_blank', 'noopener,noreferrer')} />
+      )}
       {sourceView && (
         <ActBtn
           icon={ExternalLink}
